@@ -146,3 +146,32 @@ export type SearchHit = {
   issueId: string | null;
   projectId: string | null;
 };
+
+/**
+ * One entry in the workspace audit trail.
+ *
+ * `payload` is deliberately loose: each event type stores the fields that
+ * describe it, recorded as they were at the time, and the renderer switches on
+ * `eventType`. Typing it as a discriminated union would be neater, but the
+ * trail is append-only and holds rows written by older code, so the renderer
+ * has to tolerate payloads it does not recognise either way.
+ */
+export type ActivityEvent = {
+  id: string;
+  actorId: string | null;
+  actorName: string | null;
+  entityType: string;
+  entityId: string;
+  eventType: string;
+  payload: Record<string, string | undefined>;
+  createdAt: string;
+};
+
+/** One active browser session. Token hashes never reach the client. */
+export type SessionSummary = {
+  id: string;
+  createdAt: string;
+  lastUsedAt: string;
+  userAgent: string | null;
+  current: boolean;
+};

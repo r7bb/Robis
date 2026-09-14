@@ -195,6 +195,12 @@ export default function IssuePage() {
             </p>
           )}
 
+          <Description
+            value={data.description}
+            canEdit={canEdit}
+            onSave={(next) => update.mutate({ description: next })}
+          />
+
           <CommentThread
             workspaceId={workspaceId}
             issueId={issueId}
@@ -265,6 +271,106 @@ function EditableTitle({
         className="w-full rounded-md border border-line bg-raised px-3 py-2 text-2xl font-semibold text-content outline-none focus:border-accent"
       />
     </form>
+  );
+}
+
+/**
+ * The issue description.
+ *
+ * Explicit Save and Cancel rather than the title's save-on-blur. A title is a
+ * line you retype; a description is paragraphs, and losing them because focus
+ * moved is a different class of mistake. Ctrl/Cmd+Enter saves and Escape
+ * cancels, so the mouse is optional either way.
+ *
+ * Text is stored and rendered verbatim -- no Markdown. Claiming to render
+ * Markdown and then only handling some of it is worse than plainly not doing
+ * it, and the one thing people actually rely on, line breaks, is preserved.
+ */
+function Description({
+  value,
+  canEdit,
+  onSave,
+}: {
+  value: string | null;
+  canEdit: boolean;
+  onSave: (value: string | null) => void;
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+
+  if (draft === null) {
+    const empty = !value?.trim();
+
+    // Nothing to show and no right to add it: render nothing rather than an
+    // empty box a guest cannot act on.
+    if (empty && !canEdit) return null;
+
+    return (
+      <section className="mt-8">
+        <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-faint">Description</h2>
+
+        <button
+          type="button"
+          disabled={!canEdit}
+          onClick={() => setDraft(value ?? '')}
+          className={[
+            'block w-full rounded-md px-3 py-2 text-left text-sm',
+            canEdit ? 'cursor-text hover:bg-raised' : 'cursor-default',
+            empty ? 'text-faint' : 'whitespace-pre-wrap text-muted',
+          ].join(' ')}
+        >
+          {empty ? 'Add a description…' : value}
+        </button>
+      </section>
+    );
+  }
+
+  const commit = () => {
+    const trimmed = draft.trim();
+    // An emptied description is null, not "", so the column holds one
+    // representation of "absent" rather than two that sort differently.
+    onSave(trimmed === '' ? null : trimmed);
+    setDraft(null);
+  };
+
+  return (
+    <section className="mt-8">
+      <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-faint">Description</h2>
+
+      <textarea
+        // biome-ignore lint/a11y/noAutofocus: the textarea exists only because the reader just clicked the description to edit it.
+        autoFocus
+        value={draft}
+        rows={6}
+        onChange={(event) => setDraft(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') setDraft(null);
+          if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) commit();
+        }}
+        aria-label="Issue description"
+        placeholder="What needs doing, and what does done look like?"
+        className="w-full resize-y rounded-md border border-line bg-raised px-3 py-2 text-sm text-content outline-none focus:border-accent"
+      />
+
+      <div className="mt-2 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={commit}
+          className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-accent-contrast hover:bg-accent-hover"
+        >
+          Save
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setDraft(null)}
+          className="rounded-md px-3 py-1.5 text-sm text-muted hover:text-content"
+        >
+          Cancel
+        </button>
+
+        <span className="text-xs text-faint">⌘↵ to save · Esc to cancel</span>
+      </div>
+    </section>
   );
 }
 

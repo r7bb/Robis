@@ -167,7 +167,14 @@ describe('updates', () => {
       .events.filter((e: { eventType: string }) => e.eventType === 'issue.status_changed');
 
     expect(statusEvents).toHaveLength(1);
-    expect(statusEvents[0].payload).toEqual({ from: 'TODO', to: 'IN_PROGRESS' });
+    // The key and title are recorded alongside the transition so the feed can
+    // name the issue after it is deleted, when no join would find it.
+    expect(statusEvents[0].payload).toEqual({
+      key: issue.key,
+      title: issue.title,
+      from: 'TODO',
+      to: 'IN_PROGRESS',
+    });
   });
 
   test('an empty patch is rejected rather than silently doing nothing', async () => {

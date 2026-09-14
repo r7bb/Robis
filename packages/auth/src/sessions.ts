@@ -1,5 +1,5 @@
 import { type Executor, sessions, users } from '@relay/database';
-import { and, eq, gt, lt } from 'drizzle-orm';
+import { and, desc, eq, gt, lt, ne } from 'drizzle-orm';
 import { generateSessionToken, hashSessionToken, sessionExpiry } from './tokens.ts';
 
 export type AuthenticatedUser = {
@@ -63,9 +63,77 @@ export async function revokeSession(db: Executor, token: string): Promise<void> 
   await db.delete(sessions).where(eq(sessions.tokenHash, hashSessionToken(token)));
 }
 
-/** Invalidate every session for a user, e.g. after a password change. */
+/**
+ * Invalidate every session for a user, including the one making the request.
+ *
+ * Used on password change, which then issues a fresh session for the caller.
+ * Rotating the caller's own token rather than sparing it matters: if the
+ * password is being changed *because* a token leaked, sparing the current one
+ * would leave the attacker signed in.
+ */
 export async function revokeAllSessions(db: Executor, userId: string): Promise<void> {
   await db.delete(sessions).where(eq(sessions.userId, userId));
+}
+
+/**
+ * Sign out everywhere except here.
+ *
+ * The current session is identified by its token hash rather than by an id
+ * passed in from the caller, so there is no way to ask this to spare someone
+ * else's session.
+ */
+export async function revokeOtherSessions(
+  db: Executor,
+  userId: string,
+  currentToken: string,
+): Promise<number> {
+  const removed = await db
+    .delete(sessions)
+    .where(and(eq(sessions.userId, userId), ne(sessions.tokenHash, hashSessionToken(currentToken))))
+    .returning({ id: sessions.id });
+
+  return removed.length;
+}
+
+export type SessionSummary = {
+  id: string;
+  createdAt: Date;
+  lastUsedAt: Date;
+  userAgent: string | null;
+  /** True for the session making the request. */
+  current: boolean;
+};
+
+/**
+ * Active sessions for a user.
+ *
+ * Token hashes never leave this function -- the hash of the caller's token is
+ * compared here to mark the current row, and only the flag is returned. A
+ * listing that included hashes would turn "see your devices" into "collect
+ * every credential you own".
+ */
+export async function listSessions(
+  db: Executor,
+  userId: string,
+  currentToken: string,
+): Promise<SessionSummary[]> {
+  const currentHash = hashSessionToken(currentToken);
+
+  const rows = await db
+    .select({
+      id: sessions.id,
+      tokenHash: sessions.tokenHash,
+      createdAt: sessions.createdAt,
+      lastUsedAt: sessions.lastUsedAt,
+      userAgent: sessions.userAgent,
+    })
+    .from(sessions)
+    // Expired rows are swept by a background job, so they can still be present
+    // here; showing them as active devices would be wrong.
+    .where(and(eq(sessions.userId, userId), gt(sessions.expiresAt, new Date())))
+    .orderBy(desc(sessions.lastUsedAt));
+
+  return rows.map(({ tokenHash, ...row }) => ({ ...row, current: tokenHash === currentHash }));
 }
 
 export async function deleteExpiredSessions(db: Executor): Promise<void> {

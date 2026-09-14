@@ -80,6 +80,10 @@ export default function WorkspacesPage() {
         <div className="flex items-center gap-4">
           <NotificationBell />
 
+          <Link href="/account" className="text-sm text-muted hover:text-content">
+            Account
+          </Link>
+
           <button
             type="button"
             onClick={() => signOut.mutate()}

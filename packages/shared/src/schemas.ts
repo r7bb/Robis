@@ -21,9 +21,32 @@ export const passwordSchema = z
   .min(12, 'Password must be at least 12 characters')
   .max(200, 'Password must be at most 200 characters');
 
+/**
+ * Changing your own name. Email is deliberately not editable here: it is the
+ * login identifier and the invite key, so changing it needs a verification
+ * round-trip that does not exist yet. Offering a field that silently breaks
+ * both would be worse than not offering it.
+ */
+export const updateProfileSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+});
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+
+/**
+ * Changing a password requires the current one even though the caller is
+ * already authenticated. A stolen session should not be upgradeable into
+ * permanent account takeover, and knowing the old password is the one thing a
+ * session thief does not have.
+ */
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1).max(200),
+  newPassword: passwordSchema,
+});
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+
 export const registerSchema = z.object({
   email: z.email().max(254).toLowerCase().trim(),
-  name: z.string().min(1).max(80).trim(),
+  name: z.string().trim().min(1).max(80),
   password: passwordSchema,
 });
 export type RegisterInput = z.infer<typeof registerSchema>;
@@ -35,7 +58,7 @@ export const loginSchema = z.object({
 export type LoginInput = z.infer<typeof loginSchema>;
 
 export const createWorkspaceSchema = z.object({
-  name: z.string().min(1).max(80).trim(),
+  name: z.string().trim().min(1).max(80),
   slug: z
     .string()
     .min(2)
@@ -47,7 +70,7 @@ export type CreateWorkspaceInput = z.infer<typeof createWorkspaceSchema>;
 
 export const updateWorkspaceSchema = z
   .object({
-    name: z.string().min(1).max(80).trim(),
+    name: z.string().trim().min(1).max(80),
     theme: z.enum(THEME_IDS),
   })
   .partial()
@@ -64,7 +87,7 @@ export const setMemberRoleSchema = z.object({
 });
 
 export const createProjectSchema = z.object({
-  name: z.string().min(1).max(80).trim(),
+  name: z.string().trim().min(1).max(80),
   key: z
     .string()
     .min(2)
@@ -77,7 +100,7 @@ export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
 export const updateProjectSchema = z
   .object({
-    name: z.string().min(1).max(80).trim(),
+    name: z.string().trim().min(1).max(80),
     description: z.string().max(2000).trim().nullable(),
     archived: z.boolean(),
   })
@@ -92,8 +115,8 @@ export const createIssueSchema = z.object({
    * collides on the primary key instead of producing a second row.
    */
   id: uuid.optional(),
-  title: z.string().min(1).max(200).trim(),
-  description: z.string().max(20_000).trim().optional(),
+  title: z.string().trim().min(1).max(200),
+  description: z.string().trim().max(20_000).optional(),
   status: z.enum(ISSUE_STATUSES).default('TODO'),
   priority: z.enum(ISSUE_PRIORITIES).default('NONE'),
   assigneeId: uuid.nullable().optional(),
@@ -106,8 +129,8 @@ export type CreateIssueInput = z.infer<typeof createIssueSchema>;
  */
 export const updateIssueSchema = z
   .object({
-    title: z.string().min(1).max(200).trim(),
-    description: z.string().max(20_000).trim().nullable(),
+    title: z.string().trim().min(1).max(200),
+    description: z.string().trim().max(20_000).nullable(),
     status: z.enum(ISSUE_STATUSES),
     priority: z.enum(ISSUE_PRIORITIES),
     assigneeId: uuid.nullable(),
@@ -132,18 +155,18 @@ export const listIssuesQuerySchema = z.object({
 });
 
 export const createCommentSchema = z.object({
-  body: z.string().min(1).max(10_000).trim(),
+  body: z.string().trim().min(1).max(10_000),
 });
 export type CreateCommentInput = z.infer<typeof createCommentSchema>;
 
 export const createDocumentSchema = z.object({
-  title: z.string().min(1).max(200).trim(),
+  title: z.string().trim().min(1).max(200),
   /** Optional: a document can hang off the workspace rather than a project. */
   projectId: uuid.nullable().optional(),
 });
 export type CreateDocumentInput = z.infer<typeof createDocumentSchema>;
 
 export const updateDocumentSchema = z
-  .object({ title: z.string().min(1).max(200).trim() })
+  .object({ title: z.string().trim().min(1).max(200) })
   .partial()
   .refine((v) => Object.keys(v).length > 0, { message: 'No fields to update' });

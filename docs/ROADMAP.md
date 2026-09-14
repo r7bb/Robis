@@ -2,7 +2,7 @@
 
 Where Relay is, what is left, and what is deliberately not being built.
 
-Status as of the current commit: **286 tests, lint and typecheck clean, CI green.**
+Status as of the current commit: **313 tests, lint and typecheck clean, CI green.**
 
 ---
 
@@ -41,6 +41,18 @@ Status as of the current commit: **286 tests, lint and typecheck clean, CI green
   reconciliation that preserves unflushed local work
 - Exactly-once mutations: client-generated ids plus a server idempotency ledger
 - Poison-message handling — permanent refusals are dropped, 408/429 are not
+
+### Account and audit
+
+- [x] Editable issue descriptions — the field was in the schema, accepted by
+      the API and indexed by search, with no UI to write it
+- [x] Activity feed rendering the audit trail. The endpoint and the rows
+      already existed and nothing consumed them
+- [x] Audit payloads name what they describe: the member whose role changed,
+      the issue whose status moved. Recorded at write time, so an entry stays
+      truthful after the row is deleted
+- [x] Account settings — display name, password change, active sessions with
+      revocation. `revokeAllSessions` had been written and never called
 
 ### Deleting things
 
@@ -132,9 +144,6 @@ Honest list of things that are built but thin.
   still fetch their data and will show the offline fallback if visited cold.
 - **The document editor is a plain textarea.** No formatting, and remote
   cursors are listed by name rather than drawn inline.
-- **Issue descriptions are not editable.** The field exists, the API accepts it
-  and search indexes it; the detail page shows status, priority and assignee
-  only.
 - **Search has no dedicated results page.** It is a dropdown capped at 20 hits
   with no pagination or filtering by kind.
 - **No password reset or email verification** — both need the mailer from

@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
+import { ActivityFeed } from '../../../components/activity-feed.tsx';
 import { DeleteButton } from '../../../components/delete-button.tsx';
 import { MemberList } from '../../../components/member-list.tsx';
 import { NotificationBell } from '../../../components/notification-bell.tsx';
@@ -248,6 +249,8 @@ export default function WorkspacePage() {
       <ThemePicker workspaceId={workspaceId} current={theme} canEdit={canManageWorkspace} />
 
       <MemberList workspaceId={workspaceId} viewerRole={role} />
+
+      <ActivityFeed workspaceId={workspaceId} />
     </main>
   );
 }

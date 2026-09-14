@@ -231,13 +231,22 @@ export async function issueRoutes(app: FastifyInstance, opts: { db: Database }) 
       // Status is the field the activity feed cares about; recording every
       // text edit would drown it.
       if (input.status && input.status !== before.status) {
+        // The key is resolved and stored now rather than joined at read time,
+        // so the entry still names the issue after the issue is deleted.
+        const project = await loadProject(db, workspaceId, before.projectId);
+
         await db.insert(auditEvents).values({
           workspaceId,
           actorId: user.id,
           entityType: 'issue',
           entityId: issueId,
           eventType: 'issue.status_changed',
-          payload: JSON.stringify({ from: before.status, to: input.status }),
+          payload: JSON.stringify({
+            key: `${project.key}-${before.number}`,
+            title: before.title,
+            from: before.status,
+            to: input.status,
+          }),
         });
       }
 

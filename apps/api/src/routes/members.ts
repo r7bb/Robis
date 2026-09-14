@@ -33,10 +33,20 @@ async function ownerCount(db: Executor, workspaceId: string): Promise<number> {
   return row?.n ?? 0;
 }
 
+/**
+ * The member's role, plus who they are.
+ *
+ * The identity is joined here rather than looked up at the call sites because
+ * the audit trail needs it: an entry reading "changed a member from admin to
+ * member" without naming the member records that something happened and not
+ * what. Audit payloads store the values as they were, so the trail stays
+ * truthful after the account is renamed or removed.
+ */
 async function findMember(db: Executor, workspaceId: string, userId: string) {
   const [row] = await db
-    .select({ role: workspaceMembers.role })
+    .select({ role: workspaceMembers.role, email: users.email, name: users.name })
     .from(workspaceMembers)
+    .innerJoin(users, eq(users.id, workspaceMembers.userId))
     .where(and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, userId)))
     .limit(1);
 
@@ -185,7 +195,12 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
         entityType: 'member',
         entityId: userId,
         eventType: 'member.role_changed',
-        payload: JSON.stringify({ from: target.role, to: input.role }),
+        payload: JSON.stringify({
+          email: target.email,
+          name: target.name,
+          from: target.role,
+          to: input.role,
+        }),
       });
 
       await publishEvent(db, { type: 'member.changed', workspaceId, actorId: actor.id });
@@ -227,7 +242,7 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
         entityType: 'member',
         entityId: userId,
         eventType: 'member.removed',
-        payload: JSON.stringify({ role: target.role }),
+        payload: JSON.stringify({ email: target.email, name: target.name, role: target.role }),
       });
 
       return reply.status(204).send();

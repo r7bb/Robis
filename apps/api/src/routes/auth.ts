@@ -2,12 +2,20 @@ import { randomBytes } from 'node:crypto';
 import {
   createSession,
   hashPassword,
+  listSessions,
+  revokeAllSessions,
+  revokeOtherSessions,
   revokeSession,
   SESSION_COOKIE,
   verifyPassword,
 } from '@relay/auth';
 import { type Database, users } from '@relay/database';
-import { loginSchema, registerSchema } from '@relay/shared';
+import {
+  changePasswordSchema,
+  loginSchema,
+  registerSchema,
+  updateProfileSchema,
+} from '@relay/shared';
 import { eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import type { RateLimits } from '../app.ts';
@@ -107,4 +115,82 @@ export async function authRoutes(
   app.get('/auth/me', { preHandler: requireAuth }, async (request) => ({
     user: currentUser(request),
   }));
+
+  app.patch('/auth/me', { preHandler: requireAuth }, async (request) => {
+    const user = currentUser(request);
+    const input = parse(updateProfileSchema, request.body);
+
+    const [updated] = await db
+      .update(users)
+      .set({ name: input.name })
+      .where(eq(users.id, user.id))
+      .returning({ id: users.id, email: users.email, name: users.name });
+
+    return { user: updated };
+  });
+
+  /**
+   * Change password.
+   *
+   * Throttled with the same budget as login, because it verifies a password
+   * and is therefore the same CPU cost to an attacker.
+   *
+   * Every session is revoked and a new one issued for the caller. Sparing the
+   * current session would be friendlier, but someone changing their password
+   * because a device was stolen expects that device to be signed out -- and if
+   * the current token is the leaked one, sparing it defeats the exercise.
+   */
+  app.post(
+    '/auth/password',
+    { preHandler: [requireAuth, credentialLimit] },
+    async (request, reply) => {
+      const user = currentUser(request);
+      const input = parse(changePasswordSchema, request.body);
+
+      const [row] = await db
+        .select({ passwordHash: users.passwordHash })
+        .from(users)
+        .where(eq(users.id, user.id))
+        .limit(1);
+
+      if (!row) throw ApiError.unauthorized('Not signed in');
+
+      if (!(await verifyPassword(row.passwordHash, input.currentPassword))) {
+        throw ApiError.badRequest('Current password is incorrect', 'bad_password');
+      }
+
+      // Rejected before hashing, since a no-op change would revoke every
+      // session for nothing.
+      if (await verifyPassword(row.passwordHash, input.newPassword)) {
+        throw ApiError.badRequest('New password must differ from the current one', 'same_password');
+      }
+
+      await db
+        .update(users)
+        .set({ passwordHash: await hashPassword(input.newPassword) })
+        .where(eq(users.id, user.id));
+
+      await revokeAllSessions(db, user.id);
+
+      const { token, expiresAt } = await createSession(db, user.id, request.headers['user-agent']);
+      reply.setCookie(SESSION_COOKIE, token, { ...cookieOptions, expires: expiresAt });
+
+      return { ok: true };
+    },
+  );
+
+  app.get('/auth/sessions', { preHandler: requireAuth }, async (request) => {
+    const user = currentUser(request);
+    // `requireAuth` passed, so a cookie is present.
+    const token = request.cookies[SESSION_COOKIE]!;
+
+    return { sessions: await listSessions(db, user.id, token) };
+  });
+
+  app.delete('/auth/sessions', { preHandler: requireAuth }, async (request) => {
+    const user = currentUser(request);
+    const token = request.cookies[SESSION_COOKIE]!;
+
+    return { revoked: await revokeOtherSessions(db, user.id, token) };
+  });
 }

@@ -87,6 +87,38 @@ notification, delivered by the background worker rather than inline.
 
 ![Notification inbox](docs/screenshots/11-notification-inbox.png)
 
+### Issue descriptions and the activity trail
+
+The issue detail page edits its description in place. Plain text with line
+breaks preserved, not Markdown — claiming to render Markdown and then only
+handling some of it is worse than plainly not doing it.
+
+![Issue description](docs/screenshots/22-issue-description.png)
+
+Every mutation writes an append-only audit row, and the workspace page renders
+them.
+
+![Activity feed](docs/screenshots/20-activity-feed.png)
+
+Entries describe themselves from payloads recorded at the time rather than by
+joining the rows they mention, so the trail stays truthful after an issue is
+deleted or a member renamed. The status-change entry above still names its
+issue because the key was stored with the event, not looked up.
+
+### Your account
+
+![Account](docs/screenshots/23-account.png)
+
+Change your display name, change your password, and see every browser signed
+in to your account. Sessions are server-side, so revoking one takes effect on
+the next request rather than waiting for a token to expire.
+
+Changing a password requires the current one even though you are already
+signed in — a stolen session should not be upgradeable into permanent account
+takeover — and revokes every session including your own, issuing a fresh one.
+If the password is being changed *because* a token leaked, sparing the current
+session would defeat the exercise.
+
 ### Search
 
 Full-text search across issues, comments and documents, scoped to one
@@ -543,6 +575,17 @@ failure mode is permissive rather than locking people out. A shared store is
 the fix when that matters. The limits are injectable, so the tests exercise the
 limiter with a budget of three instead of switching it off.
 
+### Trim before validate, not after
+
+Every text schema was written `z.string().min(1).max(80).trim()`. Zod applies
+`.trim()` as a *transform*, after the checks — so `"   "` passed `min(1)`, was
+then trimmed, and stored as `""`. Whitespace-only names, issue titles and
+comment bodies were all accepted and silently became empty.
+
+The fix is ordering: `z.string().trim().min(1).max(80)`. The bug was found by
+a test asserting a blank display name is rejected, which is the argument for
+writing the rejection cases rather than only the happy path.
+
 ### Paging by cursor, and why the cursor holds only an id
 
 `OFFSET n` re-counts from the start on every page. That is slower as pages
@@ -580,7 +623,7 @@ body.
 
 ## Testing
 
-**286 tests** against a real Postgres rather than mocks. The behaviour under test
+**313 tests** against a real Postgres rather than mocks. The behaviour under test
 — unique constraints, cascades, row locks, transactional `NOTIFY` — is behaviour
 the database provides, so a fake would only prove the fake works.
 
@@ -607,6 +650,7 @@ bun test
 | `pagination.test.ts`    | Keyset paging, stability under concurrent inserts and deletes    |
 | `stats.test.ts`         | Percentile and summary arithmetic behind the load-test numbers   |
 | `metrics.test.ts`       | Exposition format, label cardinality guards, cumulative buckets   |
+| `account.test.ts`       | Password change, session revocation, audit payloads, blank input  |
 | `uuid.test.ts`          | The id guard every route runs before touching the database       |
 | `idempotency.test.ts`   | Exactly-once mutations, key misuse, client-generated ids         |
 
@@ -702,7 +746,8 @@ event-loop lag is reported alongside every result.
 - Next.js client with optimistic updates
 - Load harness with measured throughput and fan-out numbers
 - Prometheus metrics on the API and the gateway
-- 286 tests, CI, linting, typechecking
+- Editable issue descriptions, workspace activity feed, account settings
+- 313 tests, CI, linting, typechecking
 
 **Next**
 

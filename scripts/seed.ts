@@ -14,6 +14,7 @@
  */
 import { hashPassword } from '@relay/auth';
 import {
+  auditEvents,
   createDatabase,
   issues,
   projects,
@@ -141,6 +142,27 @@ try {
 
   let issueCount = 0;
 
+  /** Collected as rows are created, inserted in one go below. */
+  const trail: {
+    entityType: string;
+    entityId: string;
+    eventType: string;
+    payload: string;
+  }[] = [
+    {
+      entityType: 'workspace',
+      entityId: workspace!.id,
+      eventType: 'workspace.created',
+      payload: JSON.stringify({ name: workspace!.name, slug: workspace!.slug }),
+    },
+    ...PEOPLE.filter((person) => person.email !== OWNER.email).map((person) => ({
+      entityType: 'member',
+      entityId: userIdByEmail.get(person.email)!,
+      eventType: 'member.added',
+      payload: JSON.stringify({ email: person.email, name: person.name, role: person.role }),
+    })),
+  ];
+
   for (const spec of PROJECTS) {
     const [project] = await db
       .insert(projects)
@@ -154,23 +176,54 @@ try {
       })
       .returning();
 
-    await db.insert(issues).values(
-      spec.issues.map((issue, index) => ({
-        workspaceId: workspace!.id,
-        projectId: project!.id,
-        number: index + 1,
-        title: issue.title,
-        status: issue.status,
-        priority: issue.priority,
-        // Falls back to unassigned when seeding solo and the named teammate
-        // does not exist.
-        assigneeId: (issue.assignee && userIdByEmail.get(issue.assignee)) ?? null,
-        createdBy: ownerId,
+    const createdIssues = await db
+      .insert(issues)
+      .values(
+        spec.issues.map((issue, index) => ({
+          workspaceId: workspace!.id,
+          projectId: project!.id,
+          number: index + 1,
+          title: issue.title,
+          status: issue.status,
+          priority: issue.priority,
+          // Falls back to unassigned when seeding solo and the named teammate
+          // does not exist.
+          assigneeId: (issue.assignee && userIdByEmail.get(issue.assignee)) ?? null,
+          createdBy: ownerId,
+        })),
+      )
+      .returning({ id: issues.id, number: issues.number, title: issues.title });
+
+    /*
+     * Audit entries for the seeded rows.
+     *
+     * The seed writes tables directly rather than going through the API, so
+     * nothing would otherwise record that any of this happened -- the activity
+     * feed on a freshly seeded workspace would be empty, which misrepresents
+     * what the app does. These are written by hand to match what the routes
+     * would have produced.
+     */
+    trail.push(
+      {
+        entityType: 'project',
+        entityId: project!.id,
+        eventType: 'project.created',
+        payload: JSON.stringify({ key: project!.key, name: project!.name }),
+      },
+      ...createdIssues.map((issue) => ({
+        entityType: 'issue',
+        entityId: issue.id,
+        eventType: 'issue.created',
+        payload: JSON.stringify({ key: `${spec.key}-${issue.number}`, title: issue.title }),
       })),
     );
 
     issueCount += spec.issues.length;
   }
+
+  await db
+    .insert(auditEvents)
+    .values(trail.map((entry) => ({ ...entry, workspaceId: workspace!.id, actorId: ownerId })));
 
   const who = WITH_TEAM ? `${PEOPLE.length} users` : '1 user';
   console.log(

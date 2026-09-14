@@ -2,6 +2,7 @@ import {
   auditEvents,
   type Database,
   type Executor,
+  users,
   workspaceMembers,
   workspaces,
 } from '@relay/database';
@@ -170,8 +171,21 @@ export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database
       const { workspaceId } = currentMembership(request);
 
       const events = await db
-        .select()
+        .select({
+          id: auditEvents.id,
+          actorId: auditEvents.actorId,
+          // Joined rather than stored in the payload: unlike the entities an
+          // entry describes, the actor is a real account that still exists,
+          // and showing their current name is right when they rename.
+          actorName: users.name,
+          entityType: auditEvents.entityType,
+          entityId: auditEvents.entityId,
+          eventType: auditEvents.eventType,
+          payload: auditEvents.payload,
+          createdAt: auditEvents.createdAt,
+        })
         .from(auditEvents)
+        .leftJoin(users, eq(users.id, auditEvents.actorId))
         .where(eq(auditEvents.workspaceId, workspaceId))
         .orderBy(desc(auditEvents.createdAt))
         .limit(100);
