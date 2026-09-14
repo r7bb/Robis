@@ -42,6 +42,14 @@ Status as of the current commit: **313 tests, lint and typecheck clean, CI green
 - Exactly-once mutations: client-generated ids plus a server idempotency ledger
 - Poison-message handling — permanent refusals are dropped, 408/429 are not
 
+### Documentation
+
+- [x] `scripts/screenshots.ts` — every image in the README captured from the
+      running app by driving Chrome over CDP. The README claimed as much long
+      before the script existed
+- [x] A features list covering everything implemented, so the scope is legible
+      without reading the whole file
+
 ### Account and audit
 
 - [x] Editable issue descriptions — the field was in the schema, accepted by

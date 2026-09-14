@@ -7,7 +7,87 @@ WebSockets, and a board that keeps working with the network switched off.
 ![Relay board](docs/screenshots/04-board.png)
 
 Everything below is running code. The screenshots are captured from the app by
-a script, not mocked up.
+[`scripts/screenshots.ts`](scripts/screenshots.ts), which drives a real browser
+against the real stack — none of them are mocked up.
+
+---
+
+## Features
+
+Everything in this list is implemented, tested and reachable from the UI.
+
+**Workspaces and access control**
+
+- Multi-tenant workspaces with projects, issues, comments and documents
+- Four roles — owner, admin, member, guest — from one declarative permission
+  matrix, enforced on every route
+- Invite by email, change roles, remove members; the last owner is protected
+  from demotion, removal and leaving
+- Non-members get `404` rather than `403`, so workspace ids are not enumerable
+- Append-only audit trail, rendered as a per-workspace activity feed
+
+**Issues**
+
+- Per-project keys (`REL-104`), numbered under a row lock so concurrent creates
+  cannot collide
+- Board grouped by status, with inline status, priority and assignee editing
+- Editable titles and descriptions, filtering by status and assignee
+- Keyset pagination that stays stable while other people are writing
+- Delete for every entity, behind a confirmation that names what cascades
+
+**Realtime**
+
+- Live updates over WebSockets, fanned out through Postgres `LISTEN/NOTIFY`
+- Presence showing who is in a workspace and what page they are on, counted by
+  person rather than by tab
+- A dedicated gateway process, so an API deploy does not drop every socket
+
+**Offline**
+
+- The board reads from IndexedDB and keeps working with no network
+- Writes queue durably, flush in order, and survive a reload
+- Exactly-once delivery from client-generated ids plus a server idempotency
+  ledger — a retried request cannot produce a second row
+- Deletes go through the same queue as every other write
+- A service worker serves the app shell, so a cold reload works offline too
+
+**Collaborative documents**
+
+- Yjs CRDTs over the same gateway: two people edit one paragraph and both
+  edits survive
+- Stored as a compacted update log, with live cursors that are never persisted
+
+**Search and notifications**
+
+- Full-text search across issues, comments and documents, on stored generated
+  columns so the index cannot drift from the rows
+- `@mention` parsing with in-app notifications delivered by a background worker
+- Engagement nudges that open a short guide ending in a button that does the
+  thing
+- An inbox with unread counts, mark-read and dismiss
+
+**Accounts**
+
+- Argon2id passwords and opaque, revocable, server-side sessions
+- Login timing equalised so registered addresses are not discoverable
+- Change your display name and password; see and revoke active sessions
+- Rate limiting on credential and search endpoints
+
+**Presentation**
+
+- Six themes on CSS variables, one per workspace, with WCAG contrast asserted
+  per theme
+
+**Operations**
+
+- Prometheus metrics on the API and the gateway at `/metrics`
+- A background job queue on Postgres `SKIP LOCKED`, with backoff and
+  dead-lettering
+- A load harness reporting real latency and fan-out numbers
+- 313 tests against a real Postgres, plus lint, typecheck and CI
+
+Not built, and why: [file uploads and email](#status) need an external service
+this machine cannot reach.
 
 ---
 
@@ -83,9 +163,17 @@ inline, and the title edits in place.
 ![Issue detail](docs/screenshots/10-issue-detail.png)
 
 `@handle` in a comment resolves against workspace members and produces a
-notification, delivered by the background worker rather than inline.
+notification, delivered by the background worker rather than inline — so a slow
+or failing delivery cannot make posting a comment slow or fail.
 
 ![Notification inbox](docs/screenshots/11-notification-inbox.png)
+
+The inbox above is showing a nudge rather than a mention, for an honest reason:
+mentioning yourself is not a notification, and the default seed is a single
+account, so there is nobody to mention. Run `bun run db:seed --team` and
+mention a teammate to see that path. The rules themselves are covered by
+[`mentions.test.ts`](tests/mentions.test.ts) and
+[`queue.test.ts`](tests/queue.test.ts).
 
 ### Issue descriptions and the activity trail
 
@@ -118,6 +206,19 @@ signed in — a stolen session should not be upgradeable into permanent account
 takeover — and revokes every session including your own, issuing a fresh one.
 If the password is being changed *because* a token leaked, sparing the current
 session would defeat the exercise.
+
+### Deleting things
+
+Every entity has a trash control — workspace, project, issue, document,
+comment, membership, notification — behind a confirmation that names what
+cascades rather than asking a generic "are you sure?". Cancel takes focus when
+the dialog opens, so a stray Enter deletes nothing.
+
+The controls resolve against the same permission matrix the API enforces, so a
+hidden button and a refused request always agree. On the board, deletes go
+through the offline mutation queue like every other write: remove an issue with
+no network and the removal queues, flushes on reconnect, and a `404` counts as
+success because the desired state already holds.
 
 ### Search
 
@@ -199,6 +300,21 @@ The service worker is network-first for navigations and cache-first for
 fingerprinted assets; API and WebSocket traffic is never cached, because those
 responses depend on who is asking.
 
+### Metrics
+
+Both services expose Prometheus text at `/metrics` — no scraper required to
+look:
+
+```bash
+curl -s localhost:4000/metrics | grep relay_http_requests_total
+curl -s localhost:4001/metrics | grep relay_ws
+```
+
+The API reports request counts, a latency histogram and an in-flight gauge; the
+gateway reports open sockets, document rooms, fan-out deliveries and upgrade
+outcomes. One write reaching fifty subscribed sockets counts as fifty
+deliveries, because that is the quantity that describes fan-out cost.
+
 ### Roles and permissions
 
 The seed creates one account, so there is nothing to see in the role model out
@@ -240,6 +356,7 @@ seeded.
 | `bun run lint`          | Biome lint + format check                     |
 | `bun run lint:fix`      | Apply safe lint and format fixes              |
 | `bun run loadtest`      | Measure API throughput and realtime fan-out   |
+| `bun run screenshots`   | Recapture every screenshot in this README     |
 
 Bootstrap yourself into a fresh database:
 

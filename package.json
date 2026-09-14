@@ -25,7 +25,8 @@
     "format": "biome format --write .",
     "dev:worker": "bun --watch apps/worker/src/main.ts",
     "db:migrate": "bun run scripts/migrate.ts",
-    "loadtest": "bun run scripts/loadtest.ts"
+    "loadtest": "bun run scripts/loadtest.ts",
+    "screenshots": "bun run scripts/screenshots.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.12",
