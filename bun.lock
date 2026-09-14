@@ -14,6 +14,7 @@
         "@relay/api": "workspace:*",
         "@relay/auth": "workspace:*",
         "@relay/database": "workspace:*",
+        "@relay/metrics": "workspace:*",
         "@relay/realtime": "workspace:*",
         "@relay/shared": "workspace:*",
         "@relay/sync": "workspace:*",
@@ -105,6 +106,10 @@
       "devDependencies": {
         "drizzle-kit": "^0.30.0",
       },
+    },
+    "packages/metrics": {
+      "name": "@relay/metrics",
+      "version": "0.0.0",
     },
     "packages/shared": {
       "name": "@relay/shared",
@@ -351,6 +356,8 @@
     "@relay/auth": ["@relay/auth@workspace:packages/auth"],
 
     "@relay/database": ["@relay/database@workspace:packages/database"],
+
+    "@relay/metrics": ["@relay/metrics@workspace:packages/metrics"],
 
     "@relay/realtime": ["@relay/realtime@workspace:apps/realtime"],
 

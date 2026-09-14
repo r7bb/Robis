@@ -1,4 +1,4 @@
-import { resolveSession, SESSION_COOKIE } from '@relay/auth';
+import { type AuthenticatedUser, resolveSession, SESSION_COOKIE } from '@relay/auth';
 import {
   type Database,
   findMembership,
@@ -6,6 +6,7 @@ import {
   subscribeToEvents,
   subscribeToPresence,
 } from '@relay/database';
+import { Registry } from '@relay/metrics';
 import {
   type ClientMessage,
   type DocumentAwareness,
@@ -30,6 +31,21 @@ import { PresenceRegistry } from './presence.ts';
  * It shares the database and the session logic with the API, so there is one
  * definition of who you are and what you may see.
  */
+
+/**
+ * The client message kinds, as a set, so a `type` off the wire can be bounded
+ * before it becomes a metric label. Anything else counts as `unknown` rather
+ * than opening its own time series.
+ */
+const CLIENT_MESSAGE_TYPES: ReadonlySet<string> = new Set<ClientMessage['type']>([
+  'subscribe',
+  'location',
+  'ping',
+  'doc.open',
+  'doc.close',
+  'doc.update',
+  'doc.awareness',
+]);
 
 /** How often each instance re-announces its presence entries to peers. Must be
  * comfortably below PRESENCE_TTL_MS so peers never expire a live connection. */
@@ -77,6 +93,41 @@ export async function createGateway(options: GatewayOptions) {
   const rooms = new DocumentRooms(db);
   const sockets = new Set<Bun.ServerWebSocket<SocketData>>();
 
+  /*
+   * Gateway metrics.
+   *
+   * The counters that matter here are the ones the API cannot see: fan-out
+   * volume, and how many sockets are actually open. Connection count is a
+   * collector rather than a tracked gauge because the set is already the
+   * truth -- incrementing a parallel counter in `open` and `close` is one
+   * missed path away from drifting from reality forever.
+   *
+   * No label carries a workspace id: the number of workspaces is unbounded,
+   * and per-tenant traffic is not something a metrics endpoint should expose.
+   */
+  const registry = new Registry();
+  registry.gauge('relay_ws_connections', 'Open WebSocket connections.').collect(() => sockets.size);
+  registry
+    .gauge('relay_ws_presence_entries', 'Presence entries held.')
+    .collect(() => presence.size);
+  registry.gauge('relay_ws_document_rooms', 'Document rooms in memory.').collect(() => rooms.size);
+
+  const messagesIn = registry.counter(
+    'relay_ws_messages_received_total',
+    'Client messages handled, by type.',
+    ['type'],
+  );
+  const eventsOut = registry.counter(
+    'relay_ws_event_deliveries_total',
+    'Individual event deliveries to sockets, by event type.',
+    ['type'],
+  );
+  const upgrades = registry.counter(
+    'relay_ws_upgrades_total',
+    'WebSocket upgrade attempts, by outcome.',
+    ['outcome'],
+  );
+
   /** Tail of the in-flight handler chain for each connection. */
   const pendingWork = new WeakMap<Bun.ServerWebSocket<SocketData>, Promise<void>>();
 
@@ -101,11 +152,76 @@ export async function createGateway(options: GatewayOptions) {
   function broadcastEvent(event: ServerEvent) {
     const message = JSON.stringify({ type: 'event', event } satisfies ServerMessage);
 
+    let delivered = 0;
     for (const socket of sockets) {
       // Membership was verified at subscribe time, and revocation closes the
       // socket, so workspace id is sufficient to scope the fan-out here.
-      if (socket.data.workspaceId === event.workspaceId) socket.send(message);
+      if (socket.data.workspaceId === event.workspaceId) {
+        socket.send(message);
+        delivered++;
+      }
     }
+
+    // Counts deliveries, not events: one write reaching fifty sockets is the
+    // quantity that describes fan-out cost, and dividing by the event count
+    // gives the average audience.
+    if (delivered > 0) eventsOut.inc({ type: event.type }, delivered);
+  }
+
+  /** The plain-HTTP side of the gateway: liveness and scraping, no upgrade. */
+  function serveOperationalEndpoint(pathname: string): Response | null {
+    if (pathname === '/health') {
+      return Response.json({
+        status: 'ok',
+        instanceId,
+        connections: sockets.size,
+        presence: presence.size,
+        documentRooms: rooms.size,
+      });
+    }
+
+    if (pathname === '/metrics') {
+      return new Response(registry.render(), {
+        headers: { 'content-type': Registry.CONTENT_TYPE },
+      });
+    }
+
+    return null;
+  }
+
+  /**
+   * Everything that has to hold before a socket is opened.
+   *
+   * Returns the user on success and a `Response` to send back otherwise, so
+   * each refusal is counted at the point it is decided rather than inferred
+   * later from a status code.
+   */
+  async function authenticateUpgrade(request: Request): Promise<AuthenticatedUser | Response> {
+    // Browsers do not enforce same-origin on WebSockets, so the gateway has
+    // to check Origin itself; otherwise any site could open an authenticated
+    // socket using the visitor's cookie.
+    const origin = request.headers.get('origin');
+    if (origin && origin !== webOrigin) {
+      upgrades.inc({ outcome: 'forbidden_origin' });
+      return new Response('Forbidden origin', { status: 403 });
+    }
+
+    const token = readCookie(request.headers.get('cookie'), SESSION_COOKIE);
+    if (!token) {
+      upgrades.inc({ outcome: 'no_session' });
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    const user = await resolveSession(db, token);
+    if (!user) {
+      // Distinguished from `no_session` on purpose: a cookie that no longer
+      // resolves is an expiry or a revocation, which is a different story
+      // from a client that never had one.
+      upgrades.inc({ outcome: 'invalid_session' });
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    return user;
   }
 
   const server = Bun.serve<SocketData>({
@@ -114,31 +230,13 @@ export async function createGateway(options: GatewayOptions) {
     async fetch(request, srv) {
       const url = new URL(request.url);
 
-      if (url.pathname === '/health') {
-        return Response.json({
-          status: 'ok',
-          instanceId,
-          connections: sockets.size,
-          presence: presence.size,
-          documentRooms: rooms.size,
-        });
-      }
+      const operational = serveOperationalEndpoint(url.pathname);
+      if (operational) return operational;
 
       if (url.pathname !== '/ws') return new Response('Not found', { status: 404 });
 
-      // Browsers do not enforce same-origin on WebSockets, so the gateway has
-      // to check Origin itself; otherwise any site could open an authenticated
-      // socket using the visitor's cookie.
-      const origin = request.headers.get('origin');
-      if (origin && origin !== webOrigin) {
-        return new Response('Forbidden origin', { status: 403 });
-      }
-
-      const token = readCookie(request.headers.get('cookie'), SESSION_COOKIE);
-      if (!token) return new Response('Unauthorized', { status: 401 });
-
-      const user = await resolveSession(db, token);
-      if (!user) return new Response('Unauthorized', { status: 401 });
+      const user = await authenticateUpgrade(request);
+      if (user instanceof Response) return user;
 
       const upgraded = srv.upgrade(request, {
         data: {
@@ -151,6 +249,7 @@ export async function createGateway(options: GatewayOptions) {
         } satisfies SocketData,
       });
 
+      upgrades.inc({ outcome: upgraded ? 'accepted' : 'failed' });
       return upgraded ? undefined : new Response('Upgrade failed', { status: 400 });
     },
 
@@ -164,8 +263,14 @@ export async function createGateway(options: GatewayOptions) {
         try {
           message = JSON.parse(String(raw)) as ClientMessage;
         } catch {
+          messagesIn.inc({ type: 'malformed' });
           return send(socket, { type: 'error', message: 'Malformed message' });
         }
+
+        // `type` comes off the wire, so it is bounded to the known kinds
+        // before becoming a label. An attacker sending `{"type":"<random>"}`
+        // in a loop would otherwise grow the registry without limit.
+        messagesIn.inc({ type: CLIENT_MESSAGE_TYPES.has(message.type) ? message.type : 'unknown' });
 
         /*
          * Handle one message at a time per connection.

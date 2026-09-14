@@ -502,6 +502,34 @@ What this does not give you: fuzzy matching, typo tolerance, or ranking as
 tunable as a purpose-built engine. Those are the reasons to adopt one. The word
 "search" is not.
 
+### Metrics label the route pattern, never the URL
+
+`/metrics` on the API and the gateway serves Prometheus text, written by hand
+rather than pulled from `prom-client` — the exposition format is a few hundred
+lines, and writing it keeps the parts that are easy to get subtly wrong (label
+ordering, escaping, cumulative buckets) visible and tested.
+
+The decision that actually matters is what goes in a label. Every distinct set
+of label values is a separate time series, held in memory for the life of the
+process and indexed forever by whatever scrapes it. So the `route` label
+carries the *pattern* — `/workspaces/:workspaceId/issues/:issueId` — and never
+the requested path. Labelling the path would mint a series per issue anyone
+has ever opened: unbounded memory, an unbounded index, and a dashboard that
+cannot aggregate because no two requests share a series. Requests matching no
+route collapse to `__unmatched__` for the same reason; a 404 sweep is exactly
+the traffic that would otherwise explode the registry.
+
+The same rule applies on the gateway, where the message `type` arrives from
+the client: it is checked against the known kinds and anything else counts as
+`unknown`, so `{"type":"<random>"}` in a loop cannot grow the registry.
+
+Metrics therefore declare their label names up front and reject anything else.
+A typo raises at the call site instead of silently opening a parallel series
+that never merges with the real one. No label carries a workspace id, user id
+or email — metrics tend to be the least access-controlled surface a service
+has, so they hold operational shape and nothing about who was asking, which is
+also why the endpoint needs no session.
+
 ### Rate limiting is in memory, and honest about it
 
 A fixed window and a counter, per account when signed in and per address when
@@ -552,7 +580,7 @@ body.
 
 ## Testing
 
-**253 tests** against a real Postgres rather than mocks. The behaviour under test
+**286 tests** against a real Postgres rather than mocks. The behaviour under test
 — unique constraints, cascades, row locks, transactional `NOTIFY` — is behaviour
 the database provides, so a fake would only prove the fake works.
 
@@ -578,6 +606,7 @@ bun test
 | `rate-limit.test.ts`    | Budgets, headers, per-caller isolation, retryability             |
 | `pagination.test.ts`    | Keyset paging, stability under concurrent inserts and deletes    |
 | `stats.test.ts`         | Percentile and summary arithmetic behind the load-test numbers   |
+| `metrics.test.ts`       | Exposition format, label cardinality guards, cumulative buckets   |
 | `uuid.test.ts`          | The id guard every route runs before touching the database       |
 | `idempotency.test.ts`   | Exactly-once mutations, key misuse, client-generated ids         |
 
@@ -672,12 +701,13 @@ event-loop lag is reported alongside every result.
   offline queue like any other write
 - Next.js client with optimistic updates
 - Load harness with measured throughput and fan-out numbers
-- 253 tests, CI, linting, typechecking
+- Prometheus metrics on the API and the gateway
+- 286 tests, CI, linting, typechecking
 
 **Next**
 
 - File uploads and email delivery (both need an external service)
-- OpenTelemetry traces and metrics
+- Distributed tracing (metrics are in; spans are not)
 - Drag-and-drop board, editable issue descriptions, a search results page
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for the full plan, including an honest

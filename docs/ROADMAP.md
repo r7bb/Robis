@@ -2,7 +2,7 @@
 
 Where Relay is, what is left, and what is deliberately not being built.
 
-Status as of the current commit: **253 tests, lint and typecheck clean, CI green.**
+Status as of the current commit: **286 tests, lint and typecheck clean, CI green.**
 
 ---
 
@@ -108,7 +108,13 @@ last-write-wins per field; concurrent edits to the *same paragraph* do not.
 
 ### 8 · Operations
 
-- [ ] OpenTelemetry traces and metrics
+- [x] Prometheus metrics on the API and the gateway — request counts, latency
+      histograms, in-flight gauge, fan-out deliveries, socket counts. Written
+      by hand rather than `prom-client`; every label name is declared up front
+      so a typo raises instead of opening a parallel series
+- [ ] Distributed tracing. Metrics answer "how much and how slow"; a trace
+      answers "where did this request spend its time", which is the question
+      the NOTIFY-to-socket path would most benefit from
 - [x] Load test of WebSocket fan-out and API throughput under concurrency, with
       the measured numbers in the README. Bun rather than k6, which ships as a
       Go binary this machine cannot install; the harness reports its own

@@ -4,6 +4,7 @@ import type { Database } from '@relay/database';
 import Fastify, { type FastifyInstance } from 'fastify';
 import type { Env } from './env.ts';
 import { ApiError } from './errors.ts';
+import { createMetrics, registerMetrics } from './metrics.ts';
 import { attachUser } from './plugins/authz.ts';
 import { authRoutes } from './routes/auth.ts';
 import { commentRoutes } from './routes/comments.ts';
@@ -51,6 +52,10 @@ export function buildApp({ db, env, logger = false, rateLimits }: AppDeps): Fast
     origin: env.WEB_ORIGIN,
     credentials: true,
   });
+
+  // Before `attachUser`, so the in-flight gauge and the duration histogram
+  // include time spent resolving the session rather than starting after it.
+  registerMetrics(app, createMetrics());
 
   app.addHook('preHandler', attachUser(db));
 
