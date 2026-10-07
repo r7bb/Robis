@@ -4,12 +4,14 @@ import {
   hashPassword,
   listSessions,
   revokeAllSessions,
+  revokeAuthTokens,
   revokeOtherSessions,
   revokeSession,
   SESSION_COOKIE,
   verifyPassword,
 } from '@relay/auth';
 import { type Database, users } from '@relay/database';
+import type { Mailer } from '@relay/mailer';
 import {
   changePasswordSchema,
   loginSchema,
@@ -24,12 +26,15 @@ import { ApiError } from '../errors.ts';
 import { currentUser, requireAuth } from '../plugins/authz.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
 import { parse } from '../validate.ts';
+import { createVerificationSender } from '../verification.ts';
 
 export async function authRoutes(
   app: FastifyInstance,
-  opts: { db: Database; env: Env; limits: RateLimits },
+  opts: { db: Database; env: Env; limits: RateLimits; mailer: Mailer },
 ) {
-  const { db, env, limits } = opts;
+  const { db, env, limits, mailer } = opts;
+
+  const sendVerification = createVerificationSender({ db, env, mailer, log: app.log });
 
   /**
    * Verified when no user matches, so a login attempt costs the same whether or
@@ -75,6 +80,21 @@ export async function authRoutes(
     const { token, expiresAt } = await createSession(db, user.id, request.headers['user-agent']);
     reply.setCookie(SESSION_COOKIE, token, { ...cookieOptions, expires: expiresAt });
 
+    /*
+     * Awaited, deliberately.
+     *
+     * Not awaiting would keep sign-up fast against a slow provider, which is
+     * the right shape eventually. It is wrong today for two reasons: the only
+     * driver writes to a local stream, so there is nothing to wait for, and a
+     * detached promise makes "did the new account get its link" unobservable
+     * to the caller and to tests.
+     *
+     * When a real driver lands this should become a queued job rather than a
+     * detached promise -- the queue already exists, and it gives retries and
+     * visibility that `void` does not.
+     */
+    await sendVerification(user.id, user.email);
+
     return reply.status(201).send({ user });
   });
 
@@ -112,9 +132,32 @@ export async function authRoutes(
     return { ok: true };
   });
 
-  app.get('/auth/me', { preHandler: requireAuth }, async (request) => ({
-    user: currentUser(request),
-  }));
+  /**
+   * Who the caller is.
+   *
+   * Verification status is read here rather than carried on the session,
+   * because the session row is resolved on every authenticated request and the
+   * gateway shares that path -- paying for an extra column everywhere to serve
+   * one rarely-hit endpoint is the wrong trade. This is one indexed lookup by
+   * primary key.
+   */
+  app.get('/auth/me', { preHandler: requireAuth }, async (request) => {
+    const user = currentUser(request);
+
+    const [row] = await db
+      .select({ emailVerifiedAt: users.emailVerifiedAt })
+      .from(users)
+      .where(eq(users.id, user.id))
+      .limit(1);
+
+    return {
+      user: {
+        ...user,
+        emailVerified: Boolean(row?.emailVerifiedAt),
+        emailVerifiedAt: row?.emailVerifiedAt ?? null,
+      },
+    };
+  });
 
   app.patch('/auth/me', { preHandler: requireAuth }, async (request) => {
     const user = currentUser(request);
@@ -171,6 +214,11 @@ export async function authRoutes(
         .where(eq(users.id, user.id));
 
       await revokeAllSessions(db, user.id);
+
+      // Someone changing their password because their mailbox was exposed
+      // still has a live reset link until it expires. Retire it here, or the
+      // change they just made can be undone by an old email.
+      await revokeAuthTokens(db, user.id, 'password_reset');
 
       const { token, expiresAt } = await createSession(db, user.id, request.headers['user-agent']);
       reply.setCookie(SESSION_COOKIE, token, { ...cookieOptions, expires: expiresAt });

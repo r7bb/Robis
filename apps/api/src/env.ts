@@ -22,6 +22,12 @@ const envSchema = z.object({
    * benchmark measures the server rather than the cost of serializing a log
    * line per request to a pipe.
    */
+  /**
+   * Reset links per hour per address. The default protects real mailboxes;
+   * the screenshot and demo flows raise it because they drive the form
+   * repeatedly against one seeded account.
+   */
+  AUTH_FORGOT_PER_HOUR: z.coerce.number().int().min(1).default(3),
   API_LOG: z
     .string()
     .default('1')
@@ -38,6 +44,19 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
       .map((i) => `  ${i.path.join('.') || '(root)'}: ${i.message}`)
       .join('\n');
     throw new Error(`Invalid environment configuration:\n${issues}`);
+  }
+
+  /*
+   * `WEB_ORIGIN` is not only the CORS allowance: it is the origin every
+   * mailed reset and verification link is built from. Left at its local
+   * default, a production deploy mails `http://localhost:3000` links that
+   * nobody can open, over a scheme that would leak the token if they could.
+   */
+  if (parsed.data.NODE_ENV === 'production' && !parsed.data.WEB_ORIGIN.startsWith('https://')) {
+    throw new Error(
+      `WEB_ORIGIN must be an https origin in production; got "${parsed.data.WEB_ORIGIN}". ` +
+        'It is the origin password-reset links are built from.',
+    );
   }
 
   return parsed.data;

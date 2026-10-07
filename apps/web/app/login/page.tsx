@@ -1,6 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 import { ApiError, api, type Me } from '../../lib/api.ts';
@@ -39,7 +40,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="grid min-h-screen place-items-center px-4">
+    <main className="grid min-h-[100dvh] place-items-center px-4 py-10">
       <div className="w-full max-w-sm">
         <h1 className="text-2xl font-semibold tracking-tight text-content">Relay</h1>
         <p className="mt-1 text-sm text-muted">
@@ -78,11 +79,20 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full rounded-md bg-accent px-3 py-2 text-sm font-medium text-accent-contrast transition hover:bg-accent-hover disabled:opacity-50"
+            className="w-full rounded-md bg-accent px-3 py-2 text-sm font-medium text-accent-contrast transition hover:bg-accent-hover active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-surface motion-reduce:transition-none motion-reduce:active:translate-y-0 disabled:opacity-50 disabled:active:translate-y-0"
           >
             {submitting ? 'Working…' : mode === 'login' ? 'Sign in' : 'Create account'}
           </button>
         </form>
+
+        {mode === 'login' && (
+          <Link
+            href="/forgot-password"
+            className="mt-4 block rounded text-sm text-muted underline-offset-4 transition hover:text-content hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+          >
+            Forgot your password?
+          </Link>
+        )}
 
         <button
           type="button"
@@ -121,7 +131,9 @@ function Field({
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-md border border-line bg-raised px-3 py-2 text-sm text-content outline-none focus:border-accent"
+        spellCheck={type === 'email' ? false : undefined}
+        inputMode={type === 'email' ? 'email' : undefined}
+        className="w-full rounded-md border border-line bg-raised px-3 py-2 text-sm text-content outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
       />
     </label>
   );

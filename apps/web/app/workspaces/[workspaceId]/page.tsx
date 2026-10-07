@@ -143,7 +143,7 @@ export default function WorkspacePage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="New project name"
-            className="flex-1 rounded-md border border-line bg-raised px-3 py-2 text-sm outline-none focus:border-accent"
+            className="flex-1 rounded-md border border-line bg-raised px-3 py-2 text-sm outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
           />
           <button
             type="submit"
@@ -202,7 +202,7 @@ export default function WorkspacePage() {
               value={documentTitle}
               onChange={(event) => setDocumentTitle(event.target.value)}
               placeholder="New document title"
-              className="flex-1 rounded-md border border-line bg-raised px-3 py-2 text-sm outline-none focus:border-accent"
+              className="flex-1 rounded-md border border-line bg-raised px-3 py-2 text-sm outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
             />
             <button
               type="submit"

@@ -20,5 +20,13 @@ export default function Home() {
     router.replace(isError || !data ? '/login' : '/workspaces');
   }, [data, isError, isPending, router]);
 
-  return <main className="grid min-h-screen place-items-center text-sm text-faint">Loading…</main>;
+  // Reached for a moment before the redirect resolves. A spinner for a
+  // sub-second bounce is more noticeable than the wait it describes.
+  return (
+    <main className="grid min-h-[100dvh] place-items-center px-4">
+      <p className="text-sm text-faint">
+        <span className="sr-only">Loading. </span>Relay
+      </p>
+    </main>
+  );
 }

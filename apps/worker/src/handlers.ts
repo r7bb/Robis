@@ -1,4 +1,4 @@
-import { deleteExpiredSessions } from '@relay/auth';
+import { deleteExpiredAuthTokens, deleteExpiredSessions } from '@relay/auth';
 import {
   comments,
   type Database,
@@ -109,6 +109,9 @@ export const notifyMentions = async (payload: unknown, { db }: { db: Database })
 /** Delete session rows that have already expired. */
 export const cleanupSessions = async (_payload: unknown, { db }: { db: Database }) => {
   await deleteExpiredSessions(db);
+  // Reset and verification tokens expire the same way sessions do, and there
+  // is no reason to run a second timer for the same kind of housekeeping.
+  await deleteExpiredAuthTokens(db);
 };
 
 /** Periodic scan that decides who could use a prompt. See `nudges.ts`. */

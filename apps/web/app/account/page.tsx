@@ -89,8 +89,10 @@ function ProfileSection({ user, onSaved }: { user: Me['user']; onSaved: () => vo
                 className="w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-faint"
               />
               <p className="mt-1 text-xs text-faint">
-                Email cannot be changed yet — it is the login identifier.
+                Email cannot be changed yet - it is the login identifier.
               </p>
+
+              <VerificationStatus verified={user.emailVerified} />
             </>
           )}
         </Labelled>
@@ -105,7 +107,7 @@ function ProfileSection({ user, onSaved }: { user: Me['user']; onSaved: () => vo
                 setSaved(false);
               }}
               maxLength={80}
-              className="w-full rounded-md border border-line bg-raised px-3 py-2 text-sm text-content outline-none focus:border-accent"
+              className="w-full rounded-md border border-line bg-raised px-3 py-2 text-sm text-content outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
             />
           )}
         </Labelled>
@@ -123,6 +125,48 @@ function ProfileSection({ user, onSaved }: { user: Me['user']; onSaved: () => vo
         </Row>
       </form>
     </Section>
+  );
+}
+
+/**
+ * Whether the address has been confirmed, and a way to resend the link.
+ *
+ * Phrased as information rather than a warning. Nothing in Relay is gated on a
+ * verified address, so a red banner demanding action would be a lie about the
+ * consequences of ignoring it.
+ */
+function VerificationStatus({ verified }: { verified: boolean }) {
+  const [sent, setSent] = useState(false);
+
+  const resend = useMutation({
+    mutationFn: () =>
+      api<{ ok: true; alreadyVerified: boolean }>('/auth/email/resend', { method: 'POST' }),
+    onSuccess: () => setSent(true),
+  });
+
+  if (verified) {
+    return <p className="mt-2 text-xs text-muted">This address is verified.</p>;
+  }
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2">
+      <p className="text-xs text-faint">Not verified yet.</p>
+
+      {sent ? (
+        <span className="text-xs text-muted">Link sent. Check your email.</span>
+      ) : (
+        <button
+          type="button"
+          onClick={() => resend.mutate()}
+          disabled={resend.isPending}
+          className="rounded text-xs text-accent-soft underline-offset-4 transition hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 disabled:opacity-50"
+        >
+          {resend.isPending ? 'Sending…' : 'Send a verification link'}
+        </button>
+      )}
+
+      <Failure error={resend.error} />
+    </div>
   );
 }
 
@@ -377,7 +421,7 @@ function PasswordInput({
       value={value}
       autoComplete={autoComplete}
       onChange={(event) => onChange(event.target.value)}
-      className="w-full rounded-md border border-line bg-raised px-3 py-2 text-sm text-content outline-none focus:border-accent"
+      className="w-full rounded-md border border-line bg-raised px-3 py-2 text-sm text-content outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
     />
   );
 }

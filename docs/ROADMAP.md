@@ -2,7 +2,7 @@
 
 Where Relay is, what is left, and what is deliberately not being built.
 
-Status as of the current commit: **313 tests, lint and typecheck clean, CI green.**
+Status as of the current commit: **367 tests, lint and typecheck clean, CI green.**
 
 ---
 
@@ -41,6 +41,19 @@ Status as of the current commit: **313 tests, lint and typecheck clean, CI green
   reconciliation that preserves unflushed local work
 - Exactly-once mutations: client-generated ids plus a server idempotency ledger
 - Poison-message handling — permanent refusals are dropped, 408/429 are not
+
+### Auth surfaces
+
+- [x] Three new signed-out pages on a shared `AuthShell`, so sign-in,
+      recovery and confirmation stop drifting apart
+- [x] Accessibility pass over the whole client from the Web Interface
+      Guidelines: `outline-none` with only a 1px border change was replaced
+      with real focus rings in ten places, `min-h-screen` became
+      `min-h-[100dvh]` on every entry surface, and mobile tap delay and the
+      missing `theme-color` were fixed
+- [ ] Gate something on a verified address. Deliberately open: verification
+      currently records a fact and changes no behaviour, and choosing what it
+      blocks is a product decision rather than a technical one
 
 ### Documentation
 
@@ -117,7 +130,14 @@ last-write-wins per field; concurrent edits to the *same paragraph* do not.
 - [x] `@mention` parsing and in-app notifications, delivered by a worker
 - [x] Session cleanup as a self-rescheduling job
 - [x] Notification inbox UI with unread counts, mark-read and dismiss
-- [ ] Email delivery (needs an SMTP target)
+- [x] Password reset and email verification, behind a `Mailer` port. Only the
+      transport was ever blocked: hashed single-use tokens, expiry, no address
+      enumeration and a timing floor are all buildable and tested without a
+      provider. Production refuses to start on the console driver rather than
+      print reset links to stdout
+- [ ] An SMTP driver for that port, which is the one remaining piece. When it
+      lands, the send should move onto the job queue: a network send inside the
+      request is both slow and a timing signal
 - [ ] File attachments via presigned URLs (needs an S3-compatible target)
 - [x] Search — Postgres full-text over issues, comments and documents, on
       stored generated columns so the index cannot drift from the rows
@@ -154,8 +174,6 @@ Honest list of things that are built but thin.
   cursors are listed by name rather than drawn inline.
 - **Search has no dedicated results page.** It is a dropdown capped at 20 hits
   with no pagination or filtering by kind.
-- **No password reset or email verification** — both need the mailer from
-  milestone 6.
 - **Load-test numbers are laptop numbers.** One machine, loopback networking,
   local Postgres. Good for comparing commits against each other; not a capacity
   plan, and the README says so.
@@ -172,3 +190,61 @@ Honest list of things that are built but thin.
   of Redis is to list.
 - **An AI feature as the centrepiece.** A small retrieval-and-summarise endpoint
   over issues and documents is worth adding at the end; it is not the project.
+
+---
+
+## Pick up here next session
+
+In order. The first two are small and close out work started this session.
+
+### 1. `26-reset-password.png` is skipped by the capture script
+
+`bun run screenshots` completes but warns on this one. The reset form renders
+correctly on a cold navigation (verified with a standalone CDP probe), yet
+inside the script's session it reaches `/reset-password` without the query
+string and shows the "link is incomplete" branch. The scene catches the failure
+and carries on rather than blocking the other 26 images, and the README no
+longer references the missing file.
+
+Suspects, cheapest first: the service worker caching a navigation response for
+that route, a `Page.navigate` racing the previous client-side navigation, or
+the `Suspense` boundary resolving before search params are attached. One
+instrumented run comparing `location.href` at navigate versus at first paint
+should settle it.
+
+### 2. An SMTP driver for the `Mailer` port
+
+The only piece of the recovery work that is genuinely blocked on an external
+service. Everything else is done and tested. When it lands:
+
+- move the send onto the job queue, because a network send inside the request
+  is both slow and a timing signal, which is currently handled by a floor
+- drop the production startup refusal in `apps/api/src/main.ts`
+- send a notification on password change, which the security review asked for
+  and is the normal way a victim learns their account was taken
+
+### 3. Decide what a verified address gates
+
+Verification records a fact and changes no behaviour. That is deliberate --
+choosing what it blocks is a product decision -- but leaving it inert
+indefinitely makes the feature decorative. Candidates: being invited to a
+workspace, inviting others, or nothing at all with the status simply shown.
+
+### 4. Deferred review findings
+
+From the two reviews of the recovery work. Neither blocks, both are real:
+
+- `trustProxy: true` with no trusted-proxy list means `X-Forwarded-For` is
+  spoofable if the API is ever reachable without a proxy in front, which makes
+  every per-caller limit bypassable. Pin it to the proxy address or hop count.
+- `Referrer-Policy: no-referrer` and `Cache-Control: no-store` on
+  `/reset-password` and `/verify-email`. The reset page strips the token from
+  history after use; the headers close the rest.
+- Login still has its own `Field` and submit button rather than using
+  `AuthShell`, so the shared auth chrome unifies three pages instead of four.
+
+### 5. Then the original backlog
+
+Distributed tracing, drag-and-drop board, a dedicated search results page.
+Still blocked by this machine: file uploads, Docker verified end to end,
+deployment.

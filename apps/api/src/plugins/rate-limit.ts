@@ -25,6 +25,16 @@ export type RateLimitOptions = {
   windowMs: number;
   /** Distinguishes one limiter's buckets from another's. */
   name: string;
+  /**
+   * What to count per, instead of the caller.
+   *
+   * The default is "who is asking", which is the right question for login.
+   * It is the wrong question for a reset request: there the abuse is aimed at
+   * a *recipient*, and the attacker supplies the address, so limiting by
+   * caller lets anyone with a handful of addresses flood one mailbox.
+   * Returning null falls back to the caller.
+   */
+  key?: (request: FastifyRequest) => string | null;
 };
 
 /**
@@ -68,7 +78,8 @@ export function rateLimit(options: RateLimitOptions): preHandlerHookHandler {
     const now = Date.now();
     sweep(now);
 
-    const key = `${name}:${identify(request)}`;
+    const subject = options.key?.(request) ?? identify(request);
+    const key = `${name}:${subject}`;
     const existing = buckets.get(key);
 
     const bucket =

@@ -12,6 +12,7 @@ import { buildApp } from '@relay/api/app';
 import { loadEnv } from '@relay/api/env';
 import { createDatabase, type Database } from '@relay/database';
 import { runMigrations } from '@relay/database/migrate';
+import { MemoryMailer } from '@relay/mailer';
 import postgres from 'postgres';
 
 const ADMIN_URL = process.env.TEST_ADMIN_URL ?? 'postgres://relay:relay@localhost:5433/postgres';
@@ -21,6 +22,7 @@ export const TEST_URL =
 
 /** Every table that holds test state, in an order safe for `TRUNCATE CASCADE`. */
 const TABLES = [
+  'auth_tokens',
   'audit_events',
   'jobs',
   'notifications',
@@ -38,7 +40,13 @@ const TABLES = [
 
 type App = ReturnType<typeof buildApp>;
 
-let handle: { app: App; db: Database; close: () => Promise<void> } | null = null;
+let handle: {
+  app: App;
+  db: Database;
+  /** Mail the app tried to send, so flows that email a token can be asserted. */
+  mailer: MemoryMailer;
+  close: () => Promise<void>;
+} | null = null;
 
 async function ensureTestDatabase() {
   const admin = postgres(ADMIN_URL, { prepare: false, onnotice: () => {}, max: 1 });
@@ -68,19 +76,37 @@ export async function getHarness() {
 
   // Generous budgets: the other suites create hundreds of actors from one
   // address, and throttling them would test the limiter, not them.
+  // Recorded rather than sent: the reset and verification suites read the
+  // token out of the message, which proves the address received something it
+  // can act on rather than asserting against a row the user never saw.
+  const mailer = new MemoryMailer();
+
   const app = buildApp({
     db,
     env,
-    rateLimits: { authPerMinute: 100_000, searchPerMinute: 100_000 },
+    mailer,
+    rateLimits: {
+      authPerMinute: 100_000,
+      searchPerMinute: 100_000,
+      // The reset suite asserts this limit with its own small budget; the
+      // other suites must not trip over it.
+      passwordForgotPerHourPerAddress: 3,
+    },
   });
   await app.ready();
 
-  handle = { app, db, close };
+  handle = { app, db, mailer, close };
   return handle;
 }
 
+/** The recorded outbox. Cleared by `resetDatabase` along with the tables. */
+export async function getMailer(): Promise<MemoryMailer> {
+  return (await getHarness()).mailer;
+}
+
 export async function resetDatabase() {
-  const { db } = await getHarness();
+  const { db, mailer } = await getHarness();
+  mailer.clear();
   // One statement so it is a single round trip and a single implicit
   // transaction; RESTART IDENTITY keeps sequences predictable across tests.
   await db.execute(

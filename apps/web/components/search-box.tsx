@@ -69,7 +69,7 @@ export function SearchBox({ workspaceId }: { workspaceId: string }) {
         onFocus={() => setOpen(true)}
         placeholder="Search issues, documents and comments"
         aria-label="Search this workspace"
-        className="w-full rounded-md border border-line bg-raised px-3 py-2 text-sm text-content outline-none focus:border-accent"
+        className="w-full rounded-md border border-line bg-raised px-3 py-2 text-sm text-content outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
       />
 
       {open && query.length > 0 && (

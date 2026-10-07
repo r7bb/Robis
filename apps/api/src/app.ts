@@ -1,12 +1,14 @@
 import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import type { Database } from '@relay/database';
+import { ConsoleMailer, type Mailer } from '@relay/mailer';
 import Fastify, { type FastifyInstance } from 'fastify';
 import type { Env } from './env.ts';
 import { ApiError } from './errors.ts';
 import { createMetrics, registerMetrics } from './metrics.ts';
 import { attachUser } from './plugins/authz.ts';
 import { authRoutes } from './routes/auth.ts';
+import { authRecoveryRoutes } from './routes/auth-recovery.ts';
 import { commentRoutes } from './routes/comments.ts';
 import { documentRoutes } from './routes/documents.ts';
 import { issueRoutes } from './routes/issues.ts';
@@ -26,22 +28,43 @@ export type RateLimits = {
   authPerMinute: number;
   /** Full-text search, per account. */
   searchPerMinute: number;
+  /**
+   * Reset links per hour for one email address.
+   *
+   * Separate from `authPerMinute` because it answers a different question.
+   * That one protects the server from a caller; this protects a *recipient*
+   * from being mail-bombed by callers who each stay under their own limit.
+   */
+  passwordForgotPerHourPerAddress: number;
 };
 
 export const DEFAULT_RATE_LIMITS: RateLimits = {
   authPerMinute: 10,
   searchPerMinute: 60,
+  passwordForgotPerHourPerAddress: 3,
 };
 
 export type AppDeps = {
   db: Database;
   env: Env;
+  /**
+   * Where outgoing mail goes. Defaults to the console driver, which is the
+   * right default for a repo with no mail provider configured: the reset link
+   * is printed where a developer will see it rather than silently dropped.
+   */
+  mailer?: Mailer;
   /** Quiet by default in tests; `main.ts` turns logging on. */
   logger?: boolean;
   rateLimits?: Partial<RateLimits>;
 };
 
-export function buildApp({ db, env, logger = false, rateLimits }: AppDeps): FastifyInstance {
+export function buildApp({
+  db,
+  env,
+  logger = false,
+  rateLimits,
+  mailer = new ConsoleMailer(),
+}: AppDeps): FastifyInstance {
   const limits: RateLimits = { ...DEFAULT_RATE_LIMITS, ...rateLimits };
   const app = Fastify({ logger, trustProxy: true });
 
@@ -82,7 +105,8 @@ export function buildApp({ db, env, logger = false, rateLimits }: AppDeps): Fast
 
   app.get('/health', async () => ({ status: 'ok' }));
 
-  app.register(authRoutes, { db, env, limits });
+  app.register(authRoutes, { db, env, limits, mailer });
+  app.register(authRecoveryRoutes, { db, env, limits, mailer });
   app.register(workspaceRoutes, { db });
   app.register(memberRoutes, { db });
   app.register(projectRoutes, { db });

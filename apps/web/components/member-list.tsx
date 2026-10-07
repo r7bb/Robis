@@ -92,14 +92,14 @@ export function MemberList({
             type="email"
             placeholder="Email of an existing account"
             aria-label="Invite by email"
-            className="min-w-56 flex-1 rounded-md border border-line bg-raised px-3 py-2 text-sm outline-none focus:border-accent"
+            className="min-w-56 flex-1 rounded-md border border-line bg-raised px-3 py-2 text-sm outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
           />
 
           <select
             value={role}
             onChange={(event) => setRole(event.target.value as Role)}
             aria-label="Role for the invited member"
-            className="rounded-md border border-line bg-raised px-2 py-2 text-sm text-muted outline-none focus:border-accent"
+            className="rounded-md border border-line bg-raised px-2 py-2 text-sm text-muted outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
           >
             {grantable().map((candidate) => (
               <option key={candidate} value={candidate}>
@@ -152,7 +152,7 @@ export function MemberList({
                       })
                     }
                     aria-label={`Role for ${member.name}`}
-                    className="rounded-md border border-line bg-surface px-2 py-1 text-xs text-muted outline-none focus:border-accent"
+                    className="rounded-md border border-line bg-surface px-2 py-1 text-xs text-muted outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
                   >
                     {grantable().map((candidate) => (
                       <option key={candidate} value={candidate}>

@@ -89,7 +89,7 @@ export default function BoardPage() {
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="What needs doing?"
-            className="flex-1 rounded-md border border-line bg-raised px-3 py-2 text-sm outline-none focus:border-accent"
+            className="flex-1 rounded-md border border-line bg-raised px-3 py-2 text-sm outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
           />
           <button
             type="submit"
@@ -176,7 +176,7 @@ export default function BoardPage() {
                           })
                         }
                         aria-label={`Status for ${issue.key}`}
-                        className="mt-3 w-full rounded border border-line bg-surface px-2 py-1 text-xs text-muted outline-none focus:border-accent"
+                        className="mt-3 w-full rounded border border-line bg-surface px-2 py-1 text-xs text-muted outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
                       >
                         {BOARD_COLUMNS.map((status) => (
                           <option key={status} value={status}>

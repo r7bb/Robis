@@ -147,7 +147,7 @@ function DocumentView() {
         spellCheck={false}
         placeholder="Start typing. Open this page in another window to see edits merge."
         aria-label="Document content"
-        className="mt-6 h-[28rem] w-full resize-none rounded-lg border border-line bg-raised p-4 font-mono text-sm leading-relaxed text-content outline-none focus:border-accent"
+        className="mt-6 h-[28rem] w-full resize-none rounded-lg border border-line bg-raised p-4 font-mono text-sm leading-relaxed text-content outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
       />
 
       <p className="mt-3 text-xs text-faint">

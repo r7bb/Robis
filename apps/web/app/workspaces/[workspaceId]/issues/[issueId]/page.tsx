@@ -268,7 +268,7 @@ function EditableTitle({
         onChange={(event) => onChange(event.target.value)}
         onBlur={save}
         aria-label="Issue title"
-        className="w-full rounded-md border border-line bg-raised px-3 py-2 text-2xl font-semibold text-content outline-none focus:border-accent"
+        className="w-full rounded-md border border-line bg-raised px-3 py-2 text-2xl font-semibold text-content outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
       />
     </form>
   );
@@ -348,7 +348,7 @@ function Description({
         }}
         aria-label="Issue description"
         placeholder="What needs doing, and what does done look like?"
-        className="w-full resize-y rounded-md border border-line bg-raised px-3 py-2 text-sm text-content outline-none focus:border-accent"
+        className="w-full resize-y rounded-md border border-line bg-raised px-3 py-2 text-sm text-content outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
       />
 
       <div className="mt-2 flex items-center gap-2">
@@ -399,7 +399,7 @@ function Select({
       value={value}
       disabled={disabled}
       onChange={(event) => onChange(event.target.value)}
-      className="w-full rounded-md border border-line bg-raised px-2 py-1.5 text-sm capitalize text-content outline-none focus:border-accent disabled:opacity-60"
+      className="w-full rounded-md border border-line bg-raised px-2 py-1.5 text-sm capitalize text-content outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60 disabled:opacity-60"
     >
       {options.map((option) => (
         <option key={option.value} value={option.value}>

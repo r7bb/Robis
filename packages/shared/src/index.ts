@@ -1,5 +1,6 @@
 export * from './domain.ts';
 export * from './events.ts';
+export * from './limits.ts';
 export * from './mentions.ts';
 export * from './nudges.ts';
 export * from './rbac.ts';

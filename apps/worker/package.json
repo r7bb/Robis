@@ -15,6 +15,7 @@
   "dependencies": {
     "@relay/auth": "workspace:*",
     "@relay/database": "workspace:*",
+    "@relay/mailer": "workspace:*",
     "@relay/shared": "workspace:*",
     "drizzle-orm": "^0.38.0"
   }

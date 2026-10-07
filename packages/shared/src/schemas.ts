@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ISSUE_PRIORITIES, ISSUE_STATUSES } from './domain.ts';
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from './limits.ts';
 import { ROLES } from './rbac.ts';
 import { THEME_IDS } from './themes.ts';
 
@@ -15,11 +16,13 @@ export const uuid = z.uuid();
  * Deliberately permissive on composition and strict on length. Length is the
  * property that actually correlates with resistance to guessing, and character
  * -class rules mostly push users toward predictable substitutions.
+ *
+ * The bounds come from `./limits.ts`, which the client reads directly.
  */
 export const passwordSchema = z
   .string()
-  .min(12, 'Password must be at least 12 characters')
-  .max(200, 'Password must be at most 200 characters');
+  .min(PASSWORD_MIN_LENGTH, `Password must be at least ${PASSWORD_MIN_LENGTH} characters`)
+  .max(PASSWORD_MAX_LENGTH, `Password must be at most ${PASSWORD_MAX_LENGTH} characters`);
 
 /**
  * Changing your own name. Email is deliberately not editable here: it is the
@@ -43,6 +46,35 @@ export const changePasswordSchema = z.object({
   newPassword: passwordSchema,
 });
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+
+/**
+ * Asking for a reset link.
+ *
+ * The address is normalised the way registration does it, so `Ada@X.com`
+ * finds the account stored as `ada@x.com`. A malformed address still gets the
+ * same success response as a valid one, because the reply must not depend on
+ * anything about the address.
+ */
+export const forgotPasswordSchema = z.object({
+  // Trimmed and lowercased *before* the address is validated. The other way
+  // round, " ada@x.com" fails validation and the caller gets the same silent
+  // 202 as an unknown address, so a stray leading space looks like "no
+  // account" and nobody ever finds out why no mail arrived.
+  email: z.string().trim().toLowerCase().pipe(z.email().max(254)),
+});
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+
+/** Spending a reset link. The token is opaque, so only its shape is checked. */
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1).max(500),
+  newPassword: passwordSchema,
+});
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
+export const verifyEmailSchema = z.object({
+  token: z.string().min(1).max(500),
+});
+export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
 
 export const registerSchema = z.object({
   email: z.email().max(254).toLowerCase().trim(),

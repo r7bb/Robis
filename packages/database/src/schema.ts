@@ -54,10 +54,70 @@ export const users = pgTable(
     email: text('email').notNull(),
     name: text('name').notNull(),
     passwordHash: text('password_hash').notNull(),
+    /**
+     * When this address was confirmed, or null if it never was.
+     *
+     * A timestamp rather than a boolean: "verified" and "verified on the third
+     * of March" cost the same to store, and the second can answer questions
+     * about an account later. Nothing is gated on it yet -- see the README.
+     */
+    emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
   (t) => [uniqueIndex('users_email_key').on(t.email)],
+);
+
+/** What a one-time token is for. Narrow, so the column cannot drift. */
+export const AUTH_TOKEN_PURPOSES = ['password_reset', 'email_verification'] as const;
+export type AuthTokenPurpose = (typeof AUTH_TOKEN_PURPOSES)[number];
+
+export const authTokenPurposeEnum = pgEnum('auth_token_purpose', AUTH_TOKEN_PURPOSES);
+
+/**
+ * Single-use tokens for password reset and email verification.
+ *
+ * One table with a `purpose` rather than two tables, because both flows are
+ * the same shape: a hashed secret belonging to a user that expires and works
+ * once. Two tables would be this schema written twice.
+ *
+ * Only the SHA-256 of the token is stored, for the same reason sessions do it:
+ * the row is useless to whoever reads the database, and the only copy of the
+ * secret is in the message that was sent. Plain SHA-256 rather than Argon2 is
+ * right here because the input is 256 bits of randomness -- there is nothing
+ * to brute-force.
+ *
+ * Single use is enforced by deleting the row rather than by a `consumed_at`
+ * flag: nothing is then left to replay, and there is no second state to get
+ * wrong.
+ */
+export const authTokens = pgTable(
+  'auth_tokens',
+  {
+    id: id(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    purpose: authTokenPurposeEnum('purpose').notNull(),
+    tokenHash: text('token_hash').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    // Lookup is always by the hash of a presented token.
+    uniqueIndex('auth_tokens_token_hash_key').on(t.tokenHash),
+    /*
+     * One live token per user per purpose, enforced rather than assumed.
+     *
+     * Issuing used to delete the previous row and insert a new one, which
+     * under READ COMMITTED lets two concurrent requests both delete nothing
+     * and both insert, leaving two live links. A unique index turns that into
+     * an upsert with one winner.
+     */
+    uniqueIndex('auth_tokens_user_purpose_key').on(t.userId, t.purpose),
+    // The cleanup job sweeps by expiry.
+    index('auth_tokens_expires_at_idx').on(t.expiresAt),
+  ],
 );
 
 /**

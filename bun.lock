@@ -14,6 +14,7 @@
         "@relay/api": "workspace:*",
         "@relay/auth": "workspace:*",
         "@relay/database": "workspace:*",
+        "@relay/mailer": "workspace:*",
         "@relay/metrics": "workspace:*",
         "@relay/realtime": "workspace:*",
         "@relay/shared": "workspace:*",
@@ -35,6 +36,7 @@
         "@fastify/cors": "^10.0.2",
         "@relay/auth": "workspace:*",
         "@relay/database": "workspace:*",
+        "@relay/mailer": "workspace:*",
         "@relay/shared": "workspace:*",
         "drizzle-orm": "^0.38.0",
         "fastify": "^5.2.0",
@@ -81,6 +83,7 @@
       "dependencies": {
         "@relay/auth": "workspace:*",
         "@relay/database": "workspace:*",
+        "@relay/mailer": "workspace:*",
         "@relay/shared": "workspace:*",
         "drizzle-orm": "^0.38.0",
       },
@@ -106,6 +109,10 @@
       "devDependencies": {
         "drizzle-kit": "^0.30.0",
       },
+    },
+    "packages/mailer": {
+      "name": "@relay/mailer",
+      "version": "0.0.0",
     },
     "packages/metrics": {
       "name": "@relay/metrics",
@@ -356,6 +363,8 @@
     "@relay/auth": ["@relay/auth@workspace:packages/auth"],
 
     "@relay/database": ["@relay/database@workspace:packages/database"],
+
+    "@relay/mailer": ["@relay/mailer@workspace:packages/mailer"],
 
     "@relay/metrics": ["@relay/metrics@workspace:packages/metrics"],
 

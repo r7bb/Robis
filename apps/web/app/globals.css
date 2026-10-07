@@ -22,6 +22,18 @@
   --accent-contrast: 255 255 255;
 }
 
+/*
+ * Taps should feel immediate. `manipulation` drops the 300ms double-tap-zoom
+ * wait, and the tap highlight is a grey flash Android paints over anything
+ * clickable. Neither changes behaviour with a mouse.
+ */
+button,
+a,
+[role="button"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   @apply bg-surface text-content antialiased;
   font-family:

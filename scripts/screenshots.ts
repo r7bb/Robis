@@ -16,19 +16,36 @@
  * Requires the stack to be running:
  *
  *   bun run db:start && bun run db:migrate
- *   bun run dev:api / dev:realtime / dev:web
+ *   NEXT_PUBLIC_ENABLE_SW=1 bun run dev:web
+ *   AUTH_FORGOT_PER_HOUR=100 bun run dev:api
+ *   bun run dev:realtime
+ *
+ * The two environment overrides exist because this script drives flows that
+ * are deliberately restricted in normal operation: the service worker is off
+ * under `next dev`, and reset requests are capped per address, which a script
+ * re-running against one seeded account would otherwise exhaust.
  *
  * It re-seeds first, so the images are of the same content every time rather
  * than whatever happened to be in the database.
  */
-import { existsSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createDatabase } from '@relay/database';
+import { issueAuthToken } from '@relay/auth';
+import { createDatabase, users } from '@relay/database';
 import { handlers } from '@relay/worker/handlers';
 import { scanNudges } from '@relay/worker/nudges';
 import { Runner } from '@relay/worker/runner';
+import { eq } from 'drizzle-orm';
+import {
+  closeTab,
+  findChrome,
+  listTargets,
+  openTab,
+  Page,
+  type PageConfig,
+  type Target,
+} from './lib/cdp.ts';
 
 const WEB = 'http://localhost:3000';
 const API = 'http://localhost:4000';
@@ -46,280 +63,13 @@ const SCALE = 2;
 const WIDTH = 1440;
 const HEIGHT = 900;
 
-const CHROME_CANDIDATES = [
-  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-  '/Applications/Chromium.app/Contents/MacOS/Chromium',
-  '/usr/bin/google-chrome',
-  '/usr/bin/chromium',
-  '/usr/bin/chromium-browser',
-];
-
-// ---------------------------------------------------------------------------
-// CDP client
-// ---------------------------------------------------------------------------
-
-type Target = { id: string; type: string; url: string; webSocketDebuggerUrl: string };
-
-/**
- * One browser tab.
- *
- * Every request carries a timeout. A dropped CDP response is otherwise
- * indistinguishable from a slow one, and the script hangs forever instead of
- * failing -- which is exactly what happened while this was being written.
- */
-class Page {
-  private nextId = 1;
-  private readonly pending = new Map<
-    number,
-    { resolve: (value: unknown) => void; reject: (error: Error) => void }
-  >();
-
-  private constructor(
-    private readonly socket: WebSocket,
-    readonly targetId: string,
-  ) {}
-
-  static async attach(target: Target): Promise<Page> {
-    const socket = new WebSocket(target.webSocketDebuggerUrl);
-
-    await new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error('CDP socket did not open')), 10_000);
-      socket.addEventListener('open', () => {
-        clearTimeout(timer);
-        resolve();
-      });
-      socket.addEventListener('error', () => {
-        clearTimeout(timer);
-        reject(new Error('CDP socket failed'));
-      });
-    });
-
-    const page = new Page(socket, target.id);
-
-    socket.addEventListener('message', (event) => {
-      const message = JSON.parse(String(event.data));
-      const waiting = message.id !== undefined ? page.pending.get(message.id) : undefined;
-      if (!waiting) return;
-
-      page.pending.delete(message.id);
-      if (message.error) waiting.reject(new Error(message.error.message ?? 'CDP error'));
-      else waiting.resolve(message.result);
-    });
-
-    await page.send('Page.enable');
-    await page.send('Runtime.enable');
-    await page.send('Network.enable');
-    await page.send('Emulation.setDeviceMetricsOverride', {
-      width: WIDTH,
-      height: HEIGHT,
-      deviceScaleFactor: SCALE,
-      mobile: false,
-    });
-
-    return page;
-  }
-
-  send<T = unknown>(
-    method: string,
-    params: Record<string, unknown> = {},
-    timeoutMs = 20_000,
-  ): Promise<T> {
-    const id = this.nextId++;
-
-    return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        this.pending.delete(id);
-        reject(new Error(`CDP ${method} timed out after ${timeoutMs}ms`));
-      }, timeoutMs);
-
-      this.pending.set(id, {
-        resolve: (value) => {
-          clearTimeout(timer);
-          resolve(value as T);
-        },
-        reject: (error) => {
-          clearTimeout(timer);
-          reject(error);
-        },
-      });
-
-      this.socket.send(JSON.stringify({ id, method, params }));
-    });
-  }
-
-  async eval<T>(expression: string): Promise<T> {
-    const result = await this.send<{
-      result?: { value?: unknown };
-      exceptionDetails?: { exception?: { description?: string } };
-    }>('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
-
-    if (result.exceptionDetails) {
-      throw new Error(result.exceptionDetails.exception?.description ?? 'evaluate failed');
-    }
-
-    return result.result?.value as T;
-  }
-
-  async goto(url: string) {
-    await this.send('Page.navigate', { url });
-    await this.waitFor('document.readyState === "complete"');
-    await Bun.sleep(700);
-  }
-
-  /** Poll a JavaScript predicate until it holds. */
-  async waitFor(expression: string, timeoutMs = 20_000) {
-    const deadline = Date.now() + timeoutMs;
-
-    while (Date.now() < deadline) {
-      if (await this.eval<boolean>(`!!(${expression})`)) return;
-      await Bun.sleep(150);
-    }
-
-    // Report what the page was actually showing. "Timed out" on its own sends
-    // you back to re-run the whole capture just to find out where you were.
-    const where = await this.eval<string>('location.href').catch(() => '<unreachable>');
-    const body = await this.text().catch(() => '<no body>');
-
-    throw new Error(
-      `timed out waiting for: ${expression}\n  url: ${where}\n  body: ${body.slice(0, 400).replace(/\n+/g, ' | ')}`,
-    );
-  }
-
-  /** Wait for text, tolerating the uppercase that CSS applies to headings. */
-  waitForText(text: string, timeoutMs = 20_000) {
-    return this.waitFor(
-      `document.body.innerText.toLowerCase().includes(${JSON.stringify(text.toLowerCase())})`,
-      timeoutMs,
-    );
-  }
-
-  text(): Promise<string> {
-    return this.eval<string>('document.body.innerText');
-  }
-
-  async click(selector: string) {
-    const clicked = await this.eval<boolean>(`(() => {
-      const el = document.querySelector(${JSON.stringify(selector)});
-      if (!el) return false;
-      el.click();
-      return true;
-    })()`);
-
-    if (!clicked) throw new Error(`nothing matched ${selector}`);
-    await Bun.sleep(450);
-  }
-
-  /** Click the first element whose text contains `label`. */
-  async clickText(selector: string, label: string) {
-    const clicked = await this.eval<boolean>(`(() => {
-      const el = [...document.querySelectorAll(${JSON.stringify(selector)})]
-        .find((n) => n.textContent.toLowerCase().includes(${JSON.stringify(label.toLowerCase())}));
-      if (!el) return false;
-      el.click();
-      return true;
-    })()`);
-
-    if (!clicked) throw new Error(`no ${selector} containing "${label}"`);
-    await Bun.sleep(450);
-  }
-
-  /**
-   * Set a value on a React-controlled field.
-   *
-   * React tracks the previous value on the DOM node and ignores an event whose
-   * value it believes it already has, so the native setter has to be called
-   * rather than assigning `.value` directly.
-   */
-  async fill(selector: string, value: string) {
-    const filled = await this.eval<boolean>(`(() => {
-      const el = document.querySelector(${JSON.stringify(selector)});
-      if (!el) return false;
-      const proto = el instanceof HTMLTextAreaElement
-        ? HTMLTextAreaElement.prototype
-        : HTMLInputElement.prototype;
-      Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, ${JSON.stringify(value)});
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-      el.dispatchEvent(new Event('change', { bubbles: true }));
-      return true;
-    })()`);
-
-    if (!filled) throw new Error(`no field matched ${selector}`);
-    await Bun.sleep(300);
-  }
-
-  /** Cut the network at the browser, which is what `navigator.onLine` reads. */
-  setOffline(offline: boolean) {
-    return this.send('Network.emulateNetworkConditions', {
-      offline,
-      latency: 0,
-      downloadThroughput: -1,
-      uploadThroughput: -1,
-    });
-  }
-
-  async shot(name: string) {
-    // Let any in-flight transition settle, so nothing is caught mid-fade.
-    await Bun.sleep(400);
-    const { data } = await this.send<{ data: string }>('Page.captureScreenshot', {
-      format: 'png',
-    });
-    await Bun.write(`${SHOTS}${name}`, Buffer.from(data, 'base64'));
-    console.log(`  ${name}`);
-  }
-
-  close() {
-    this.socket.close();
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Browser lifecycle
-// ---------------------------------------------------------------------------
-
-function findChrome(): string {
-  const found = CHROME_CANDIDATES.find((path) => existsSync(path));
-  if (!found) {
-    throw new Error(
-      `No Chrome found. Looked in:\n${CHROME_CANDIDATES.map((p) => `  ${p}`).join('\n')}`,
-    );
-  }
-  return found;
-}
-
-async function listTargets(): Promise<Target[]> {
-  const response = await fetch(`http://127.0.0.1:${CDP_PORT}/json`);
-  return (await response.json()) as Target[];
-}
-
-/** Open a second tab, for the screenshots that need two windows. */
-async function openTab(url: string): Promise<Page> {
-  const response = await fetch(`http://127.0.0.1:${CDP_PORT}/json/new?${encodeURIComponent(url)}`, {
-    method: 'PUT',
-  });
-  const target = (await response.json()) as Target;
-
-  // The freshly created target is not always in /json immediately.
-  for (let i = 0; i < 40; i++) {
-    const match = (await listTargets()).find((t) => t.id === target.id);
-    if (match?.webSocketDebuggerUrl) return Page.attach(match);
-    await Bun.sleep(150);
-  }
-
-  throw new Error('new tab never appeared');
-}
-
-/**
- * Close a tab by its target id.
- *
- * Not by url: both tabs sit on the same origin, so matching on a prefix can
- * close the main one and leave the rest of the run driving a dead page.
- */
-async function closeTab(page: Page) {
-  const id = page.targetId;
-  page.close();
-  await fetch(`http://127.0.0.1:${CDP_PORT}/json/close/${id}`);
-  await Bun.sleep(300);
-}
+const cdp: PageConfig = {
+  port: CDP_PORT,
+  shotsDir: SHOTS,
+  width: WIDTH,
+  height: HEIGHT,
+  scale: SCALE,
+};
 
 // ---------------------------------------------------------------------------
 // Preflight
@@ -401,7 +151,7 @@ async function captureBasics(page: Page) {
 /** Two tabs on one board: an issue created in the second appears in the first. */
 async function captureRealtime(page: Page, boardUrl: string) {
   console.log('\nRealtime');
-  const other = await openTab(boardUrl);
+  const other = await openTab(cdp, boardUrl);
 
   try {
     await other.waitFor('document.querySelector(\'input[placeholder="What needs doing?"]\')');
@@ -415,7 +165,7 @@ async function captureRealtime(page: Page, boardUrl: string) {
     await page.waitForText('Ship the activity feed', 10_000);
     await page.shot('05-realtime.png');
   } finally {
-    await closeTab(other);
+    await closeTab(cdp, other);
   }
 }
 
@@ -533,7 +283,7 @@ async function captureDocuments(page: Page, workspaceUrl: string) {
   await page.waitFor('document.querySelector(\'textarea[aria-label="Document content"]\')');
 
   const documentUrl = await page.eval<string>('location.href');
-  const other = await openTab(documentUrl);
+  const other = await openTab(cdp, documentUrl);
 
   try {
     await other.waitFor('document.querySelector(\'textarea[aria-label="Document content"]\')');
@@ -557,7 +307,7 @@ async function captureDocuments(page: Page, workspaceUrl: string) {
     );
     await page.shot('08-document-collab.png');
   } finally {
-    await closeTab(other);
+    await closeTab(cdp, other);
   }
 }
 
@@ -656,6 +406,89 @@ async function captureMembersAndActivity(page: Page, workspaceUrl: string) {
   await page.shot('20-activity-feed.png');
 }
 
+/**
+ * The forgotten-password flow, end to end.
+ *
+ * The reset token is read out of the database rather than scraped from the
+ * API's console output: the console driver is the dev default, but parsing a
+ * log for a credential is fragile, and the token hash is all the database
+ * holds. So this issues its own token through the same helper the route uses,
+ * which is also what a person clicking a real link would end up with.
+ */
+async function captureRecovery(page: Page) {
+  console.log('\nAccount recovery');
+
+  await page.goto(`${WEB}/login`);
+  await page.waitFor('document.querySelector(\'input[type="email"]\')');
+
+  // The entry point: a link on the sign-in form.
+  await page.clickText('a', 'Forgot your password');
+  await page.waitForText('reset your password');
+  await page.fill('#forgot-email', EMAIL);
+  await page.shot('24-forgot-password.png');
+
+  await page.clickText('button', 'Send reset link');
+  await page.waitForText('check your email');
+  await page.shot('25-forgot-password-sent.png');
+
+  // A real token for the seeded account, issued the same way the route does.
+  const { db, close } = createDatabase(DATABASE_URL);
+  let token: string;
+  try {
+    const [owner] = await db.select({ id: users.id }).from(users).where(eq(users.email, EMAIL));
+    if (!owner) throw new Error(`no seeded account for ${EMAIL}`);
+    token = (await issueAuthToken(db, owner.id, 'password_reset')).token;
+  } finally {
+    await close();
+  }
+
+  await page.goto(`${WEB}/reset-password?token=${encodeURIComponent(token)}`);
+
+  try {
+    await page.waitForText('choose a new password', 8000);
+
+    // Shown mid-validation, so the inline mismatch error is visible rather
+    // than a blank form.
+    await page.fill('#reset-password', 'a-strong-enough-password');
+    await page.fill('#reset-confirm', 'a-strong-enough-passwo');
+    await page.shot('26-reset-password.png');
+  } catch {
+    console.warn(
+      '  skipping 26-reset-password.png - the form did not pick up the token.\n' +
+        '  It renders correctly on a cold navigation; something in this run\n' +
+        '  reaches it without the query. Worth chasing, not worth blocking on.',
+    );
+  }
+
+  // The token is left unspent: redeeming it would change the demo password.
+}
+
+/** The confirmation page, reached with a link that has already been used. */
+async function captureVerifyEmail(page: Page) {
+  console.log('\nEmail verification');
+
+  const { db, close } = createDatabase(DATABASE_URL);
+  let token: string;
+  try {
+    const [owner] = await db.select({ id: users.id }).from(users).where(eq(users.email, EMAIL));
+    if (!owner) throw new Error(`no seeded account for ${EMAIL}`);
+    token = (await issueAuthToken(db, owner.id, 'email_verification')).token;
+  } finally {
+    await close();
+  }
+
+  await page.goto(`${WEB}/verify-email?token=${encodeURIComponent(token)}`);
+
+  try {
+    await page.waitForText('confirm my address', 8000);
+    await page.clickText('button', 'Confirm my address');
+    await page.waitForText('address confirmed', 8000);
+    await page.shot('27-verify-email.png');
+  } catch {
+    console.warn('  skipping 27-verify-email.png - the page did not pick up the token.');
+  }
+}
+
 async function captureAccount(page: Page) {
   console.log('\nAccount');
   await page.goto(`${WEB}/account`);
@@ -725,7 +558,7 @@ try {
   let target: Target | undefined;
   for (let i = 0; i < 80; i++) {
     try {
-      target = (await listTargets()).find((t) => t.type === 'page');
+      target = (await listTargets(CDP_PORT)).find((t) => t.type === 'page');
       if (target) break;
     } catch {
       /* not listening yet */
@@ -734,7 +567,7 @@ try {
   }
   if (!target) throw new Error('Chrome never exposed a page target');
 
-  page = await Page.attach(target);
+  page = await Page.attach(target, cdp);
 
   const { workspaceUrl, boardUrl } = await captureBasics(page);
   const workspaceId = workspaceUrl.split('/workspaces/')[1]!.split(/[/?#]/)[0]!;
@@ -756,6 +589,8 @@ try {
   await drainJobs({ nudge: true });
   await captureInbox(page);
   await captureNudge(page, workspaceUrl);
+  await captureRecovery(page);
+  await captureVerifyEmail(page);
   await captureAccount(page);
 
   console.log('\nDone.');

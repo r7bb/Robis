@@ -99,7 +99,7 @@ export default function WorkspacesPage() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="New workspace name"
-          className="flex-1 rounded-md border border-line bg-raised px-3 py-2 text-sm outline-none focus:border-accent"
+          className="flex-1 rounded-md border border-line bg-raised px-3 py-2 text-sm outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
         />
         <button
           type="submit"

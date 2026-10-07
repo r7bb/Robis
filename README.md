@@ -70,8 +70,10 @@ Everything in this list is implemented, tested and reachable from the UI.
 
 - Argon2id passwords and opaque, revocable, server-side sessions
 - Login timing equalised so registered addresses are not discoverable
+- Forgotten-password recovery and email verification, behind a `Mailer` port
 - Change your display name and password; see and revoke active sessions
-- Rate limiting on credential and search endpoints
+- Rate limiting on credential and search endpoints, per caller and per
+  recipient address
 
 **Presentation**
 
@@ -86,8 +88,10 @@ Everything in this list is implemented, tested and reachable from the UI.
 - A load harness reporting real latency and fan-out numbers
 - 313 tests against a real Postgres, plus lint, typecheck and CI
 
-Not built, and why: [file uploads and email](#status) need an external service
-this machine cannot reach.
+Not built, and why: [file uploads](#status) need an object store, and mail
+needs an SMTP provider this machine cannot reach. The recovery flows are
+complete behind a `Mailer` interface whose only driver prints to the console;
+see [Account recovery](#account-recovery).
 
 ---
 
@@ -192,6 +196,41 @@ Entries describe themselves from payloads recorded at the time rather than by
 joining the rows they mention, so the trail stays truthful after an issue is
 deleted or a member renamed. The status-change entry above still names its
 issue because the key was stored with the event, not looked up.
+
+### Account recovery
+
+Forgotten passwords and address confirmation, both built on the same one-time
+token.
+
+![Forgot password](docs/screenshots/24-forgot-password.png)
+
+The confirmation never says whether the address has an account:
+
+![Link sent](docs/screenshots/25-forgot-password-sent.png)
+
+**There is no mail provider.** Sending is a port with one driver, which prints
+the message to the API log, so the flow is exercisable end to end locally:
+
+```
+  --- mail ------------------------------------------
+  to:      rohit@relay.dev
+  subject: Reset your Relay password
+  ---------------------------------------------------
+  Open this link to choose a new one:
+  http://localhost:3000/reset-password?token=...
+```
+
+Adding SMTP is one more driver implementing `send`. Until then the API
+**refuses to start in production** rather than fall back to the console
+driver, because that would mean nobody receives a reset link and anyone with
+log access could take over any account. See
+[Mail is a port, and production refuses the console driver](#mail-is-a-port-and-production-refuses-the-console-driver).
+
+![Address confirmed](docs/screenshots/27-verify-email.png)
+
+Verification records that the address reaches you. **Nothing is gated on it** —
+an unverified account works normally. Gating something would be a bigger
+decision than the feature, so it is deliberately not made here.
 
 ### Your account
 
@@ -651,6 +690,66 @@ What this does not give you: fuzzy matching, typo tolerance, or ranking as
 tunable as a purpose-built engine. Those are the reasons to adopt one. The word
 "search" is not.
 
+### Mail is a port, and production refuses the console driver
+
+There is no SMTP service reachable from this machine, which is why sending is a
+`Mailer` port with two drivers rather than a call to a provider: a console one
+for development, and an in-memory one so tests can read the token out of the
+message a user would have received.
+
+The part worth keeping is what happens when the driver is wrong for the
+environment. `buildApp` defaults to the console driver, which is right for
+local work and catastrophic in production: no user receives a link, and anyone
+who can read the logs can take over any account by requesting a reset for its
+address. So `main.ts` refuses to boot in production rather than accept that
+default, and `WEB_ORIGIN` must be an `https` origin there too, because it is
+what every mailed link is built from.
+
+A fail-fast startup error is better than a system whose recovery flow is a
+credential leak, and it keeps the missing piece visible rather than implied.
+
+### One-time tokens are sessions with a shorter rope
+
+Reset and verification tokens reuse the session primitives: 256 bits of
+randomness, stored only as its SHA-256. What differs is lifetime and reach. A
+session proves who you are; a reset token can *change* who controls the
+account, so it expires in 30 minutes, works once, and is scoped to the single
+purpose it was issued for.
+
+Four details carry more weight than they look like they should:
+
+- **`purpose` is part of the redeem predicate, not a label.** A verification
+  link sits in an inbox and is the easiest token to obtain, so it must not be
+  spendable as a password reset.
+- **The delete *is* the check.** `DELETE ... RETURNING` with the hash, purpose
+  and expiry in the `WHERE` either removes one row or none, so two requests
+  arriving together cannot both succeed. Reading the row and then deleting it
+  leaves that race open.
+- **One live token per user per purpose, enforced by a unique index.** Issuing
+  used to delete the old row and insert a new one, which under `READ COMMITTED`
+  lets two concurrent requests both insert and leave two live links. It is an
+  upsert now.
+- **Every redemption failure returns one generic error.** Telling "expired"
+  apart from "no such token" confirms a token once existed for that account.
+
+### Not leaking which addresses have accounts
+
+`POST /auth/password/forgot` always answers `202` with the same body: unknown
+address, malformed address, or real account. The schema is parsed permissively
+so a bad address cannot even produce a validation error, because that would
+also be an answer.
+
+Status and body being identical is not enough on its own. The work for a known
+address is strictly more than for an unknown one, so the *response time* says
+whether the account exists. Every reply is therefore held to a floor, which
+removes the signal regardless of how slow the driver is — the obvious next
+driver is SMTP over a network, where the gap would be unmissable.
+
+The endpoint is also limited per **recipient address**, not only per caller.
+The caller-keyed limit protects the server; it does nothing for the person
+being mailed, because the attacker chooses the address and a handful of
+addresses is enough to flood one mailbox.
+
 ### Metrics label the route pattern, never the URL
 
 `/metrics` on the API and the gateway serves Prometheus text, written by hand
@@ -740,7 +839,7 @@ body.
 
 ## Testing
 
-**313 tests** against a real Postgres rather than mocks. The behaviour under test
+**367 tests** against a real Postgres rather than mocks. The behaviour under test
 — unique constraints, cascades, row locks, transactional `NOTIFY` — is behaviour
 the database provides, so a fake would only prove the fake works.
 
@@ -768,6 +867,10 @@ bun test
 | `stats.test.ts`         | Percentile and summary arithmetic behind the load-test numbers   |
 | `metrics.test.ts`       | Exposition format, label cardinality guards, cumulative buckets   |
 | `account.test.ts`       | Password change, session revocation, audit payloads, blank input  |
+| `auth-tokens.test.ts`   | One-time tokens: single use, expiry, cross-purpose refusal         |
+| `password-reset.test.ts`| Enumeration, timing floor, mail-bombing, link retirement           |
+| `email-verification.test.ts` | Confirmation, single use, resend, cross-purpose misuse        |
+| `mailer.test.ts`        | Mail port drivers and message bodies                              |
 | `uuid.test.ts`          | The id guard every route runs before touching the database       |
 | `idempotency.test.ts`   | Exactly-once mutations, key misuse, client-generated ids         |
 
@@ -864,7 +967,7 @@ event-loop lag is reported alongside every result.
 - Load harness with measured throughput and fan-out numbers
 - Prometheus metrics on the API and the gateway
 - Editable issue descriptions, workspace activity feed, account settings
-- 313 tests, CI, linting, typechecking
+- 367 tests, CI, linting, typechecking
 
 **Next**
 

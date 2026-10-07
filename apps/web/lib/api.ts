@@ -47,7 +47,16 @@ export async function api<T>(
   return payload as T;
 }
 
-export type Me = { user: { id: string; email: string; name: string } };
+export type Me = {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    /** Whether the address has been confirmed. Nothing is gated on it yet. */
+    emailVerified: boolean;
+    emailVerifiedAt: string | null;
+  };
+};
 
 export type WorkspaceSummary = {
   id: string;

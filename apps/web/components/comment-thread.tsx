@@ -114,7 +114,7 @@ export function CommentThread({
             placeholder="Leave a comment. Use @name to notify someone."
             rows={3}
             aria-label="New comment"
-            className="w-full resize-none rounded-md border border-line bg-raised px-3 py-2 text-sm text-content outline-none focus:border-accent"
+            className="w-full resize-none rounded-md border border-line bg-raised px-3 py-2 text-sm text-content outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
           />
 
           <div className="mt-2 flex items-center justify-between">
