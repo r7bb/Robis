@@ -193,7 +193,7 @@ export async function channelRoutes(app: FastifyInstance, opts: { db: Database }
       const cursorId = decodeCursor(query.cursor);
       if (cursorId) {
         // Sort key read back from the row, not carried in the cursor -- see
-        // the note in packages/database/src/pagination.ts.
+        // the note in backend/database/src/pagination.ts.
         filters.push(
           sql`(${messages.createdAt}, ${messages.id}) < (
             select created_at, id from messages where id = ${cursorId}::uuid

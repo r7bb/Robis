@@ -1,6 +1,6 @@
 'use client';
 
-import { can } from '@relay/shared';
+import { can, type PresenceUser, type Role } from '@relay/shared';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -12,12 +12,64 @@ import { Avatar } from '../../components/ui/avatar.tsx';
 import { SectionLabel } from '../../components/ui/primitives.tsx';
 import { ErrorState, RoleBadge } from '../../components/ui.tsx';
 import { ApiError, api, type Me, type Member, type WorkspaceSummary } from '../../lib/api.ts';
-import { useRealtime } from '../../lib/realtime.ts';
+import { type ConnectionState, useRealtime } from '../../lib/realtime.ts';
 import { lastTheme, rememberTheme, useApplyTheme } from '../../lib/theme.ts';
 import { ChannelList } from '../chat/channel-list.tsx';
 import { ChatView } from '../chat/chat-view.tsx';
 import { useChannels, useCreateChannel } from '../chat/use-chat.ts';
 import { SidePanel } from './side-panel.tsx';
+
+/** Breadcrumb, search, presence, notifications, and the way out to /account. */
+function TopBar({
+  workspaceId,
+  workspaceName,
+  role,
+  presence,
+  realtimeState,
+  userName,
+  userId,
+}: {
+  workspaceId: string;
+  workspaceName: string;
+  role: Role | undefined;
+  presence: PresenceUser[];
+  realtimeState: ConnectionState;
+  userName: string | null;
+  userId: string | null;
+}) {
+  return (
+    <header className="flex shrink-0 items-center gap-4 border-b border-line bg-raised px-4 py-2">
+      <nav className="flex min-w-0 items-center gap-2 text-sm">
+        <Link href="/workspaces" className="shrink-0 text-faint hover:text-muted">
+          Workspaces
+        </Link>
+        <span className="text-faint">/</span>
+        <span className="truncate font-medium text-content">{workspaceName}</span>
+        {role ? <RoleBadge role={role} /> : null}
+      </nav>
+
+      <div className="ml-auto flex min-w-0 items-center gap-3">
+        {/* Hidden rather than wrapped on a narrow screen: the breadcrumb and
+            presence matter more than search at that width. */}
+        <div className="hidden w-64 md:block">
+          <SearchBox workspaceId={workspaceId} />
+        </div>
+
+        <PresenceBar users={presence} state={realtimeState} />
+        <NotificationBell />
+
+        <Link
+          href="/account"
+          className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+          aria-label="Your account"
+          title={userName ?? 'Your account'}
+        >
+          <Avatar name={userName ?? '?'} seed={userId ?? undefined} size="sm" />
+        </Link>
+      </div>
+    </header>
+  );
+}
 
 /**
  * Who is in the workspace, and who is here right now.
@@ -135,36 +187,15 @@ export function WorkspaceShell({ workspaceId }: { workspaceId: string }) {
     // `h-dvh` rather than `h-screen`: on mobile Safari `100vh` includes the
     // browser chrome, so the composer sits below the fold until you scroll.
     <div className="flex h-dvh flex-col overflow-hidden bg-surface">
-      <header className="flex shrink-0 items-center gap-4 border-b border-line bg-raised px-4 py-2">
-        <nav className="flex min-w-0 items-center gap-2 text-sm">
-          <Link href="/workspaces" className="shrink-0 text-faint hover:text-muted">
-            Workspaces
-          </Link>
-          <span className="text-faint">/</span>
-          <span className="truncate font-medium text-content">
-            {workspace.data?.workspace.name ?? '…'}
-          </span>
-          {role ? <RoleBadge role={role} /> : null}
-        </nav>
-
-        <div className="ml-auto flex min-w-0 items-center gap-3">
-          <div className="hidden w-64 md:block">
-            <SearchBox workspaceId={workspaceId} />
-          </div>
-
-          <PresenceBar users={presence} state={realtimeState} />
-          <NotificationBell />
-
-          <Link
-            href="/account"
-            className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
-            aria-label="Your account"
-            title={me.data?.user.name ?? 'Your account'}
-          >
-            <Avatar name={me.data?.user.name ?? '?'} seed={currentUserId ?? undefined} size="sm" />
-          </Link>
-        </div>
-      </header>
+      <TopBar
+        workspaceId={workspaceId}
+        workspaceName={workspace.data?.workspace.name ?? '…'}
+        role={role}
+        presence={presence}
+        realtimeState={realtimeState}
+        userName={me.data?.user.name ?? null}
+        userId={currentUserId}
+      />
 
       <div className="flex min-h-0 flex-1">
         <nav className="flex w-56 shrink-0 flex-col gap-4 overflow-y-auto border-r border-line bg-raised p-3">

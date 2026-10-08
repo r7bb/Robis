@@ -609,13 +609,13 @@ const childEnv = {
   API_LOG: '0',
 };
 
-const api = Bun.spawn(['bun', 'apps/api/src/main.ts'], {
+const api = Bun.spawn(['bun', 'backend/api/src/main.ts'], {
   env: childEnv,
   stdout: 'ignore',
   stderr: 'inherit',
 });
 
-const gateway = Bun.spawn(['bun', 'apps/realtime/src/main.ts'], {
+const gateway = Bun.spawn(['bun', 'backend/realtime/src/main.ts'], {
   env: childEnv,
   stdout: 'ignore',
   stderr: 'inherit',

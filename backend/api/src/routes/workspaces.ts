@@ -11,6 +11,7 @@ import { createWorkspaceSchema, slugify, updateWorkspaceSchema } from '@relay/sh
 
 /** The room every new workspace is born with. */
 const DEFAULT_CHANNEL_NAME = 'general';
+
 import { desc, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../errors.ts';

@@ -28,7 +28,7 @@
         "yjs": "^13.6.32",
       },
     },
-    "apps/api": {
+    "backend/api": {
       "name": "@relay/api",
       "version": "0.0.0",
       "dependencies": {
@@ -44,7 +44,37 @@
         "zod": "^4.0.0",
       },
     },
-    "apps/realtime": {
+    "backend/auth": {
+      "name": "@relay/auth",
+      "version": "0.0.0",
+      "dependencies": {
+        "@node-rs/argon2": "^2.0.2",
+        "@relay/database": "workspace:*",
+        "drizzle-orm": "^0.38.0",
+      },
+    },
+    "backend/database": {
+      "name": "@relay/database",
+      "version": "0.0.0",
+      "dependencies": {
+        "@relay/shared": "workspace:*",
+        "drizzle-orm": "^0.38.0",
+        "postgres": "^3.4.5",
+        "yjs": "^13.6.32",
+      },
+      "devDependencies": {
+        "drizzle-kit": "^0.30.0",
+      },
+    },
+    "backend/mailer": {
+      "name": "@relay/mailer",
+      "version": "0.0.0",
+    },
+    "backend/metrics": {
+      "name": "@relay/metrics",
+      "version": "0.0.0",
+    },
+    "backend/realtime": {
       "name": "@relay/realtime",
       "version": "0.0.0",
       "dependencies": {
@@ -55,7 +85,18 @@
         "yjs": "^13.6.32",
       },
     },
-    "apps/web": {
+    "backend/worker": {
+      "name": "@relay/worker",
+      "version": "0.0.0",
+      "dependencies": {
+        "@relay/auth": "workspace:*",
+        "@relay/database": "workspace:*",
+        "@relay/mailer": "workspace:*",
+        "@relay/shared": "workspace:*",
+        "drizzle-orm": "^0.38.0",
+      },
+    },
+    "frontend": {
       "name": "@relay/web",
       "version": "0.0.0",
       "dependencies": {
@@ -77,55 +118,14 @@
         "typescript": "^5.9.3",
       },
     },
-    "apps/worker": {
-      "name": "@relay/worker",
-      "version": "0.0.0",
-      "dependencies": {
-        "@relay/auth": "workspace:*",
-        "@relay/database": "workspace:*",
-        "@relay/mailer": "workspace:*",
-        "@relay/shared": "workspace:*",
-        "drizzle-orm": "^0.38.0",
-      },
-    },
-    "packages/auth": {
-      "name": "@relay/auth",
-      "version": "0.0.0",
-      "dependencies": {
-        "@node-rs/argon2": "^2.0.2",
-        "@relay/database": "workspace:*",
-        "drizzle-orm": "^0.38.0",
-      },
-    },
-    "packages/database": {
-      "name": "@relay/database",
-      "version": "0.0.0",
-      "dependencies": {
-        "@relay/shared": "workspace:*",
-        "drizzle-orm": "^0.38.0",
-        "postgres": "^3.4.5",
-        "yjs": "^13.6.32",
-      },
-      "devDependencies": {
-        "drizzle-kit": "^0.30.0",
-      },
-    },
-    "packages/mailer": {
-      "name": "@relay/mailer",
-      "version": "0.0.0",
-    },
-    "packages/metrics": {
-      "name": "@relay/metrics",
-      "version": "0.0.0",
-    },
-    "packages/shared": {
+    "shared/contracts": {
       "name": "@relay/shared",
       "version": "0.0.0",
       "dependencies": {
         "zod": "^4.0.0",
       },
     },
-    "packages/sync": {
+    "shared/sync": {
       "name": "@relay/sync",
       "version": "0.0.0",
       "dependencies": {
@@ -358,25 +358,25 @@
 
     "@pinojs/redact": ["@pinojs/redact@0.4.0", "", {}, "sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg=="],
 
-    "@relay/api": ["@relay/api@workspace:apps/api"],
+    "@relay/api": ["@relay/api@workspace:backend/api"],
 
-    "@relay/auth": ["@relay/auth@workspace:packages/auth"],
+    "@relay/auth": ["@relay/auth@workspace:backend/auth"],
 
-    "@relay/database": ["@relay/database@workspace:packages/database"],
+    "@relay/database": ["@relay/database@workspace:backend/database"],
 
-    "@relay/mailer": ["@relay/mailer@workspace:packages/mailer"],
+    "@relay/mailer": ["@relay/mailer@workspace:backend/mailer"],
 
-    "@relay/metrics": ["@relay/metrics@workspace:packages/metrics"],
+    "@relay/metrics": ["@relay/metrics@workspace:backend/metrics"],
 
-    "@relay/realtime": ["@relay/realtime@workspace:apps/realtime"],
+    "@relay/realtime": ["@relay/realtime@workspace:backend/realtime"],
 
-    "@relay/shared": ["@relay/shared@workspace:packages/shared"],
+    "@relay/shared": ["@relay/shared@workspace:shared/contracts"],
 
-    "@relay/sync": ["@relay/sync@workspace:packages/sync"],
+    "@relay/sync": ["@relay/sync@workspace:shared/sync"],
 
-    "@relay/web": ["@relay/web@workspace:apps/web"],
+    "@relay/web": ["@relay/web@workspace:frontend"],
 
-    "@relay/worker": ["@relay/worker@workspace:apps/worker"],
+    "@relay/worker": ["@relay/worker@workspace:backend/worker"],
 
     "@swc/helpers": ["@swc/helpers@0.5.15", "", { "dependencies": { "tslib": "^2.8.0" } }, "sha512-JQ5TuMi45Owi4/BIMAJBoSQoOJu12oOk/gADqlcUL9JEdHB8vyjUSsxqeNXnmXHjYKMi2WcYtezGEEhqUI/E2g=="],
 

@@ -174,10 +174,15 @@ describe('workspace theme', () => {
  * tests never render.
  */
 describe('no hardcoded colours outside the palette', () => {
-  const SOURCE_DIRS = ['apps/web/app', 'apps/web/components'];
+  const SOURCE_DIRS = ['frontend/app', 'frontend/components', 'frontend/features'];
 
   /** Fixed by design: avatar initials sit on saturated, unthemed backgrounds. */
-  const ALLOWED = new Set(['apps/web/components/presence.tsx']);
+  const ALLOWED = new Set([
+    'frontend/components/presence.tsx',
+    // The online dot and the ring that cuts it out of the avatar. Green
+    // means "here" in every theme, so it must not move with one.
+    'frontend/features/workspace/shell.tsx',
+  ]);
 
   function sourceFiles(): string[] {
     const files: string[] = [];

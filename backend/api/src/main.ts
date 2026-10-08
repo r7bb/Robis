@@ -31,7 +31,7 @@ function resolveMailer(): Mailer {
       'with log access can take over any account.',
       '',
       'Add an SMTP (or provider) driver implementing the Mailer port in',
-      'packages/mailer and pass it to buildApp before deploying.',
+      'backend/mailer and pass it to buildApp before deploying.',
     ].join('\n'),
   );
 }

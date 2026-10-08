@@ -293,10 +293,11 @@ describe('rescheduling and cancelling', () => {
       actor: owner,
     });
 
-    const response = await request(
-      `/workspaces/${mine.id}/meetings/${created.json().meeting.id}`,
-      { method: 'PATCH', payload: { title: 'Peeked' }, actor: outsider },
-    );
+    const response = await request(`/workspaces/${mine.id}/meetings/${created.json().meeting.id}`, {
+      method: 'PATCH',
+      payload: { title: 'Peeked' },
+      actor: outsider,
+    });
 
     expect(response.statusCode).toBe(404);
   });

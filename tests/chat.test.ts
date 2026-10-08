@@ -82,7 +82,7 @@ describe('channels', () => {
     const owner = await createActor('Owner');
     const guest = await createActor('Guest');
     const workspace = await createWorkspace(owner);
-    await addMember(owner, workspace.id,guest, 'GUEST');
+    await addMember(owner, workspace.id, guest, 'GUEST');
 
     const response = await request(`/workspaces/${workspace.id}/channels`, {
       method: 'POST',
@@ -111,10 +111,11 @@ describe('messages', () => {
     const workspace = await createWorkspace(owner);
     const channel = await generalChannel(owner, workspace.id);
 
-    const posted = await request(
-      `/workspaces/${workspace.id}/channels/${channel.id}/messages`,
-      { method: 'POST', payload: { body: 'Morning' }, actor: owner },
-    );
+    const posted = await request(`/workspaces/${workspace.id}/channels/${channel.id}/messages`, {
+      method: 'POST',
+      payload: { body: 'Morning' },
+      actor: owner,
+    });
 
     expect(posted.statusCode).toBe(201);
     expect(posted.json().message.authorName).toBe('Owner');
@@ -132,10 +133,11 @@ describe('messages', () => {
     const workspace = await createWorkspace(owner);
     const channel = await generalChannel(owner, workspace.id);
 
-    const response = await request(
-      `/workspaces/${workspace.id}/channels/${channel.id}/messages`,
-      { method: 'POST', payload: { body: '   ' }, actor: owner },
-    );
+    const response = await request(`/workspaces/${workspace.id}/channels/${channel.id}/messages`, {
+      method: 'POST',
+      payload: { body: '   ' },
+      actor: owner,
+    });
 
     // The schema trims before checking the minimum, so this is not a
     // one-space message -- it is an empty one.
@@ -146,13 +148,14 @@ describe('messages', () => {
     const owner = await createActor('Owner');
     const guest = await createActor('Guest');
     const workspace = await createWorkspace(owner);
-    await addMember(owner, workspace.id,guest, 'GUEST');
+    await addMember(owner, workspace.id, guest, 'GUEST');
     const channel = await generalChannel(owner, workspace.id);
 
-    const response = await request(
-      `/workspaces/${workspace.id}/channels/${channel.id}/messages`,
-      { method: 'POST', payload: { body: 'Hello' }, actor: guest },
-    );
+    const response = await request(`/workspaces/${workspace.id}/channels/${channel.id}/messages`, {
+      method: 'POST',
+      payload: { body: 'Hello' },
+      actor: guest,
+    });
 
     expect(response.statusCode).toBe(201);
   });
@@ -202,10 +205,9 @@ describe('messages', () => {
     // Authenticated, a member of *something*, and guessing an id from
     // elsewhere. The workspace in the path is their own, so membership
     // passes -- only the tenancy check on the channel stops this.
-    const response = await request(
-      `/workspaces/${mine.id}/channels/${theirChannel.id}/messages`,
-      { actor: outsider },
-    );
+    const response = await request(`/workspaces/${mine.id}/channels/${theirChannel.id}/messages`, {
+      actor: outsider,
+    });
 
     expect(response.statusCode).toBe(404);
   });
@@ -214,17 +216,18 @@ describe('messages', () => {
     const owner = await createActor('Owner');
     const member = await createActor('Member');
     const workspace = await createWorkspace(owner);
-    await addMember(owner, workspace.id,member, 'MEMBER');
+    await addMember(owner, workspace.id, member, 'MEMBER');
     const channel = await generalChannel(owner, workspace.id);
 
-    const posted = await request(
-      `/workspaces/${workspace.id}/channels/${channel.id}/messages`,
-      { method: 'POST', payload: { body: 'Mine' }, actor: member },
-    );
+    const posted = await request(`/workspaces/${workspace.id}/channels/${channel.id}/messages`, {
+      method: 'POST',
+      payload: { body: 'Mine' },
+      actor: member,
+    });
     const messageId = posted.json().message.id;
 
     const peer = await createActor('Peer');
-    await addMember(owner, workspace.id,peer, 'MEMBER');
+    await addMember(owner, workspace.id, peer, 'MEMBER');
 
     const refused = await request(`/workspaces/${workspace.id}/messages/${messageId}`, {
       method: 'DELETE',
@@ -243,13 +246,14 @@ describe('messages', () => {
     const owner = await createActor('Owner');
     const member = await createActor('Member');
     const workspace = await createWorkspace(owner);
-    await addMember(owner, workspace.id,member, 'MEMBER');
+    await addMember(owner, workspace.id, member, 'MEMBER');
     const channel = await generalChannel(owner, workspace.id);
 
-    const posted = await request(
-      `/workspaces/${workspace.id}/channels/${channel.id}/messages`,
-      { method: 'POST', payload: { body: 'Off topic' }, actor: member },
-    );
+    const posted = await request(`/workspaces/${workspace.id}/channels/${channel.id}/messages`, {
+      method: 'POST',
+      payload: { body: 'Off topic' },
+      actor: member,
+    });
 
     const response = await request(
       `/workspaces/${workspace.id}/messages/${posted.json().message.id}`,
