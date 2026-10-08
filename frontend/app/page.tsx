@@ -11,6 +11,7 @@ import {
   Hero,
   OfflineStory,
   REPO,
+  Stack,
 } from '../features/landing/sections.tsx';
 import { useScrolled } from '../features/landing/use-scroll.ts';
 import { api, type Me } from '../lib/api.ts';
@@ -93,6 +94,7 @@ export default function Home() {
       <main>
         <Hero href={href} label={label} />
         <OfflineStory />
+        <Stack />
         <Documents />
         <Capabilities />
         <Decisions />

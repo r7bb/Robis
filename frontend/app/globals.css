@@ -120,6 +120,37 @@ body {
 }
 
 /*
+ * The stack marquee.
+ *
+ * Translating by exactly -50% of a track holding two identical lanes puts
+ * the second lane precisely where the first began, so the restart is
+ * invisible. Any other distance leaves a seam.
+ *
+ * `transform` only, so the compositor owns it and the main thread does no
+ * work per frame. Linear easing on purpose: a marquee that accelerates
+ * and decelerates reads as broken rather than continuous.
+ */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 42s linear infinite;
+  /* Promote once rather than on every frame. */
+  will-change: transform;
+}
+
+/* Hovering stops it, so a reader can actually look at a logo. */
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/*
  * Reduced motion removes the movement, not the content.
  *
  * Everything lands in its final state immediately. A reveal that never fires

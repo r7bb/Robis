@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { BANDS, Band, FILLED, Headline, OUTLINED, Shot, Subhead } from './band.tsx';
 import { Counter, Reveal } from './motion.tsx';
+import { StackMarquee } from './stack.tsx';
 import { useActiveStep } from './use-scroll.ts';
 
 /**
@@ -98,12 +99,26 @@ export function Hero({ href, label }: { href: string; label: string }) {
           <p className="mt-3 text-xs text-faint">Measured by the benchmark in this repository.</p>
         </Reveal>
 
+        {/*
+         * Cropped, not scaled. The board screenshot is 16:10 and its lower
+         * third is empty column space, which at hero size reads as a
+         * product with nothing in it. A 2:1 window with `object-top` keeps
+         * the columns and their cards and drops the tail, so what is shown
+         * is deliberate rather than whatever the capture happened to
+         * include.
+         */}
         <Reveal delay={260} className="mt-[clamp(2.5rem,6vh,4.5rem)]">
-          <Shot
-            src="/shots/board.png"
-            alt="The Relay issue board, with a column per status and coloured priority badges."
-            priority
-          />
+          <div className="relative mx-auto aspect-[2/1] w-full overflow-hidden rounded-xl border border-white/10 shadow-2xl shadow-black/60">
+            <Image
+              src="/shots/board.png"
+              alt="The Relay issue board, with a column per status and coloured priority badges."
+              width={1440}
+              height={900}
+              priority
+              sizes="(max-width: 1024px) 100vw, 1100px"
+              className="absolute inset-0 h-full w-full object-cover object-top"
+            />
+          </div>
         </Reveal>
       </div>
     </Band>
@@ -217,6 +232,22 @@ export function OfflineStory() {
         </div>
       </div>
     </section>
+  );
+}
+
+export function Stack() {
+  return (
+    <Band tone="raised">
+      <Reveal>
+        <Headline>Built with.</Headline>
+        <Subhead>
+          No framework doing the hard part. The interesting pieces are the ones that are not here:
+          no Redis, no queue broker, no search cluster.
+        </Subhead>
+      </Reveal>
+
+      <StackMarquee />
+    </Band>
   );
 }
 
