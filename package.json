@@ -9,23 +9,28 @@
   ],
   "scripts": {
     "postinstall": "bun run scripts/db/fix-pg-dylibs.ts",
+
+    "//dev": "Run from the repository root, not via --filter: Bun loads .env from the working directory, and --filter would start each service in its own package directory where there is none.",
+    "dev:api": "bun --watch backend/api/src/main.ts",
+    "dev:realtime": "bun --watch backend/realtime/src/main.ts",
+    "dev:worker": "bun --watch backend/worker/src/main.ts",
+    "dev:web": "bun --filter '@relay/web' dev",
+    "start:api": "bun backend/api/src/main.ts",
+
     "db:start": "bun run scripts/db/dev-db.ts start",
     "db:stop": "bun run scripts/db/dev-db.ts stop",
     "db:reset": "bun run scripts/db/dev-db.ts reset",
-    "db:push": "bun --filter '@relay/database' push",
+    "db:migrate": "bun run scripts/db/migrate.ts",
     "db:seed": "bun run scripts/db/seed.ts",
-    "dev:api": "bun --watch backend/api/src/main.ts",
-    "dev:web": "bun --filter '@relay/web' dev",
-    "test": "bun test",
-    "typecheck": "tsc --noEmit -p shared/contracts && tsc --noEmit -p backend/metrics && tsc --noEmit -p backend/mailer && tsc --noEmit -p backend/auth && tsc --noEmit -p backend/database && tsc --noEmit -p shared/sync && tsc --noEmit -p backend/api && tsc --noEmit -p backend/realtime && tsc --noEmit -p backend/worker && tsc --noEmit -p scripts && tsc --noEmit -p frontend",
-    "start:api": "bun backend/api/src/main.ts",
+    "db:push": "bun --filter '@relay/database' push",
     "grant:owner": "bun run scripts/db/grant-owner.ts",
-    "dev:realtime": "bun --watch backend/realtime/src/main.ts",
+
+    "test": "bun test",
+    "typecheck": "tsc --noEmit -p shared/contracts && tsc --noEmit -p shared/sync && tsc --noEmit -p backend/metrics && tsc --noEmit -p backend/mailer && tsc --noEmit -p backend/auth && tsc --noEmit -p backend/database && tsc --noEmit -p backend/api && tsc --noEmit -p backend/realtime && tsc --noEmit -p backend/worker && tsc --noEmit -p scripts && tsc --noEmit -p frontend",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
-    "dev:worker": "bun --watch backend/worker/src/main.ts",
-    "db:migrate": "bun run scripts/db/migrate.ts",
+
     "loadtest": "bun run scripts/bench/loadtest.ts",
     "screenshots": "bun run scripts/capture/screenshots.ts"
   },

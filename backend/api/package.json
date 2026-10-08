@@ -8,10 +8,6 @@
     "./env": "./src/env.ts",
     "./rate-limit": "./src/plugins/rate-limit.ts"
   },
-  "scripts": {
-    "dev": "bun --watch src/main.ts",
-    "start": "bun src/main.ts"
-  },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^10.0.2",
