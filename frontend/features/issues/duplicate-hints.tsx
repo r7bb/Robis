@@ -82,7 +82,7 @@ export function DuplicateHints({ workspaceId, title }: { workspaceId: string; ti
           <li key={issue.id}>
             <Link
               href={`/workspaces/${workspaceId}/issues/${issue.id}`}
-              className="flex items-baseline justify-between gap-3 rounded px-2 py-1 text-sm text-muted transition-colors duration-[--micro] ease-[--ease] hover:bg-amber-400/10 hover:text-content"
+              className="flex items-baseline justify-between gap-3 rounded px-2 py-1 text-sm text-muted transition-colors duration-[var(--micro)] ease-[var(--ease)] hover:bg-amber-400/10 hover:text-content"
             >
               <span className="truncate">{issue.title}</span>
 

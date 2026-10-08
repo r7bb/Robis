@@ -7,6 +7,7 @@ import {
   Capabilities,
   Closing,
   Decisions,
+  Documents,
   Hero,
   Measurements,
   OfflineStory,
@@ -59,7 +60,7 @@ export default function Home() {
         <nav className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-6">
           <Link
             href="/"
-            className="text-content transition-opacity duration-[--micro] ease-[--ease] hover:opacity-80"
+            className="text-content transition-opacity duration-[var(--micro)] ease-[var(--ease)] hover:opacity-80"
           >
             <Logo size={32} />
           </Link>
@@ -67,20 +68,20 @@ export default function Home() {
           <div className="ml-auto flex items-center gap-5 text-sm">
             <a
               href={`${REPO}#architecture`}
-              className="hidden text-muted transition-colors duration-[--micro] ease-[--ease] hover:text-content sm:block"
+              className="hidden text-muted transition-colors duration-[var(--micro)] ease-[var(--ease)] hover:text-content sm:block"
             >
               Architecture
             </a>
             <a
               href={REPO}
-              className="hidden text-muted transition-colors duration-[--micro] ease-[--ease] hover:text-content sm:block"
+              className="hidden text-muted transition-colors duration-[var(--micro)] ease-[var(--ease)] hover:text-content sm:block"
             >
               Source
             </a>
 
             <Link
               href={href}
-              className="rounded-full bg-accent px-4 py-1.5 font-semibold text-accent-contrast transition-colors duration-[--micro] ease-[--ease] hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+              className="rounded-full bg-accent px-4 py-1.5 font-semibold text-accent-contrast transition-colors duration-[var(--micro)] ease-[var(--ease)] hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
             >
               {label}
             </Link>
@@ -92,6 +93,7 @@ export default function Home() {
         <Hero href={href} label={label} />
         <OfflineStory />
         <Measurements />
+        <Documents />
         <Capabilities />
         <Decisions />
         <Closing href={href} label={label} />
@@ -107,13 +109,13 @@ export default function Home() {
           />
           <a
             href={REPO}
-            className="transition-colors duration-[--micro] ease-[--ease] hover:text-muted"
+            className="transition-colors duration-[var(--micro)] ease-[var(--ease)] hover:text-muted"
           >
             GitHub
           </a>
           <Link
             href="/login"
-            className="transition-colors duration-[--micro] ease-[--ease] hover:text-muted"
+            className="transition-colors duration-[var(--micro)] ease-[var(--ease)] hover:text-muted"
           >
             Sign in
           </Link>
