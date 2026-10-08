@@ -1,5 +1,6 @@
 import {
   auditEvents,
+  channels,
   type Database,
   type Executor,
   users,
@@ -7,6 +8,9 @@ import {
   workspaces,
 } from '@relay/database';
 import { createWorkspaceSchema, slugify, updateWorkspaceSchema } from '@relay/shared';
+
+/** The room every new workspace is born with. */
+const DEFAULT_CHANNEL_NAME = 'general';
 import { desc, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../errors.ts';
@@ -84,6 +88,21 @@ export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database
         workspaceId: created.id,
         userId: user.id,
         role: 'OWNER',
+      });
+
+      /*
+       * Every workspace starts with somewhere to talk.
+       *
+       * Without this the shell opens on an empty centre column and the first
+       * thing a new owner has to do is guess that chat needs a room created
+       * first. In the same transaction as the workspace, so there is no state
+       * where one exists without the other.
+       */
+      await tx.insert(channels).values({
+        workspaceId: created.id,
+        name: DEFAULT_CHANNEL_NAME,
+        topic: 'Anything that does not belong anywhere else.',
+        createdById: user.id,
       });
 
       await tx.insert(auditEvents).values({

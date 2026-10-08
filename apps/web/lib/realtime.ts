@@ -90,6 +90,30 @@ export function useRealtime(
           invalidate(['members', event.workspaceId]);
           invalidate(['workspace', event.workspaceId]);
           return;
+
+        /*
+         * Chat invalidates rather than appending the pushed row, for the
+         * reason in this hook's doc comment: the event carries ids only, so
+         * the message is re-read through the authorised endpoint. It costs a
+         * round trip per message and buys one place where access is decided.
+         */
+        case 'message.created':
+        case 'message.deleted':
+          invalidate(['messages', event.workspaceId, event.channelId]);
+          return;
+
+        case 'channel.created':
+        case 'channel.deleted':
+          invalidate(['channels', event.workspaceId]);
+          return;
+
+        case 'meeting.changed':
+          invalidate(['meetings', event.workspaceId]);
+          return;
+
+        case 'document.created':
+          invalidate(['documents', event.workspaceId]);
+          return;
       }
     }
 

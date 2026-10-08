@@ -1,6 +1,14 @@
 import { z } from 'zod';
 import { ISSUE_PRIORITIES, ISSUE_STATUSES } from './domain.ts';
-import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from './limits.ts';
+import {
+  CHANNEL_NAME_MAX_LENGTH,
+  MEETING_MAX_MINUTES,
+  MEETING_MIN_MINUTES,
+  MESSAGE_MAX_LENGTH,
+  MESSAGE_PAGE_SIZE,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+} from './limits.ts';
 import { ROLES } from './rbac.ts';
 import { THEME_IDS } from './themes.ts';
 
@@ -202,3 +210,105 @@ export const updateDocumentSchema = z
   .object({ title: z.string().trim().min(1).max(200) })
   .partial()
   .refine((v) => Object.keys(v).length > 0, { message: 'No fields to update' });
+
+/**
+ * Channel names are normalised, not merely validated.
+ *
+ * `#General`, `#general ` and `#general` are the same room to a human, and a
+ * unique index on the raw column would happily store all three. Lowercasing
+ * and collapsing whitespace into hyphens on the way in means the index
+ * enforces what people actually mean by "already taken".
+ */
+export const channelNameSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .transform((value) => value.replace(/[\s_]+/g, '-').replace(/[^a-z0-9-]/g, ''))
+  // Checked after the transform: stripping punctuation can empty a string
+  // that looked fine, and `#` alone is not a channel name.
+  .pipe(
+    z
+      .string()
+      .min(1, 'Channel name must have at least one letter or number')
+      .max(CHANNEL_NAME_MAX_LENGTH),
+  );
+
+export const createChannelSchema = z.object({
+  name: channelNameSchema,
+  topic: z.string().trim().max(200).nullable().optional(),
+});
+export type CreateChannelInput = z.infer<typeof createChannelSchema>;
+
+export const updateChannelSchema = z
+  .object({
+    name: channelNameSchema,
+    topic: z.string().trim().max(200).nullable(),
+  })
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, { message: 'No fields to update' });
+export type UpdateChannelInput = z.infer<typeof updateChannelSchema>;
+
+export const createMessageSchema = z.object({
+  body: z.string().trim().min(1).max(MESSAGE_MAX_LENGTH),
+});
+export type CreateMessageInput = z.infer<typeof createMessageSchema>;
+
+export const listMessagesQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(MESSAGE_PAGE_SIZE),
+  /** Names the oldest message already shown; the next page is older still. */
+  cursor: z.string().max(200).optional(),
+});
+
+/**
+ * A join link, if there is one.
+ *
+ * Restricted to `https` because these links are shown to the whole workspace
+ * and clicked without much thought. Allowing arbitrary schemes would make the
+ * field a stored-XSS vector via `javascript:` and a phishing surface via
+ * anything else; `http` is excluded because a meeting link is a bearer
+ * credential for a room.
+ */
+export const joinUrlSchema = z
+  .string()
+  .trim()
+  .max(2000)
+  .refine((value) => value === '' || /^https:\/\/\S+$/i.test(value), {
+    message: 'Join link must be an https:// URL',
+  })
+  // Empty means "no link", which is a legitimate meeting (a room number, a
+  // corridor) -- stored as null rather than an empty string.
+  .transform((value) => (value === '' ? null : value));
+
+export const createMeetingSchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  agenda: z.string().trim().max(5000).nullable().optional(),
+  /** ISO 8601, parsed to a Date here so the route never handles a raw string. */
+  startsAt: z.coerce.date(),
+  durationMinutes: z.coerce
+    .number()
+    .int()
+    .min(MEETING_MIN_MINUTES)
+    .max(MEETING_MAX_MINUTES)
+    .default(30),
+  joinUrl: joinUrlSchema.nullable().optional(),
+  /** Who to invite. The organiser is added by the server regardless. */
+  attendeeIds: z.array(uuid).max(200).optional(),
+});
+export type CreateMeetingInput = z.infer<typeof createMeetingSchema>;
+
+export const updateMeetingSchema = z
+  .object({
+    title: z.string().trim().min(1).max(200),
+    agenda: z.string().trim().max(5000).nullable(),
+    startsAt: z.coerce.date(),
+    durationMinutes: z.coerce.number().int().min(MEETING_MIN_MINUTES).max(MEETING_MAX_MINUTES),
+    joinUrl: joinUrlSchema.nullable(),
+  })
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, { message: 'No fields to update' });
+export type UpdateMeetingInput = z.infer<typeof updateMeetingSchema>;
+
+export const respondToMeetingSchema = z.object({
+  response: z.enum(['yes', 'no', 'maybe']),
+});
+export type RespondToMeetingInput = z.infer<typeof respondToMeetingSchema>;

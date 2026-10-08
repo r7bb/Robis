@@ -9,9 +9,11 @@ import { createMetrics, registerMetrics } from './metrics.ts';
 import { attachUser } from './plugins/authz.ts';
 import { authRoutes } from './routes/auth.ts';
 import { authRecoveryRoutes } from './routes/auth-recovery.ts';
+import { channelRoutes } from './routes/channels.ts';
 import { commentRoutes } from './routes/comments.ts';
 import { documentRoutes } from './routes/documents.ts';
 import { issueRoutes } from './routes/issues.ts';
+import { meetingRoutes } from './routes/meetings.ts';
 import { memberRoutes } from './routes/members.ts';
 import { notificationRoutes } from './routes/notifications.ts';
 import { projectRoutes } from './routes/projects.ts';
@@ -113,6 +115,8 @@ export function buildApp({
   app.register(issueRoutes, { db });
   app.register(commentRoutes, { db });
   app.register(documentRoutes, { db });
+  app.register(channelRoutes, { db });
+  app.register(meetingRoutes, { db });
   app.register(notificationRoutes, { db });
   app.register(searchRoutes, { db, limits });
 

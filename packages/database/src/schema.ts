@@ -515,6 +515,149 @@ export const mutations = pgTable(
   (t) => [index('mutations_user_created_idx').on(t.userId, t.createdAt)],
 );
 
+/**
+ * Workspace chat channels.
+ *
+ * Relay already had threaded comments, but a comment hangs off an issue:
+ * there was nowhere to say something that is not about one piece of work.
+ * Channels are that place -- a per-workspace room list, each room an ordered
+ * log of messages.
+ *
+ * Deliberately not direct messages. DMs need a different privacy story (who
+ * may read the transcript, what an export contains, what happens when
+ * somebody leaves the workspace) and bolting them onto a workspace-scoped
+ * table would answer those questions badly and silently. A channel is
+ * readable by exactly the people who can read the workspace -- a rule that
+ * already exists, and is already tested.
+ */
+export const channels = pgTable(
+  'channels',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    /** Lowercase and hyphenated, so it reads as `#general` wherever shown. */
+    name: text('name').notNull(),
+    topic: text('topic'),
+    /**
+     * Null once the creator's account is gone. The channel outlives them --
+     * deleting a departing colleague's account must not delete the team's
+     * conversation.
+     */
+    createdById: uuid('created_by_id').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [uniqueIndex('channels_workspace_name_key').on(t.workspaceId, t.name)],
+);
+
+/**
+ * One chat message.
+ *
+ * `workspaceId` is denormalised from the channel. It is redundant, and it is
+ * worth it: every read is already scoped by workspace for tenancy, and
+ * carrying the column means that filter is an index lookup rather than a join
+ * back to `channels` on the hot path.
+ *
+ * Author deletion is `restrict`, matching comments: a message with no author
+ * is a transcript that lies about who said what.
+ */
+export const messages = pgTable(
+  'messages',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    channelId: uuid('channel_id')
+      .notNull()
+      .references(() => channels.id, { onDelete: 'cascade' }),
+    authorId: uuid('author_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    body: text('body').notNull(),
+    /** Null until edited, so "(edited)" is a fact about the row, not a guess. */
+    editedAt: timestamp('edited_at', { withTimezone: true }),
+    createdAt: createdAt(),
+    searchVector: tsvector('search_vector').generatedAlwaysAs(
+      sql`to_tsvector('english', coalesce(body, ''))`,
+    ),
+  },
+  (t) => [
+    /*
+     * Matches the keyset order exactly -- newest first, `id` as tiebreaker --
+     * so scrolling back through history is an index range scan rather than a
+     * sort of the whole channel.
+     */
+    index('messages_channel_created_idx').on(t.channelId, t.createdAt, t.id),
+    index('messages_search_idx').using('gin', t.searchVector),
+  ],
+);
+
+/**
+ * A scheduled meeting.
+ *
+ * Relay stores the *plan*, never the call. `joinUrl` is whatever link the
+ * organiser supplies -- the UI can offer to generate one, but the server
+ * neither mints nor validates rooms on anybody's conferencing service. That
+ * keeps a third-party dependency out of the request path, and keeps Relay
+ * from implying a relationship with a provider it does not have.
+ *
+ * `durationMinutes` rather than an end timestamp: it is what the organiser
+ * actually chooses, and an end time derived once on write would be wrong the
+ * moment the start moves.
+ */
+export const meetings = pgTable(
+  'meetings',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    agenda: text('agenda'),
+    startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
+    durationMinutes: integer('duration_minutes').notNull().default(30),
+    joinUrl: text('join_url'),
+    organizerId: uuid('organizer_id').references(() => users.id, { onDelete: 'set null' }),
+    canceledAt: timestamp('canceled_at', { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    // "What is coming up in this workspace" is the only way this is read.
+    index('meetings_workspace_starts_idx').on(t.workspaceId, t.startsAt),
+  ],
+);
+
+/** What an invitee said. `pending` is the absence of an answer, stored
+ * explicitly so the UI can distinguish "has not replied" from "not invited". */
+export const MEETING_RESPONSES = ['pending', 'yes', 'no', 'maybe'] as const;
+export type MeetingResponse = (typeof MEETING_RESPONSES)[number];
+
+export const meetingResponseEnum = pgEnum('meeting_response', MEETING_RESPONSES);
+
+export const meetingAttendees = pgTable(
+  'meeting_attendees',
+  {
+    meetingId: uuid('meeting_id')
+      .notNull()
+      .references(() => meetings.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    response: meetingResponseEnum('response').notNull().default('pending'),
+    respondedAt: timestamp('responded_at', { withTimezone: true }),
+  },
+  (t) => [
+    // The pair is the identity: one row per person per meeting, enforced
+    // rather than deduplicated after the fact.
+    primaryKey({ columns: [t.meetingId, t.userId] }),
+    index('meeting_attendees_user_idx').on(t.userId),
+  ],
+);
+
 export const usersRelations = relations(users, ({ many }) => ({
   memberships: many(workspaceMembers),
   sessions: many(sessions),
@@ -553,6 +696,27 @@ export const commentsRelations = relations(comments, ({ one }) => ({
   author: one(users, { fields: [comments.authorId], references: [users.id] }),
 }));
 
+export const channelsRelations = relations(channels, ({ one, many }) => ({
+  workspace: one(workspaces, { fields: [channels.workspaceId], references: [workspaces.id] }),
+  messages: many(messages),
+}));
+
+export const messagesRelations = relations(messages, ({ one }) => ({
+  channel: one(channels, { fields: [messages.channelId], references: [channels.id] }),
+  author: one(users, { fields: [messages.authorId], references: [users.id] }),
+}));
+
+export const meetingsRelations = relations(meetings, ({ one, many }) => ({
+  workspace: one(workspaces, { fields: [meetings.workspaceId], references: [workspaces.id] }),
+  organizer: one(users, { fields: [meetings.organizerId], references: [users.id] }),
+  attendees: many(meetingAttendees),
+}));
+
+export const meetingAttendeesRelations = relations(meetingAttendees, ({ one }) => ({
+  meeting: one(meetings, { fields: [meetingAttendees.meetingId], references: [meetings.id] }),
+  user: one(users, { fields: [meetingAttendees.userId], references: [users.id] }),
+}));
+
 export type User = typeof users.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
 export type Workspace = typeof workspaces.$inferSelect;
@@ -566,3 +730,7 @@ export type Job = typeof jobs.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type Document = typeof documents.$inferSelect;
 export type DocumentUpdate = typeof documentUpdates.$inferSelect;
+export type Channel = typeof channels.$inferSelect;
+export type Message = typeof messages.$inferSelect;
+export type Meeting = typeof meetings.$inferSelect;
+export type MeetingAttendee = typeof meetingAttendees.$inferSelect;

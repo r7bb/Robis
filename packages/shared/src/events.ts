@@ -39,7 +39,33 @@ export type ServerEvent =
   | { type: 'project.deleted'; workspaceId: string; projectId: string; actorId: string }
   | { type: 'comment.created'; workspaceId: string; issueId: string; actorId: string }
   | { type: 'member.changed'; workspaceId: string; actorId: string }
-  | { type: 'document.created'; workspaceId: string; documentId: string; actorId: string };
+  | { type: 'document.created'; workspaceId: string; documentId: string; actorId: string }
+  /*
+   * Chat carries no body on the wire.
+   *
+   * A NOTIFY payload is capped at 8000 bytes and fans out to every connected
+   * member, including ones whose role may have changed since they connected.
+   * Sending only the ids means the client re-reads the message through the
+   * same authorised endpoint everything else uses, so there is exactly one
+   * place that decides who may see a message.
+   */
+  | {
+      type: 'message.created';
+      workspaceId: string;
+      channelId: string;
+      messageId: string;
+      actorId: string;
+    }
+  | {
+      type: 'message.deleted';
+      workspaceId: string;
+      channelId: string;
+      messageId: string;
+      actorId: string;
+    }
+  | { type: 'channel.created'; workspaceId: string; channelId: string; actorId: string }
+  | { type: 'channel.deleted'; workspaceId: string; channelId: string; actorId: string }
+  | { type: 'meeting.changed'; workspaceId: string; meetingId: string; actorId: string };
 
 export type PresenceUser = {
   userId: string;

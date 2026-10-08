@@ -40,6 +40,25 @@ export const PERMISSIONS = [
   'comment:delete_own',
   /** Delete anyone's comment (moderation). */
   'comment:delete_any',
+
+  'channel:read',
+  'channel:create',
+  /** Rename a channel or change its topic. */
+  'channel:update',
+  'channel:delete',
+
+  'message:create',
+  /** Delete a message you wrote. */
+  'message:delete_own',
+  /** Delete anyone's message (moderation). */
+  'message:delete_any',
+
+  'meeting:read',
+  'meeting:create',
+  /** Reschedule or cancel a meeting you organised. */
+  'meeting:manage_own',
+  /** Reschedule or cancel anyone's meeting. */
+  'meeting:manage_any',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -50,9 +69,25 @@ const READ_ONLY: readonly Permission[] = [
   'project:read',
   'issue:read',
   'comment:read',
+  'channel:read',
+  'meeting:read',
 ];
 
-const GUEST: readonly Permission[] = [...READ_ONLY, 'comment:create', 'comment:delete_own'];
+/*
+ * Guests talk.
+ *
+ * They can already comment on issues, so withholding chat would be an odd
+ * line to draw: a guest contractor who can argue about a ticket but cannot
+ * answer "are you free Thursday?" is a worse product and no safer. What they
+ * still cannot do is create or reshape rooms.
+ */
+const GUEST: readonly Permission[] = [
+  ...READ_ONLY,
+  'comment:create',
+  'comment:delete_own',
+  'message:create',
+  'message:delete_own',
+];
 
 const MEMBER: readonly Permission[] = [
   ...GUEST,
@@ -61,6 +96,9 @@ const MEMBER: readonly Permission[] = [
   'issue:create',
   'issue:update',
   'issue:delete',
+  'channel:create',
+  'meeting:create',
+  'meeting:manage_own',
 ];
 
 const ADMIN: readonly Permission[] = [
@@ -71,6 +109,10 @@ const ADMIN: readonly Permission[] = [
   'member:set_role',
   'project:delete',
   'comment:delete_any',
+  'channel:update',
+  'channel:delete',
+  'message:delete_any',
+  'meeting:manage_any',
 ];
 
 /** Owners differ from admins only by being able to destroy the workspace. */
