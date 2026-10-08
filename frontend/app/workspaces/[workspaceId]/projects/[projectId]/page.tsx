@@ -8,6 +8,7 @@ import { type FormEvent, useEffect, useState } from 'react';
 import { DeleteButton } from '../../../../../components/delete-button.tsx';
 import { PresenceBar } from '../../../../../components/presence.tsx';
 import { SyncStatus } from '../../../../../components/sync-status.tsx';
+import { PriorityBadge, StatusHeading } from '../../../../../components/ui/badges.tsx';
 import { ErrorState } from '../../../../../components/ui/primitives.tsx';
 import { api, type WorkspaceSummary } from '../../../../../lib/api.ts';
 import { useRealtime } from '../../../../../lib/realtime.ts';
@@ -107,10 +108,7 @@ export default function BoardPage() {
 
           return (
             <section key={column} className="rounded-lg border border-line bg-raised/50 p-3">
-              <h2 className="flex items-baseline justify-between text-xs font-medium uppercase tracking-wide text-muted">
-                {COLUMN_LABELS[column]}
-                <span className="text-faint">{columnIssues.length}</span>
-              </h2>
+              <StatusHeading status={column} count={columnIssues.length} />
 
               <ul className="mt-3 space-y-2">
                 {columnIssues.map((issue) => (
@@ -142,11 +140,7 @@ export default function BoardPage() {
                           Unsynced
                         </span>
                       ) : (
-                        issue.priority !== 'NONE' && (
-                          <span className="text-[10px] uppercase tracking-wide text-amber-500/80">
-                            {issue.priority}
-                          </span>
-                        )
+                        <PriorityBadge priority={issue.priority} />
                       )}
                     </div>
 

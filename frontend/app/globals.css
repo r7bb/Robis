@@ -15,7 +15,14 @@
   --border: 37 42 51;
   --content: 226 232 240;
   --muted: 148 163 184;
-  --faint: 100 116 139;
+  /*
+   * Raised from `100 116 139`, which scored 4.00:1 against the surface and
+   * 3.70:1 against raised panels. Both are under the 4.5:1 WCAG AA floor
+   * for body text, and every dark theme had the same problem: timestamps,
+   * helper text and empty states were the least readable things on screen
+   * while also being the ones people squint at. Now 5.96:1 and 5.51:1.
+   */
+  --faint: 133 145 163;
   --accent: 99 102 241;
   --accent-hover: 129 140 248;
   --accent-soft: 165 180 252;
@@ -38,4 +45,58 @@ body {
   @apply bg-surface text-content antialiased;
   font-family:
     ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/*
+ * Scroll reveals.
+ *
+ * The transition lives in CSS and only the `data-shown` flag is toggled from
+ * JavaScript, by an IntersectionObserver. That split matters: the compositor
+ * runs the animation, and nothing recalculates on a scroll frame.
+ *
+ * Only `opacity` and `transform` are animated. Both are composited, so
+ * neither triggers layout or paint.
+ */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(1.25rem);
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+[data-reveal][data-shown="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+/* Cross-fading frames in the scroll-told sequence. */
+[data-frame] {
+  opacity: 0;
+  transform: scale(0.985);
+  transition:
+    opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-frame][data-active="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+/*
+ * Reduced motion removes the movement, not the content.
+ *
+ * Everything lands in its final state immediately. A reveal that never fires
+ * because the observer was skipped would leave the page blank, so the
+ * fallback is "visible", never "hidden".
+ */
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal],
+  [data-frame] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }

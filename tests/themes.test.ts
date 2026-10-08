@@ -182,6 +182,20 @@ describe('no hardcoded colours outside the palette', () => {
     // The online dot and the ring that cuts it out of the avatar. Green
     // means "here" in every theme, so it must not move with one.
     'frontend/features/workspace/shell.tsx',
+    /*
+     * Status and priority colours, for the same reason the danger colour is
+     * literal in tailwind.config.ts: red means the same thing in every
+     * workspace, and an urgency scale that shifts with the theme is a scale
+     * nobody learns to read.
+     */
+    'frontend/components/ui/badges.tsx',
+    /*
+     * The landing page is a marketing surface, not the themed product. It
+     * deliberately carries its own palette -- one hue per section, so
+     * scrolling reads as moving between places -- and a workspace theme has
+     * no business reaching a page you see before signing in.
+     */
+    'frontend/features/landing/sections.tsx',
   ]);
 
   function sourceFiles(): string[] {
