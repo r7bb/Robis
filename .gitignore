@@ -21,3 +21,7 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 *.egg-info/
+
+# Next dev build output, kept apart from production .next
+.next-dev/
+.next-dev/
