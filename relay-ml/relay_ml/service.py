@@ -29,7 +29,7 @@ from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from .auth import check_configuration, require_service_token
-from .data import load_issues
+from .data import corpus_fingerprint, load_issues
 from .model import (
     DEFAULT_DUPLICATE_THRESHOLD,
     MIN_TRAINING_EXAMPLES,
@@ -40,19 +40,17 @@ from .model import (
 
 logger = logging.getLogger(__name__)
 
-#: How long a fitted workspace is reused before the next request refits.
+#: Longest a cached model is reused without even checking it is current.
 #:
-#: This is a staleness window, and it is the weakest thing about the
-#: service: there is no invalidation, so an issue filed now is invisible to
-#: duplicate detection for up to this long. That is exactly the wrong moment
-#: to be blind, because the author who just filed it is the person most
-#: likely to file it twice.
+#: This used to be the only invalidation, which meant an issue filed thirty
+#: seconds ago was invisible to duplicate detection for five minutes -- the
+#: exact moment somebody is most likely to file the same thing twice.
 #:
-#: Every response carries `model_age_seconds` so a caller can see how stale
-#: the answer is rather than having to assume. The real fix is an
-#: invalidation hook, or checking `max(updated_at)` per workspace before
-#: reusing a model; both are on the roadmap, neither is done.
-CACHE_TTL_SECONDS = 300
+#: Correctness now comes from `corpus_fingerprint`, which is checked on
+#: every request and costs an indexed count. This remains as a backstop for
+#: anything the fingerprint cannot see, and responses still carry
+#: `model_age_seconds` so a caller can judge for itself.
+CACHE_TTL_SECONDS = 900
 
 # Before the app exists, so an unconfigured deployment dies at import rather
 # than serving one unauthenticated request.
@@ -71,6 +69,9 @@ class Fitted:
     triage: TriageModel
     issue_count: int
     fitted_at: float
+    #: `(count, max(updated_at))` at the moment this was fitted. A cached
+    #: model is reused only while the workspace still matches it.
+    fingerprint: tuple[int, str]
 
 
 # Per-workspace, because the models are per-tenant: issues from one
@@ -95,7 +96,7 @@ _cache_lock = Lock()
 _fit_locks: defaultdict[str, Lock] = defaultdict(Lock)
 
 
-def _fit(workspace_id: str) -> Fitted:
+def _fit(workspace_id: str, fingerprint: tuple[int, str]) -> Fitted:
     issues = load_issues(workspace_id)
 
     triage = TriageModel()
@@ -113,13 +114,20 @@ def _fit(workspace_id: str) -> Fitted:
         triage=triage,
         issue_count=len(issues),
         fitted_at=monotonic(),
+        fingerprint=fingerprint,
     )
 
 
-def _cached(workspace_id: str) -> Fitted | None:
+def _cached(workspace_id: str, fingerprint: tuple[int, str] | None) -> Fitted | None:
     with _cache_lock:
         found = _cache.get(workspace_id)
         if found is None or monotonic() - found.fitted_at >= CACHE_TTL_SECONDS:
+            return None
+
+        # A known-different fingerprint means the workspace moved on. An
+        # unknown one (the lookup failed) is not grounds to throw away a
+        # working model, so the cached answer stands.
+        if fingerprint is not None and found.fingerprint != fingerprint:
             return None
 
         _cache.move_to_end(workspace_id)
@@ -135,8 +143,24 @@ def _store(workspace_id: str, fitted: Fitted) -> None:
             _cache.popitem(last=False)
 
 
+def _current_fingerprint(workspace_id: str) -> tuple[int, str] | None:
+    """None when the database cannot be reached.
+
+    Deliberately not an error. A fingerprint lookup is how the service
+    decides whether to *refresh*; failing it should degrade to serving the
+    model already in hand, not to failing the request.
+    """
+    try:
+        return corpus_fingerprint(workspace_id)
+    except Exception as error:  # noqa: BLE001 - any driver error means "unknown"
+        logger.warning("fingerprint lookup failed workspace=%s: %s", workspace_id, error)
+        return None
+
+
 def _models_for(workspace_id: str) -> Fitted:
-    hit = _cached(workspace_id)
+    fingerprint = _current_fingerprint(workspace_id)
+
+    hit = _cached(workspace_id, fingerprint)
     if hit is not None:
         return hit
 
@@ -145,11 +169,11 @@ def _models_for(workspace_id: str) -> Fitted:
     # single-flight: whoever lost the race finds the winner's model here
     # rather than fitting the same thing again.
     with _fit_locks[workspace_id]:
-        hit = _cached(workspace_id)
+        hit = _cached(workspace_id, fingerprint)
         if hit is not None:
             return hit
 
-        fitted = _fit(workspace_id)
+        fitted = _fit(workspace_id, fingerprint or (0, ""))
         _store(workspace_id, fitted)
         return fitted
 

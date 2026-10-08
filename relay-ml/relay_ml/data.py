@@ -69,6 +69,34 @@ def load_issues(workspace_id: str, url: str | None = None) -> list[Issue]:
     return [Issue(id=row[0], title=row[1], description=row[2], priority=row[3]) for row in rows]
 
 
+def corpus_fingerprint(workspace_id: str, url: str | None = None) -> tuple[int, str]:
+    """A cheap summary of a workspace's issues: how many, and newest change.
+
+    This exists so the service can tell whether a cached model still
+    describes reality. That was previously answered by a five-minute timer,
+    which meant an issue filed thirty seconds ago was invisible to duplicate
+    detection -- the exact moment somebody is most likely to file the same
+    thing twice.
+
+    Count and max together rather than either alone: a count misses an edit
+    to an existing title, and a max misses a deletion. Both are served from
+    the `(workspace_id, ...)` index without reading a row, so this is far
+    cheaper than the load and fit it avoids.
+    """
+    query = """
+        select count(*), coalesce(max(updated_at)::text, '')
+        from issues
+        where workspace_id = %s::uuid
+    """
+
+    with _connect(url) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(query, (workspace_id,))
+            row = cursor.fetchone()
+
+    return (int(row[0]), str(row[1])) if row else (0, "")
+
+
 def workspace_ids(url: str | None = None) -> list[str]:
     """Every workspace that has at least one issue, for warming caches."""
     with _connect(url) as connection:

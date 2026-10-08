@@ -110,23 +110,39 @@ nobody mistakes this for a considered rejection of embeddings.
 .venv/bin/python -m relay_ml.evaluate <workspace-id>
 ```
 
-Reports **macro-F1 against a majority-class baseline** on a stratified split,
-and exits non-zero if the model fails to beat the baseline, so a promotion step
-can gate on it.
+Reports **macro-F1 over 5-fold stratified cross-validation, repeated 5 times**,
+against a stratified-random baseline, plus a time-ordered holdout and a Brier
+score. Exits non-zero unless the model clears the baseline by a margin.
 
-Macro-F1 rather than accuracy, because a real backlog is mostly `MEDIUM` and a
-model that answers `MEDIUM` to everything scores well on accuracy while being
-worthless. A stratified split, because with four classes and few rows a random
-one can leave zero `URGENT` examples in the test set.
+Four deliberate choices:
+
+- **Repeated k-fold, not one split.** A single holdout gives a number that
+  moves by tens of points with the seed. Measured on a noise corpus, one run
+  ranged from 0.155 to 0.448. The spread is the honest half of the result.
+- **Macro-F1, not accuracy.** A real backlog is mostly `MEDIUM`, and a model
+  that answers `MEDIUM` to everything scores well on accuracy while being
+  worthless.
+- **A stratified-random baseline, and a margin.** The obvious baseline,
+  always answering the most common label, is far too weak: it scores near
+  zero on macro-F1 by construction. Against a corpus of *random labels* the
+  model scored 0.259 to that baseline's 0.193 and a bare "greater than" let
+  it through as a pass. It had learned nothing; it just spread its guesses
+  across three classes while the degenerate baseline put everything in one.
+  Guessing in proportion to the class frequencies is what a signal-free
+  model actually does, so beating *that* means something. It now scores
+  0.259 against 0.296 on noise, and correctly fails.
+- **A time-ordered holdout as well.** The random folds are optimistic here:
+  the corpus is full of paraphrases, so a near-duplicate can sit in train
+  while its twin sits in test. Training on the oldest and testing on the
+  newest is what production looks like.
 
 **No evaluation numbers are published here.** The seeded workspace has nine
 triaged issues, which is below the threshold to fit at all. Quoting a metric
 computed on nine rows would be the dishonest part of this module.
 
-Known weaknesses of the current harness, not yet fixed: it is a single 25%
-split rather than repeated k-fold, so the figure moves by tens of points
-between seeds; and the split is random rather than by time, which with a corpus
-full of paraphrases lets a near-duplicate sit in train and its twin in test.
+Still missing: `DuplicateFinder` has no precision or recall figure, because
+no labelled set of true duplicate pairs exists. Until one does, it is not a
+validated model and the 0.35 threshold remains a guess tuned by eye.
 
 ## Multi-tenancy, and what is not protected
 
@@ -146,12 +162,19 @@ or an internal-only bind. This is the top item on its roadmap.
 
 ## Staleness
 
-There is no cache invalidation, only a 5-minute TTL, so an issue filed now is
-invisible to duplicate detection for up to that long. That is the wrong moment
-to be blind, because the person who just filed it is the one most likely to
-file it twice. Every response carries `model_age_seconds` so a caller can see
-how stale the answer is instead of assuming. A real invalidation hook is on the
-roadmap.
+A cached model is reused only while the workspace still matches the
+`(count, max(updated_at))` fingerprint it was fitted against. That check runs
+on every request and costs an indexed count, far less than the load and fit it
+avoids, so an issue filed thirty seconds ago is findable immediately.
+
+This replaced a five-minute TTL, which left a new issue invisible to duplicate
+detection for five minutes -- the exact moment somebody is most likely to file
+the same thing twice. A 15-minute TTL remains as a backstop for anything the
+fingerprint cannot see, and responses still carry `model_age_seconds`.
+
+If the fingerprint lookup fails, the cached model is served rather than the
+request failing: being unable to check freshness is not a reason to stop
+answering.
 
 ## Layout
 

@@ -44,6 +44,11 @@ def client(monkeypatch: pytest.MonkeyPatch):
     # environment and the per-workspace cache starts empty.
     service = importlib.reload(importlib.import_module("relay_ml.service"))
     monkeypatch.setattr(service, "load_issues", lambda workspace_id: CORPORA[workspace_id])
+    monkeypatch.setattr(
+        service,
+        "corpus_fingerprint",
+        lambda workspace_id: (len(CORPORA[workspace_id]), "2026-01-01T00:00:00+00:00"),
+    )
 
     return TestClient(service.app)
 
@@ -98,6 +103,7 @@ class TestAuthentication:
 
         service = importlib.reload(importlib.import_module("relay_ml.service"))
         monkeypatch.setattr(service, "load_issues", lambda workspace_id: CORPORA[workspace_id])
+        monkeypatch.setattr(service, "corpus_fingerprint", lambda workspace_id: (1, "x"))
 
         response = TestClient(service.app).post(
             f"/workspaces/{ALPHA}/similar", json={"title": "anything"}
@@ -184,3 +190,89 @@ class TestRequestValidation:
         assert response["priority"] is None
         assert response["score"] is None
         assert str(model.MIN_TRAINING_EXAMPLES) in response["reason"]
+
+
+class TestCacheInvalidation:
+    """The staleness bug: a just-filed issue must be findable immediately."""
+
+    def test_a_new_issue_invalidates_the_cached_model(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv(auth.TOKEN_ENV, TOKEN)
+        service = importlib.reload(importlib.import_module("relay_ml.service"))
+
+        corpus = [model.Issue("a1", "Billing page is blank", "")]
+        fingerprint = [(1, "t1")]
+
+        monkeypatch.setattr(service, "load_issues", lambda _: list(corpus))
+        monkeypatch.setattr(service, "corpus_fingerprint", lambda _: fingerprint[0])
+
+        client = TestClient(service.app)
+        query = {"title": "Offline queue drops writes"}
+
+        first = client.post(
+            f"/workspaces/{ALPHA}/similar?threshold=0.05", json=query, headers=auth_header()
+        ).json()
+        assert first["corpus_size"] == 1
+
+        # Somebody files the issue the query is about.
+        corpus.append(model.Issue("a2", "Offline queue drops writes", "mutations are lost"))
+        fingerprint[0] = (2, "t2")
+
+        second = client.post(
+            f"/workspaces/{ALPHA}/similar?threshold=0.05", json=query, headers=auth_header()
+        ).json()
+
+        # Under the old five-minute TTL this was still 1 for five minutes.
+        assert second["corpus_size"] == 2
+        assert "a2" in {m["id"] for m in second["similar"]}
+
+    def test_an_unchanged_workspace_reuses_the_cached_model(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv(auth.TOKEN_ENV, TOKEN)
+        service = importlib.reload(importlib.import_module("relay_ml.service"))
+
+        fits = {"count": 0}
+
+        def counting_loader(workspace_id: str):
+            fits["count"] += 1
+            return CORPORA[workspace_id]
+
+        monkeypatch.setattr(service, "load_issues", counting_loader)
+        monkeypatch.setattr(service, "corpus_fingerprint", lambda _: (2, "stable"))
+
+        client = TestClient(service.app)
+        for _ in range(3):
+            client.post(
+                f"/workspaces/{ALPHA}/similar", json={"title": "x"}, headers=auth_header()
+            )
+
+        # A fingerprint check per request, but only one load and fit.
+        assert fits["count"] == 1
+
+    def test_an_unreachable_database_serves_the_model_in_hand(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv(auth.TOKEN_ENV, TOKEN)
+        service = importlib.reload(importlib.import_module("relay_ml.service"))
+
+        monkeypatch.setattr(service, "load_issues", lambda w: CORPORA[w])
+        monkeypatch.setattr(service, "corpus_fingerprint", lambda _: (2, "ok"))
+
+        client = TestClient(service.app)
+        client.post(f"/workspaces/{ALPHA}/similar", json={"title": "x"}, headers=auth_header())
+
+        def broken(_: str):
+            raise RuntimeError("connection refused")
+
+        monkeypatch.setattr(service, "corpus_fingerprint", broken)
+
+        # Failing to check freshness is not grounds to fail the request, or
+        # to throw away a working model.
+        response = client.post(
+            f"/workspaces/{ALPHA}/similar", json={"title": "x"}, headers=auth_header()
+        )
+
+        assert response.status_code == 200
+        assert response.json()["corpus_size"] == 2

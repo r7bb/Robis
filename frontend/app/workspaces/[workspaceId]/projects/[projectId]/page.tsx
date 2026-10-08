@@ -10,6 +10,7 @@ import { PresenceBar } from '../../../../../components/presence.tsx';
 import { SyncStatus } from '../../../../../components/sync-status.tsx';
 import { PriorityBadge, StatusHeading } from '../../../../../components/ui/badges.tsx';
 import { ErrorState } from '../../../../../components/ui/primitives.tsx';
+import { DuplicateHints } from '../../../../../features/issues/duplicate-hints.tsx';
 import { api, type WorkspaceSummary } from '../../../../../lib/api.ts';
 import { useRealtime } from '../../../../../lib/realtime.ts';
 import { lastTheme, useApplyTheme } from '../../../../../lib/theme.ts';
@@ -85,21 +86,28 @@ export default function BoardPage() {
       </div>
 
       {canEdit && (
-        <form onSubmit={onCreate} className="mt-6 flex gap-2">
-          <input
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            placeholder="What needs doing?"
-            className="flex-1 rounded-md border border-line bg-raised px-3 py-2 text-sm outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
-          />
-          <button
-            type="submit"
-            disabled={!title.trim()}
-            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-contrast hover:bg-accent-hover disabled:opacity-50"
-          >
-            Add issue
-          </button>
-        </form>
+        <div className="mt-6">
+          <form onSubmit={onCreate} className="flex gap-2">
+            <input
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder="What needs doing?"
+              className="flex-1 rounded-md border border-line bg-raised px-3 py-2 text-sm outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
+            />
+            <button
+              type="submit"
+              disabled={!title.trim()}
+              className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-contrast hover:bg-accent-hover disabled:opacity-50"
+            >
+              Add issue
+            </button>
+          </form>
+
+          {/* Below the form, never inside it: a hint must not be reachable
+              by Tab between the field and the submit button, and must not
+              move the button as it appears and disappears. */}
+          <DuplicateHints workspaceId={workspaceId} title={title} />
+        </div>
       )}
 
       <div className="mt-8 grid gap-4 md:grid-cols-4">

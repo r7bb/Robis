@@ -49,62 +49,45 @@ published numbers, a screenshot script that drives a real browser.
 **Presentation.** A landing page, a short README, 28 captured screenshots.
 
 **Machine learning.** `relay-ml/`: duplicate detection and priority triage,
-with an evaluation harness and an explicit refusal below 40 triaged issues.
+behind a service token, wired into the issue composer. Typing a title shows
+possible duplicates with a match percentage; a missing or broken ML service
+degrades to no hints and never blocks filing. Evaluation is repeated
+stratified k-fold against a stratified-random baseline with a margin gate, a
+time-ordered holdout, and a Brier score. Cached models are invalidated by a
+`(count, max(updated_at))` fingerprint rather than a timer.
 
 ---
 
 ## Pick up here next session
 
-### 1. Wire `relay-ml` into the issue composer
+### 1. A labelled duplicate set
 
-The obvious payoff and the reason the module exists. As somebody types an
-issue title, show possible duplicates underneath it.
+Everything else about the duplicate feature is built and verified end to
+end; what is missing is evidence that it is any good. See item 2.
 
-Blocked on item 2: the service is unauthenticated, so the API cannot safely
-call it yet.
+### 2. Precision and recall for `DuplicateFinder`
 
-### 2. Authenticate the ML service
+The triage model is now measured properly (repeated stratified k-fold against
+a stratified-random baseline, a time-ordered holdout, and a Brier score, with
+a margin the model must clear). The duplicate model is not measured at all,
+because no labelled set of true duplicate pairs exists.
 
-It takes a `workspace_id` from the URL and trusts it. Anyone who can reach the
-port and knows a workspace UUID can read issue titles. Needs a
-service-to-service credential or an internal-only bind, plus a test that two
-workspaces never see each other's rows. **Do this before it is deployed or
-called from anywhere.**
+Build one from the seeded corpus plus real paraphrases, then report precision
+and recall at several thresholds. Until that exists, 0.35 is a guess tuned by
+eye and the model is not validated.
 
-### 3. Make the ML evaluation trustworthy
-
-Three known weaknesses, all real:
-
-- A single 25% split, so macro-F1 moves by tens of points between seeds.
-  Replace with repeated stratified k-fold and report mean plus interval.
-- The split is random rather than by time. With a corpus full of paraphrases
-  that lets a near-duplicate sit in train and its twin in test, inflating the
-  score.
-- No labelled duplicate pairs exist, so `DuplicateFinder` has no precision or
-  recall figure at all and the 0.35 threshold is a guess tuned by eye.
-
-Also: `score` is an uncalibrated softmax. Measure calibration before anyone
-treats it as a probability.
-
-### 4. Cache invalidation for `relay-ml`
-
-There is only a 5-minute TTL, so a just-filed issue is invisible to duplicate
-detection for up to that long, which is exactly the wrong moment. Check
-`max(updated_at)` and `count(*)` per workspace before reusing a model, or add
-an invalidation hook from the API.
-
-### 5. An SMTP driver for the `Mailer` port
+### 3. An SMTP driver for the `Mailer` port
 
 The only driver is `ConsoleMailer`, which prints reset links to stdout. The
 API refuses to start in production without a real one. Once SMTP exists, move
 sends onto the job queue and drop the startup refusal.
 
-### 6. Decide what a verified address gates
+### 4. Decide what a verified address gates
 
 `users.email_verified_at` is recorded and nothing depends on it. Either gate
 something (invitations, perhaps) or say in the UI that it is informational.
 
-### 7. Deferred review findings
+### 5. Deferred review findings
 
 - Pin `trustProxy` rather than leaving it at the default.
 - `Referrer-Policy: no-referrer` and `Cache-Control: no-store` on pages that
