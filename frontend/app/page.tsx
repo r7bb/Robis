@@ -9,7 +9,6 @@ import {
   Decisions,
   Documents,
   Hero,
-  Measurements,
   OfflineStory,
   REPO,
 } from '../features/landing/sections.tsx';
@@ -94,7 +93,6 @@ export default function Home() {
       <main>
         <Hero href={href} label={label} />
         <OfflineStory />
-        <Measurements />
         <Documents />
         <Capabilities />
         <Decisions />

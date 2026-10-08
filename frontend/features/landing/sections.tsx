@@ -25,6 +25,13 @@ import { useActiveStep } from './use-scroll.ts';
 
 export const REPO = 'https://github.com/r7bb/Relay';
 
+/** Three measured figures, short enough to read in a glance. */
+const HERO_PROOF = [
+  { value: 6.4, decimals: 1, suffix: 'ms', label: 'to read a board' },
+  { value: 4400, decimals: 0, suffix: '', label: 'requests a second' },
+  { value: 5.8, decimals: 1, suffix: 'ms', label: 'to reach everyone' },
+] as const;
+
 export function Hero({ href, label }: { href: string; label: string }) {
   return (
     <Band tone="black" className="relative">
@@ -68,7 +75,30 @@ export function Hero({ href, label }: { href: string; label: string }) {
          * message pane, which at hero size reads as an unfinished product;
          * the board is dense and colourful and shows the work.
          */}
-        <Reveal delay={210} className="mt-[clamp(2.5rem,6vh,4.5rem)]">
+        {/*
+         * The first screen has to do the selling. Headline, subhead and
+         * buttons ended at 394px of a 758px viewport, and the rest of the
+         * fold was the top 44% of a screenshot, which reads as a cropped
+         * image rather than a deliberate peek. These are the most
+         * convincing things Relay has and they are measured, so they go
+         * above the fold and the screenshot starts under it on purpose.
+         */}
+        <Reveal delay={200}>
+          <dl className="mx-auto mt-10 flex max-w-2xl flex-wrap items-baseline justify-center gap-x-10 gap-y-3">
+            {HERO_PROOF.map((item) => (
+              <div key={item.label} className="flex items-baseline gap-2">
+                <dt className="sr-only">{item.label}</dt>
+                <dd className="font-mono text-lg font-semibold text-amber-200">
+                  <Counter value={item.value} decimals={item.decimals} suffix={item.suffix} />
+                </dd>
+                <dd className="text-sm text-muted">{item.label}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="mt-3 text-xs text-faint">Measured by the benchmark in this repository.</p>
+        </Reveal>
+
+        <Reveal delay={260} className="mt-[clamp(2.5rem,6vh,4.5rem)]">
           <Shot
             src="/shots/board.png"
             alt="The Relay issue board, with a column per status and coloured priority badges."
@@ -122,7 +152,15 @@ export function OfflineStory() {
     <section className={`relative ${BANDS.base}`}>
       <div className="mx-auto max-w-6xl px-6">
         <div className="hidden lg:block">
-          <div className="sticky top-0 flex h-svh flex-col items-center justify-center gap-[clamp(1rem,3vh,2.5rem)] py-[clamp(3rem,8vh,6rem)]">
+          {/*
+            `top-16` and a height reduced by the same amount, because the
+            nav is sticky and 4rem tall. Pinning at `top-0` against a full
+            `100svh` centres the content against the whole viewport while
+            the top 64px of it is covered, so everything sits exactly one
+            nav-height too high -- measured at 4px above the nav's bottom
+            edge and 61px of slack below.
+          */}
+          <div className="sticky top-16 flex h-[calc(100svh-4rem)] flex-col items-center justify-center gap-[clamp(1rem,3vh,2.5rem)] py-[clamp(2rem,6vh,4rem)]">
             <div className="shrink-0">
               <p
                 className={`text-sm font-semibold uppercase tracking-[0.22em] transition-colors duration-[var(--entrance)] ease-[var(--ease)] ${step.tint}`}
@@ -179,34 +217,6 @@ export function OfflineStory() {
         </div>
       </div>
     </section>
-  );
-}
-
-const MEASUREMENTS = [
-  { value: 6.4, decimals: 1, suffix: ' ms', label: 'to read a board' },
-  { value: 4400, decimals: 0, suffix: '', label: 'requests a second' },
-  { value: 5.8, decimals: 1, suffix: ' ms', label: 'to reach everyone' },
-] as const;
-
-export function Measurements() {
-  return (
-    <Band tone="raised">
-      <Reveal>
-        <Headline>Measured, not claimed.</Headline>
-        <Subhead>Every number here comes from the benchmark in this repository.</Subhead>
-      </Reveal>
-
-      <div className="mt-[clamp(2.5rem,6vh,4rem)] grid gap-10 sm:grid-cols-3">
-        {MEASUREMENTS.map((item, index) => (
-          <Reveal key={item.label} delay={index * 90}>
-            <p className="font-mono text-[clamp(2rem,4vw,3.25rem)] font-semibold tracking-tight text-amber-200">
-              <Counter value={item.value} decimals={item.decimals} suffix={item.suffix} />
-            </p>
-            <p className="mt-2 text-base text-muted">{item.label}</p>
-          </Reveal>
-        ))}
-      </div>
-    </Band>
   );
 }
 
