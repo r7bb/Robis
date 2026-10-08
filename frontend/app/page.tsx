@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
+import { Logo } from '../components/brand/logo.tsx';
 import {
   Capabilities,
   Closing,
@@ -11,6 +12,7 @@ import {
   OfflineStory,
   REPO,
 } from '../features/landing/sections.tsx';
+import { useScrolled } from '../features/landing/use-scroll.ts';
 import { api, type Me } from '../lib/api.ts';
 
 /**
@@ -34,35 +36,51 @@ export default function Home() {
     retry: false,
   });
 
+  const [sentinel, scrolled] = useScrolled();
+
   const signedIn = Boolean(data?.user);
   const href = signedIn ? '/workspaces' : '/login';
   const label = signedIn ? 'Open your workspaces' : 'Get started';
 
   return (
     <div className="min-h-[100dvh] bg-surface">
-      <header className="sticky top-0 z-40 border-b border-line/60 bg-surface/70 backdrop-blur-xl">
+      {/* Watched instead of the scroll position: this element leaving the
+          viewport is exactly the question the nav needs answered. */}
+      <div ref={sentinel} aria-hidden="true" className="absolute top-0 h-px w-full" />
+
+      <header
+        data-nav=""
+        className={`sticky top-0 z-40 border-b backdrop-blur-xl ${
+          scrolled
+            ? 'border-line/70 bg-surface/80 shadow-lg shadow-black/20'
+            : 'border-transparent bg-transparent shadow-none'
+        }`}
+      >
         <nav className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-6">
-          <Link href="/" className="text-sm font-semibold tracking-tight text-content">
-            Relay
+          <Link
+            href="/"
+            className="text-content transition-opacity duration-[--micro] ease-[--ease] hover:opacity-80"
+          >
+            <Logo size={26} />
           </Link>
 
           <div className="ml-auto flex items-center gap-5 text-sm">
             <a
               href={`${REPO}#architecture`}
-              className="hidden text-muted transition-colors hover:text-content sm:block"
+              className="hidden text-muted transition-colors duration-[--micro] ease-[--ease] hover:text-content sm:block"
             >
               Architecture
             </a>
             <a
               href={REPO}
-              className="hidden text-muted transition-colors hover:text-content sm:block"
+              className="hidden text-muted transition-colors duration-[--micro] ease-[--ease] hover:text-content sm:block"
             >
               Source
             </a>
 
             <Link
               href={href}
-              className="rounded-full bg-accent px-4 py-1.5 font-semibold text-accent-contrast transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+              className="rounded-full bg-accent px-4 py-1.5 font-semibold text-accent-contrast transition-colors duration-[--micro] ease-[--ease] hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
             >
               {label}
             </Link>
@@ -81,11 +99,17 @@ export default function Home() {
 
       <footer className="border-t border-line">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-6 py-8 text-xs text-faint">
-          <span>Relay</span>
-          <a href={REPO} className="transition-colors hover:text-muted">
+          <Logo size={20} className="text-faint" markClassName="text-accent/70" />
+          <a
+            href={REPO}
+            className="transition-colors duration-[--micro] ease-[--ease] hover:text-muted"
+          >
             GitHub
           </a>
-          <Link href="/login" className="transition-colors hover:text-muted">
+          <Link
+            href="/login"
+            className="transition-colors duration-[--micro] ease-[--ease] hover:text-muted"
+          >
             Sign in
           </Link>
         </div>

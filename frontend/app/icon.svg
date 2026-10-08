@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <title>Relay</title>
+  <!--
+    The site icon. Same geometry as components/brand/logo.tsx, with the
+    colours literal: a favicon has no stylesheet and no `currentColor` to
+    inherit from.
+
+    Next.js App Router serves any `app/icon.svg` as the site icon and emits
+    the <link rel="icon"> itself, which is why this is a standalone file
+    rather than a component.
+  -->
+  <rect width="32" height="32" rx="7" fill="#0e1014"/>
+  <rect x="4" y="4" width="17" height="17" rx="5" fill="#6366f1" opacity="0.4"/>
+  <rect x="11" y="11" width="17" height="17" rx="5" fill="#6366f1"/>
+  <path d="M11 11h10v10H11z" fill="#6366f1" opacity="0.75"/>
+</svg>

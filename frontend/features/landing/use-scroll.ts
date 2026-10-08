@@ -78,6 +78,33 @@ export function useInView<T extends HTMLElement>(): [RefObject<T | null>, boolea
 }
 
 /**
+ * True once the page has scrolled away from the very top.
+ *
+ * Driven by a sentinel element at the top of the document rather than by
+ * reading `scrollY`: the observer fires twice in a session, once when the
+ * sentinel leaves and once when it comes back, where a scroll handler would
+ * run on every frame to answer the same yes/no question.
+ */
+export function useScrolled(): [RefObject<HTMLDivElement | null>, boolean] {
+  const sentinel = useRef<HTMLDivElement>(null);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const element = sentinel.current;
+    if (!element || typeof IntersectionObserver === 'undefined') return;
+
+    const observer = new IntersectionObserver(([entry]) => setScrolled(!entry?.isIntersecting), {
+      threshold: 0,
+    });
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  return [sentinel, scrolled];
+}
+
+/**
  * Which step of a sticky sequence is currently being read.
  *
  * The pattern: a tall container, a `position: sticky` stage that stays put,

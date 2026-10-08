@@ -57,12 +57,32 @@ body {
  * Only `opacity` and `transform` are animated. Both are composited, so
  * neither triggers layout or paint.
  */
+/*
+ * One easing curve and three durations for the whole page.
+ *
+ * `easeOutQuint`: most of the distance is covered immediately and the tail
+ * settles. It is why a well-made marketing site feels quick even when the
+ * animation is close to half a second, and it is the single biggest
+ * difference between this and a default `ease-out`.
+ *
+ * Three steps, not a continuum. Micro is a colour change under the cursor,
+ * quick is something moving a short distance, entrance is a reveal crossing
+ * real space. Anything wanting a fourth value usually wants a different
+ * animation.
+ */
+:root {
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --micro: 230ms;
+  --quick: 280ms;
+  --entrance: 460ms;
+}
+
 [data-reveal] {
   opacity: 0;
-  transform: translateY(1.25rem);
+  transform: translateY(1rem);
   transition:
-    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity var(--entrance) var(--ease),
+    transform var(--entrance) var(--ease);
   transition-delay: var(--reveal-delay, 0ms);
 }
 
@@ -76,8 +96,22 @@ body {
   opacity: 0;
   transform: scale(0.985);
   transition:
-    opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity var(--entrance) var(--ease),
+    transform var(--entrance) var(--ease);
+}
+
+/*
+ * The nav goes from invisible to a real surface once the page scrolls.
+ *
+ * Transitioning the background, border and shadow rather than the whole
+ * element: `transition: all` on a sticky header animates properties nobody
+ * asked for and costs a paint on each one.
+ */
+[data-nav] {
+  transition:
+    background-color var(--entrance) var(--ease),
+    border-color var(--entrance) var(--ease),
+    box-shadow var(--entrance) var(--ease);
 }
 
 [data-frame][data-active="true"] {

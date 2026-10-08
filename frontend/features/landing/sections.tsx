@@ -21,10 +21,10 @@ import { useActiveStep } from './use-scroll.ts';
 export const REPO = 'https://github.com/r7bb/Relay';
 
 const PRIMARY_BUTTON =
-  'inline-flex items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-semibold text-accent-contrast shadow-lg shadow-accent/25 transition-all hover:bg-accent-hover hover:shadow-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft focus-visible:ring-offset-2 focus-visible:ring-offset-surface active:translate-y-px';
+  'inline-flex items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-semibold text-accent-contrast shadow-lg shadow-accent/25 transition-[background-color,box-shadow,transform] duration-[--quick] ease-[--ease] hover:bg-accent-hover hover:shadow-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft focus-visible:ring-offset-2 focus-visible:ring-offset-surface active:translate-y-px';
 
 const GHOST_BUTTON =
-  'inline-flex items-center justify-center rounded-full border border-line bg-raised/60 px-6 py-3 text-sm font-semibold text-content backdrop-blur transition-all hover:border-accent-soft hover:bg-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft focus-visible:ring-offset-2 focus-visible:ring-offset-surface active:translate-y-px';
+  'inline-flex items-center justify-center rounded-full border border-line bg-raised/60 px-6 py-3 text-sm font-semibold text-content backdrop-blur transition-[background-color,border-color,transform] duration-[--quick] ease-[--ease] hover:border-accent-soft hover:bg-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft focus-visible:ring-offset-2 focus-visible:ring-offset-surface active:translate-y-px';
 
 function Shot({
   src,
@@ -177,7 +177,7 @@ export function OfflineStory() {
               {OFFLINE_STEPS.map((item, index) => (
                 <span
                   key={item.kicker}
-                  className={`h-1 rounded-full transition-all duration-500 ${
+                  className={`h-1 rounded-full transition-all duration-[--entrance] ease-[--ease] ${
                     index === active ? 'w-10 bg-accent-soft' : 'w-4 bg-line'
                   }`}
                 />
