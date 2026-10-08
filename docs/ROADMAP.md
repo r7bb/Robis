@@ -1,6 +1,6 @@
 # Roadmap
 
-Where Relay is, what is left, and what is deliberately not being built.
+Where Robis is, what is left, and what is deliberately not being built.
 
 Status: **393 TypeScript tests, 17 Python tests, lint and typecheck clean,
 production build passing.**
@@ -48,7 +48,7 @@ published numbers, a screenshot script that drives a real browser.
 
 **Presentation.** A landing page, a short README, 28 captured screenshots.
 
-**Machine learning.** `relay-ml/`: duplicate detection and priority triage,
+**Machine learning.** `robis-ml/`: duplicate detection and priority triage,
 behind a service token, wired into the issue composer. Typing a title shows
 possible duplicates with a match percentage; a missing or broken ML service
 degrades to no hints and never blocks filing. Evaluation is repeated
@@ -130,13 +130,13 @@ transcript, what an export contains, what happens when somebody leaves.
 Bolting them onto a workspace-scoped table would answer those questions badly
 and silently.
 
-**A public project directory with match percentages.** Relay workspaces are
+**A public project directory with match percentages.** Robis workspaces are
 private tenancies with invite-only membership, and the 404-not-403 rule is
 tested. A public discovery surface would contradict that access model rather
 than extend it. If it is ever wanted, it belongs as a separate public surface
 with its own threat model, not as a flag on `workspaces`.
 
-**Conferencing.** Relay stores a link. Minting rooms would put a third party
+**Conferencing.** Robis stores a link. Minting rooms would put a third party
 in the request path and imply a provider relationship that does not exist.
 
 **Microservices beyond the four that exist.** The API, gateway and worker are

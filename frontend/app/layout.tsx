@@ -5,7 +5,7 @@ import { ServiceWorker } from '../components/service-worker.tsx';
 import { Providers } from './providers.tsx';
 
 export const metadata: Metadata = {
-  title: 'Relay',
+  title: 'Robis',
   description: 'Collaborative workspace for issues, projects and documents.',
 };
 

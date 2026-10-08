@@ -1,6 +1,6 @@
 'use client';
 
-import type { PresenceUser } from '@relay/shared';
+import type { PresenceUser } from '@robis/shared';
 import type { ConnectionState } from '../lib/realtime.ts';
 import { Avatar } from './ui/avatar.tsx';
 

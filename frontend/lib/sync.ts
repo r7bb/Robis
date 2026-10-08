@@ -6,7 +6,7 @@ import {
   SyncEngine,
   SyncError,
   type SyncTransport,
-} from '@relay/sync';
+} from '@robis/sync';
 import { ApiError, api } from './api.ts';
 
 /**
@@ -70,6 +70,6 @@ let engine: SyncEngine | null = null;
 /** One engine per tab. Created lazily so it is never constructed during SSR,
  * where there is no IndexedDB. */
 export function getSyncEngine(): SyncEngine {
-  engine ??= new SyncEngine(createStorage('relay'), transport);
+  engine ??= new SyncEngine(createStorage('robis'), transport);
   return engine;
 }

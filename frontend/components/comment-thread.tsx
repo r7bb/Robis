@@ -1,6 +1,6 @@
 'use client';
 
-import { splitMentions } from '@relay/shared';
+import { splitMentions } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { api, type Comment, type Me } from '../lib/api.ts';
@@ -145,7 +145,7 @@ export function CommentThread({
 /**
  * Highlight `@handle` so a mention is visible in the rendered comment.
  *
- * The split comes from `@relay/shared` rather than a regex here, so what gets
+ * The split comes from `@robis/shared` rather than a regex here, so what gets
  * highlighted is exactly what gets notified.
  */
 function Mentions({ text }: { text: string }) {

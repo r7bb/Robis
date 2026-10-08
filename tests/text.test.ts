@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { applyEdit, diffEdit } from '@relay/shared';
+import { applyEdit, diffEdit } from '@robis/shared';
 
 /**
  * `diffEdit` turns a textarea's new value back into the edit that produced it.

@@ -1,8 +1,8 @@
 import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
-import { documents, enqueue, notifications } from '@relay/database';
-import { handlers } from '@relay/worker/handlers';
-import { dedupeKeyFor, nudgeFor, scanNudges, weekBucket } from '@relay/worker/nudges';
-import { Runner } from '@relay/worker/runner';
+import { documents, enqueue, notifications } from '@robis/database';
+import { handlers } from '@robis/worker/handlers';
+import { dedupeKeyFor, nudgeFor, scanNudges, weekBucket } from '@robis/worker/nudges';
+import { Runner } from '@robis/worker/runner';
 import { eq } from 'drizzle-orm';
 import {
   type Actor,

@@ -6,7 +6,7 @@ read endpoint for anybody who can reach the port and guess a UUID, which is
 why nothing was allowed to call it until this existed.
 
 A shared bearer token rather than anything cleverer. The only caller is
-Relay's own API, over a private network, so there is no third party to
+Robis's own API, over a private network, so there is no third party to
 federate with and no user identity to carry: the API has already decided
 that *this user* may read *this workspace* before it asks anything here.
 Adding OAuth or mTLS would be protecting a different threat model than the
@@ -22,7 +22,7 @@ from typing import Annotated
 from fastapi import Header, HTTPException
 
 #: The shared secret, read from the environment.
-TOKEN_ENV = "RELAY_ML_TOKEN"
+TOKEN_ENV = "ROBIS_ML_TOKEN"
 
 #: Explicit opt-out, for running the service locally against seeded data.
 #:
@@ -30,7 +30,7 @@ TOKEN_ENV = "RELAY_ML_TOKEN"
 #: open: forgetting to set the variable in a deployment would silently
 #: publish the endpoints. This way the quiet path is the safe one and
 #: anybody turning it off has to say so.
-ALLOW_ANONYMOUS_ENV = "RELAY_ML_ALLOW_ANONYMOUS"
+ALLOW_ANONYMOUS_ENV = "ROBIS_ML_ALLOW_ANONYMOUS"
 
 
 def _configured_token() -> str | None:

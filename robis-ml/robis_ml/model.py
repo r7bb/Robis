@@ -1,4 +1,4 @@
-"""Two models over the text of Relay issues.
+"""Two models over the text of Robis issues.
 
 Both are built on a single TF-IDF representation rather than sentence
 embeddings from a pretrained transformer. That is a deliberate choice, and
@@ -31,7 +31,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 #: The priorities worth predicting.
 #:
-#: Relay's enum is ``('NONE', 'LOW', 'MEDIUM', 'HIGH', 'URGENT')`` and ``NONE``
+#: Robis's enum is ``('NONE', 'LOW', 'MEDIUM', 'HIGH', 'URGENT')`` and ``NONE``
 #: is the column default, so most rows carry it without anybody having chosen
 #: it. It is the *absence* of a priority, not a fifth one, and training on it
 #: would teach the model to predict "nobody triaged this yet".

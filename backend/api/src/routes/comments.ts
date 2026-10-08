@@ -1,5 +1,5 @@
-import { comments, type Database, enqueue, issues, publishEvent, users } from '@relay/database';
-import { can, createCommentSchema, isUuid } from '@relay/shared';
+import { comments, type Database, enqueue, issues, publishEvent, users } from '@robis/database';
+import { can, createCommentSchema, isUuid } from '@robis/shared';
 import { and, asc, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../errors.ts';

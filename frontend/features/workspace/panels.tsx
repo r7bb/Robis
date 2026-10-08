@@ -1,6 +1,6 @@
 'use client';
 
-import { can, type Role } from '@relay/shared';
+import { can, type Role } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { type FormEvent, useState } from 'react';

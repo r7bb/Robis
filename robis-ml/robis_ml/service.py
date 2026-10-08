@@ -1,6 +1,6 @@
 """HTTP surface for the two models.
 
-    uvicorn relay_ml.service:app --port 8000
+    uvicorn robis_ml.service:app --port 8000
 
 A separate process from the Fastify API rather than a library inside it,
 because the two have different shapes: scikit-learn is synchronous and
@@ -8,7 +8,7 @@ CPU-bound, and fitting a model inside the event loop that serves issue
 reads would stall every request for the duration.
 
 Everything here is *advisory*. These endpoints suggest; they never decide.
-Nothing in Relay changes a priority or closes an issue on the strength of a
+Nothing in Robis changes a priority or closes an issue on the strength of a
 prediction, and the response always carries the score so the caller can
 disagree with it.
 
@@ -57,8 +57,8 @@ CACHE_TTL_SECONDS = 900
 check_configuration()
 
 app = FastAPI(
-    title="Relay ML",
-    summary="Duplicate detection and priority triage for Relay issues.",
+    title="Robis ML",
+    summary="Duplicate detection and priority triage for Robis issues.",
     version="0.1.0",
 )
 

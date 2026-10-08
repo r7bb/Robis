@@ -28,9 +28,9 @@ import { pgBin } from './pg-paths.ts';
 const DATA_DIR = resolve(import.meta.dir, '..', '..', '.pgdata');
 const LOG_FILE = join(DATA_DIR, 'server.log');
 const PORT = 5433;
-const USER = 'relay';
-const PASSWORD = 'relay';
-const DATABASE = 'relay';
+const USER = 'robis';
+const PASSWORD = 'robis';
+const DATABASE = 'robis';
 
 function bin(name: string): string {
   const path = pgBin(name);
@@ -75,7 +75,7 @@ async function provision() {
   console.log('Provisioning Postgres data directory...');
 
   // initdb refuses a password on the command line, so it has to go via a file.
-  const dir = await mkdtemp(join(tmpdir(), 'relay-pw-'));
+  const dir = await mkdtemp(join(tmpdir(), 'robis-pw-'));
   const pwFile = join(dir, 'pw');
 
   try {

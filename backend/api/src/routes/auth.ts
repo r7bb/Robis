@@ -9,15 +9,15 @@ import {
   revokeSession,
   SESSION_COOKIE,
   verifyPassword,
-} from '@relay/auth';
-import { type Database, users } from '@relay/database';
-import type { Mailer } from '@relay/mailer';
+} from '@robis/auth';
+import { type Database, users } from '@robis/database';
+import type { Mailer } from '@robis/mailer';
 import {
   changePasswordSchema,
   loginSchema,
   registerSchema,
   updateProfileSchema,
-} from '@relay/shared';
+} from '@robis/shared';
 import { eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import type { RateLimits } from '../app.ts';

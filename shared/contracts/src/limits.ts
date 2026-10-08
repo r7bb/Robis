@@ -1,7 +1,7 @@
 /**
  * Numbers the client and the server must agree on.
  *
- * A separate module with no imports, exposed as `@relay/shared/limits`. The
+ * A separate module with no imports, exposed as `@robis/shared/limits`. The
  * package barrel pulls in the Zod schemas, and importing it from a client
  * component to read two integers added ~27kB of JavaScript to every page that
  * did. The schemas read these back, so there is still one source of truth.

@@ -1,6 +1,6 @@
 'use client';
 
-import { can, type Role } from '@relay/shared';
+import { can, type Role } from '@robis/shared';
 import { useState } from 'react';
 import { Button, EmptyState, InlineError, Pill } from '../../components/ui/primitives.tsx';
 import { ApiError, type Member } from '../../lib/api.ts';

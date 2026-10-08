@@ -1,4 +1,4 @@
-import { type Executor, sessions, users } from '@relay/database';
+import { type Executor, sessions, users } from '@robis/database';
 import { and, desc, eq, gt, lt, ne } from 'drizzle-orm';
 import { generateSessionToken, hashSessionToken, sessionExpiry } from './tokens.ts';
 

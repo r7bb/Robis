@@ -1,25 +1,25 @@
 /**
  * Integration-test harness.
  *
- * Tests run against a real Postgres (`relay_test`), not a mock. The behaviour
+ * Tests run against a real Postgres (`robis_test`), not a mock. The behaviour
  * under test here -- unique constraints, `ON DELETE CASCADE`, row locks around
  * the issue counter, transaction rollback -- is behaviour the database
  * provides, so a fake would only assert that the fake works.
  *
  * Requires the dev server to be up: `bun run db:start`.
  */
-import { buildApp } from '@relay/api/app';
-import { loadEnv } from '@relay/api/env';
-import type { SimilarIssue } from '@relay/api/suggestions';
-import { createDatabase, type Database } from '@relay/database';
-import { runMigrations } from '@relay/database/migrate';
-import { MemoryMailer } from '@relay/mailer';
+import { buildApp } from '@robis/api/app';
+import { loadEnv } from '@robis/api/env';
+import type { SimilarIssue } from '@robis/api/suggestions';
+import { createDatabase, type Database } from '@robis/database';
+import { runMigrations } from '@robis/database/migrate';
+import { MemoryMailer } from '@robis/mailer';
 import postgres from 'postgres';
 
-const ADMIN_URL = process.env.TEST_ADMIN_URL ?? 'postgres://relay:relay@localhost:5433/postgres';
-const TEST_DB = 'relay_test';
+const ADMIN_URL = process.env.TEST_ADMIN_URL ?? 'postgres://robis:robis@localhost:5433/postgres';
+const TEST_DB = 'robis_test';
 export const TEST_URL =
-  process.env.TEST_DATABASE_URL ?? `postgres://relay:relay@localhost:5433/${TEST_DB}`;
+  process.env.TEST_DATABASE_URL ?? `postgres://robis:robis@localhost:5433/${TEST_DB}`;
 
 /** Every table that holds test state, in an order safe for `TRUNCATE CASCADE`. */
 const TABLES = [
@@ -179,7 +179,7 @@ let userCounter = 0;
 /** Register a fresh user and return their identity plus session cookie. */
 export async function createActor(name = `User ${++userCounter}`): Promise<Actor> {
   const { app } = await getHarness();
-  const email = `user${userCounter}-${Date.now()}@relay.test`;
+  const email = `user${userCounter}-${Date.now()}@robis.test`;
 
   const response = await app.inject({
     method: 'POST',

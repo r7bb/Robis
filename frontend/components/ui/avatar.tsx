@@ -1,7 +1,7 @@
 /**
  * Initials in a tinted circle.
  *
- * Relay has no file uploads, so there are no uploaded photographs to show.
+ * Robis has no file uploads, so there are no uploaded photographs to show.
  * Rather than give everyone the same grey silhouette -- which makes a member
  * list unscannable -- each person gets a colour derived from their user id.
  * It is stable across sessions and devices because it is a pure function of

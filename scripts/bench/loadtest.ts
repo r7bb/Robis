@@ -36,7 +36,7 @@
  * useful for comparing changes to this codebase against each other, and for
  * showing the shape of the system. They are not a capacity plan.
  */
-import { createSession, hashPassword, SESSION_COOKIE } from '@relay/auth';
+import { createSession, hashPassword, SESSION_COOKIE } from '@robis/auth';
 import {
   createDatabase,
   type Database,
@@ -44,11 +44,11 @@ import {
   users,
   workspaceMembers,
   workspaces,
-} from '@relay/database';
-import { formatMs, type ServerMessage, type Summary, slugify, summarize } from '@relay/shared';
+} from '@robis/database';
+import { formatMs, type ServerMessage, type Summary, slugify, summarize } from '@robis/shared';
 import { eq, inArray, sql } from 'drizzle-orm';
 
-const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://relay:relay@localhost:5433/relay';
+const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://robis:robis@localhost:5433/robis';
 
 // ---------------------------------------------------------------------------
 // Options
@@ -161,7 +161,7 @@ async function setupFixture(db: Database, count: number): Promise<Fixture> {
     .insert(users)
     .values(
       Array.from({ length: count }, (_, i) => ({
-        email: `loadtest-${runId}-${i}@relay.invalid`,
+        email: `loadtest-${runId}-${i}@robis.invalid`,
         name: `Load ${i}`,
         passwordHash,
       })),
@@ -645,7 +645,7 @@ try {
   const accounts = Math.max(options.connections, options.subscribers, 1);
   fixture = await setupFixture(db, accounts);
 
-  console.log('Relay load test');
+  console.log('Robis load test');
   console.log(`  api         ${API_URL} (request logging off)`);
   console.log(`  gateway     ${WS_URL}`);
   console.log(`  database    ${DATABASE_URL.replace(/\/\/[^@]*@/, '//')}`);

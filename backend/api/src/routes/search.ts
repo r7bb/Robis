@@ -1,4 +1,4 @@
-import { type Database, searchWorkspace } from '@relay/database';
+import { type Database, searchWorkspace } from '@robis/database';
 import type { FastifyInstance } from 'fastify';
 import type { RateLimits } from '../app.ts';
 import { currentMembership, requireAuth, requireMembership } from '../plugins/authz.ts';

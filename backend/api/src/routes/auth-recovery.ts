@@ -4,10 +4,10 @@ import {
   issueAuthToken,
   revokeAllSessions,
   ttlMinutesFor,
-} from '@relay/auth';
-import { type Database, users } from '@relay/database';
-import { type Mailer, passwordResetMail } from '@relay/mailer';
-import { forgotPasswordSchema, resetPasswordSchema, verifyEmailSchema } from '@relay/shared';
+} from '@robis/auth';
+import { type Database, users } from '@robis/database';
+import { type Mailer, passwordResetMail } from '@robis/mailer';
+import { forgotPasswordSchema, resetPasswordSchema, verifyEmailSchema } from '@robis/shared';
 import { and, eq, isNull } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import type { RateLimits } from '../app.ts';

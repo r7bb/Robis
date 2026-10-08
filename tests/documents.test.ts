@@ -6,7 +6,7 @@ import {
   documentText,
   loadDocument,
   recordUpdate,
-} from '@relay/database';
+} from '@robis/database';
 import { eq } from 'drizzle-orm';
 import * as Y from 'yjs';
 import {
@@ -22,7 +22,7 @@ import {
  * CRDT documents.
  *
  * The convergence tests are the point of the whole milestone. Everything else
- * in Relay merges under last-write-wins, which is fine for a status field and
+ * in Robis merges under last-write-wins, which is fine for a status field and
  * catastrophic for a paragraph: two people typing in the same sentence would
  * lose one of the edits. These assert that they do not.
  */

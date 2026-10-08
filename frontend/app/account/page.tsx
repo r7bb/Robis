@@ -131,7 +131,7 @@ function ProfileSection({ user, onSaved }: { user: Me['user']; onSaved: () => vo
 /**
  * Whether the address has been confirmed, and a way to resend the link.
  *
- * Phrased as information rather than a warning. Nothing in Relay is gated on a
+ * Phrased as information rather than a warning. Nothing in Robis is gated on a
  * verified address, so a red banner demanding action would be a lie about the
  * consequences of ignoring it.
  */

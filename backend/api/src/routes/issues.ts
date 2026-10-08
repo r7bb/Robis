@@ -9,14 +9,14 @@ import {
   publishEvent,
   users,
   workspaceMembers,
-} from '@relay/database';
+} from '@robis/database';
 import {
   createIssueSchema,
   isUuid,
   listIssuesQuerySchema,
   similarIssuesQuerySchema,
   updateIssueSchema,
-} from '@relay/shared';
+} from '@robis/shared';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../errors.ts';

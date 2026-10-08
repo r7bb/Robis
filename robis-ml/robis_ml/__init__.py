@@ -1,4 +1,4 @@
-"""Duplicate detection and priority triage for Relay issues.
+"""Duplicate detection and priority triage for Robis issues.
 
 Only the model layer is re-exported here. ``data`` and ``service`` are not,
 because importing this package should not require a database driver or a

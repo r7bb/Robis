@@ -1,4 +1,4 @@
-# Relay: complete feature inventory
+# Robis: complete feature inventory
 
 Everything the application does today, what it deliberately does not do, and
 where each thing lives. [The README](README.md) is the short tour;
@@ -102,8 +102,8 @@ authorisation path.
 | Cancel marks the row rather than deleting it | same |
 | Optional `https` join link | `shared/contracts/src/schemas.ts` |
 
-Relay stores the plan and never the call. `joinUrl` is organiser-supplied and
-validated as `https`, so Relay takes on no conferencing provider and no
+Robis stores the plan and never the call. `joinUrl` is organiser-supplied and
+validated as `https`, so Robis takes on no conferencing provider and no
 third-party data flow. Invitee ids are intersected with the roster, which stops
 a member attaching strangers and stops the endpoint confirming that a given
 user id exists.
@@ -149,11 +149,11 @@ JavaScript.
 
 | Feature | Where |
 | --- | --- |
-| Duplicate issue detection (TF-IDF, cosine) | `relay-ml/relay_ml/model.py` |
+| Duplicate issue detection (TF-IDF, cosine) | `robis-ml/robis_ml/model.py` |
 | Priority triage (logistic regression) | same |
 | Refuses to predict below 40 triaged issues | same |
-| Macro-F1 against a majority-class baseline | `relay-ml/relay_ml/evaluate.py` |
-| FastAPI service, per-workspace models | `relay-ml/relay_ml/service.py` |
+| Macro-F1 against a majority-class baseline | `robis-ml/robis_ml/evaluate.py` |
+| FastAPI service, per-workspace models | `robis-ml/robis_ml/service.py` |
 
 Advisory only. Not wired into the API, and **unauthenticated**, so it is not
 deployable as it stands.
@@ -166,12 +166,12 @@ deployable as it stands.
 transcript, what an export contains, what happens when somebody leaves. Bolting
 them onto a workspace-scoped table would answer those badly and silently.
 
-**A public project directory with match percentages.** Relay workspaces are
+**A public project directory with match percentages.** Robis workspaces are
 private tenancies with invite-only membership, and the 404-not-403 rule is
 tested. A public discovery surface would contradict that access model rather
 than extend it.
 
-**Conferencing.** Relay stores a link. It does not mint rooms, does not hold a
+**Conferencing.** Robis stores a link. It does not mint rooms, does not hold a
 provider relationship, and does not put a third party in the request path.
 
 **Any compliance claim.** The code does what is described here. That is not the

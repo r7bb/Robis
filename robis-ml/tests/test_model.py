@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from relay_ml.model import (
+from robis_ml.model import (
     MIN_TRAINING_EXAMPLES,
     DuplicateFinder,
     Issue,
@@ -168,7 +168,7 @@ class TestIssueText:
 
 class TestLabelledIssues:
     def test_none_is_not_a_label(self) -> None:
-        """`NONE` is Relay's column default, not a priority anyone chose.
+        """`NONE` is Robis's column default, not a priority anyone chose.
 
         `if issue.priority` is true for the string "NONE", which counted
         every untriaged issue as training data and put rows in the test set

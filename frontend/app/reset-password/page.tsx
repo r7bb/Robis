@@ -1,6 +1,6 @@
 'use client';
 
-import { PASSWORD_MIN_LENGTH } from '@relay/shared/limits';
+import { PASSWORD_MIN_LENGTH } from '@robis/shared/limits';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { type FormEvent, Suspense, useState } from 'react';

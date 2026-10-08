@@ -1,4 +1,4 @@
-import { createDatabase } from '@relay/database';
+import { createDatabase } from '@robis/database';
 import postgres from 'postgres';
 import { createGateway } from './gateway.ts';
 

@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
-import { SESSION_COOKIE } from '@relay/auth';
+import { SESSION_COOKIE } from '@robis/auth';
 import { closeHarness, createActor, request, resetDatabase } from './harness.ts';
 
 beforeEach(resetDatabase);
@@ -11,11 +11,11 @@ describe('registration', () => {
   test('creates an account and starts a session', async () => {
     const response = await request('/auth/register', {
       method: 'POST',
-      payload: { email: 'ada@relay.test', name: 'Ada', password: PASSWORD },
+      payload: { email: 'ada@robis.test', name: 'Ada', password: PASSWORD },
     });
 
     expect(response.statusCode).toBe(201);
-    expect(response.json().user.email).toBe('ada@relay.test');
+    expect(response.json().user.email).toBe('ada@robis.test');
 
     const cookie = response.headers['set-cookie'];
     expect(String(cookie)).toContain(SESSION_COOKIE);
@@ -25,7 +25,7 @@ describe('registration', () => {
   test('never returns the password hash', async () => {
     const response = await request('/auth/register', {
       method: 'POST',
-      payload: { email: 'ada@relay.test', name: 'Ada', password: PASSWORD },
+      payload: { email: 'ada@robis.test', name: 'Ada', password: PASSWORD },
     });
 
     expect(response.body).not.toContain('argon2');
@@ -35,12 +35,12 @@ describe('registration', () => {
   test('rejects a duplicate email regardless of casing', async () => {
     await request('/auth/register', {
       method: 'POST',
-      payload: { email: 'ada@relay.test', name: 'Ada', password: PASSWORD },
+      payload: { email: 'ada@robis.test', name: 'Ada', password: PASSWORD },
     });
 
     const response = await request('/auth/register', {
       method: 'POST',
-      payload: { email: 'ADA@Relay.test', name: 'Impostor', password: PASSWORD },
+      payload: { email: 'ADA@Robis.test', name: 'Impostor', password: PASSWORD },
     });
 
     expect(response.statusCode).toBe(409);
@@ -50,7 +50,7 @@ describe('registration', () => {
   test('rejects a password below the length floor', async () => {
     const response = await request('/auth/register', {
       method: 'POST',
-      payload: { email: 'ada@relay.test', name: 'Ada', password: 'short' },
+      payload: { email: 'ada@robis.test', name: 'Ada', password: 'short' },
     });
 
     expect(response.statusCode).toBe(400);
@@ -85,7 +85,7 @@ describe('login', () => {
 
     const unknownAccount = await request('/auth/login', {
       method: 'POST',
-      payload: { email: 'nobody@relay.test', password: 'not-the-right-password' },
+      payload: { email: 'nobody@robis.test', password: 'not-the-right-password' },
     });
 
     expect(wrongPassword.statusCode).toBe(401);

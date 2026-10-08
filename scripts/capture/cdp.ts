@@ -3,7 +3,7 @@
  *
  * Extracted from `screenshots.ts`, which had grown past the 800-line ceiling
  * the repo holds itself to. The split is also the natural seam: everything
- * here is about driving a browser, and nothing here knows what Relay is.
+ * here is about driving a browser, and nothing here knows what Robis is.
  *
  * Chrome over CDP rather than Playwright because Playwright's browser download
  * does not work on this machine, and Chrome is already installed. The subset

@@ -4,7 +4,7 @@
  * There is no SMTP service reachable from this machine, which is exactly why
  * sending is a port rather than a call to a provider: the flows that send mail
  * depend on this one function, and the driver decides whether the message goes
- * to a terminal, to a test, or one day to a real relay.
+ * to a terminal, to a test, or one day to a real robis.
  *
  * Adding SMTP means one more driver wrapping `nodemailer` and a line of
  * configuration. It is deliberately not here yet -- a dependency that cannot

@@ -5,7 +5,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 /**
  * Destructive actions, behind a confirmation.
  *
- * Everything deletable in Relay cascades to something: a workspace takes its
+ * Everything deletable in Robis cascades to something: a workspace takes its
  * projects, issues and comments with it, a project takes its issues, a
  * document takes its edit history. None of it is recoverable, so the dialog
  * names what is about to go and what goes with it rather than asking a generic

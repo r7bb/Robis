@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
-import { SESSION_COOKIE } from '@relay/auth';
+import { SESSION_COOKIE } from '@robis/auth';
 import {
   type Actor,
   closeHarness,

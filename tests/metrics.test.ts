@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
-import { Registry } from '@relay/metrics';
+import { Registry } from '@robis/metrics';
 import { closeHarness, createActor, createWorkspace, request, resetDatabase } from './harness.ts';
 
 /**
@@ -305,7 +305,7 @@ describe('the API endpoint', () => {
     await request('/health');
 
     expect(await scrape()).toContain(
-      'relay_http_requests_total{method="GET",route="/health",status="200"} 2',
+      'robis_http_requests_total{method="GET",route="/health",status="200"} 2',
     );
   });
 
@@ -325,7 +325,7 @@ describe('the API endpoint', () => {
     const body = await scrape();
     const series = body
       .split('\n')
-      .filter((line) => line.startsWith('relay_http_requests_total') && line.includes('/issues/'));
+      .filter((line) => line.startsWith('robis_http_requests_total') && line.includes('/issues/'));
 
     expect(series).toHaveLength(1);
     expect(series[0]).toContain('route="/workspaces/:workspaceId/issues/:issueId"');
@@ -349,7 +349,7 @@ describe('the API endpoint', () => {
 
     const body = await scrape();
     expect(body).toContain(
-      'relay_http_request_duration_seconds_count{method="GET",route="/health"}',
+      'robis_http_request_duration_seconds_count{method="GET",route="/health"}',
     );
     expect(body).toContain('le="+Inf"');
   });
@@ -363,7 +363,7 @@ describe('the API endpoint', () => {
   test('the in-flight gauge counts only the scrape once traffic has settled', async () => {
     for (let i = 0; i < 5; i++) await request('/health');
 
-    expect(await scrape()).toContain('relay_http_requests_in_flight 1');
+    expect(await scrape()).toContain('robis_http_requests_in_flight 1');
   });
 
   test('failed requests are counted with their real status', async () => {

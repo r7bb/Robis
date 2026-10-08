@@ -6,7 +6,7 @@ import {
   SyncEngine,
   SyncError,
   type SyncTransport,
-} from '@relay/sync';
+} from '@robis/sync';
 
 /**
  * Unit tests for the offline engine.

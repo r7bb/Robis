@@ -1,4 +1,4 @@
-import type { IssuePriority, IssueStatus } from '@relay/shared';
+import type { IssuePriority, IssueStatus } from '@robis/shared';
 
 /**
  * Colour that carries information.

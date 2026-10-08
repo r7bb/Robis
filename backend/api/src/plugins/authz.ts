@@ -1,6 +1,6 @@
-import { type AuthenticatedUser, resolveSession, SESSION_COOKIE } from '@relay/auth';
-import { type Database, findMembership } from '@relay/database';
-import { can, type Permission, type Role } from '@relay/shared';
+import { type AuthenticatedUser, resolveSession, SESSION_COOKIE } from '@robis/auth';
+import { type Database, findMembership } from '@robis/database';
+import { can, type Permission, type Role } from '@robis/shared';
 import type { FastifyReply, FastifyRequest, preHandlerHookHandler } from 'fastify';
 import { ApiError } from '../errors.ts';
 

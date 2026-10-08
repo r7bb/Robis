@@ -5,14 +5,14 @@ import {
   publishEvent,
   users,
   workspaceMembers,
-} from '@relay/database';
+} from '@robis/database';
 import {
   inviteMemberSchema,
   outranks,
   type Role,
   rankOf,
   setMemberRoleSchema,
-} from '@relay/shared';
+} from '@robis/shared';
 import { and, count, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../errors.ts';

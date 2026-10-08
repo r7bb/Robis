@@ -1,6 +1,6 @@
 'use client';
 
-import { ROLES, type Role, rankOf } from '@relay/shared';
+import { ROLES, type Role, rankOf } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { api, type Me, type Member } from '../lib/api.ts';

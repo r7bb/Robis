@@ -1,6 +1,6 @@
 'use client';
 
-import { PASSWORD_RESET_TTL_MINUTES } from '@relay/shared/limits';
+import { PASSWORD_RESET_TTL_MINUTES } from '@robis/shared/limits';
 import { type FormEvent, useState } from 'react';
 import {
   AuthButton,
@@ -55,7 +55,7 @@ export default function ForgotPasswordPage() {
       >
         <div className="mt-3 space-y-3">
           <AuthNotice>
-            If <span className="text-content">{email}</span> has a Relay account, a reset link is on
+            If <span className="text-content">{email}</span> has a Robis account, a reset link is on
             its way. The link works once and expires in {PASSWORD_RESET_TTL_MINUTES} minutes.
           </AuthNotice>
 

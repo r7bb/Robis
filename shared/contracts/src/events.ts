@@ -6,11 +6,11 @@
  * all three rather than a silently ignored message.
  */
 
-export const REALTIME_CHANNEL = 'relay_events';
+export const REALTIME_CHANNEL = 'robis_events';
 
 /** Separate channel so a gateway can subscribe to presence without parsing
  * every domain event, and so the two can be split later. */
-export const PRESENCE_CHANNEL = 'relay_presence';
+export const PRESENCE_CHANNEL = 'robis_presence';
 
 /** Server -> client domain events. */
 export type ServerEvent =

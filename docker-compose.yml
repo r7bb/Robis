@@ -8,21 +8,21 @@
 services:
   postgres:
     image: postgres:18-alpine
-    container_name: relay-postgres
+    container_name: robis-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: relay
-      POSTGRES_PASSWORD: relay
-      POSTGRES_DB: relay
+      POSTGRES_USER: robis
+      POSTGRES_PASSWORD: robis
+      POSTGRES_DB: robis
     ports:
       - '5433:5432'
     volumes:
-      - relay-pgdata:/var/lib/postgresql/data
+      - robis-pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U relay -d relay']
+      test: ['CMD-SHELL', 'pg_isready -U robis -d robis']
       interval: 5s
       timeout: 5s
       retries: 10
 
 volumes:
-  relay-pgdata:
+  robis-pgdata:

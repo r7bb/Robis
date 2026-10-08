@@ -12,7 +12,7 @@
  * person -- there is nothing to see in a permission matrix when every session is
  * the same owner.
  */
-import { hashPassword } from '@relay/auth';
+import { hashPassword } from '@robis/auth';
 import {
   auditEvents,
   channels,
@@ -25,24 +25,24 @@ import {
   users,
   workspaceMembers,
   workspaces,
-} from '@relay/database';
-import { type IssuePriority, type IssueStatus, type Role, slugify } from '@relay/shared';
+} from '@robis/database';
+import { type IssuePriority, type IssueStatus, type Role, slugify } from '@robis/shared';
 import { eq, inArray } from 'drizzle-orm';
 
-const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://relay:relay@localhost:5433/relay';
-const PASSWORD = process.env.SEED_PASSWORD ?? 'relay-demo-password';
+const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://robis:robis@localhost:5433/robis';
+const PASSWORD = process.env.SEED_PASSWORD ?? 'robis-demo-password';
 
 const WITH_TEAM = process.argv.includes('--team');
 
 type Person = { email: string; name: string; role: Role };
 
-const OWNER: Person = { email: 'rohit@relay.dev', name: 'Rohit Biju', role: 'OWNER' };
+const OWNER: Person = { email: 'rohit@robis.test', name: 'Rohit Biju', role: 'OWNER' };
 
 /** Only created with `--team`. */
 const TEAM: Person[] = [
-  { email: 'alex@relay.dev', name: 'Alex Rivera', role: 'ADMIN' },
-  { email: 'john@relay.dev', name: 'John Okafor', role: 'MEMBER' },
-  { email: 'mia@relay.dev', name: 'Mia Lindqvist', role: 'GUEST' },
+  { email: 'alex@robis.test', name: 'Alex Rivera', role: 'ADMIN' },
+  { email: 'john@robis.test', name: 'John Okafor', role: 'MEMBER' },
+  { email: 'mia@robis.test', name: 'Mia Lindqvist', role: 'GUEST' },
 ];
 
 const PEOPLE: Person[] = WITH_TEAM ? [OWNER, ...TEAM] : [OWNER];
@@ -59,7 +59,7 @@ const PROJECTS: { key: string; name: string; description: string; issues: IssueS
   {
     key: 'REL',
     name: 'Web App',
-    description: 'The Relay client.',
+    description: 'The Robis client.',
     issues: [
       {
         title: 'Fix OAuth refresh-token bug',
@@ -79,7 +79,7 @@ const PROJECTS: { key: string; name: string; description: string; issues: IssueS
         title: 'Billing settings page',
         status: 'IN_REVIEW',
         priority: 'MEDIUM',
-        assignee: 'alex@relay.dev',
+        assignee: 'alex@robis.test',
       },
       { title: 'Dark mode', status: 'DONE', priority: 'LOW', assignee: OWNER.email },
     ],
@@ -100,7 +100,7 @@ const PROJECTS: { key: string; name: string; description: string; issues: IssueS
         title: 'Cursor pagination for issue lists',
         status: 'IN_PROGRESS',
         priority: 'MEDIUM',
-        assignee: 'john@relay.dev',
+        assignee: 'john@robis.test',
       },
       { title: 'Session cleanup job', status: 'DONE', priority: 'LOW' },
     ],
@@ -125,49 +125,49 @@ const CHANNELS: { name: string; topic: string }[] = [
 const CONVERSATION: { channel: string; from: string; minutesAgo: number; body: string }[] = [
   {
     channel: 'offline-sync',
-    from: 'alex@relay.dev',
+    from: 'alex@robis.test',
     minutesAgo: 1_510,
     body: 'The replay test is green. Queue drains in order after a 40 second disconnect.',
   },
   {
     channel: 'offline-sync',
-    from: 'rohit@relay.dev',
+    from: 'rohit@robis.test',
     minutesAgo: 1_495,
     body: 'Good. Did you check the ambiguous case, where the response is lost but the write landed?',
   },
   {
     channel: 'offline-sync',
-    from: 'alex@relay.dev',
+    from: 'alex@robis.test',
     minutesAgo: 1_480,
     body: 'Yes. Second attempt finds the ledger row and returns the stored response instead of inserting again.',
   },
   {
     channel: 'offline-sync',
-    from: 'john@relay.dev',
+    from: 'john@robis.test',
     minutesAgo: 184,
     body: 'Reading through this now. Is the ledger key per user, or global?',
   },
   {
     channel: 'offline-sync',
-    from: 'alex@relay.dev',
+    from: 'alex@robis.test',
     minutesAgo: 176,
     body: 'Global key, but the user id is checked too, so one account cannot probe another’s.',
   },
   {
     channel: 'offline-sync',
-    from: 'rohit@relay.dev',
+    from: 'rohit@robis.test',
     minutesAgo: 41,
     body: 'Let us walk through the fan-out numbers at standup. p50 to all 50 subscribers is 5.8ms, which I did not expect.',
   },
   {
     channel: 'general',
-    from: 'mia@relay.dev',
+    from: 'mia@robis.test',
     minutesAgo: 95,
     body: 'The 404-for-non-members behaviour caught me out in testing. Then I read the comment and it is obviously right.',
   },
   {
     channel: 'general',
-    from: 'rohit@relay.dev',
+    from: 'rohit@robis.test',
     minutesAgo: 88,
     body: 'That one is worth keeping. A 403 tells you the workspace exists, which is half of what an attacker wants.',
   },

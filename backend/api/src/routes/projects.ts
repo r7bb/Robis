@@ -5,8 +5,8 @@ import {
   issues,
   projects,
   publishEvent,
-} from '@relay/database';
-import { createProjectSchema, deriveProjectKey, isUuid, updateProjectSchema } from '@relay/shared';
+} from '@robis/database';
+import { createProjectSchema, deriveProjectKey, isUuid, updateProjectSchema } from '@robis/shared';
 import { and, count, eq, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../errors.ts';

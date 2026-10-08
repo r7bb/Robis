@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
-import { SESSION_COOKIE } from '@relay/auth';
+import { SESSION_COOKIE } from '@robis/auth';
 import {
   type Actor,
   closeHarness,
@@ -62,14 +62,14 @@ describe('asking for a link', () => {
     const actor = await createActor('Holder');
 
     const known = await forgot(actor.email);
-    const unknown = await forgot('nobody-at-all@relay.invalid');
+    const unknown = await forgot('nobody-at-all@robis.invalid');
 
     expect(unknown.statusCode).toBe(known.statusCode);
     expect(unknown.body).toBe(known.body);
   });
 
   test('and no mail is sent for an address with no account', async () => {
-    await forgot('nobody-at-all@relay.invalid');
+    await forgot('nobody-at-all@robis.invalid');
 
     expect((await getMailer()).sent).toEqual([]);
   });
@@ -228,7 +228,7 @@ describe('hardening', () => {
     };
 
     const known = await timeOf(actor.email);
-    const unknown = await timeOf('nobody-at-all@relay.invalid');
+    const unknown = await timeOf('nobody-at-all@robis.invalid');
 
     // Both are held to the same floor, so neither is a usable signal. A
     // generous bound: this asserts the floor exists, not that the clock is
@@ -272,7 +272,7 @@ describe('hardening', () => {
 
     await Promise.all([forgot(actor.email), forgot(actor.email), forgot(actor.email)]);
 
-    const { authTokens } = await import('@relay/database');
+    const { authTokens } = await import('@robis/database');
     const { and, eq } = await import('drizzle-orm');
     const { db } = await import('./harness.ts').then((m) => m.getHarness());
 

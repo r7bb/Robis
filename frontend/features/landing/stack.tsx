@@ -12,7 +12,7 @@
  * Licensing, because it is a dependency like any other: the icon paths are
  * Simple Icons, released under CC0 1.0 (public domain). The marks
  * themselves remain the trademarks of their owners and are used here only
- * to say what Relay is built with, which is what trademark law calls
+ * to say what Robis is built with, which is what trademark law calls
  * nominative use.
  */
 

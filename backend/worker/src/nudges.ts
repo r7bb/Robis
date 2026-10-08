@@ -7,8 +7,8 @@ import {
   users,
   workspaceMembers,
   workspaces,
-} from '@relay/database';
-import type { NudgeKind } from '@relay/shared';
+} from '@robis/database';
+import type { NudgeKind } from '@robis/shared';
 import { and, count, eq, sql } from 'drizzle-orm';
 
 /**

@@ -1,6 +1,6 @@
 'use client';
 
-import { can } from '@relay/shared';
+import { can } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

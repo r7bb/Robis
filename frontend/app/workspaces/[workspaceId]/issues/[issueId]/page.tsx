@@ -6,7 +6,7 @@ import {
   ISSUE_PRIORITIES,
   type IssuePriority,
   type IssueStatus,
-} from '@relay/shared';
+} from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';

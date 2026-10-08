@@ -1,5 +1,5 @@
-import { createDatabase } from '@relay/database';
-import { ConsoleMailer, type Mailer } from '@relay/mailer';
+import { createDatabase } from '@robis/database';
+import { ConsoleMailer, type Mailer } from '@robis/mailer';
 import { buildApp } from './app.ts';
 import { loadEnv } from './env.ts';
 
@@ -26,7 +26,7 @@ function resolveMailer(): Mailer {
     [
       'Refusing to start: no production mail driver is configured.',
       '',
-      'Relay ships only ConsoleMailer, which writes password-reset links to',
+      'Robis ships only ConsoleMailer, which writes password-reset links to',
       'stdout. In production that means no user receives a link, and anyone',
       'with log access can take over any account.',
       '',

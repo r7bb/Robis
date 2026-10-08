@@ -119,7 +119,7 @@ export const NUDGE_GUIDES: Record<NudgeKind, NudgeGuide> = {
 /** Starter content for the sample document, so the page is not empty. */
 export const SAMPLE_DOCUMENT_TITLE = 'Getting started';
 
-export const SAMPLE_DOCUMENT_BODY = `Welcome to Relay documents.
+export const SAMPLE_DOCUMENT_BODY = `Welcome to Robis documents.
 
 This text is a CRDT. Open this page in a second window and type in both at the
 same time — in this very paragraph, if you like. Both sets of edits survive.

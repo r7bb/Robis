@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test';
-import { createGateway } from '@relay/realtime/gateway';
-import type { ServerMessage } from '@relay/shared';
+import { createGateway } from '@robis/realtime/gateway';
+import type { ServerMessage } from '@robis/shared';
 import postgres from 'postgres';
 import * as Y from 'yjs';
 import {
@@ -505,9 +505,9 @@ describe('document collaboration', () => {
     local.getText('content').insert(0, 'typed by A');
     a.sendUpdate(document.id, local);
 
-    const relayed = await b.waitFor(isDocUpdate);
+    const forwarded = await b.waitFor(isDocUpdate);
     const mirror = new Y.Doc();
-    Y.applyUpdate(mirror, new Uint8Array(Buffer.from(relayed.update, 'base64')));
+    Y.applyUpdate(mirror, new Uint8Array(Buffer.from(forwarded.update, 'base64')));
 
     expect(mirror.getText('content').toString()).toBe('typed by A');
 

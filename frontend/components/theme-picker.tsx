@@ -1,6 +1,6 @@
 'use client';
 
-import { THEME_LIST, type ThemeId } from '@relay/shared';
+import { THEME_LIST, type ThemeId } from '@robis/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api.ts';
 import { rememberTheme } from '../lib/theme.ts';

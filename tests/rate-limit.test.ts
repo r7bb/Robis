@@ -1,8 +1,8 @@
 import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
-import { buildApp } from '@relay/api/app';
-import { loadEnv } from '@relay/api/env';
-import { resetRateLimits } from '@relay/api/rate-limit';
-import { MemoryMailer } from '@relay/mailer';
+import { buildApp } from '@robis/api/app';
+import { loadEnv } from '@robis/api/env';
+import { resetRateLimits } from '@robis/api/rate-limit';
+import { MemoryMailer } from '@robis/mailer';
 import { closeHarness, getHarness, resetDatabase, TEST_URL } from './harness.ts';
 
 /**
@@ -46,7 +46,7 @@ const register = (app: Awaited<ReturnType<typeof throttledApp>>, ip = '10.0.0.1'
     // which is how one test can pretend to be several callers.
     headers: { 'x-forwarded-for': ip },
     payload: {
-      email: `limited${++counter}-${Date.now()}@relay.test`,
+      email: `limited${++counter}-${Date.now()}@robis.test`,
       name: 'Limited',
       password: 'correct-horse-battery-staple',
     },

@@ -5,7 +5,7 @@ export default defineConfig({
   out: './migrations',
   dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.DATABASE_URL ?? 'postgres://relay:relay@localhost:5433/relay',
+    url: process.env.DATABASE_URL ?? 'postgres://robis:robis@localhost:5433/robis',
   },
   strict: true,
   verbose: true,

@@ -1,4 +1,4 @@
-import { type ClaimedJob, claimJobs, completeJob, type Database, failJob } from '@relay/database';
+import { type ClaimedJob, claimJobs, completeJob, type Database, failJob } from '@robis/database';
 
 /**
  * The worker loop.

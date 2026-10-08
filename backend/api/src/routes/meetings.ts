@@ -5,14 +5,14 @@ import {
   publishEvent,
   users,
   workspaceMembers,
-} from '@relay/database';
+} from '@robis/database';
 import {
   can,
   createMeetingSchema,
   isUuid,
   respondToMeetingSchema,
   updateMeetingSchema,
-} from '@relay/shared';
+} from '@robis/shared';
 import { and, asc, eq, gte, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../errors.ts';
@@ -27,7 +27,7 @@ import { parse } from '../validate.ts';
 /**
  * Scheduled meetings.
  *
- * Relay stores the plan and nothing else. There is no conferencing provider
+ * Robis stores the plan and nothing else. There is no conferencing provider
  * behind this: `joinUrl` is a link the organiser supplies, validated only as
  * an https URL. Minting rooms on someone's service would put a third-party
  * dependency -- and that provider's data handling -- on the request path for

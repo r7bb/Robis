@@ -1,5 +1,5 @@
-import { type Database, notifications, users } from '@relay/database';
-import { isUuid } from '@relay/shared';
+import { type Database, notifications, users } from '@robis/database';
+import { isUuid } from '@robis/shared';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../errors.ts';

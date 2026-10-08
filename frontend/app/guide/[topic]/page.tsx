@@ -5,7 +5,7 @@ import {
   NUDGE_GUIDES,
   SAMPLE_DOCUMENT_BODY,
   SAMPLE_DOCUMENT_TITLE,
-} from '@relay/shared';
+} from '@robis/shared';
 import { useMutation } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';

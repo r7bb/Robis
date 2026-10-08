@@ -4,7 +4,7 @@ import { closeHarness, createActor, getMailer, request, resetDatabase } from './
 /**
  * Email verification.
  *
- * Nothing in Relay is gated on a verified address yet -- see the README -- so
+ * Nothing in Robis is gated on a verified address yet -- see the README -- so
  * what these tests protect is the integrity of the claim itself: the link is
  * single-use, cannot be spent on another account, and cannot be spent as a
  * password reset.

@@ -6,8 +6,8 @@ import {
   users,
   workspaceMembers,
   workspaces,
-} from '@relay/database';
-import { createWorkspaceSchema, slugify, updateWorkspaceSchema } from '@relay/shared';
+} from '@robis/database';
+import { createWorkspaceSchema, slugify, updateWorkspaceSchema } from '@robis/shared';
 
 /** The room every new workspace is born with. */
 const DEFAULT_CHANNEL_NAME = 'general';

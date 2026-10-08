@@ -1,19 +1,19 @@
-# relay-ml
+# robis-ml
 
-Two models over the text of Relay issues: **find possible duplicates**, and
+Two models over the text of Robis issues: **find possible duplicates**, and
 **suggest a priority**.
 
-Both are advisory. Nothing in Relay changes a priority or closes an issue on
+Both are advisory. Nothing in Robis changes a priority or closes an issue on
 the strength of a prediction. Every response carries its score so the caller
 can disagree.
 
 ```bash
-cd relay-ml
+cd robis-ml
 uv venv --python 3.11 .venv
 uv pip install --python .venv/bin/python -e ".[dev]"
 
 .venv/bin/python -m pytest                    # 17 tests
-.venv/bin/python -m uvicorn relay_ml.service:app --port 8000
+.venv/bin/python -m uvicorn robis_ml.service:app --port 8000
 ```
 
 ## Possible duplicates
@@ -84,7 +84,7 @@ Two things that field is *not*:
   regularised model trained with `class_weight="balanced"`, which deliberately
   shifts probabilities away from the real class priors. Nothing here measures
   calibration. Treat it as a ranking signal, not as "87% sure".
-- `NONE` is not a class. It is Relay's column default and means "nobody has
+- `NONE` is not a class. It is Robis's column default and means "nobody has
   triaged this", so it is excluded from training and from evaluation. This was
   a real bug: `if issue.priority` is true for the string `"NONE"`, which
   counted every untriaged issue as a labelled example and then scored the model
@@ -107,7 +107,7 @@ nobody mistakes this for a considered rejection of embeddings.
 ## Measuring it
 
 ```bash
-.venv/bin/python -m relay_ml.evaluate <workspace-id>
+.venv/bin/python -m robis_ml.evaluate <workspace-id>
 ```
 
 Reports **macro-F1 over 5-fold stratified cross-validation, repeated 5 times**,
@@ -179,7 +179,7 @@ answering.
 ## Layout
 
 ```
-relay_ml/
+robis_ml/
   model.py      DuplicateFinder, TriageModel, compose_text, the vectorizer
   data.py       read-only Postgres loader, scoped by workspace
   evaluate.py   stratified split, macro-F1 vs baseline

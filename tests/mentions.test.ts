@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { handleFor, parseMentions, resolveMentions, splitMentions } from '@relay/shared';
+import { handleFor, parseMentions, resolveMentions, splitMentions } from '@robis/shared';
 
 /**
  * Mention parsing decides who gets notified, so its failure modes are
@@ -35,8 +35,8 @@ describe('parseMentions', () => {
    * name.
    */
   test('an email address in prose is not a mention', () => {
-    expect(parseMentions('write to ada@relay.dev about it')).toEqual([]);
-    expect(parseMentions('ada@relay.dev')).toEqual([]);
+    expect(parseMentions('write to ada@robis.test about it')).toEqual([]);
+    expect(parseMentions('ada@robis.test')).toEqual([]);
   });
 
   test('a bare @ is not a mention', () => {
@@ -60,15 +60,15 @@ describe('parseMentions', () => {
 
 describe('handleFor', () => {
   test('is the local part of the email, lowercased', () => {
-    expect(handleFor('Rohit@Relay.dev')).toBe('rohit');
-    expect(handleFor('ada.lovelace@relay.dev')).toBe('ada.lovelace');
+    expect(handleFor('Rohit@Robis.dev')).toBe('rohit');
+    expect(handleFor('ada.lovelace@robis.test')).toBe('ada.lovelace');
   });
 });
 
 describe('resolveMentions', () => {
   const members = [
-    { id: 'u1', email: 'rohit@relay.dev' },
-    { id: 'u2', email: 'ada@relay.dev' },
+    { id: 'u1', email: 'rohit@robis.test' },
+    { id: 'u2', email: 'ada@robis.test' },
   ];
 
   test('resolves handles to members', () => {
@@ -85,7 +85,7 @@ describe('resolveMentions', () => {
    */
   test('ambiguous handles are dropped rather than guessed', () => {
     const ambiguous = [
-      { id: 'a', email: 'sam@relay.dev' },
+      { id: 'a', email: 'sam@robis.test' },
       { id: 'b', email: 'sam@example.com' },
     ];
 
@@ -93,7 +93,7 @@ describe('resolveMentions', () => {
   });
 
   test('an email in prose does not resolve to a member', () => {
-    expect(resolveMentions('reply to ada@relay.dev', members)).toEqual([]);
+    expect(resolveMentions('reply to ada@robis.test', members)).toEqual([]);
   });
 
   test('a member list that is empty resolves nothing', () => {
@@ -113,7 +113,7 @@ describe('splitMentions', () => {
       'no mentions here',
       '@rohit at the start',
       'at the end @rohit',
-      'hey @rohit and @ada, see ada@relay.dev',
+      'hey @rohit and @ada, see ada@robis.test',
       '@@rohit',
       'thanks @ada!',
       'multi\nline @rohit text',
@@ -142,8 +142,8 @@ describe('splitMentions', () => {
   });
 
   test('an email address is not split into a mention', () => {
-    expect(splitMentions('write to ada@relay.dev')).toEqual([
-      { text: 'write to ada@relay.dev', handle: null },
+    expect(splitMentions('write to ada@robis.test')).toEqual([
+      { text: 'write to ada@robis.test', handle: null },
     ]);
   });
 
@@ -154,7 +154,7 @@ describe('splitMentions', () => {
   test('agrees with parseMentions on every sample', () => {
     for (const text of [
       'hey @rohit and @ada',
-      'ada@relay.dev is not @ada... or is it @ada',
+      'ada@robis.test is not @ada... or is it @ada',
       '@a @b @c @a',
       'thanks @ada! and @Rohit.',
       'nothing to see',

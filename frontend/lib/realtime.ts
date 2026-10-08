@@ -1,6 +1,6 @@
 'use client';
 
-import type { ClientMessage, PresenceUser, ServerEvent, ServerMessage } from '@relay/shared';
+import type { ClientMessage, PresenceUser, ServerEvent, ServerMessage } from '@robis/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 

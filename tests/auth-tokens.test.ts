@@ -6,8 +6,8 @@ import {
   hashSessionToken,
   issueAuthToken,
   PASSWORD_RESET_TTL_MS,
-} from '@relay/auth';
-import { authTokens } from '@relay/database';
+} from '@robis/auth';
+import { authTokens } from '@robis/database';
 import { and, eq } from 'drizzle-orm';
 import { closeHarness, createActor, getHarness, resetDatabase } from './harness.ts';
 

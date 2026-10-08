@@ -4,7 +4,7 @@ const config: NextConfig = {
   /*
    * Dev and production builds write to different directories.
    *
-   * They shared `.next` by default, so running `bun --filter '@relay/web'
+   * They shared `.next` by default, so running `bun --filter '@robis/web'
    * build` while the dev server was up replaced the chunks that server had
    * already loaded. The next request died with `Cannot find module
    * './539.js'` from `webpack-runtime.js`, which reads like a corrupted
@@ -17,7 +17,7 @@ const config: NextConfig = {
   reactStrictMode: true,
   // The workspace packages ship TypeScript source rather than build output, so
   // Next has to compile them alongside the app.
-  transpilePackages: ['@relay/shared'],
+  transpilePackages: ['@robis/shared'],
   /*
    * The dev-mode build indicator is a floating badge in the bottom-left
    * corner. It is useful while developing and it also lands in the middle of

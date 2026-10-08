@@ -1,6 +1,6 @@
 'use client';
 
-import { can, type Role } from '@relay/shared';
+import { can, type Role } from '@robis/shared';
 import { ApiError } from '../../lib/api.ts';
 import { Composer } from './composer.tsx';
 import { MessageList } from './message-list.tsx';

@@ -1,6 +1,6 @@
 """Measure the triage model, honestly.
 
-    python -m relay_ml.evaluate <workspace-id>
+    python -m robis_ml.evaluate <workspace-id>
 
 Exists so that "the model works" is a number somebody can reproduce rather
 than an impression. What this does that a naive script would not:
@@ -257,7 +257,7 @@ def evaluate(issues: list[Issue]) -> int:
 
 def main() -> int:
     if len(sys.argv) != 2:
-        print("usage: python -m relay_ml.evaluate <workspace-id>")
+        print("usage: python -m robis_ml.evaluate <workspace-id>")
         return 2
 
     return evaluate(load_issues(sys.argv[1]))

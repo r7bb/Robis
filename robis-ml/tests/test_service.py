@@ -16,7 +16,7 @@ import importlib
 import pytest
 from fastapi.testclient import TestClient
 
-from relay_ml import auth, model
+from robis_ml import auth, model
 
 TOKEN = "test-service-token"
 
@@ -42,7 +42,7 @@ def client(monkeypatch: pytest.MonkeyPatch):
 
     # Reimported so `check_configuration` runs against the patched
     # environment and the per-workspace cache starts empty.
-    service = importlib.reload(importlib.import_module("relay_ml.service"))
+    service = importlib.reload(importlib.import_module("robis_ml.service"))
     monkeypatch.setattr(service, "load_issues", lambda workspace_id: CORPORA[workspace_id])
     monkeypatch.setattr(
         service,
@@ -101,7 +101,7 @@ class TestAuthentication:
         monkeypatch.delenv(auth.TOKEN_ENV, raising=False)
         monkeypatch.setenv(auth.ALLOW_ANONYMOUS_ENV, "1")
 
-        service = importlib.reload(importlib.import_module("relay_ml.service"))
+        service = importlib.reload(importlib.import_module("robis_ml.service"))
         monkeypatch.setattr(service, "load_issues", lambda workspace_id: CORPORA[workspace_id])
         monkeypatch.setattr(service, "corpus_fingerprint", lambda workspace_id: (1, "x"))
 
@@ -118,7 +118,7 @@ class TestAuthentication:
         monkeypatch.delenv(auth.ALLOW_ANONYMOUS_ENV, raising=False)
 
         with pytest.raises(RuntimeError, match="Refusing to start"):
-            importlib.reload(importlib.import_module("relay_ml.service"))
+            importlib.reload(importlib.import_module("robis_ml.service"))
 
 
 class TestTenantIsolation:
@@ -199,7 +199,7 @@ class TestCacheInvalidation:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.setenv(auth.TOKEN_ENV, TOKEN)
-        service = importlib.reload(importlib.import_module("relay_ml.service"))
+        service = importlib.reload(importlib.import_module("robis_ml.service"))
 
         corpus = [model.Issue("a1", "Billing page is blank", "")]
         fingerprint = [(1, "t1")]
@@ -231,7 +231,7 @@ class TestCacheInvalidation:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.setenv(auth.TOKEN_ENV, TOKEN)
-        service = importlib.reload(importlib.import_module("relay_ml.service"))
+        service = importlib.reload(importlib.import_module("robis_ml.service"))
 
         fits = {"count": 0}
 
@@ -255,7 +255,7 @@ class TestCacheInvalidation:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.setenv(auth.TOKEN_ENV, TOKEN)
-        service = importlib.reload(importlib.import_module("relay_ml.service"))
+        service = importlib.reload(importlib.import_module("robis_ml.service"))
 
         monkeypatch.setattr(service, "load_issues", lambda w: CORPORA[w])
         monkeypatch.setattr(service, "corpus_fingerprint", lambda _: (2, "ok"))

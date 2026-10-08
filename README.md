@@ -1,11 +1,11 @@
-# Relay
+# Robis
 
 A collaborative workspace that keeps working when the network does not.
 
 Issues, documents, chat and meetings for a team. Every change you make offline
 is queued locally and reconciles when you reconnect, exactly once.
 
-![The Relay workspace](imgs/03-workspace.png)
+![The Robis workspace](imgs/03-workspace.png)
 
 ```bash
 bun install
@@ -17,7 +17,7 @@ bun run dev:worker
 bun run dev:web        # :3000
 ```
 
-Sign in as `rohit@relay.dev` with `relay-demo-password`.
+Sign in as `rohit@robis.test` with `robis-demo-password`.
 
 ---
 
@@ -94,14 +94,14 @@ backend/
 shared/
   contracts/     Zod schemas, the permission matrix, wire events
   sync/          offline queue, CRDT glue
-relay-ml/        duplicate detection and priority triage (Python)
+robis-ml/        duplicate detection and priority triage (Python)
 ```
 
 `shared/` is a third top-level directory rather than a folder inside
-`backend/`, because the frontend genuinely imports it: `@relay/shared` and
-`@relay/sync` are its only two workspace dependencies. Filing them under the
+`backend/`, because the frontend genuinely imports it: `@robis/shared` and
+`@robis/sync` are its only two workspace dependencies. Filing them under the
 backend would misdescribe who uses them. The package is still named
-`@relay/shared`; the directory is `contracts` because that is what is in it.
+`@robis/shared`; the directory is `contracts` because that is what is in it.
 
 Four roles, one declarative permission matrix. Non-members get **404, not
 403** — a 403 confirms the workspace exists, which is half of what an attacker
@@ -127,7 +127,7 @@ The long version, with the rejected alternatives spelled out, is in
 
 ## Machine learning
 
-`relay-ml/` finds possible duplicate issues and suggests a priority. Both are
+`robis-ml/` finds possible duplicate issues and suggests a priority. Both are
 advisory; nothing acts on a prediction.
 
 TF-IDF rather than transformer embeddings, because one workspace's issues are
@@ -137,7 +137,7 @@ same intent. Below 40 triaged issues the model **declines to predict** rather
 than returning a confident-looking guess.
 
 It is not wired into the API and is unauthenticated, so it is not deployable as
-it stands. See **[relay-ml/README.md](relay-ml/README.md)**.
+it stands. See **[robis-ml/README.md](robis-ml/README.md)**.
 
 ---
 

@@ -1,4 +1,4 @@
-import type { PresenceMessage, PresenceUser } from '@relay/shared';
+import type { PresenceMessage, PresenceUser } from '@robis/shared';
 
 /**
  * Who is currently connected, per workspace.

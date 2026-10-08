@@ -5,8 +5,8 @@
  * this only has to decide *what looks like a mention*. Two cases make that less
  * trivial than a single regex:
  *
- * - An email address in prose contains an `@`. "write to ada@relay.dev" must
- *   not mention `relay`. So the character before the `@` may not be one that
+ * - An email address in prose contains an `@`. "write to ada@robis.test" must
+ *   not mention `robis`. So the character before the `@` may not be one that
  *   could end a handle or an address.
  * - Trailing punctuation belongs to the sentence, not the handle: "thanks
  *   @ada!" mentions `ada`.

@@ -1,5 +1,5 @@
-import { type Database, documents, loadDocument, recordUpdate } from '@relay/database';
-import type { DocumentAwareness } from '@relay/shared';
+import { type Database, documents, loadDocument, recordUpdate } from '@robis/database';
+import type { DocumentAwareness } from '@robis/shared';
 import { and, eq } from 'drizzle-orm';
 import * as Y from 'yjs';
 
@@ -11,7 +11,7 @@ import * as Y from 'yjs';
  * asynchronously, because a keystroke should not wait on a database write.
  *
  * Keeping a server-side replica -- rather than treating the gateway as a dumb
- * relay -- is what lets a client that joins late receive one catch-up message
+ * robis -- is what lets a client that joins late receive one catch-up message
  * instead of replaying the whole update log.
  */
 

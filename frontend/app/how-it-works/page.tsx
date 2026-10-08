@@ -8,7 +8,7 @@ import { Reveal } from '../../features/landing/motion.tsx';
 import { REPO } from '../../features/landing/sections.tsx';
 
 /**
- * How Relay works.
+ * How Robis works.
  *
  * The landing page used to send anyone curious about the architecture
  * straight to a README on GitHub, which is a strange thing for a product
@@ -44,7 +44,7 @@ const WRITE_PATH = [
 const EXCHANGES = [
   {
     who: 'A member of the workspace',
-    request: 'GET /workspaces/4c84…/issues\ncookie: relay_session=…',
+    request: 'GET /workspaces/4c84…/issues\ncookie: robis_session=…',
     status: '200 OK',
     statusTint: 'text-emerald-300',
     note: 'Membership resolved, permission checked against the matrix, rows returned.',
@@ -52,7 +52,7 @@ const EXCHANGES = [
   },
   {
     who: 'Everybody else',
-    request: 'GET /workspaces/4c84…/issues\ncookie: relay_session=…',
+    request: 'GET /workspaces/4c84…/issues\ncookie: robis_session=…',
     status: '404 Not Found',
     statusTint: 'text-rose-300',
     note: 'Not forbidden. As far as this caller is concerned, the workspace is not there.',
@@ -148,7 +148,7 @@ const SERVICES = [
   },
   {
     accent: 'border-accent-soft/50 text-accent-soft',
-    name: 'relay-ml',
+    name: 'robis-ml',
     body: 'Duplicate detection and triage. Advisory, and optional.',
   },
 ];
@@ -272,7 +272,7 @@ export default function HowItWorks() {
           <Reveal delay={200}>
             <p className="mx-auto mt-8 max-w-2xl text-base leading-relaxed text-faint">
               The second response is the interesting one. A 403 would confirm the workspace exists,
-              which is half of what somebody probing for it wants to know.
+              which is half of what somebody probisng for it wants to know.
             </p>
           </Reveal>
         </Band>
@@ -310,7 +310,7 @@ export default function HowItWorks() {
           <Reveal>
             <Headline>What is missing.</Headline>
             <Subhead>
-              Relay has not been deployed. These are real gaps, not an oversight, and listing them
+              Robis has not been deployed. These are real gaps, not an oversight, and listing them
               is the point.
             </Subhead>
           </Reveal>

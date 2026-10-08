@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Logo } from '../components/brand/logo.tsx';
 import { Faq } from '../features/landing/faq.tsx';
 import { SiteFooter } from '../features/landing/footer.tsx';
+import { SayIt } from '../features/landing/say-it.tsx';
 import {
   Capabilities,
   Closing,
@@ -27,7 +28,7 @@ import { api, type Me } from '../lib/api.ts';
  * the network dies, what it measures, and why it is built the way it is.
  *
  * Every figure is measured and every screenshot is the real app. There is
- * no customer logo wall, because Relay has no customers and inventing some
+ * no customer logo wall, because Robis has no customers and inventing some
  * would be the one dishonest thing on a page like this.
  */
 export default function Home() {
@@ -100,6 +101,7 @@ export default function Home() {
         <Documents />
         <Capabilities />
         <Decisions />
+        <SayIt />
         <Faq />
         <Closing href={href} label={label} />
       </main>

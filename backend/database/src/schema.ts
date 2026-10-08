@@ -1,4 +1,4 @@
-import { ISSUE_PRIORITIES, ISSUE_STATUSES, ROLES } from '@relay/shared';
+import { ISSUE_PRIORITIES, ISSUE_STATUSES, ROLES } from '@robis/shared';
 import { relations, sql } from 'drizzle-orm';
 import {
   bigserial,
@@ -518,7 +518,7 @@ export const mutations = pgTable(
 /**
  * Workspace chat channels.
  *
- * Relay already had threaded comments, but a comment hangs off an issue:
+ * Robis already had threaded comments, but a comment hangs off an issue:
  * there was nowhere to say something that is not about one piece of work.
  * Channels are that place -- a per-workspace room list, each room an ordered
  * log of messages.
@@ -598,10 +598,10 @@ export const messages = pgTable(
 /**
  * A scheduled meeting.
  *
- * Relay stores the *plan*, never the call. `joinUrl` is whatever link the
+ * Robis stores the *plan*, never the call. `joinUrl` is whatever link the
  * organiser supplies -- the UI can offer to generate one, but the server
  * neither mints nor validates rooms on anybody's conferencing service. That
- * keeps a third-party dependency out of the request path, and keeps Relay
+ * keeps a third-party dependency out of the request path, and keeps Robis
  * from implying a relationship with a provider it does not have.
  *
  * `durationMinutes` rather than an end timestamp: it is what the organiser

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { formatMs, percentile, summarize } from '@relay/shared';
+import { formatMs, percentile, summarize } from '@robis/shared';
 
 /**
  * Statistics for the load harness.

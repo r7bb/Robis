@@ -24,7 +24,7 @@ import { useActiveStep } from './use-scroll.ts';
  * `object-contain` so it fits whatever space is left over.
  */
 
-export const REPO = 'https://github.com/r7bb/Relay';
+export const REPO = 'https://github.com/r7bb/Robis';
 
 /** Three measured figures, short enough to read in a glance. */
 const HERO_PROOF = [
@@ -45,9 +45,9 @@ export function Hero({ href, label }: { href: string; label: string }) {
         <Reveal>
           {/*
            * The proposition, not the product name. An earlier version made
-           * this "Relay" with "Never offline." underneath, which works for
+           * this "Robis" with "Never offline." underneath, which works for
            * Apple because everyone already knows what an iPhone is. Nobody
-           * knows what Relay is, so the first line has to say.
+           * knows what Robis is, so the first line has to say.
            */}
           <h1 className="mx-auto max-w-[18ch] text-balance text-[clamp(2.5rem,5.5vw,5rem)] font-semibold leading-[1.04] tracking-[-0.035em] text-content">
             Never lose a change.
@@ -81,7 +81,7 @@ export function Hero({ href, label }: { href: string; label: string }) {
          * buttons ended at 394px of a 758px viewport, and the rest of the
          * fold was the top 44% of a screenshot, which reads as a cropped
          * image rather than a deliberate peek. These are the most
-         * convincing things Relay has and they are measured, so they go
+         * convincing things Robis has and they are measured, so they go
          * above the fold and the screenshot starts under it on purpose.
          */}
         <Reveal delay={200}>
@@ -111,7 +111,7 @@ export function Hero({ href, label }: { href: string; label: string }) {
           <div className="relative mx-auto aspect-[2/1] w-full overflow-hidden rounded-xl border border-white/10 shadow-2xl shadow-black/60">
             <Image
               src="/shots/board.png"
-              alt="The Relay issue board, with a column per status and coloured priority badges."
+              alt="The Robis issue board, with a column per status and coloured priority badges."
               width={1440}
               height={900}
               priority

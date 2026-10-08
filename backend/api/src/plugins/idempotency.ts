@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { type Database, mutations } from '@relay/database';
+import { type Database, mutations } from '@robis/database';
 import { and, eq } from 'drizzle-orm';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { ApiError } from '../errors.ts';

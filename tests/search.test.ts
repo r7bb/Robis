@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
-import { documents, searchWorkspace } from '@relay/database';
+import { documents, searchWorkspace } from '@robis/database';
 import {
   type Actor,
   closeHarness,

@@ -1,7 +1,7 @@
 'use client';
 
-import type { IssuePriority, IssueStatus } from '@relay/shared';
-import type { LocalIssue } from '@relay/sync';
+import type { IssuePriority, IssueStatus } from '@robis/shared';
+import type { LocalIssue } from '@robis/sync';
 import { useCallback, useEffect, useState } from 'react';
 import { getSyncEngine } from './sync.ts';
 

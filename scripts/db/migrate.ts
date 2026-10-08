@@ -10,10 +10,10 @@
  * present in the migration was missing from a pushed dev database, so the
  * mention handler failed on `ON CONFLICT` in dev while passing every test.
  */
-import { createDatabase } from '@relay/database';
-import { MIGRATIONS_DIR, runMigrations } from '@relay/database/migrate';
+import { createDatabase } from '@robis/database';
+import { MIGRATIONS_DIR, runMigrations } from '@robis/database/migrate';
 
-const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://relay:relay@localhost:5433/relay';
+const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://robis:robis@localhost:5433/robis';
 
 const { db, close } = createDatabase(DATABASE_URL, { max: 1 });
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { CHANNEL_NAME_MAX_LENGTH } from '@relay/shared/limits';
+import { CHANNEL_NAME_MAX_LENGTH } from '@robis/shared/limits';
 import { type FormEvent, useState } from 'react';
 import { Button, InlineError, SectionLabel } from '../../components/ui/primitives.tsx';
 

@@ -1,4 +1,4 @@
-import { createDatabase, enqueue } from '@relay/database';
+import { createDatabase, enqueue } from '@robis/database';
 import { handlers } from './handlers.ts';
 import { Runner } from './runner.ts';
 

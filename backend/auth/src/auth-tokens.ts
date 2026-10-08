@@ -1,5 +1,5 @@
-import { type AuthTokenPurpose, authTokens, type Executor } from '@relay/database';
-import { EMAIL_VERIFICATION_TTL_MINUTES, PASSWORD_RESET_TTL_MINUTES } from '@relay/shared';
+import { type AuthTokenPurpose, authTokens, type Executor } from '@robis/database';
+import { EMAIL_VERIFICATION_TTL_MINUTES, PASSWORD_RESET_TTL_MINUTES } from '@robis/shared';
 import { and, eq, gt, lt } from 'drizzle-orm';
 import { generateSessionToken, hashSessionToken } from './tokens.ts';
 

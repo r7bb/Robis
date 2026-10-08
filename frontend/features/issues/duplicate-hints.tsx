@@ -17,7 +17,7 @@ import { api } from '../../lib/api.ts';
  * Everything degrades to showing nothing. The endpoint answers with an
  * empty list when the ML service is unconfigured or unreachable, and the
  * query below treats an error the same way, so a composer in a deployment
- * without `relay-ml` looks exactly as it did before this existed.
+ * without `robis-ml` looks exactly as it did before this existed.
  */
 
 /** Below this, a title is too short to say anything about. */

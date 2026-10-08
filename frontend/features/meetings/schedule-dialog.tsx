@@ -1,6 +1,6 @@
 'use client';
 
-import { MEETING_MAX_MINUTES, MEETING_MIN_MINUTES } from '@relay/shared/limits';
+import { MEETING_MAX_MINUTES, MEETING_MIN_MINUTES } from '@robis/shared/limits';
 import { type FormEvent, useEffect, useId, useRef, useState } from 'react';
 import { Avatar } from '../../components/ui/avatar.tsx';
 import { Button, InlineError } from '../../components/ui/primitives.tsx';
@@ -36,7 +36,7 @@ function nextSlot(): Date {
  * A room name with enough entropy that it cannot be guessed.
  *
  * The link is the only thing protecting the room, so a readable slug like
- * `relay-standup` would be a room anyone could walk into. 128 bits of
+ * `robis-standup` would be a room anyone could walk into. 128 bits of
  * randomness via `crypto` -- `Math.random` is not suitable for something
  * acting as a credential.
  */
@@ -44,7 +44,7 @@ function generateRoomUrl(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(16));
   const slug = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 
-  return `https://meet.jit.si/relay-${slug}`;
+  return `https://meet.jit.si/robis-${slug}`;
 }
 
 function Field({
@@ -247,8 +247,8 @@ export function ScheduleDialog({
 
           {/*
            * Said plainly, because it is the one thing on this form that
-           * involves anyone outside Relay. "Generate" mints a URL for the
-           * public Jitsi instance; Relay does not run it, does not book it,
+           * involves anyone outside Robis. "Generate" mints a URL for the
+           * public Jitsi instance; Robis does not run it, does not book it,
            * and cannot promise it will be there.
            */}
           <p className="mt-1 text-[10px] text-faint">

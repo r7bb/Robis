@@ -1,6 +1,6 @@
 'use client';
 
-import { can, diffEdit } from '@relay/shared';
+import { can, diffEdit } from '@robis/shared';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';

@@ -1,5 +1,5 @@
 {
-  "name": "@relay/api",
+  "name": "@robis/api",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -12,10 +12,10 @@
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^10.0.2",
-    "@relay/auth": "workspace:*",
-    "@relay/database": "workspace:*",
-    "@relay/mailer": "workspace:*",
-    "@relay/shared": "workspace:*",
+    "@robis/auth": "workspace:*",
+    "@robis/database": "workspace:*",
+    "@robis/mailer": "workspace:*",
+    "@robis/shared": "workspace:*",
     "drizzle-orm": "^0.38.0",
     "fastify": "^5.2.0",
     "zod": "^4.0.0"

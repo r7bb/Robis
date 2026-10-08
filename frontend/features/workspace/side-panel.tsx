@@ -1,6 +1,6 @@
 'use client';
 
-import type { Role } from '@relay/shared';
+import type { Role } from '@robis/shared';
 import { type KeyboardEvent, useRef, useState } from 'react';
 import { ActivityFeed } from '../../components/activity-feed.tsx';
 import { MemberList } from '../../components/member-list.tsx';

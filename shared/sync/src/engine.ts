@@ -1,4 +1,4 @@
-import type { IssuePriority, IssueStatus } from '@relay/shared';
+import type { IssuePriority, IssueStatus } from '@robis/shared';
 import { MutationQueue, type QueuedMutation } from './queue.ts';
 import { STORE_ISSUES, type StorageAdapter } from './storage.ts';
 

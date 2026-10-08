@@ -16,7 +16,7 @@ describe('issue numbering', () => {
   test('numbers increment per project and render as a key', async () => {
     const owner = await createActor('Owner');
     const workspace = await createWorkspace(owner);
-    const project = await createProject(owner, workspace.id, 'Relay');
+    const project = await createProject(owner, workspace.id, 'Robis');
 
     const first = await request(`/workspaces/${workspace.id}/projects/${project.id}/issues`, {
       method: 'POST',
@@ -67,7 +67,7 @@ describe('issue numbering', () => {
   test('concurrent creates never duplicate or skip a number', async () => {
     const owner = await createActor('Owner');
     const workspace = await createWorkspace(owner);
-    const project = await createProject(owner, workspace.id, 'Relay');
+    const project = await createProject(owner, workspace.id, 'Robis');
 
     const CONCURRENCY = 25;
 

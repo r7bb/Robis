@@ -1,5 +1,5 @@
 /**
- * The Relay mark.
+ * The Robis mark.
  *
  * Two rounded squares, offset diagonally, overlapping. That is the product:
  * a copy on your device and a copy on the server, converging on the same
@@ -56,7 +56,7 @@ export function Logo({
   return (
     <span className={`inline-flex items-center gap-2.5 ${className}`}>
       <LogoMark size={size} className={markClassName} />
-      <span className={`font-semibold tracking-tight ${wordClassName}`}>Relay</span>
+      <span className={`font-semibold tracking-tight ${wordClassName}`}>Robis</span>
     </span>
   );
 }

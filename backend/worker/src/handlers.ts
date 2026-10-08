@@ -1,4 +1,4 @@
-import { deleteExpiredAuthTokens, deleteExpiredSessions } from '@relay/auth';
+import { deleteExpiredAuthTokens, deleteExpiredSessions } from '@robis/auth';
 import {
   comments,
   type Database,
@@ -7,8 +7,8 @@ import {
   projects,
   users,
   workspaceMembers,
-} from '@relay/database';
-import { resolveMentions } from '@relay/shared';
+} from '@robis/database';
+import { resolveMentions } from '@robis/shared';
 import { and, eq, ne } from 'drizzle-orm';
 import { scanNudges } from './nudges.ts';
 import type { Handlers } from './runner.ts';

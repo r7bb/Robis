@@ -1,4 +1,4 @@
-import { Registry } from '@relay/metrics';
+import { Registry } from '@robis/metrics';
 import type { FastifyInstance } from 'fastify';
 
 /**
@@ -27,25 +27,25 @@ export function createMetrics() {
   const registry = new Registry();
 
   const requests = registry.counter(
-    'relay_http_requests_total',
+    'robis_http_requests_total',
     'HTTP requests, by method, route pattern and status.',
     ['method', 'route', 'status'],
   );
 
   const duration = registry.histogram(
-    'relay_http_request_duration_seconds',
+    'robis_http_request_duration_seconds',
     'HTTP request duration in seconds.',
     ['method', 'route'],
   );
 
   const inFlight = registry.gauge(
-    'relay_http_requests_in_flight',
+    'robis_http_requests_in_flight',
     'Requests currently being served.',
   );
 
   const started = Date.now();
   registry
-    .gauge('relay_process_uptime_seconds', 'Seconds since this process started.')
+    .gauge('robis_process_uptime_seconds', 'Seconds since this process started.')
     .collect(() => (Date.now() - started) / 1000);
 
   return { registry, requests, duration, inFlight };

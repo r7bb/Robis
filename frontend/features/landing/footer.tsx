@@ -14,7 +14,7 @@ import { Logo } from '../../components/brand/logo.tsx';
  * `window.opener` and can navigate it somewhere else.
  */
 
-const REPO = 'https://github.com/r7bb/Relay';
+const REPO = 'https://github.com/r7bb/Robis';
 
 type Entry = { label: string; href: string; external?: boolean };
 
@@ -100,9 +100,9 @@ export function SiteFooter() {
           form an impression the project cannot support.
         */}
         <p className="mt-12 border-t border-line pt-6 text-xs leading-relaxed text-faint">
-          Relay is a portfolio project. It runs locally and is tested; it has not been deployed, and
+          Robis is a portfolio project. It runs locally and is tested; it has not been deployed, and
           nothing here is a security or compliance claim. Logos belong to their respective owners
-          and are shown to say what Relay is built with.
+          and are shown to say what Robis is built with.
         </p>
       </div>
     </footer>

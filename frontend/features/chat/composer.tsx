@@ -1,6 +1,6 @@
 'use client';
 
-import { MESSAGE_MAX_LENGTH } from '@relay/shared/limits';
+import { MESSAGE_MAX_LENGTH } from '@robis/shared/limits';
 import { type FormEvent, type KeyboardEvent, useRef, useState } from 'react';
 import { Button, InlineError } from '../../components/ui/primitives.tsx';
 

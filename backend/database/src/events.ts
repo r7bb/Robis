@@ -1,4 +1,4 @@
-import { MAX_NOTIFY_BYTES, REALTIME_CHANNEL, type ServerEvent } from '@relay/shared';
+import { MAX_NOTIFY_BYTES, REALTIME_CHANNEL, type ServerEvent } from '@robis/shared';
 import { sql } from 'drizzle-orm';
 import type postgres from 'postgres';
 import type { Executor } from './index.ts';
@@ -14,7 +14,7 @@ import type { Executor } from './index.ts';
  * before. Publishing to Redis from inside a database transaction has no such
  * guarantee -- the message can go out and then the transaction can roll back,
  * so every client refetches and sees the old value. Getting that right against
- * Redis needs an outbox table and a relay process; here it is free.
+ * Redis needs an outbox table and a robis process; here it is free.
  *
  * The practical one: it is one fewer service to run, and this deployment has no
  * Redis available.

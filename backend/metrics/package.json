@@ -1,5 +1,5 @@
 {
-  "name": "@relay/metrics",
+  "name": "@robis/metrics",
   "version": "0.0.0",
   "private": true,
   "type": "module",

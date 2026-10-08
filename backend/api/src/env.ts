@@ -34,7 +34,7 @@ const envSchema = z.object({
     .transform((v) => v === '1' || v.toLowerCase() === 'true'),
   /**
    * The duplicate-suggestion service. Empty means the feature is off, which
-   * is the default: Relay runs perfectly well without it, and a composer
+   * is the default: Robis runs perfectly well without it, and a composer
    * that needs a Python process to accept a bug report would be a worse
    * product than one that simply has no hints.
    */

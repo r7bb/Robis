@@ -15,13 +15,15 @@ coverage/
 *.log
 *.tsbuildinfo
 
-# Python (relay-ml)
+# Python (robis-ml)
 .venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
 *.egg-info/
 
-# Next dev build output, kept apart from production .next
-.next-dev/
-.next-dev/
+# Builds run under an alternate distDir via NEXT_DIST_DIR, so a production
+# build can run while the dev server still owns .next. The glob covers every
+# such directory: listing them one by one is how .next-build nearly got
+# committed.
+.next-*/

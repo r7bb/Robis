@@ -1,5 +1,5 @@
 {
-  "name": "@relay/worker",
+  "name": "@robis/worker",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -9,9 +9,9 @@
     "./nudges": "./src/nudges.ts"
   },
   "dependencies": {
-    "@relay/auth": "workspace:*",
-    "@relay/database": "workspace:*",
-    "@relay/shared": "workspace:*",
+    "@robis/auth": "workspace:*",
+    "@robis/database": "workspace:*",
+    "@robis/shared": "workspace:*",
     "drizzle-orm": "^0.38.0"
   }
 }

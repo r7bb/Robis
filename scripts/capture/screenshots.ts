@@ -31,11 +31,11 @@
 import { mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { issueAuthToken } from '@relay/auth';
-import { createDatabase, users } from '@relay/database';
-import { handlers } from '@relay/worker/handlers';
-import { scanNudges } from '@relay/worker/nudges';
-import { Runner } from '@relay/worker/runner';
+import { issueAuthToken } from '@robis/auth';
+import { createDatabase, users } from '@robis/database';
+import { handlers } from '@robis/worker/handlers';
+import { scanNudges } from '@robis/worker/nudges';
+import { Runner } from '@robis/worker/runner';
 import { eq } from 'drizzle-orm';
 import {
   closeTab,
@@ -96,11 +96,11 @@ async function publishLandingShots() {
  * service worker against a dev server, which this script deliberately does in
  * order to capture the offline flows.
  */
-const PROFILE = join(tmpdir(), `relay-screenshots-chrome-${Date.now()}`);
-const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://relay:relay@localhost:5433/relay';
+const PROFILE = join(tmpdir(), `robis-screenshots-chrome-${Date.now()}`);
+const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://robis:robis@localhost:5433/robis';
 
-const EMAIL = 'rohit@relay.dev';
-const PASSWORD = process.env.SEED_PASSWORD ?? 'relay-demo-password';
+const EMAIL = 'rohit@robis.test';
+const PASSWORD = process.env.SEED_PASSWORD ?? 'robis-demo-password';
 
 /** Retina, so the images stay sharp when GitHub scales them down. */
 const SCALE = 2;

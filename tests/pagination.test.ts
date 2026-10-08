@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
-import { decodeCursor, encodeCursor } from '@relay/database';
+import { decodeCursor, encodeCursor } from '@robis/database';
 import {
   type Actor,
   closeHarness,

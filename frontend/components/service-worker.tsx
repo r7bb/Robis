@@ -52,7 +52,7 @@ export function ServiceWorker() {
         if ('caches' in window) {
           const keys = await caches.keys();
           await Promise.all(
-            keys.filter((key) => key.startsWith('relay-')).map((key) => caches.delete(key)),
+            keys.filter((key) => key.startsWith('robis-')).map((key) => caches.delete(key)),
           );
         }
 

@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { DEFAULT_THEME, resolveTheme, THEME_IDS, THEMES, themeVariables } from '@relay/shared';
+import { DEFAULT_THEME, resolveTheme, THEME_IDS, THEMES, themeVariables } from '@robis/shared';
 import {
   addMember,
   closeHarness,

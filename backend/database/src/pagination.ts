@@ -17,7 +17,7 @@
  * Resolving the sort key from the id inside the query avoids the conversion
  * entirely, at the cost of one primary-key lookup per page.
  */
-import { isUuid } from '@relay/shared';
+import { isUuid } from '@robis/shared';
 
 /** Opaque to callers: encoded to signal it should be echoed, not constructed. */
 export function encodeCursor(id: string): string {

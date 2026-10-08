@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { isUuid } from '@relay/shared';
+import { isUuid } from '@robis/shared';
 
 /**
  * The id guard every route runs before touching the database.

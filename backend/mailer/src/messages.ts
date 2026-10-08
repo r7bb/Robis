@@ -1,7 +1,7 @@
 import type { Mail } from './mailer.ts';
 
 /**
- * The messages Relay sends.
+ * The messages Robis sends.
  *
  * Bodies live here rather than inline in the route handlers so there is one
  * place that assembles a link, and so the wording can be asserted. Plain text
@@ -31,9 +31,9 @@ function humanDuration(minutes: number): string {
 export function passwordResetMail(to: string, link: string, expiresInMinutes: number): Mail {
   return {
     to,
-    subject: 'Reset your Relay password',
+    subject: 'Reset your Robis password',
     text: [
-      'Someone asked to reset the password for this Relay account.',
+      'Someone asked to reset the password for this Robis account.',
       '',
       'Open this link to choose a new one:',
       link,
@@ -50,9 +50,9 @@ export function passwordResetMail(to: string, link: string, expiresInMinutes: nu
 export function verifyEmailMail(to: string, link: string, expiresInMinutes: number): Mail {
   return {
     to,
-    subject: 'Verify your Relay email address',
+    subject: 'Verify your Robis email address',
     text: [
-      'Welcome to Relay. Confirm this address so we know it reaches you:',
+      'Welcome to Robis. Confirm this address so we know it reaches you:',
       '',
       link,
       '',

@@ -1,6 +1,6 @@
 'use client';
 
-import { DEFAULT_THEME, resolveTheme, type ThemeId, themeVariables } from '@relay/shared';
+import { DEFAULT_THEME, resolveTheme, type ThemeId, themeVariables } from '@robis/shared';
 import { useEffect } from 'react';
 
 /**
@@ -31,7 +31,7 @@ export function useApplyTheme(themeId: ThemeId | string | null | undefined) {
  * Remember the last theme seen, so navigating between workspaces does not
  * flash the default while the new one loads.
  */
-const STORAGE_KEY = 'relay:last-theme';
+const STORAGE_KEY = 'robis:last-theme';
 
 export function rememberTheme(themeId: string | null | undefined) {
   if (typeof window === 'undefined' || !themeId) return;

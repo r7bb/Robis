@@ -4,8 +4,8 @@ import {
   documentText,
   loadDocument,
   publishEvent,
-} from '@relay/database';
-import { createDocumentSchema, isUuid, updateDocumentSchema } from '@relay/shared';
+} from '@robis/database';
+import { createDocumentSchema, isUuid, updateDocumentSchema } from '@robis/shared';
 import { and, desc, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../errors.ts';

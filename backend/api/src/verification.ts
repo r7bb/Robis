@@ -1,6 +1,6 @@
-import { issueAuthToken, ttlMinutesFor } from '@relay/auth';
-import type { Database } from '@relay/database';
-import { type Mailer, verifyEmailMail } from '@relay/mailer';
+import { issueAuthToken, ttlMinutesFor } from '@robis/auth';
+import type { Database } from '@robis/database';
+import { type Mailer, verifyEmailMail } from '@robis/mailer';
 import type { FastifyBaseLogger } from 'fastify';
 import type { Env } from './env.ts';
 
@@ -29,7 +29,7 @@ export type VerificationSender = (userId: string, email: string) => Promise<void
  * A sender that never fails its caller.
  *
  * Registration must not roll back because a mail provider is down: an account
- * with an unconfirmed address is still a working account, and nothing in Relay
+ * with an unconfirmed address is still a working account, and nothing in Robis
  * is gated on verification. So the failure is logged and swallowed.
  */
 export function createVerificationSender(deps: {

@@ -1,5 +1,5 @@
 {
-  "name": "@relay/realtime",
+  "name": "@robis/realtime",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -8,9 +8,9 @@
     "./presence": "./src/presence.ts"
   },
   "dependencies": {
-    "@relay/auth": "workspace:*",
-    "@relay/database": "workspace:*",
-    "@relay/shared": "workspace:*",
+    "@robis/auth": "workspace:*",
+    "@robis/database": "workspace:*",
+    "@robis/shared": "workspace:*",
     "drizzle-orm": "^0.38.0",
     "yjs": "^13.6.32"
   }

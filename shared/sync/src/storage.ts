@@ -66,7 +66,7 @@ export class IndexedDbAdapter implements StorageAdapter {
   private handle: Promise<IDBDatabase> | null = null;
 
   constructor(
-    private readonly name = 'relay',
+    private readonly name = 'robis',
     private readonly version = 1,
   ) {}
 
@@ -127,6 +127,6 @@ export class IndexedDbAdapter implements StorageAdapter {
 }
 
 /** Prefer IndexedDB, fall back to memory where it is unavailable. */
-export function createStorage(name = 'relay'): StorageAdapter {
+export function createStorage(name = 'robis'): StorageAdapter {
   return typeof indexedDB === 'undefined' ? new MemoryAdapter() : new IndexedDbAdapter(name);
 }

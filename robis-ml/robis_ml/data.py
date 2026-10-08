@@ -1,4 +1,4 @@
-"""Reading issues out of Relay's database.
+"""Reading issues out of Robis's database.
 
 This service is a *reader*. It opens its own connection, selects, and never
 writes: the schema belongs to ``backend/database`` and is owned by the
@@ -20,7 +20,7 @@ import psycopg
 
 from .model import Issue
 
-DEFAULT_DATABASE_URL = "postgres://relay:relay@localhost:5433/relay"
+DEFAULT_DATABASE_URL = "postgres://robis:robis@localhost:5433/robis"
 
 
 #: Fail rather than hang. Without this a stalled database holds the

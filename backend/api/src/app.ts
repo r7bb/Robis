@@ -1,7 +1,7 @@
 import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
-import type { Database } from '@relay/database';
-import { ConsoleMailer, type Mailer } from '@relay/mailer';
+import type { Database } from '@robis/database';
+import { ConsoleMailer, type Mailer } from '@robis/mailer';
 import Fastify, { type FastifyInstance } from 'fastify';
 import type { Env } from './env.ts';
 import { ApiError } from './errors.ts';

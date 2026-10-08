@@ -1,6 +1,6 @@
 'use client';
 
-import type { DocumentAwareness, ServerMessage } from '@relay/shared';
+import type { DocumentAwareness, ServerMessage } from '@robis/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as Y from 'yjs';
 

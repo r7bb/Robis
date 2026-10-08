@@ -1,6 +1,6 @@
 'use client';
 
-import { BOARD_COLUMNS, can, type IssueStatus } from '@relay/shared';
+import { BOARD_COLUMNS, can, type IssueStatus } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';

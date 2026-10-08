@@ -1,4 +1,4 @@
-import { MAX_NOTIFY_BYTES, PRESENCE_CHANNEL, type PresenceMessage } from '@relay/shared';
+import { MAX_NOTIFY_BYTES, PRESENCE_CHANNEL, type PresenceMessage } from '@robis/shared';
 import { sql } from 'drizzle-orm';
 import type postgres from 'postgres';
 import type { Executor } from './index.ts';

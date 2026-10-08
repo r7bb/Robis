@@ -10,9 +10,9 @@ import {
   notifications,
   pendingCount,
   VISIBILITY_TIMEOUT_MS,
-} from '@relay/database';
-import { handlers } from '@relay/worker/handlers';
-import { Runner } from '@relay/worker/runner';
+} from '@robis/database';
+import { handlers } from '@robis/worker/handlers';
+import { Runner } from '@robis/worker/runner';
 import { eq } from 'drizzle-orm';
 import {
   type Actor,

@@ -1,4 +1,4 @@
-import type { IssuePriority, IssueStatus, Role, ThemeId } from '@relay/shared';
+import type { IssuePriority, IssueStatus, Role, ThemeId } from '@robis/shared';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 

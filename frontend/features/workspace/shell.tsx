@@ -1,6 +1,6 @@
 'use client';
 
-import { can, type PresenceUser, type Role } from '@relay/shared';
+import { can, type PresenceUser, type Role } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';

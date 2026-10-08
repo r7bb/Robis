@@ -1,12 +1,12 @@
-import { type AuthenticatedUser, resolveSession, SESSION_COOKIE } from '@relay/auth';
+import { type AuthenticatedUser, resolveSession, SESSION_COOKIE } from '@robis/auth';
 import {
   type Database,
   findMembership,
   publishPresence,
   subscribeToEvents,
   subscribeToPresence,
-} from '@relay/database';
-import { Registry } from '@relay/metrics';
+} from '@robis/database';
+import { Registry } from '@robis/metrics';
 import {
   type ClientMessage,
   type DocumentAwareness,
@@ -14,7 +14,7 @@ import {
   type PresenceMessage,
   type ServerEvent,
   type ServerMessage,
-} from '@relay/shared';
+} from '@robis/shared';
 import type postgres from 'postgres';
 import { DocumentRooms, documentInWorkspace } from './documents.ts';
 import { PresenceRegistry } from './presence.ts';
@@ -106,24 +106,24 @@ export async function createGateway(options: GatewayOptions) {
    * and per-tenant traffic is not something a metrics endpoint should expose.
    */
   const registry = new Registry();
-  registry.gauge('relay_ws_connections', 'Open WebSocket connections.').collect(() => sockets.size);
+  registry.gauge('robis_ws_connections', 'Open WebSocket connections.').collect(() => sockets.size);
   registry
-    .gauge('relay_ws_presence_entries', 'Presence entries held.')
+    .gauge('robis_ws_presence_entries', 'Presence entries held.')
     .collect(() => presence.size);
-  registry.gauge('relay_ws_document_rooms', 'Document rooms in memory.').collect(() => rooms.size);
+  registry.gauge('robis_ws_document_rooms', 'Document rooms in memory.').collect(() => rooms.size);
 
   const messagesIn = registry.counter(
-    'relay_ws_messages_received_total',
+    'robis_ws_messages_received_total',
     'Client messages handled, by type.',
     ['type'],
   );
   const eventsOut = registry.counter(
-    'relay_ws_event_deliveries_total',
+    'robis_ws_event_deliveries_total',
     'Individual event deliveries to sockets, by event type.',
     ['type'],
   );
   const upgrades = registry.counter(
-    'relay_ws_upgrades_total',
+    'robis_ws_upgrades_total',
     'WebSocket upgrade attempts, by outcome.',
     ['outcome'],
   );
@@ -394,7 +394,7 @@ export async function createGateway(options: GatewayOptions) {
     }
   }
 
-  /** Relay a document update to every other editor. The sender already has it. */
+  /** Robis a document update to every other editor. The sender already has it. */
   function broadcastDocUpdate(documentId: string, update: string, from: string) {
     const message = JSON.stringify({
       type: 'doc.update',
@@ -469,7 +469,7 @@ export async function createGateway(options: GatewayOptions) {
       return send(socket, { type: 'error', message: 'Malformed document update' });
     }
 
-    // Nothing new means nothing to relay -- Yjs tolerates duplicates, but the
+    // Nothing new means nothing to robis -- Yjs tolerates duplicates, but the
     // other editors should not pay for them.
     if (room.applyUpdate(update)) {
       broadcastDocUpdate(documentId, encoded, socket.data.connectionId);

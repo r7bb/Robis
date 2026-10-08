@@ -6,7 +6,7 @@ import {
   messages,
   publishEvent,
   users,
-} from '@relay/database';
+} from '@robis/database';
 import {
   can,
   createChannelSchema,
@@ -14,7 +14,7 @@ import {
   isUuid,
   listMessagesQuerySchema,
   updateChannelSchema,
-} from '@relay/shared';
+} from '@robis/shared';
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../errors.ts';

@@ -1,4 +1,4 @@
-# Relay architecture
+# Robis architecture
 
 The long version. [The README](../README.md) is the short one.
 
@@ -76,8 +76,8 @@ the message to the API log, so the flow is exercisable end to end locally:
 
 ```
   --- mail ------------------------------------------
-  to:      rohit@relay.dev
-  subject: Reset your Relay password
+  to:      rohit@robis.test
+  subject: Reset your Robis password
   ---------------------------------------------------
   Open this link to choose a new one:
   http://localhost:3000/reset-password?token=...
@@ -208,8 +208,8 @@ Both services expose Prometheus text at `/metrics` — no scraper required to
 look:
 
 ```bash
-curl -s localhost:4000/metrics | grep relay_http_requests_total
-curl -s localhost:4001/metrics | grep relay_ws
+curl -s localhost:4000/metrics | grep robis_http_requests_total
+curl -s localhost:4001/metrics | grep robis_ws
 ```
 
 The API reports request counts, a latency histogram and an in-flight gauge; the
@@ -226,7 +226,7 @@ of the box. To exercise it:
 bun run db:seed --team
 ```
 
-That adds an admin, a member and a guest (all `@relay.dev`, same password).
+That adds an admin, a member and a guest (all `@robis.test`, same password).
 Signing in as the guest shows the same board with the add-issue field and every
 status dropdown gone — and the API returns `403` even if you send the request by
 hand with `curl`.
@@ -290,7 +290,7 @@ same port; skip `db:start` in that case.
         │Fastify│ │   :4001    │
         └──┬───┘ └──┬──────────┘
            │        │  LISTEN
-     write │        │  relay_events
+     write │        │  robis_events
            └───┬────┘
         ┌──────▼───────┐
         │  PostgreSQL  │  :5433
@@ -355,7 +355,7 @@ reason and one practical one.
 delivered only if that transaction commits. Publishing to Redis from inside a
 database transaction has no such guarantee — the message can go out and then the
 write can roll back, leaving every client refetching stale data. Getting that
-right against Redis needs an outbox table and a relay process; here it is free.
+right against Redis needs an outbox table and a robis process; here it is free.
 There is [a test](tests/realtime.test.ts) asserting a rejected write emits no
 event.
 

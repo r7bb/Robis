@@ -36,7 +36,7 @@
  * and claims open clients. That machinery already existed; it had simply
  * never run, because the version had never changed.
  */
-const VERSION = 'relay-v2';
+const VERSION = 'robis-v2';
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 

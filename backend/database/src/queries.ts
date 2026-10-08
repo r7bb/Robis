@@ -1,4 +1,4 @@
-import { isUuid, type Role } from '@relay/shared';
+import { isUuid, type Role } from '@robis/shared';
 import { and, eq } from 'drizzle-orm';
 import type { Executor } from './index.ts';
 import { workspaceMembers } from './schema.ts';
