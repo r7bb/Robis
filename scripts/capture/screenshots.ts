@@ -67,6 +67,7 @@ const PUBLIC_SHOTS = new URL('../../frontend/public/shots/', import.meta.url).pa
  */
 const LANDING_SHOTS: Record<string, string> = {
   '03-workspace.png': 'workspace.png',
+  '04-board.png': 'board.png',
   '06-offline-unsynced.png': 'offline.png',
   '07-after-reconnect.png': 'reconnected.png',
   '08-document-collab.png': 'document.png',

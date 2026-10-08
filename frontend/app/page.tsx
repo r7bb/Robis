@@ -61,7 +61,7 @@ export default function Home() {
             href="/"
             className="text-content transition-opacity duration-[--micro] ease-[--ease] hover:opacity-80"
           >
-            <Logo size={26} />
+            <Logo size={32} />
           </Link>
 
           <div className="ml-auto flex items-center gap-5 text-sm">
@@ -99,7 +99,12 @@ export default function Home() {
 
       <footer className="border-t border-line">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-6 py-8 text-xs text-faint">
-          <Logo size={20} className="text-faint" markClassName="text-accent/70" />
+          <Logo
+            size={20}
+            className="text-faint"
+            markClassName="text-accent/70"
+            wordClassName="text-sm"
+          />
           <a
             href={REPO}
             className="transition-colors duration-[--micro] ease-[--ease] hover:text-muted"

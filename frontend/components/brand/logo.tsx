@@ -25,8 +25,10 @@ export function LogoMark({ size = 28, className = '' }: { size?: number; classNa
       aria-hidden="true"
       focusable="false"
     >
-      {/* The remote copy, behind. */}
-      <rect x="2" y="2" width="20" height="20" rx="6" fill="currentColor" opacity="0.4" />
+      {/* The remote copy, behind. Raised from 0.4: against a near-black
+          page the fainter version read as a smudge rather than a second
+          square, and the whole point of the mark is that there are two. */}
+      <rect x="2" y="2" width="20" height="20" rx="6" fill="currentColor" opacity="0.55" />
 
       {/* The local copy, in front. */}
       <rect x="10" y="10" width="20" height="20" rx="6" fill="currentColor" />
@@ -40,18 +42,21 @@ export function LogoMark({ size = 28, className = '' }: { size?: number; classNa
 
 /** Mark plus wordmark, for the nav and the footer. */
 export function Logo({
-  size = 28,
+  size = 32,
   className = '',
   markClassName = 'text-accent',
+  /** The wordmark scales with the mark rather than being set separately. */
+  wordClassName = 'text-xl',
 }: {
   size?: number;
   className?: string;
   markClassName?: string;
+  wordClassName?: string;
 }) {
   return (
-    <span className={`inline-flex items-center gap-2 ${className}`}>
+    <span className={`inline-flex items-center gap-2.5 ${className}`}>
       <LogoMark size={size} className={markClassName} />
-      <span className="text-lg font-semibold tracking-tight">Relay</span>
+      <span className={`font-semibold tracking-tight ${wordClassName}`}>Relay</span>
     </span>
   );
 }
