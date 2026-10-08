@@ -15,7 +15,7 @@ Written to be checkable. Every row names a file you can open.
 | Services | 4 (web, API, realtime gateway, worker) plus an optional ML service |
 | Database tables | 18 |
 | HTTP endpoints | 60+ |
-| Tests | 393 TypeScript, 17 Python |
+| Tests | 400 TypeScript, 35 Python |
 | Screenshots | 28, all captured from the running app |
 | Measured throughput | ~4,400 req/s, zero errors |
 
@@ -152,11 +152,13 @@ JavaScript.
 | Duplicate issue detection (TF-IDF, cosine) | `robis-ml/robis_ml/model.py` |
 | Priority triage (logistic regression) | same |
 | Refuses to predict below 40 triaged issues | same |
-| Macro-F1 against a majority-class baseline | `robis-ml/robis_ml/evaluate.py` |
+| Repeated stratified k-fold against a stratified-random baseline | `robis-ml/robis_ml/evaluate.py` |
 | FastAPI service, per-workspace models | `robis-ml/robis_ml/service.py` |
+| Shared bearer token, refuses to start without one | `robis-ml/robis_ml/auth.py` |
+| Duplicate hints in the issue composer | `backend/api/src/suggestions.ts` |
 
-Advisory only. Not wired into the API, and **unauthenticated**, so it is not
-deployable as it stands.
+Advisory only. A missing or broken ML service degrades to no hints and never
+blocks filing an issue.
 
 ---
 
@@ -188,8 +190,7 @@ is.
 | Verified container build | No Docker available |
 | Production mail driver | No SMTP. The API refuses to boot in production without one rather than printing reset links to a log |
 | Deployment | Follows from the above |
-| ML service auth | Takes a workspace id from the URL and trusts it |
-| ML evaluation rigour | Single split rather than repeated k-fold; no labelled duplicate set |
+| Duplicate detection accuracy | No labelled duplicate set, so no precision or recall figure |
 
 The first four are environment constraints and are stated rather than
-disguised. The last two are real work that has not been done.
+disguised. The last is real work that has not been done.

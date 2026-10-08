@@ -136,8 +136,10 @@ honestly: "auth" matches at 0.64 where "authentication" matches at 0.26 for the
 same intent. Below 40 triaged issues the model **declines to predict** rather
 than returning a confident-looking guess.
 
-It is not wired into the API and is unauthenticated, so it is not deployable as
-it stands. See **[robis-ml/README.md](robis-ml/README.md)**.
+It sits behind a shared service token and is wired into the issue composer:
+typing a title shows possible duplicates. If the service is missing, slow or
+broken, the hints disappear and filing still works. Duplicate detection has no
+precision or recall figure yet. See **[robis-ml/README.md](robis-ml/README.md)**.
 
 ---
 
@@ -145,7 +147,7 @@ it stands. See **[robis-ml/README.md](robis-ml/README.md)**.
 
 | Command               | What it does                         |
 | --------------------- | ------------------------------------ |
-| `bun test`            | 393 tests                            |
+| `bun test`            | 400 tests                            |
 | `bun run typecheck`   | every package                        |
 | `bun run lint`        | Biome                                |
 | `bun run loadtest`    | the benchmark above                  |

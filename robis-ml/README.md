@@ -12,8 +12,10 @@ cd robis-ml
 uv venv --python 3.11 .venv
 uv pip install --python .venv/bin/python -e ".[dev]"
 
-.venv/bin/python -m pytest                    # 17 tests
-.venv/bin/python -m uvicorn robis_ml.service:app --port 8000
+.venv/bin/python -m pytest                    # 35 tests
+
+# local only; anywhere else, set ROBIS_ML_TOKEN instead
+ROBIS_ML_ALLOW_ANONYMOUS=1 .venv/bin/python -m uvicorn robis_ml.service:app --port 8000
 ```
 
 ## Possible duplicates
@@ -154,11 +156,15 @@ one model. The query is parameterised, and the connection is opened
 from Postgres rather than a silent second writer to tables owned by
 `backend/database`.
 
-**The service itself is unauthenticated.** It takes a workspace id from the URL
-and trusts it. Anyone who can reach the port and knows a workspace UUID can
-read issue titles from it. That is acceptable only because it is not deployed
-and not wired into the API; before it is either, it needs a service credential
-or an internal-only bind. This is the top item on its roadmap.
+**Every endpoint except `/health` needs a bearer token.** The service reads it
+from `ROBIS_ML_TOKEN` and refuses to start without one; the API sends the same
+value as `ML_SERVICE_TOKEN`. Tokens are compared with `hmac.compare_digest`.
+For local work against seeded data, `ROBIS_ML_ALLOW_ANONYMOUS=1` turns the check
+off, and has to be set on purpose so that a forgotten variable fails closed.
+
+The token says the caller is Robis's API, not which user is asking. The API has
+already checked workspace membership before it calls here, and a non-member
+gets 404 without the service being called at all.
 
 ## Staleness
 
@@ -184,8 +190,10 @@ robis_ml/
   data.py       read-only Postgres loader, scoped by workspace
   evaluate.py   stratified split, macro-F1 vs baseline
   service.py    FastAPI: /health, /similar, /triage
+  auth.py       shared bearer token
 tests/
-  test_model.py 17 tests, in-memory, no database
+  test_model.py   17 tests, in-memory, no database
+  test_service.py 18 tests: auth, tenant isolation, cache
 ```
 
 `compose_text` is shared by the corpus and the query on purpose. They were two

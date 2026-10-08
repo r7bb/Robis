@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status: **393 TypeScript tests, 17 Python tests, lint and typecheck clean,
+Status: **400 TypeScript tests, 35 Python tests, lint and typecheck clean,
 production build passing.**
 
 A full inventory of what exists is in
