@@ -312,3 +312,15 @@ export const respondToMeetingSchema = z.object({
   response: z.enum(['yes', 'no', 'maybe']),
 });
 export type RespondToMeetingInput = z.infer<typeof respondToMeetingSchema>;
+
+/**
+ * The draft being typed, for duplicate suggestions.
+ *
+ * Bounded the same way `createIssueSchema` bounds a real issue, so a query
+ * cannot be larger than the thing it is searching for.
+ */
+export const similarIssuesQuerySchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  description: z.string().trim().max(20_000).nullable().optional(),
+});
+export type SimilarIssuesQuery = z.infer<typeof similarIssuesQuerySchema>;

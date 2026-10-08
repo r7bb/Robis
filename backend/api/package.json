@@ -6,7 +6,8 @@
   "exports": {
     "./app": "./src/app.ts",
     "./env": "./src/env.ts",
-    "./rate-limit": "./src/plugins/rate-limit.ts"
+    "./rate-limit": "./src/plugins/rate-limit.ts",
+    "./suggestions": "./src/suggestions.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",

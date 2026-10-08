@@ -19,6 +19,7 @@ import { notificationRoutes } from './routes/notifications.ts';
 import { projectRoutes } from './routes/projects.ts';
 import { searchRoutes } from './routes/search.ts';
 import { workspaceRoutes } from './routes/workspaces.ts';
+import { createSuggestionClient, type SuggestionClient } from './suggestions.ts';
 
 /**
  * Per-minute request budgets, injectable so tests can exercise the limiter
@@ -58,6 +59,14 @@ export type AppDeps = {
   /** Quiet by default in tests; `main.ts` turns logging on. */
   logger?: boolean;
   rateLimits?: Partial<RateLimits>;
+  /**
+   * Duplicate-issue suggestions. Off unless a URL is configured.
+   *
+   * Injected rather than constructed here so tests can supply a stub and
+   * never reach the network, and so the API has no opinion about whether
+   * the ML service exists.
+   */
+  suggestions?: SuggestionClient;
 };
 
 export function buildApp({
@@ -66,6 +75,7 @@ export function buildApp({
   logger = false,
   rateLimits,
   mailer = new ConsoleMailer(),
+  suggestions,
 }: AppDeps): FastifyInstance {
   const limits: RateLimits = { ...DEFAULT_RATE_LIMITS, ...rateLimits };
   const app = Fastify({ logger, trustProxy: true });
@@ -77,6 +87,27 @@ export function buildApp({
     origin: env.WEB_ORIGIN,
     credentials: true,
   });
+
+  /*
+   * Built here rather than by the caller because it needs `app.log`, and
+   * `app` does not exist until the line above. An earlier version passed it
+   * into `buildApp` from `main.ts` and referenced `app.log` inside `app`'s
+   * own initialiser, which is a temporal dead zone and throws.
+   *
+   * An injected client still wins, so tests supply a stub and never reach
+   * the network. With no URL configured this is the switched-off client and
+   * the endpoint returns an empty list.
+   */
+  const suggest =
+    suggestions ??
+    createSuggestionClient(
+      {
+        url: env.ML_SERVICE_URL || null,
+        token: env.ML_SERVICE_TOKEN || null,
+        timeoutMs: env.ML_TIMEOUT_MS,
+      },
+      app.log,
+    );
 
   // Before `attachUser`, so the in-flight gauge and the duration histogram
   // include time spent resolving the session rather than starting after it.
@@ -112,7 +143,7 @@ export function buildApp({
   app.register(workspaceRoutes, { db });
   app.register(memberRoutes, { db });
   app.register(projectRoutes, { db });
-  app.register(issueRoutes, { db });
+  app.register(issueRoutes, { db, suggestions: suggest });
   app.register(commentRoutes, { db });
   app.register(documentRoutes, { db });
   app.register(channelRoutes, { db });

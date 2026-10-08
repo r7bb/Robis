@@ -32,6 +32,16 @@ const envSchema = z.object({
     .string()
     .default('1')
     .transform((v) => v === '1' || v.toLowerCase() === 'true'),
+  /**
+   * The duplicate-suggestion service. Empty means the feature is off, which
+   * is the default: Relay runs perfectly well without it, and a composer
+   * that needs a Python process to accept a bug report would be a worse
+   * product than one that simply has no hints.
+   */
+  ML_SERVICE_URL: z.string().default(''),
+  ML_SERVICE_TOKEN: z.string().default(''),
+  /** Short: this sits between a keystroke and a hint. */
+  ML_TIMEOUT_MS: z.coerce.number().int().min(50).max(5000).default(600),
 });
 
 export type Env = z.infer<typeof envSchema>;

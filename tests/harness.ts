@@ -10,6 +10,7 @@
  */
 import { buildApp } from '@relay/api/app';
 import { loadEnv } from '@relay/api/env';
+import type { SimilarIssue } from '@relay/api/suggestions';
 import { createDatabase, type Database } from '@relay/database';
 import { runMigrations } from '@relay/database/migrate';
 import { MemoryMailer } from '@relay/mailer';
@@ -59,6 +60,46 @@ async function ensureTestDatabase() {
   }
 }
 
+/**
+ * What the suggestion service "returns", and what it was asked.
+ *
+ * The app is built once and shared, so the client cannot be swapped per
+ * test. This indirection lets a test set the answer and then read back the
+ * calls, which is how "a non-member never reaches the service at all" is
+ * asserted rather than assumed.
+ */
+type SuggestionCall = { workspaceId: string; title: string };
+
+export const suggestionCalls: SuggestionCall[] = [];
+
+let suggestionAnswer: SimilarIssue[] = [];
+let suggestionThrows = false;
+
+/** Matches `SuggestionClient['similar']`, description included. */
+async function suggestionStub(
+  workspaceId: string,
+  title: string,
+  _description?: string | null,
+): Promise<SimilarIssue[]> {
+  suggestionCalls.push({ workspaceId, title });
+
+  if (suggestionThrows) throw new Error('connection refused');
+  return suggestionAnswer;
+}
+
+/** Set what the next calls return, and forget earlier calls. */
+export function setSuggestions(answer: SimilarIssue[]) {
+  suggestionAnswer = answer;
+  suggestionThrows = false;
+  suggestionCalls.length = 0;
+}
+
+/** Make the client throw, to prove a broken service cannot break the route. */
+export function breakSuggestions() {
+  suggestionThrows = true;
+  suggestionCalls.length = 0;
+}
+
 /** Built once and shared; each test isolates itself with `resetDatabase`. */
 export async function getHarness() {
   if (handle) return handle;
@@ -85,6 +126,10 @@ export async function getHarness() {
     db,
     env,
     mailer,
+    // A stub, never the real client: the suite must not depend on a Python
+    // service being up, and must never reach the network. `suggestionStub`
+    // below lets one test decide what it answers.
+    suggestions: { similar: suggestionStub },
     rateLimits: {
       authPerMinute: 100_000,
       searchPerMinute: 100_000,

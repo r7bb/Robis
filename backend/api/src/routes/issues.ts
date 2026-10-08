@@ -10,7 +10,13 @@ import {
   users,
   workspaceMembers,
 } from '@relay/database';
-import { createIssueSchema, isUuid, listIssuesQuerySchema, updateIssueSchema } from '@relay/shared';
+import {
+  createIssueSchema,
+  isUuid,
+  listIssuesQuerySchema,
+  similarIssuesQuerySchema,
+  updateIssueSchema,
+} from '@relay/shared';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../errors.ts';
@@ -21,6 +27,7 @@ import {
   requireMembership,
 } from '../plugins/authz.ts';
 import { withIdempotency } from '../plugins/idempotency.ts';
+import type { SuggestionClient } from '../suggestions.ts';
 import { parse } from '../validate.ts';
 import { loadProject } from './projects.ts';
 
@@ -55,8 +62,44 @@ async function assertAssignable(db: Executor, workspaceId: string, assigneeId: s
     throw ApiError.badRequest('Assignee is not a member of this workspace', 'bad_assignee');
 }
 
-export async function issueRoutes(app: FastifyInstance, opts: { db: Database }) {
-  const { db } = opts;
+export async function issueRoutes(
+  app: FastifyInstance,
+  opts: { db: Database; suggestions: SuggestionClient },
+) {
+  const { db, suggestions } = opts;
+
+  /**
+   * Issues that look like the one being written.
+   *
+   * A GET with the draft in the query string rather than a POST: it reads
+   * nothing and changes nothing, so it should be cacheable and safe to
+   * retry. The title is short by schema, so it fits.
+   *
+   * Membership is checked here, by the same `requireMembership` as every
+   * other route. The ML service trusts whatever workspace id it is handed,
+   * so this is the only place that decides whether the caller may ask.
+   */
+  app.get(
+    '/workspaces/:workspaceId/issues/similar',
+    { preHandler: [requireAuth, requireMembership(db, 'issue:read')] },
+    async (request) => {
+      const { workspaceId } = currentMembership(request);
+      const query = parse(similarIssuesQuerySchema, request.query);
+
+      /*
+       * Caught here as well as inside the client. The client swallows its
+       * own network failures, but this route must hold the stronger
+       * property: whatever the client is, and however it breaks, a person
+       * filing an issue never sees an error from a hint.
+       */
+      try {
+        return { similar: await suggestions.similar(workspaceId, query.title, query.description) };
+      } catch (error) {
+        request.log.warn({ err: error }, 'suggestion lookup failed');
+        return { similar: [] };
+      }
+    },
+  );
 
   app.get(
     '/workspaces/:workspaceId/projects/:projectId/issues',

@@ -25,9 +25,10 @@ from threading import Lock
 from time import monotonic
 from uuid import UUID
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
+from .auth import check_configuration, require_service_token
 from .data import load_issues
 from .model import (
     DEFAULT_DUPLICATE_THRESHOLD,
@@ -52,6 +53,10 @@ logger = logging.getLogger(__name__)
 #: invalidation hook, or checking `max(updated_at)` per workspace before
 #: reusing a model; both are on the roadmap, neither is done.
 CACHE_TTL_SECONDS = 300
+
+# Before the app exists, so an unconfigured deployment dies at import rather
+# than serving one unauthenticated request.
+check_configuration()
 
 app = FastAPI(
     title="Relay ML",
@@ -217,7 +222,11 @@ def health() -> dict[str, object]:
     return {"ok": True}
 
 
-@app.post("/workspaces/{workspace_id}/similar", response_model=SimilarResponse)
+@app.post(
+    "/workspaces/{workspace_id}/similar",
+    response_model=SimilarResponse,
+    dependencies=[Depends(require_service_token)],
+)
 def similar(
     workspace_id: str,
     request: TextRequest,
@@ -248,7 +257,11 @@ def similar(
     )
 
 
-@app.post("/workspaces/{workspace_id}/triage", response_model=TriageResponse)
+@app.post(
+    "/workspaces/{workspace_id}/triage",
+    response_model=TriageResponse,
+    dependencies=[Depends(require_service_token)],
+)
 def triage(workspace_id: str, request: TextRequest) -> TriageResponse:
     """A suggested priority, or an explicit refusal.
 

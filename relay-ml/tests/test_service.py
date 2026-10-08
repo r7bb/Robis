@@ -1,0 +1,186 @@
+"""Tests for the HTTP surface.
+
+Two properties matter here and neither was covered before: that the
+endpoints are closed without a token, and that one workspace's issues can
+never reach another workspace's answer. The second was asserted only in
+comments, which is not an assertion.
+
+`load_issues` is monkeypatched, so none of this needs a database. That is
+the point of keeping the loader in its own module.
+"""
+
+from __future__ import annotations
+
+import importlib
+
+import pytest
+from fastapi.testclient import TestClient
+
+from relay_ml import auth, model
+
+TOKEN = "test-service-token"
+
+ALPHA = "11111111-1111-4111-8111-111111111111"
+BETA = "22222222-2222-4222-8222-222222222222"
+
+CORPORA = {
+    ALPHA: [
+        model.Issue("a1", "Offline queue drops writes", "IndexedDB mutations are lost"),
+        model.Issue("a2", "Alpha only secret", "nothing to do with beta"),
+    ],
+    BETA: [
+        model.Issue("b1", "Billing page is blank", "the invoice list does not render"),
+    ],
+}
+
+
+@pytest.fixture
+def client(monkeypatch: pytest.MonkeyPatch):
+    """A client over a freshly imported service with a known token."""
+    monkeypatch.setenv(auth.TOKEN_ENV, TOKEN)
+    monkeypatch.delenv(auth.ALLOW_ANONYMOUS_ENV, raising=False)
+
+    # Reimported so `check_configuration` runs against the patched
+    # environment and the per-workspace cache starts empty.
+    service = importlib.reload(importlib.import_module("relay_ml.service"))
+    monkeypatch.setattr(service, "load_issues", lambda workspace_id: CORPORA[workspace_id])
+
+    return TestClient(service.app)
+
+
+def auth_header(token: str = TOKEN) -> dict[str, str]:
+    return {"Authorization": f"Bearer {token}"}
+
+
+class TestAuthentication:
+    def test_health_needs_no_token(self, client: TestClient) -> None:
+        # A liveness probe reports nothing about any workspace, so it stays
+        # open for whatever is watching the process.
+        assert client.get("/health").status_code == 200
+
+    @pytest.mark.parametrize("path", ["similar", "triage"])
+    def test_tenant_endpoints_refuse_without_a_token(
+        self, client: TestClient, path: str
+    ) -> None:
+        response = client.post(f"/workspaces/{ALPHA}/{path}", json={"title": "anything"})
+
+        assert response.status_code == 401
+        assert response.headers["www-authenticate"] == "Bearer"
+
+    @pytest.mark.parametrize(
+        "header",
+        [
+            {"Authorization": "Bearer wrong-token"},
+            {"Authorization": TOKEN},  # right secret, missing scheme
+            {"Authorization": "Basic " + TOKEN},
+            {"Authorization": "Bearer "},
+        ],
+    )
+    def test_a_malformed_or_wrong_credential_is_refused(
+        self, client: TestClient, header: dict[str, str]
+    ) -> None:
+        response = client.post(
+            f"/workspaces/{ALPHA}/similar", json={"title": "anything"}, headers=header
+        )
+
+        assert response.status_code == 401
+
+    def test_the_right_token_is_accepted(self, client: TestClient) -> None:
+        response = client.post(
+            f"/workspaces/{ALPHA}/similar", json={"title": "anything"}, headers=auth_header()
+        )
+
+        assert response.status_code == 200
+
+    def test_anonymous_mode_opens_the_endpoints(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delenv(auth.TOKEN_ENV, raising=False)
+        monkeypatch.setenv(auth.ALLOW_ANONYMOUS_ENV, "1")
+
+        service = importlib.reload(importlib.import_module("relay_ml.service"))
+        monkeypatch.setattr(service, "load_issues", lambda workspace_id: CORPORA[workspace_id])
+
+        response = TestClient(service.app).post(
+            f"/workspaces/{ALPHA}/similar", json={"title": "anything"}
+        )
+
+        assert response.status_code == 200
+
+    def test_importing_unconfigured_refuses_rather_than_serving_openly(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.delenv(auth.TOKEN_ENV, raising=False)
+        monkeypatch.delenv(auth.ALLOW_ANONYMOUS_ENV, raising=False)
+
+        with pytest.raises(RuntimeError, match="Refusing to start"):
+            importlib.reload(importlib.import_module("relay_ml.service"))
+
+
+class TestTenantIsolation:
+    def test_a_query_only_ever_returns_its_own_workspaces_issues(
+        self, client: TestClient
+    ) -> None:
+        """The property the whole design rests on.
+
+        Alpha's corpus contains a near-duplicate of the query; Beta's does
+        not contain anything like it. Asking Beta must not surface Alpha's
+        row however similar it is.
+        """
+        query = {"title": "Offline writes in the queue get lost"}
+
+        alpha = client.post(
+            f"/workspaces/{ALPHA}/similar?threshold=0.05", json=query, headers=auth_header()
+        ).json()
+        beta = client.post(
+            f"/workspaces/{BETA}/similar?threshold=0.05", json=query, headers=auth_header()
+        ).json()
+
+        assert {m["id"] for m in alpha["similar"]} <= {"a1", "a2"}
+        assert "a1" in {m["id"] for m in alpha["similar"]}
+
+        # Beta's only issue is about billing, so nothing should clear the bar,
+        # and Alpha's rows must not appear whatever happens.
+        assert {m["id"] for m in beta["similar"]} <= {"b1"}
+        assert beta["corpus_size"] == 1
+
+    def test_the_cache_does_not_serve_one_workspace_from_another(
+        self, client: TestClient
+    ) -> None:
+        # Warming Alpha first is the interesting order: a cache keyed wrongly
+        # would hand Alpha's fitted model back for Beta.
+        client.post(f"/workspaces/{ALPHA}/similar", json={"title": "warm"}, headers=auth_header())
+
+        beta = client.post(
+            f"/workspaces/{BETA}/similar", json={"title": "warm"}, headers=auth_header()
+        ).json()
+
+        assert beta["corpus_size"] == 1
+
+
+class TestRequestValidation:
+    def test_a_malformed_workspace_id_is_rejected_before_the_database(
+        self, client: TestClient
+    ) -> None:
+        response = client.post(
+            "/workspaces/not-a-uuid/similar", json={"title": "x"}, headers=auth_header()
+        )
+
+        # 422, not the 500 a failed `::uuid` cast used to produce.
+        assert response.status_code == 422
+
+    def test_a_threshold_outside_zero_to_one_is_rejected(self, client: TestClient) -> None:
+        response = client.post(
+            f"/workspaces/{ALPHA}/similar?threshold=5",
+            json={"title": "x"},
+            headers=auth_header(),
+        )
+
+        assert response.status_code == 400
+
+    def test_triage_declines_on_a_small_corpus_and_says_why(self, client: TestClient) -> None:
+        response = client.post(
+            f"/workspaces/{ALPHA}/triage", json={"title": "x"}, headers=auth_header()
+        ).json()
+
+        assert response["priority"] is None
+        assert response["score"] is None
+        assert str(model.MIN_TRAINING_EXAMPLES) in response["reason"]
