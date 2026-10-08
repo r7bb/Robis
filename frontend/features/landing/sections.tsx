@@ -168,24 +168,20 @@ export function OfflineStory() {
       <div className="mx-auto max-w-6xl px-6">
         <div className="hidden lg:block">
           {/*
-            `top-16` and a height reduced by the same amount, because the
-            nav is sticky and 4rem tall. Pinning at `top-0` against a full
-            `100svh` centres the content against the whole viewport while
-            the top 64px of it is covered, so everything sits exactly one
-            nav-height too high -- measured at 4px above the nav's bottom
-            edge and 61px of slack below.
-          */}
-          <div className="sticky top-16 flex h-[calc(100svh-4rem)] flex-col items-center justify-center gap-[clamp(1rem,3vh,2.5rem)] py-[clamp(2rem,6vh,4rem)]">
-            <div className="shrink-0">
-              <p
-                className={`text-sm font-semibold uppercase tracking-[0.22em] transition-colors duration-[var(--entrance)] ease-[var(--ease)] ${step.tint}`}
-              >
-                {step.kicker}
-              </p>
-              <Headline>{step.title}</Headline>
-            </div>
+            The screenshot fills the stage and the caption sits over it.
 
-            <div className="relative min-h-0 w-full flex-1">
+            It used to be a caption row above an `object-contain` image,
+            which left the board 477px tall in a 694px stage and
+            letterboxed: the UI was too small to read, which defeats the
+            point of showing it.
+
+            `top-16` with a height reduced to match, because the nav is
+            sticky and 4rem tall. Pinning at `top-0` against a full
+            `100svh` centres against a viewport whose top 64px is covered,
+            which put everything exactly one nav-height too high.
+          */}
+          <div className="sticky top-16 h-[calc(100svh-4rem)] py-[clamp(1rem,3vh,2rem)]">
+            <div className="relative h-full w-full overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-black/60">
               {OFFLINE_STEPS.map((item, index) => (
                 <Image
                   key={item.kicker}
@@ -196,12 +192,32 @@ export function OfflineStory() {
                   sizes="1100px"
                   data-frame=""
                   data-active={index === active}
-                  // Absolute and `object-contain`: all three stack in one
-                  // box, and each fits whatever space is left rather than
-                  // dictating the height of the stage.
-                  className="absolute inset-0 h-full w-full rounded-xl border border-white/10 object-contain shadow-2xl shadow-black/60"
+                  // Covering, not containing. The stage is about 1087x694
+                  // and the capture is 16:10, so almost nothing is lost to
+                  // the crop and the board lands at close to native scale.
+                  className="absolute inset-0 h-full w-full object-cover object-top"
                 />
               ))}
+
+              {/*
+                A scrim, not a flat panel. The caption has to stay legible
+                over whichever frame is showing, and the board is busiest
+                at the top where its toolbar is, so the gradient is
+                deepest exactly where the text sits and gone by the cards.
+              */}
+              <div
+                aria-hidden="true"
+                className="absolute inset-x-0 top-0 h-2/5 bg-gradient-to-b from-black via-black/85 to-transparent"
+              />
+
+              <div className="absolute inset-x-0 top-0 px-6 pt-[clamp(1.5rem,4vh,3rem)] text-center">
+                <p
+                  className={`text-sm font-semibold uppercase tracking-[0.22em] transition-colors duration-[var(--entrance)] ease-[var(--ease)] ${step.tint}`}
+                >
+                  {step.kicker}
+                </p>
+                <Headline>{step.title}</Headline>
+              </div>
             </div>
           </div>
 
@@ -320,8 +336,11 @@ export function Documents() {
         {/*
          * Zoomed onto the editor, not merely cropped.
          *
-         * A 4:3 window over a 16:10 capture, anchored to the top. That
-         * drops the empty page below the text without zooming.
+         * A 1.75:1 window over a 16:10 (1.6) capture, anchored to the
+         * top. Wider than the source, so `object-cover` trims the bottom
+         * and nothing else. A 4:3 frame was narrower than the source and
+         * cropped the left and right edges instead, taking the breadcrumb
+         * with them.
          *
          * Zooming was the first attempt and it was the wrong fix: at
          * 1.75x the breadcrumb and title were clipped off the left edge
@@ -331,7 +350,7 @@ export function Documents() {
          * something here to frame.
          */}
         <Reveal delay={120}>
-          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-white/10 shadow-2xl shadow-black/60">
+          <div className="relative aspect-[1.75] w-full overflow-hidden rounded-xl border border-white/10 shadow-2xl shadow-black/60">
             <Image
               src="/shots/document.png"
               alt="Two people editing the same document, each with their own cursor."

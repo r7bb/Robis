@@ -3,6 +3,8 @@
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { Logo } from '../components/brand/logo.tsx';
+import { Faq } from '../features/landing/faq.tsx';
+import { SiteFooter } from '../features/landing/footer.tsx';
 import {
   Capabilities,
   Closing,
@@ -98,39 +100,11 @@ export default function Home() {
         <Documents />
         <Capabilities />
         <Decisions />
+        <Faq />
         <Closing href={href} label={label} />
       </main>
 
-      <footer className="border-t border-line">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-6 py-8 text-xs text-faint">
-          <Logo
-            size={20}
-            className="text-faint"
-            markClassName="text-accent/70"
-            wordClassName="text-sm"
-          />
-          <Link
-            href="/how-it-works"
-            className="transition-colors duration-[var(--micro)] ease-[var(--ease)] hover:text-muted"
-          >
-            How it works
-          </Link>
-          <a
-            href={REPO}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="transition-colors duration-[var(--micro)] ease-[var(--ease)] hover:text-muted"
-          >
-            GitHub
-          </a>
-          <Link
-            href="/login"
-            className="transition-colors duration-[var(--micro)] ease-[var(--ease)] hover:text-muted"
-          >
-            Sign in
-          </Link>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
