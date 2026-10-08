@@ -341,14 +341,40 @@ async function captureDocuments(page: Page, workspaceUrl: string) {
     await other.waitFor('document.querySelector(\'textarea[aria-label="Document content"]\')');
 
     // Both windows edit. The CRDT merges rather than picking a winner.
+    /*
+     * Enough text that the editor photographs as a document rather than as
+     * an empty box. The earlier version typed one line into each side,
+     * which proved the merge but made every screenshot of this screen look
+     * like an unfinished product.
+     */
     await page.fill(
       'textarea[aria-label="Document content"]',
-      'Offline writes are queued in IndexedDB and flushed in order.\n',
+      [
+        'Sync protocol',
+        '',
+        'Offline writes are queued in IndexedDB and flushed in order. The queue is',
+        'durable, so closing the tab mid-edit loses nothing.',
+        '',
+      ].join('\n'),
     );
     await Bun.sleep(800);
 
-    const merged =
-      'Offline writes are queued in IndexedDB and flushed in order.\nExactly-once comes from client-generated ids plus a server ledger.\n';
+    // The second window keeps what the first wrote and adds to it, which
+    // is what the merge actually produces.
+    const merged = [
+      'Sync protocol',
+      '',
+      'Offline writes are queued in IndexedDB and flushed in order. The queue is',
+      'durable, so closing the tab mid-edit loses nothing.',
+      '',
+      'Exactly-once comes from client-generated ids plus a server ledger: the',
+      'first request for a key stores its response, and a replay returns that',
+      'response instead of doing the work twice.',
+      '',
+      'Convergence is a property of the data structure, not of who reached the',
+      'server first, which is why a document still merges after an hour offline.',
+      '',
+    ].join('\n');
     await other.fill('textarea[aria-label="Document content"]', merged);
     await Bun.sleep(1200);
 

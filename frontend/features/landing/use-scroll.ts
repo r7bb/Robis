@@ -142,12 +142,21 @@ export function useActiveStep(count: number): [RefObject<HTMLDivElement | null>[
         }
       },
       /*
-       * A one-pixel band across the middle of the viewport. Collapsing the
-       * root to a line means exactly one spacer can intersect at a time, so
-       * there is never an ambiguous moment where two steps both claim to be
-       * active and the stage flickers between them.
+       * A one-pixel line across the viewport. Collapsing the root to a
+       * line means exactly one spacer can intersect at a time, so there is
+       * never an ambiguous moment where two steps both claim to be active
+       * and the stage flickers between them.
+       *
+       * The line sits low, at 85%, rather than at the middle. The
+       * spacers follow a sticky stage, so scrolling stops once the
+       * container's bottom reaches the viewport's -- and everything below
+       * the line at that moment is never traversed. With the line at 50%
+       * that dead zone was half a viewport, and the last step was active
+       * for 45px of a 709px scroll: it showed for one sampled frame out
+       * of eleven. Dropping the line to 85% shrinks the dead zone to 15%
+       * of a viewport, which a short tail spacer then absorbs.
        */
-      { rootMargin: '-50% 0px -50% 0px', threshold: 0 },
+      { rootMargin: '-85% 0px -15% 0px', threshold: 0 },
     );
 
     for (const element of elements) observer.observe(element);

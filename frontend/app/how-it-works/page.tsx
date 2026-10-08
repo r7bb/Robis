@@ -20,6 +20,45 @@ import { REPO } from '../../features/landing/sections.tsx';
  * what works is an advertisement, not an explanation.
  */
 
+const WRITE_PATH = [
+  {
+    title: 'The client decides the id',
+    body: 'Every mutation carries a key generated on the device, before anything is sent.',
+  },
+  {
+    title: 'The queue is durable',
+    body: 'It lives in IndexedDB, so closing the tab mid-edit loses nothing.',
+  },
+  {
+    title: 'The server keeps a ledger',
+    body: 'The first request for a key inserts a row and stores its response. A replay finds that row and returns the stored response instead of doing the work twice.',
+  },
+  {
+    title: 'A retry is therefore safe',
+    body: 'An offline client cannot tell a request that never arrived from one whose response was lost. Without the ledger, "create issue" retried after an ambiguous failure produces two issues.',
+  },
+];
+
+/** The same request, from a member and from somebody who is not one. */
+const EXCHANGES = [
+  {
+    who: 'A member of the workspace',
+    request: 'GET /workspaces/4c84…/issues\ncookie: relay_session=…',
+    status: '200 OK',
+    statusTint: 'text-emerald-300',
+    note: 'Membership resolved, permission checked against the matrix, rows returned.',
+    frame: 'border-emerald-400/30 from-emerald-400/[0.07]',
+  },
+  {
+    who: 'Everybody else',
+    request: 'GET /workspaces/4c84…/issues\ncookie: relay_session=…',
+    status: '404 Not Found',
+    statusTint: 'text-rose-300',
+    note: 'Not forbidden. As far as this caller is concerned, the workspace is not there.',
+    frame: 'border-rose-400/30 from-rose-400/[0.07]',
+  },
+];
+
 type Decision = { choice: string; instead: string; reason: string };
 
 const DECISIONS: Decision[] = [
@@ -68,8 +107,10 @@ function Decisions() {
       {DECISIONS.map((decision, index) => (
         <Reveal key={decision.choice} delay={index * 60}>
           <dt className="text-lg font-semibold text-content">{decision.choice}</dt>
-          <dd className="mt-1 text-xs uppercase tracking-wide text-faint">
-            instead of {decision.instead}
+          <dd className="mt-2">
+            <span className="rounded-full border border-line px-2 py-0.5 text-xs text-faint line-through decoration-danger-soft/70">
+              {decision.instead}
+            </span>
           </dd>
           <dd className="mt-2.5 text-base leading-relaxed text-muted">{decision.reason}</dd>
         </Reveal>
@@ -79,12 +120,36 @@ function Decisions() {
 }
 
 const SERVICES = [
-  { name: 'frontend', body: 'Next.js and React. Reads from IndexedDB, not the network.' },
-  { name: 'backend/api', body: 'Fastify. Every request resolves a session and checks membership.' },
-  { name: 'backend/realtime', body: 'A Bun WebSocket gateway: fan-out, presence, document rooms.' },
-  { name: 'backend/worker', body: 'Background jobs off the same Postgres table.' },
-  { name: 'shared/contracts', body: 'Zod schemas and the permission matrix, used by both sides.' },
-  { name: 'relay-ml', body: 'Duplicate detection and triage. Advisory, and optional.' },
+  {
+    accent: 'border-sky-400/50 text-sky-200',
+    name: 'frontend',
+    body: 'Next.js and React. Reads from IndexedDB, not the network.',
+  },
+  {
+    accent: 'border-violet-400/50 text-violet-200',
+    name: 'backend/api',
+    body: 'Fastify. Every request resolves a session and checks membership.',
+  },
+  {
+    accent: 'border-emerald-400/50 text-emerald-200',
+    name: 'backend/realtime',
+    body: 'A Bun WebSocket gateway: fan-out, presence, document rooms.',
+  },
+  {
+    accent: 'border-amber-400/50 text-amber-200',
+    name: 'backend/worker',
+    body: 'Background jobs off the same Postgres table.',
+  },
+  {
+    accent: 'border-rose-400/50 text-rose-200',
+    name: 'shared/contracts',
+    body: 'Zod schemas and the permission matrix, used by both sides.',
+  },
+  {
+    accent: 'border-accent-soft/50 text-accent-soft',
+    name: 'relay-ml',
+    body: 'Duplicate detection and triage. Advisory, and optional.',
+  },
 ];
 
 export default function HowItWorks() {
@@ -138,29 +203,32 @@ export default function HowItWorks() {
             </Subhead>
           </Reveal>
 
-          <Reveal delay={100} className="mx-auto mt-[clamp(2.5rem,6vh,4rem)] max-w-3xl text-left">
-            <ol className="space-y-5 text-base leading-relaxed text-muted">
-              <li>
-                <span className="font-medium text-content">1. The client decides the id.</span>{' '}
-                Every mutation carries a key generated on the device, before anything is sent.
-              </li>
-              <li>
-                <span className="font-medium text-content">2. The queue is durable.</span> It lives
-                in IndexedDB, so closing the tab mid-edit loses nothing.
-              </li>
-              <li>
-                <span className="font-medium text-content">3. The server keeps a ledger.</span> The
-                first request for a key inserts a row and stores its response. A replay finds that
-                row and returns the stored response instead of doing the work twice.
-              </li>
-              <li>
-                <span className="font-medium text-content">4. A retry is therefore safe.</span> An
-                offline client cannot tell a request that never arrived from one whose response was
-                lost. Without the ledger, &ldquo;create issue&rdquo; retried after an ambiguous
-                failure produces two issues.
-              </li>
-            </ol>
-          </Reveal>
+          <ol className="mx-auto mt-[clamp(2.5rem,6vh,4rem)] max-w-3xl text-left">
+            {WRITE_PATH.map((step, index) => (
+              <Reveal key={step.title} delay={index * 80}>
+                <li className="relative flex gap-5 pb-9 last:pb-0">
+                  {/* The rail. Drawn behind the markers and stopped on the
+                      last item, so the sequence reads as finished rather
+                      than trailing off. */}
+                  {index < WRITE_PATH.length - 1 ? (
+                    <span
+                      aria-hidden="true"
+                      className="absolute left-[1.1rem] top-9 h-[calc(100%-2.25rem)] w-px bg-gradient-to-b from-accent/50 to-accent/10"
+                    />
+                  ) : null}
+
+                  <span className="relative z-10 grid h-9 w-9 shrink-0 place-items-center rounded-full border border-accent/40 bg-surface font-mono text-sm font-semibold text-accent-soft">
+                    {index + 1}
+                  </span>
+
+                  <div className="pt-1">
+                    <p className="text-lg font-semibold text-content">{step.title}</p>
+                    <p className="mt-1.5 text-base leading-relaxed text-muted">{step.body}</p>
+                  </div>
+                </li>
+              </Reveal>
+            ))}
+          </ol>
 
           <Reveal delay={160} className="mt-[clamp(2.5rem,6vh,4rem)]">
             <Shot
@@ -179,11 +247,31 @@ export default function HowItWorks() {
             </Subhead>
           </Reveal>
 
-          <Reveal delay={100} className="mx-auto mt-[clamp(2rem,5vh,3rem)] max-w-2xl">
-            <p className="rounded-2xl border border-rose-400/30 bg-rose-400/[0.07] p-6 text-left text-base leading-relaxed text-muted">
-              <span className="font-medium text-rose-200">404, never 403.</span> A non-member asking
-              about a workspace is told it does not exist. A 403 would confirm that it does, which
-              is half of what somebody probing for it wants to know.
+          <div className="mx-auto mt-[clamp(2.5rem,6vh,4rem)] grid max-w-4xl gap-5 text-left sm:grid-cols-2">
+            {EXCHANGES.map((exchange, index) => (
+              <Reveal key={exchange.who} delay={index * 90}>
+                <div
+                  className={`h-full rounded-2xl border bg-gradient-to-b to-transparent p-6 ${exchange.frame}`}
+                >
+                  <p className="text-sm font-medium text-content">{exchange.who}</p>
+
+                  <pre className="mt-4 overflow-x-auto font-mono text-xs leading-relaxed text-muted">
+                    <code>{exchange.request}</code>
+                  </pre>
+
+                  <p className={`mt-4 font-mono text-2xl font-semibold ${exchange.statusTint}`}>
+                    {exchange.status}
+                  </p>
+                  <p className="mt-1.5 text-sm leading-relaxed text-muted">{exchange.note}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+
+          <Reveal delay={200}>
+            <p className="mx-auto mt-8 max-w-2xl text-base leading-relaxed text-faint">
+              The second response is the interesting one. A 403 would confirm the workspace exists,
+              which is half of what somebody probing for it wants to know.
             </p>
           </Reveal>
         </Band>
@@ -196,8 +284,10 @@ export default function HowItWorks() {
           <div className="mx-auto mt-[clamp(2.5rem,6vh,4rem)] grid max-w-5xl gap-8 text-left sm:grid-cols-2 lg:grid-cols-3">
             {SERVICES.map((service, index) => (
               <Reveal key={service.name} delay={index * 60}>
-                <p className="font-mono text-sm font-semibold text-accent-soft">{service.name}</p>
-                <p className="mt-2 text-base leading-relaxed text-muted">{service.body}</p>
+                <div className={`h-full rounded-2xl border-l-2 pl-5 ${service.accent}`}>
+                  <p className="font-mono text-sm font-semibold">{service.name}</p>
+                  <p className="mt-2 text-base leading-relaxed text-muted">{service.body}</p>
+                </div>
               </Reveal>
             ))}
           </div>

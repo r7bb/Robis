@@ -205,14 +205,25 @@ export function OfflineStory() {
             </div>
           </div>
 
-          {/* Scroll distance: one viewport per step after the first. */}
+          {/*
+           * Half a viewport per step after the first, so the whole
+           * sequence costs one screen of scrolling rather than two.
+           *
+           * The arithmetic matters. The sticky stage is in flow and
+           * contributes its own height, so the container is
+           * `stage + spacers` and the distance the stage stays pinned is
+           * just the spacers. Two full-viewport spacers meant two screens
+           * of scrolling to see three images, which is a long time to
+           * hold somebody for one idea.
+           *
+           * Equal spacers, including one for the first step. An earlier
+           * version gave step one no spacer at all and let it win by
+           * default, which left the last step active for only the final
+           * instant before the stage unpinned: sampled across the
+           * sequence it showed 5 frames, 5 frames, then 1.
+           */}
           {OFFLINE_STEPS.map((item, index) => (
-            <div
-              key={item.kicker}
-              ref={refs[index]}
-              className={index === 0 ? 'h-0' : 'h-svh'}
-              aria-hidden="true"
-            />
+            <div key={item.kicker} ref={refs[index]} className="h-[34svh]" aria-hidden="true" />
           ))}
         </div>
 
@@ -251,17 +262,87 @@ export function Stack() {
   );
 }
 
+/** What actually happens when two people type in one place. */
+const MERGE_STEPS = [
+  { who: 'You', tint: 'text-sky-300', body: 'insert a word at position 12, offline.' },
+  {
+    who: 'They',
+    tint: 'text-emerald-300',
+    body: 'insert a sentence at position 12, at the same moment.',
+  },
+  {
+    who: 'Both',
+    tint: 'text-violet-300',
+    body: 'end up with the same document. No lock, no winner, no lost keystroke.',
+  },
+];
+
+/**
+ * Deliberately not another centred band.
+ *
+ * Every other section on this page is a centred headline over a wide
+ * screenshot, and by the fifth one the rhythm stops being a rhythm and
+ * starts being a template. This one splits: the explanation on the left,
+ * the product on the right, and the screenshot cropped to the editor
+ * rather than showing the chrome around it.
+ */
 export function Documents() {
   return (
     <Band tone="base">
-      <Reveal>
-        <Headline>Two cursors. One paragraph.</Headline>
-        <Subhead>CRDTs over a WebSocket gateway, so edits merge instead of overwriting.</Subhead>
-      </Reveal>
+      <div className="grid items-center gap-[clamp(2.5rem,5vw,4rem)] lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+        <div className="text-left">
+          <Reveal>
+            <h2 className="max-w-[14ch] text-balance text-[clamp(2.25rem,4vw,3.5rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-content">
+              Two cursors. One paragraph.
+            </h2>
+          </Reveal>
 
-      <Reveal delay={120} className="mt-[clamp(2.5rem,6vh,4rem)]">
-        <Shot src="/shots/document.png" alt="Two people editing the same document at once." />
-      </Reveal>
+          <Reveal delay={80}>
+            <dl className="mt-8 space-y-5">
+              {MERGE_STEPS.map((step) => (
+                <div key={step.who} className="flex gap-3">
+                  <dt className={`shrink-0 text-base font-semibold ${step.tint}`}>{step.who}</dt>
+                  <dd className="text-base leading-relaxed text-muted">{step.body}</dd>
+                </div>
+              ))}
+            </dl>
+          </Reveal>
+
+          <Reveal delay={160}>
+            <p className="mt-7 border-l-2 border-accent/40 pl-4 text-sm leading-relaxed text-faint">
+              Yjs CRDTs over a WebSocket gateway. Convergence is a property of the data structure,
+              not of who reached the server first, which is why it still works after an hour
+              offline.
+            </p>
+          </Reveal>
+        </div>
+
+        {/*
+         * Zoomed onto the editor, not merely cropped.
+         *
+         * A 4:3 window over a 16:10 capture, anchored to the top. That
+         * drops the empty page below the text without zooming.
+         *
+         * Zooming was the first attempt and it was the wrong fix: at
+         * 1.75x the breadcrumb and title were clipped off the left edge
+         * and the editor was still half empty, because the problem was
+         * never the framing. The capture script typed two lines into the
+         * document. It writes several paragraphs now, so there is
+         * something here to frame.
+         */}
+        <Reveal delay={120}>
+          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-white/10 shadow-2xl shadow-black/60">
+            <Image
+              src="/shots/document.png"
+              alt="Two people editing the same document, each with their own cursor."
+              width={1440}
+              height={900}
+              sizes="(max-width: 1024px) 100vw, 640px"
+              className="absolute inset-0 h-full w-full origin-[50%_14%] scale-[1.75] object-cover object-top"
+            />
+          </div>
+        </Reveal>
+      </div>
     </Band>
   );
 }
