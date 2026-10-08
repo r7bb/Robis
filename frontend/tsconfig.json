@@ -1,11 +1,7 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "jsx": "preserve",
     "allowJs": true,
     "incremental": true,
@@ -26,7 +22,5 @@
     "next-env.d.ts",
     ".next-build/types/**/*.ts"
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }
