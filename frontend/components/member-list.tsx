@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { api, type Me, type Member } from '../lib/api.ts';
 import { DeleteButton } from './delete-button.tsx';
-import { RoleBadge } from './ui.tsx';
+import { RoleBadge } from './ui/primitives.tsx';
 
 /**
  * Workspace members: invite, change role, remove.

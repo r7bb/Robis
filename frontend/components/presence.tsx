@@ -2,33 +2,19 @@
 
 import type { PresenceUser } from '@relay/shared';
 import type { ConnectionState } from '../lib/realtime.ts';
+import { Avatar } from './ui/avatar.tsx';
 
-/**
- * Fixed palette, deliberately not themed. These identify people, so they must
- * stay distinguishable from each other and stable across workspaces -- an
- * avatar that changes colour with the theme is a worse avatar.
+/*
+ * This file used to carry its own palette, hash and initials function, which
+ * had already drifted from the shared `Avatar`: it took the first and last
+ * word of a name where `Avatar` takes the first two, so "Mary Jane Watson"
+ * appeared as MW in the presence bar and MJ everywhere else. Same person,
+ * two faces. One implementation now.
  */
-const AVATAR_COLORS = [
-  'bg-indigo-500',
-  'bg-emerald-500',
-  'bg-amber-500',
-  'bg-rose-500',
-  'bg-sky-500',
-  'bg-violet-500',
-];
 
-/** Stable colour per user, so the same person keeps the same swatch across
- * reloads and across other people's screens. */
-function colorFor(userId: string): string {
-  let hash = 0;
-  for (const char of userId) hash = (hash * 31 + char.charCodeAt(0)) | 0;
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]!;
-}
-
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
-  return (parts[0]![0]! + parts.at(-1)![0]!).toUpperCase();
+/** "Ada Lovelace" or "Ada Lovelace, viewing this board". */
+function describe(user: PresenceUser, here: string | null | undefined): string {
+  return here && user.location === here ? `${user.name}, viewing this board` : user.name;
 }
 
 export function PresenceBar({
@@ -52,16 +38,22 @@ export function PresenceBar({
     <div className="flex items-center gap-3">
       <div className="flex -space-x-2">
         {users.map((user) => (
-          <span
-            key={user.userId}
-            title={here && user.location === here ? `${user.name} — viewing this board` : user.name}
-            className={[
-              'grid h-7 w-7 place-items-center rounded-full text-[10px] font-semibold text-white ring-2',
-              colorFor(user.userId),
-              here && user.location === here ? 'ring-emerald-400' : 'ring-surface',
-            ].join(' ')}
-          >
-            {initials(user.name)}
+          // `Avatar` renders initials and is `aria-hidden`, so the name is
+          // carried by the wrapper: a tooltip for a mouse, and text for a
+          // screen reader, which a bare `title` would not reliably give.
+          <span key={user.userId} title={describe(user, here)}>
+            <Avatar
+              name={user.name}
+              seed={user.userId}
+              size="md"
+              // The ring marks somebody as looking at this very board. It
+              // stays here rather than moving into `Avatar`, because it is a
+              // fact about presence, not about the person.
+              className={`ring-2 ${
+                here && user.location === here ? 'ring-emerald-400' : 'ring-surface'
+              }`}
+            />
+            <span className="sr-only">{describe(user, here)}</span>
           </span>
         ))}
       </div>

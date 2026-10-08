@@ -5,8 +5,6 @@
     "": {
       "name": "relay",
       "dependencies": {
-        "lib0": "^0.2.117",
-        "y-protocols": "^1.0.7",
         "yjs": "^13.6.32",
       },
       "devDependencies": {
@@ -25,7 +23,6 @@
         "embedded-postgres": "18.4.0-beta.17",
         "postgres": "^3.4.9",
         "typescript": "^5.7.0",
-        "yjs": "^13.6.32",
       },
     },
     "backend/api": {
@@ -40,7 +37,6 @@
         "@relay/shared": "workspace:*",
         "drizzle-orm": "^0.38.0",
         "fastify": "^5.2.0",
-        "yjs": "^13.6.32",
         "zod": "^4.0.0",
       },
     },
@@ -91,7 +87,6 @@
       "dependencies": {
         "@relay/auth": "workspace:*",
         "@relay/database": "workspace:*",
-        "@relay/mailer": "workspace:*",
         "@relay/shared": "workspace:*",
         "drizzle-orm": "^0.38.0",
       },
@@ -707,8 +702,6 @@
     "which": ["which@4.0.0", "", { "dependencies": { "isexe": "^3.1.1" }, "bin": { "node-which": "bin/which.js" } }, "sha512-GlaYyEb07DPxYCKhKzplCWBJtvxZcZMrL+4UkrTSJHHPyZU4mYYTv3qaOe77H7EODLSSopAUFAc6W8U4yqvscg=="],
 
     "xtend": ["xtend@4.0.2", "", {}, "sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ=="],
-
-    "y-protocols": ["y-protocols@1.0.7", "", { "dependencies": { "lib0": "^0.2.85" }, "peerDependencies": { "yjs": "^13.0.0" } }, "sha512-YSVsLoXxO67J6eE/nV4AtFtT3QEotZf5sK5BHxFBXso7VDUT3Tx07IfA6hsu5Q5OmBdMkQVmFZ9QOA7fikWvnw=="],
 
     "yjs": ["yjs@13.6.32", "", { "dependencies": { "lib0": "^0.2.99" } }, "sha512-lfiJIIC4Xayt5ItynE407ehlE03pCjeOc4hkR4yxxvvNJ4kuiN25B0g+Qp8XagYz361LLL7DCzR5bvFJ81QKtQ=="],
 

@@ -50,7 +50,7 @@ export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
  * session thief does not have.
  */
 export const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1).max(200),
+  currentPassword: z.string().min(1).max(PASSWORD_MAX_LENGTH),
   newPassword: passwordSchema,
 });
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
@@ -93,7 +93,7 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 
 export const loginSchema = z.object({
   email: z.email().max(254).toLowerCase().trim(),
-  password: z.string().min(1).max(200),
+  password: z.string().min(1).max(PASSWORD_MAX_LENGTH),
 });
 export type LoginInput = z.infer<typeof loginSchema>;
 

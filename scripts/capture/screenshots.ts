@@ -45,13 +45,42 @@ import {
   Page,
   type PageConfig,
   type Target,
-} from './lib/cdp.ts';
+} from './cdp.ts';
 
 const WEB = 'http://localhost:3000';
 const API = 'http://localhost:4000';
 const REALTIME = 'http://localhost:4001';
 const CDP_PORT = 9333;
-const SHOTS = new URL('../imgs/', import.meta.url).pathname;
+const SHOTS = new URL('../../imgs/', import.meta.url).pathname;
+
+/** Where the landing page reads its screenshots from. */
+const PUBLIC_SHOTS = new URL('../../frontend/public/shots/', import.meta.url).pathname;
+
+/**
+ * The four shots the landing page shows, under the names it asks for.
+ *
+ * Next.js can only serve static files out of `public/`, so these have to
+ * exist twice. They were copied by hand once, which is the kind of
+ * duplication that silently goes stale the first time anybody recaptures
+ * and forgets. Copying them here means `bun run screenshots` is the single
+ * action that updates both places.
+ */
+const LANDING_SHOTS: Record<string, string> = {
+  '03-workspace.png': 'workspace.png',
+  '06-offline-unsynced.png': 'offline.png',
+  '07-after-reconnect.png': 'reconnected.png',
+  '08-document-collab.png': 'document.png',
+};
+
+async function publishLandingShots() {
+  console.log('\nLanding page');
+  await mkdir(PUBLIC_SHOTS, { recursive: true });
+
+  for (const [source, destination] of Object.entries(LANDING_SHOTS)) {
+    await Bun.write(`${PUBLIC_SHOTS}${destination}`, Bun.file(`${SHOTS}${source}`));
+    console.log(`  ${destination}`);
+  }
+}
 /**
  * A fresh Chrome profile per run.
  *
@@ -553,7 +582,7 @@ console.log('Re-seeding so the screenshots show the same content every time.');
 // `--team`, so the member list, the role badges and the chat transcript have
 // more than one person in them. A workspace of one misrepresents a product
 // whose whole subject is collaboration.
-const seed = Bun.spawnSync(['bun', 'run', 'scripts/seed.ts', '--team'], {
+const seed = Bun.spawnSync(['bun', 'run', 'scripts/db/seed.ts', '--team'], {
   stdout: 'pipe',
   stderr: 'pipe',
 });
@@ -618,6 +647,7 @@ try {
   await captureRecovery(page);
   await captureVerifyEmail(page);
   await captureAccount(page);
+  await publishLandingShots();
 
   console.log('\nDone.');
 } finally {

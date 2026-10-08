@@ -141,8 +141,8 @@ JavaScript.
 | Prometheus `/metrics` on API and gateway | `backend/metrics/` |
 | Route-pattern labels (cardinality-safe) | `backend/api/src/metrics.ts` |
 | Health endpoints | `backend/api/src/app.ts` |
-| Load harness | `scripts/loadtest.ts` |
-| Screenshot capture over CDP | `scripts/screenshots.ts` |
+| Load harness | `scripts/bench/loadtest.ts` |
+| Screenshot capture over CDP | `scripts/capture/screenshots.ts` |
 | CI: lint, typecheck, test, build | `.github/workflows/ci.yml` |
 
 ## Machine learning

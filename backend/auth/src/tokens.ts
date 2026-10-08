@@ -1,4 +1,4 @@
-import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 
 export const SESSION_COOKIE = 'relay_session';
 export const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
@@ -20,13 +20,6 @@ export function hashSessionToken(token: string): string {
 }
 
 /** Constant-time comparison for any secret compared outside the database. */
-export function safeEqual(a: string, b: string): boolean {
-  const ab = Buffer.from(a, 'utf8');
-  const bb = Buffer.from(b, 'utf8');
-  if (ab.length !== bb.length) return false;
-  return timingSafeEqual(ab, bb);
-}
-
 export function sessionExpiry(now: Date = new Date()): Date {
   return new Date(now.getTime() + SESSION_TTL_MS);
 }

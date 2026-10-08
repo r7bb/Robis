@@ -14,8 +14,6 @@ declare module 'fastify' {
 
 /** Narrowed request types so handlers don't re-check what a guard guaranteed. */
 export type AuthedRequest = FastifyRequest & { user: AuthenticatedUser };
-export type MemberRequest = AuthedRequest & { membership: { workspaceId: string; role: Role } };
-
 export function currentUser(request: FastifyRequest): AuthenticatedUser {
   if (!request.user) throw ApiError.unauthorized();
   return request.user;

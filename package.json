@@ -8,26 +8,26 @@
     "shared/*"
   ],
   "scripts": {
-    "postinstall": "bun run scripts/fix-pg-dylibs.ts",
-    "db:start": "bun run scripts/dev-db.ts start",
-    "db:stop": "bun run scripts/dev-db.ts stop",
-    "db:reset": "bun run scripts/dev-db.ts reset",
+    "postinstall": "bun run scripts/db/fix-pg-dylibs.ts",
+    "db:start": "bun run scripts/db/dev-db.ts start",
+    "db:stop": "bun run scripts/db/dev-db.ts stop",
+    "db:reset": "bun run scripts/db/dev-db.ts reset",
     "db:push": "bun --filter '@relay/database' push",
-    "db:seed": "bun run scripts/seed.ts",
+    "db:seed": "bun run scripts/db/seed.ts",
     "dev:api": "bun --watch backend/api/src/main.ts",
     "dev:web": "bun --filter '@relay/web' dev",
     "test": "bun test",
-    "typecheck": "tsc --noEmit -p shared/contracts && tsc --noEmit -p backend/metrics && tsc --noEmit -p backend/mailer && tsc --noEmit -p backend/auth && tsc --noEmit -p backend/database && tsc --noEmit -p shared/sync && tsc --noEmit -p backend/api && tsc --noEmit -p backend/realtime && tsc --noEmit -p backend/worker && tsc --noEmit -p tsconfig.scripts.json && tsc --noEmit -p frontend",
+    "typecheck": "tsc --noEmit -p shared/contracts && tsc --noEmit -p backend/metrics && tsc --noEmit -p backend/mailer && tsc --noEmit -p backend/auth && tsc --noEmit -p backend/database && tsc --noEmit -p shared/sync && tsc --noEmit -p backend/api && tsc --noEmit -p backend/realtime && tsc --noEmit -p backend/worker && tsc --noEmit -p scripts && tsc --noEmit -p frontend",
     "start:api": "bun backend/api/src/main.ts",
-    "grant:owner": "bun run scripts/grant-owner.ts",
+    "grant:owner": "bun run scripts/db/grant-owner.ts",
     "dev:realtime": "bun --watch backend/realtime/src/main.ts",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "dev:worker": "bun --watch backend/worker/src/main.ts",
-    "db:migrate": "bun run scripts/migrate.ts",
-    "loadtest": "bun run scripts/loadtest.ts",
-    "screenshots": "bun run scripts/screenshots.ts"
+    "db:migrate": "bun run scripts/db/migrate.ts",
+    "loadtest": "bun run scripts/bench/loadtest.ts",
+    "screenshots": "bun run scripts/capture/screenshots.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.12",
@@ -44,12 +44,9 @@
     "drizzle-orm": "^0.38.0",
     "embedded-postgres": "18.4.0-beta.17",
     "postgres": "^3.4.9",
-    "typescript": "^5.7.0",
-    "yjs": "^13.6.32"
+    "typescript": "^5.7.0"
   },
   "dependencies": {
-    "lib0": "^0.2.117",
-    "y-protocols": "^1.0.7",
     "yjs": "^13.6.32"
   }
 }

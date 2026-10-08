@@ -14,7 +14,7 @@ import { type FormEvent, useState } from 'react';
 import { CommentThread } from '../../../../../components/comment-thread.tsx';
 import { DeleteButton } from '../../../../../components/delete-button.tsx';
 import { PresenceBar } from '../../../../../components/presence.tsx';
-import { ErrorState } from '../../../../../components/ui.tsx';
+import { ErrorState } from '../../../../../components/ui/primitives.tsx';
 import {
   api,
   type IssueDetail,

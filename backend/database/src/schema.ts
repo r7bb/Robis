@@ -720,16 +720,12 @@ export const meetingAttendeesRelations = relations(meetingAttendees, ({ one }) =
 export type User = typeof users.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
 export type Workspace = typeof workspaces.$inferSelect;
-export type WorkspaceMember = typeof workspaceMembers.$inferSelect;
 export type Project = typeof projects.$inferSelect;
 export type Issue = typeof issues.$inferSelect;
 export type Comment = typeof comments.$inferSelect;
-export type AuditEvent = typeof auditEvents.$inferSelect;
-export type Mutation = typeof mutations.$inferSelect;
 export type Job = typeof jobs.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type Document = typeof documents.$inferSelect;
-export type DocumentUpdate = typeof documentUpdates.$inferSelect;
 export type Channel = typeof channels.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type Meeting = typeof meetings.$inferSelect;

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
 /**
@@ -42,10 +43,6 @@ export function Button({
       {...props}
     />
   );
-}
-
-export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <div className={`rounded-lg border border-line bg-raised ${className}`}>{children}</div>;
 }
 
 /** A section heading inside a panel: small, quiet, and consistently spaced. */
@@ -98,5 +95,27 @@ export function Pill({
     <span className={`rounded-full border px-1.5 py-px text-[10px] font-medium ${styles}`}>
       {children}
     </span>
+  );
+}
+
+export function RoleBadge({ role }: { role: string }) {
+  return (
+    <span className="rounded-full border border-line px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted">
+      {role}
+    </span>
+  );
+}
+
+export function ErrorState({ message }: { message: string }) {
+  return (
+    <main className="mx-auto max-w-md px-6 py-24 text-center">
+      <p className="text-sm text-muted">{message}</p>
+      <Link
+        href="/workspaces"
+        className="mt-4 inline-block text-sm text-accent-soft hover:underline"
+      >
+        Back to workspaces
+      </Link>
+    </main>
   );
 }

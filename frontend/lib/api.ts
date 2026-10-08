@@ -75,17 +75,6 @@ export type ProjectSummary = {
   openIssues: number;
 };
 
-export type IssueSummary = {
-  id: string;
-  key: string;
-  number: number;
-  title: string;
-  status: IssueStatus;
-  priority: IssuePriority;
-  assigneeId: string | null;
-  assigneeName: string | null;
-};
-
 export type Member = {
   userId: string;
   email: string;

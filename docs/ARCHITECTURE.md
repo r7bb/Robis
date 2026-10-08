@@ -857,11 +857,11 @@ runtime and no admin rights. Two wrinkles are handled in `scripts/`:
 
 - The npm tarball loses the shared-library version symlinks the binaries link
   against, so `initdb` fails with a dyld error.
-  [`fix-pg-dylibs.ts`](scripts/fix-pg-dylibs.ts) recreates them from
+  [`fix-pg-dylibs.ts`](scripts/db/fix-pg-dylibs.ts) recreates them from
   `postinstall`.
 - The package ships only `initdb`, `pg_ctl` and `postgres` — no `createdb` — and
   its JS wrapper spawns Postgres as a direct child, so the server dies with the
-  script. [`dev-db.ts`](scripts/dev-db.ts) drives `pg_ctl` directly for a
+  script. [`dev-db.ts`](scripts/db/dev-db.ts) drives `pg_ctl` directly for a
   properly detached server and creates the database over the wire.
 
 CI uses a plain Postgres service container instead, since it already has one.

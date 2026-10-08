@@ -8,7 +8,7 @@ import { type FormEvent, useEffect, useState } from 'react';
 import { DeleteButton } from '../../../../../components/delete-button.tsx';
 import { PresenceBar } from '../../../../../components/presence.tsx';
 import { SyncStatus } from '../../../../../components/sync-status.tsx';
-import { ErrorState } from '../../../../../components/ui.tsx';
+import { ErrorState } from '../../../../../components/ui/primitives.tsx';
 import { api, type WorkspaceSummary } from '../../../../../lib/api.ts';
 import { useRealtime } from '../../../../../lib/realtime.ts';
 import { lastTheme, useApplyTheme } from '../../../../../lib/theme.ts';

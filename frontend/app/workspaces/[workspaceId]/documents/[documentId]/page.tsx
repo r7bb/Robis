@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef } from 'react';
 import { DeleteButton } from '../../../../../components/delete-button.tsx';
-import { ErrorState } from '../../../../../components/ui.tsx';
+import { ErrorState } from '../../../../../components/ui/primitives.tsx';
 import { api, type WorkspaceSummary } from '../../../../../lib/api.ts';
 import { lastTheme, useApplyTheme } from '../../../../../lib/theme.ts';
 import { useDocument } from '../../../../../lib/use-document.ts';

@@ -43,8 +43,6 @@ export type QueuedMutation =
       lastError?: string;
     };
 
-export type MutationKind = QueuedMutation['kind'];
-
 export class MutationQueue {
   constructor(private readonly storage: StorageAdapter) {}
 

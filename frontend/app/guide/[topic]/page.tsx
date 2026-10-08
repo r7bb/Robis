@@ -10,7 +10,7 @@ import { useMutation } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-import { ErrorState } from '../../../components/ui.tsx';
+import { ErrorState } from '../../../components/ui/primitives.tsx';
 import { api, type DocumentSummary } from '../../../lib/api.ts';
 import { lastTheme, useApplyTheme } from '../../../lib/theme.ts';
 

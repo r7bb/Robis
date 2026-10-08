@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useState } from 'react';
 import { DeleteButton } from '../../components/delete-button.tsx';
 import { NotificationBell } from '../../components/notification-bell.tsx';
-import { RoleBadge } from '../../components/ui.tsx';
+import { RoleBadge } from '../../components/ui/primitives.tsx';
 import { api, type Me, type WorkspaceSummary } from '../../lib/api.ts';
 
 export default function WorkspacesPage() {
