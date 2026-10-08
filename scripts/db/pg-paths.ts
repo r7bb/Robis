@@ -8,7 +8,9 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-const ROOT = resolve(import.meta.dir, '..');
+// Two levels up: this file lives in `scripts/db/`, and the paths below
+// are relative to the repository root where `node_modules` lives.
+const ROOT = resolve(import.meta.dir, '..', '..');
 const PLATFORMS = ['darwin-arm64', 'darwin-x64', 'linux-x64', 'linux-arm64'];
 
 function candidateRoots(): string[] {

@@ -23,7 +23,9 @@ import { join, resolve } from 'node:path';
 import postgres from 'postgres';
 import { pgBin } from './pg-paths.ts';
 
-const DATA_DIR = resolve(import.meta.dir, '..', '.pgdata');
+// Two levels up, so the data directory stays at the repository root
+// rather than appearing inside `scripts/`.
+const DATA_DIR = resolve(import.meta.dir, '..', '..', '.pgdata');
 const LOG_FILE = join(DATA_DIR, 'server.log');
 const PORT = 5433;
 const USER = 'relay';
