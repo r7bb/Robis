@@ -66,14 +66,16 @@ export default function Home() {
           </Link>
 
           <div className="ml-auto flex items-center gap-5 text-sm">
-            <a
-              href={`${REPO}#architecture`}
+            <Link
+              href="/how-it-works"
               className="hidden text-muted transition-colors duration-[var(--micro)] ease-[var(--ease)] hover:text-content sm:block"
             >
-              Architecture
-            </a>
+              How it works
+            </Link>
             <a
               href={REPO}
+              target="_blank"
+              rel="noopener noreferrer"
               className="hidden text-muted transition-colors duration-[var(--micro)] ease-[var(--ease)] hover:text-content sm:block"
             >
               Source
@@ -107,8 +109,16 @@ export default function Home() {
             markClassName="text-accent/70"
             wordClassName="text-sm"
           />
+          <Link
+            href="/how-it-works"
+            className="transition-colors duration-[var(--micro)] ease-[var(--ease)] hover:text-muted"
+          >
+            How it works
+          </Link>
           <a
             href={REPO}
+            target="_blank"
+            rel="noopener noreferrer"
             className="transition-colors duration-[var(--micro)] ease-[var(--ease)] hover:text-muted"
           >
             GitHub

@@ -196,6 +196,14 @@ describe('no hardcoded colours outside the palette', () => {
      * no business reaching a page you see before signing in.
      */
     'frontend/features/landing/sections.tsx',
+    /*
+     * The band primitives the public pages share. Same reason as
+     * `sections.tsx`: the landing and how-it-works pages carry their own
+     * palette, and the hairline around a screenshot is a fixed white at
+     * 10% rather than a themed border, because it has to read against
+     * every screenshot rather than against a workspace's surface.
+     */
+    'frontend/features/landing/band.tsx',
   ]);
 
   function sourceFiles(): string[] {

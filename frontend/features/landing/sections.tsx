@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { BANDS, Band, FILLED, Headline, OUTLINED, Shot, Subhead } from './band.tsx';
 import { Counter, Reveal } from './motion.tsx';
 import { useActiveStep } from './use-scroll.ts';
 
@@ -24,91 +24,6 @@ import { useActiveStep } from './use-scroll.ts';
  */
 
 export const REPO = 'https://github.com/r7bb/Relay';
-
-/** Band backgrounds, darkest first. Adjacent bands never repeat. */
-const BANDS = {
-  black: 'bg-[#08090c]',
-  base: 'bg-[#0e1014]',
-  raised: 'bg-[#14171d]',
-} as const;
-
-const FILLED =
-  'inline-flex items-center justify-center rounded-full bg-accent px-7 py-3 text-base font-medium text-accent-contrast transition-[background-color,transform] duration-[var(--quick)] ease-[var(--ease)] hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft focus-visible:ring-offset-4 focus-visible:ring-offset-surface active:scale-[0.98]';
-
-const OUTLINED =
-  'inline-flex items-center justify-center rounded-full border border-accent-soft/50 px-7 py-3 text-base font-medium text-accent-soft transition-[background-color,border-color,transform] duration-[var(--quick)] ease-[var(--ease)] hover:border-accent-soft hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft focus-visible:ring-offset-4 focus-visible:ring-offset-surface active:scale-[0.98]';
-
-/**
- * One full-bleed band.
- *
- * Height comes from the content. The vertical padding scales with the
- * viewport so a band breathes on a large screen without stranding content
- * in the middle of a small one, and there is no `min-height` to overflow.
- */
-function Band({
-  tone,
-  children,
-  className = '',
-}: {
-  tone: keyof typeof BANDS;
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <section className={`px-6 py-[clamp(4rem,9vh,9rem)] text-center ${BANDS[tone]} ${className}`}>
-      <div className="mx-auto w-full max-w-6xl">{children}</div>
-    </section>
-  );
-}
-
-/**
- * The shared headline.
- *
- * `clamp` rather than breakpoint steps: the size moves continuously with
- * the viewport, so there is no width at which it is awkwardly large or
- * suddenly small. `text-balance` keeps a two-line headline from leaving an
- * orphan word on the second line.
- */
-function Headline({ children }: { children: ReactNode }) {
-  return (
-    <h2 className="mx-auto max-w-[16ch] text-balance text-[clamp(2.25rem,5vw,4.5rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-content">
-      {children}
-    </h2>
-  );
-}
-
-function Subhead({ children }: { children: ReactNode }) {
-  return (
-    <p className="mx-auto mt-5 max-w-[46ch] text-[clamp(1.05rem,1.6vw,1.4rem)] leading-relaxed text-muted">
-      {children}
-    </p>
-  );
-}
-
-/** A screenshot at its natural aspect ratio. */
-function Shot({
-  src,
-  alt,
-  priority,
-  className = '',
-}: {
-  src: string;
-  alt: string;
-  priority?: boolean;
-  className?: string;
-}) {
-  return (
-    <Image
-      src={src}
-      alt={alt}
-      width={1440}
-      height={900}
-      priority={priority}
-      sizes="(max-width: 1024px) 100vw, 1100px"
-      className={`mx-auto h-auto w-full rounded-xl border border-white/10 shadow-2xl shadow-black/60 ${className}`}
-    />
-  );
-}
 
 export function Hero({ href, label }: { href: string; label: string }) {
   return (
@@ -142,9 +57,9 @@ export function Hero({ href, label }: { href: string; label: string }) {
             <Link href={href} className={FILLED}>
               {label}
             </Link>
-            <a href={`${REPO}#architecture`} className={OUTLINED}>
+            <Link href="/how-it-works" className={OUTLINED}>
               How it works
-            </a>
+            </Link>
           </div>
         </Reveal>
 
@@ -389,7 +304,7 @@ export function Closing({ href, label }: { href: string; label: string }) {
           <Link href={href} className={FILLED}>
             {label}
           </Link>
-          <a href={REPO} className={OUTLINED}>
+          <a href={REPO} className={OUTLINED} target="_blank" rel="noopener noreferrer">
             Source on GitHub
           </a>
         </div>

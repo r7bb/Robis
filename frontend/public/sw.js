@@ -20,7 +20,23 @@
  * offline data.
  */
 
-const VERSION = 'relay-v1';
+/*
+ * Bump this to evict a worker serving a stale build.
+ *
+ * It is the only escape hatch for a browser already stuck, and the reason
+ * matters. A registered worker serves the cached bundle, so a fix shipped
+ * *inside* the application cannot reach a client that worker is holding:
+ * the stale worker hands back the stale fix. That happened after a run
+ * with `NEXT_PUBLIC_ENABLE_SW=1` left a worker in a development browser.
+ *
+ * The way out is this file. Browsers re-fetch the worker script on
+ * navigation and byte-compare it, bypassing the worker's own cache. New
+ * bytes mean install, `skipWaiting`, then the `activate` handler below
+ * deletes every cache whose key does not start with the current VERSION
+ * and claims open clients. That machinery already existed; it had simply
+ * never run, because the version had never changed.
+ */
+const VERSION = 'relay-v2';
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 
