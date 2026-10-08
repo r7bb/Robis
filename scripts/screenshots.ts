@@ -6,7 +6,7 @@
  * The README claims its screenshots come from the running app rather than a
  * mockup. This is the script that makes that claim checkable: it drives a real
  * Chrome over the DevTools Protocol against the real stack, and every image in
- * `docs/screenshots/` is its output.
+ * `imgs/` is its output.
  *
  * Chrome over CDP rather than Playwright, because Playwright's browser download
  * does not work on this machine and CDP is available without installing
@@ -51,8 +51,22 @@ const WEB = 'http://localhost:3000';
 const API = 'http://localhost:4000';
 const REALTIME = 'http://localhost:4001';
 const CDP_PORT = 9333;
-const SHOTS = new URL('../docs/screenshots/', import.meta.url).pathname;
-const PROFILE = join(tmpdir(), 'relay-screenshots-chrome');
+const SHOTS = new URL('../imgs/', import.meta.url).pathname;
+/**
+ * A fresh Chrome profile per run.
+ *
+ * This used to be a fixed directory, which meant the service worker
+ * registered by one run survived into the next. Under `next dev` the chunk
+ * filenames are stable rather than fingerprinted, so the worker's cache-first
+ * rule for assets happily served yesterday's JavaScript against today's HTML
+ * and every page died with a client-side exception.
+ *
+ * Production does not have this problem: built chunks carry content hashes,
+ * so a stale entry is never requested. The hazard is specific to running a
+ * service worker against a dev server, which this script deliberately does in
+ * order to capture the offline flows.
+ */
+const PROFILE = join(tmpdir(), `relay-screenshots-chrome-${Date.now()}`);
 const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://relay:relay@localhost:5433/relay';
 
 const EMAIL = 'rohit@relay.dev';
@@ -121,7 +135,10 @@ async function openWorkspace(page: Page): Promise<string> {
   await page.goto(`${WEB}/workspaces`);
   await page.waitForText('Engineering');
   await page.click('a[href^="/workspaces/"]');
-  await page.waitForText('documents');
+  // The shell's own furniture rather than a panel's contents: projects and
+  // documents now live behind tabs, so waiting on either would depend on
+  // which tab happens to open first.
+  await page.waitForText('channels');
   return page.eval<string>('location.href');
 }
 
@@ -272,10 +289,15 @@ async function captureMention(page: Page, issueUrl: string) {
 async function captureDocuments(page: Page, workspaceUrl: string) {
   console.log('\nDocuments');
   await page.goto(workspaceUrl);
-  await page.waitForText('documents');
+  await page.waitForText('channels');
 
-  await page.fill('input[placeholder="New document title"]', 'Sync protocol notes');
-  await page.clickText('button', 'Create document');
+  // Documents live behind a tab in the right rail now, so the panel has to
+  // be opened before its form exists.
+  await page.clickText('[role="tab"]', 'Docs');
+  await page.waitFor('document.querySelector(\'input[placeholder="New document"]\')');
+
+  await page.fill('input[placeholder="New document"]', 'Sync protocol notes');
+  await page.clickText('button', 'Add');
   await Bun.sleep(1200);
 
   await page.waitFor('document.querySelector(\'a[href*="/documents/"]\')');
@@ -387,23 +409,21 @@ async function captureSearch(page: Page, workspaceUrl: string) {
 async function captureMembersAndActivity(page: Page, workspaceUrl: string) {
   console.log('\nMembers and activity');
   await page.goto(workspaceUrl);
-  await page.waitForText('members');
+  await page.waitForText('channels');
 
-  await page.eval(`(() => {
-    const heading = [...document.querySelectorAll('h2')]
-      .find((h) => h.textContent.trim().toLowerCase() === 'members');
-    heading?.scrollIntoView({ block: 'start' });
-  })()`);
-  await Bun.sleep(500);
+  // Both are tabs in the right rail now, so each is one click rather than a
+  // scroll down a long page.
+  await page.clickText('[role="tab"]', 'Team');
+  await Bun.sleep(700);
   await page.shot('19-members.png');
 
-  await page.eval(`(() => {
-    const heading = [...document.querySelectorAll('h2')]
-      .find((h) => h.textContent.trim().toLowerCase() === 'activity');
-    heading?.scrollIntoView({ block: 'start' });
-  })()`);
-  await Bun.sleep(500);
+  await page.clickText('[role="tab"]', 'Activity');
+  await Bun.sleep(900);
   await page.shot('20-activity-feed.png');
+
+  await page.clickText('[role="tab"]', 'Meetings');
+  await Bun.sleep(900);
+  await page.shot('28-meetings.png');
 }
 
 /**
@@ -530,7 +550,13 @@ await preflight();
 await mkdir(SHOTS, { recursive: true });
 
 console.log('Re-seeding so the screenshots show the same content every time.');
-const seed = Bun.spawnSync(['bun', 'run', 'scripts/seed.ts'], { stdout: 'pipe', stderr: 'pipe' });
+// `--team`, so the member list, the role badges and the chat transcript have
+// more than one person in them. A workspace of one misrepresents a product
+// whose whole subject is collaboration.
+const seed = Bun.spawnSync(['bun', 'run', 'scripts/seed.ts', '--team'], {
+  stdout: 'pipe',
+  stderr: 'pipe',
+});
 if (seed.exitCode !== 0) {
   console.error(seed.stderr.toString());
   process.exit(1);

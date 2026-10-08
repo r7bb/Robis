@@ -4,7 +4,7 @@ A local-first collaborative workspace — workspaces, projects, issues and
 CRDT-backed documents, with role-based access control, live updates over
 WebSockets, and a board that keeps working with the network switched off.
 
-![Relay board](docs/screenshots/04-board.png)
+![Relay board](imgs/04-board.png)
 
 Everything below is running code. The screenshots are captured from the app by
 [`scripts/screenshots.ts`](scripts/screenshots.ts), which drives a real browser
@@ -130,19 +130,19 @@ bun run dev:worker     # Background jobs   (optional; needed for @mentions)
 
 Open <http://localhost:3000>.
 
-![Sign in](docs/screenshots/01-login.png)
+![Sign in](imgs/01-login.png)
 
 | Email             | Password              | Role  |
 | ----------------- | --------------------- | ----- |
 | `rohit@relay.dev` | `relay-demo-password` | OWNER |
 
-![Workspaces](docs/screenshots/02-workspaces.png)
+![Workspaces](imgs/02-workspaces.png)
 
 Click **Engineering** for the workspace, then a project for its board.
 
-![Workspace](docs/screenshots/03-workspace.png)
+![Workspace](imgs/03-workspace.png)
 
-![Board](docs/screenshots/04-board.png)
+![Board](imgs/04-board.png)
 
 ---
 
@@ -154,7 +154,7 @@ Open the board in two windows. Create an issue in one and it appears in the
 other with no reload — the WebSocket event triggers a reconcile directly, so
 propagation is immediate rather than waiting on a poll.
 
-![Realtime](docs/screenshots/05-realtime.png)
+![Realtime](imgs/05-realtime.png)
 
 The presence bar counts distinct people, not tabs, so two windows signed in as
 the same account correctly read `1 online`.
@@ -164,13 +164,13 @@ the same account correctly read `1 online`.
 Click a card to open the issue: status, priority and assignee are editable
 inline, and the title edits in place.
 
-![Issue detail](docs/screenshots/10-issue-detail.png)
+![Issue detail](imgs/10-issue-detail.png)
 
 `@handle` in a comment resolves against workspace members and produces a
 notification, delivered by the background worker rather than inline — so a slow
 or failing delivery cannot make posting a comment slow or fail.
 
-![Notification inbox](docs/screenshots/11-notification-inbox.png)
+![Notification inbox](imgs/11-notification-inbox.png)
 
 The inbox above is showing a nudge rather than a mention, for an honest reason:
 mentioning yourself is not a notification, and the default seed is a single
@@ -185,12 +185,12 @@ The issue detail page edits its description in place. Plain text with line
 breaks preserved, not Markdown — claiming to render Markdown and then only
 handling some of it is worse than plainly not doing it.
 
-![Issue description](docs/screenshots/22-issue-description.png)
+![Issue description](imgs/22-issue-description.png)
 
 Every mutation writes an append-only audit row, and the workspace page renders
 them.
 
-![Activity feed](docs/screenshots/20-activity-feed.png)
+![Activity feed](imgs/20-activity-feed.png)
 
 Entries describe themselves from payloads recorded at the time rather than by
 joining the rows they mention, so the trail stays truthful after an issue is
@@ -202,11 +202,11 @@ issue because the key was stored with the event, not looked up.
 Forgotten passwords and address confirmation, both built on the same one-time
 token.
 
-![Forgot password](docs/screenshots/24-forgot-password.png)
+![Forgot password](imgs/24-forgot-password.png)
 
 The confirmation never says whether the address has an account:
 
-![Link sent](docs/screenshots/25-forgot-password-sent.png)
+![Link sent](imgs/25-forgot-password-sent.png)
 
 **There is no mail provider.** Sending is a port with one driver, which prints
 the message to the API log, so the flow is exercisable end to end locally:
@@ -226,7 +226,7 @@ driver, because that would mean nobody receives a reset link and anyone with
 log access could take over any account. See
 [Mail is a port, and production refuses the console driver](#mail-is-a-port-and-production-refuses-the-console-driver).
 
-![Address confirmed](docs/screenshots/27-verify-email.png)
+![Address confirmed](imgs/27-verify-email.png)
 
 Verification records that the address reaches you. **Nothing is gated on it** —
 an unverified account works normally. Gating something would be a bigger
@@ -234,7 +234,7 @@ decision than the feature, so it is deliberately not made here.
 
 ### Your account
 
-![Account](docs/screenshots/23-account.png)
+![Account](imgs/23-account.png)
 
 Change your display name, change your password, and see every browser signed
 in to your account. Sessions are server-side, so revoking one takes effect on
@@ -264,7 +264,7 @@ success because the desired state already holds.
 Full-text search across issues, comments and documents, scoped to one
 workspace and to what you are allowed to read.
 
-![Search](docs/screenshots/18-search.png)
+![Search](imgs/18-search.png)
 
 ### Managing people
 
@@ -272,14 +272,14 @@ Invite by email, change roles, remove members. The controls mirror the server's
 rules rather than reimplementing them — an admin sees no option to promote
 someone to owner, and the last owner has no remove button.
 
-![Members](docs/screenshots/19-members.png)
+![Members](imgs/19-members.png)
 
 ### Themes
 
 Each workspace picks its own theme, and everyone in it sees the same one. Six
 palettes, including a light one.
 
-![Daylight theme](docs/screenshots/13-theme-daylight.png)
+![Daylight theme](imgs/13-theme-daylight.png)
 
 Colours resolve through CSS variables, so switching is a variable swap rather
 than a class rewrite. Only surfaces and the accent are themed — status colours
@@ -292,7 +292,7 @@ A background scan looks for people who could use a prompt: no workspace yet, a
 project with no issues, a workspace with no documents. Clicking one opens a
 short guide that ends in a button which does the thing.
 
-![Guide page](docs/screenshots/15-guide-page.png)
+![Guide page](imgs/15-guide-page.png)
 
 The interesting constraint is not sending them: one nudge per person per scan,
 and a weekly bucket in the dedupe key so the same prompt cannot arrive twice in
@@ -304,7 +304,7 @@ Create a document from the workspace page and open it in two windows. Both
 edit the same paragraph at once, and **both edits survive** — this is a Yjs
 CRDT, so the server never picks a winner.
 
-![Collaborative document](docs/screenshots/08-document-collab.png)
+![Collaborative document](imgs/08-document-collab.png)
 
 Issue fields merge under last-write-wins, which is fine for a status but
 catastrophic for prose: two people typing in the same sentence would lose one
@@ -320,18 +320,18 @@ fetching.
 Create issues with no connection. They appear immediately, outlined in amber
 and marked **Unsynced**, and the header counts what is waiting.
 
-![Unsynced issues](docs/screenshots/06-offline-unsynced.png)
+![Unsynced issues](imgs/06-offline-unsynced.png)
 
 Reconnect and the queue drains by itself. The placeholder keys become real
 `REL-8` / `REL-9` and the amber outlines clear.
 
-![After reconnect](docs/screenshots/07-after-reconnect.png)
+![After reconnect](imgs/07-after-reconnect.png)
 
 Reload the page while still offline and the board comes back — a service worker
 serves the app shell from cache, and the issue store and mutation queue are read
 from IndexedDB.
 
-![Offline cold reload](docs/screenshots/09-offline-cold-reload.png)
+![Offline cold reload](imgs/09-offline-cold-reload.png)
 
 **Scope, honestly:** the board is the offline-capable route. Other pages still
 fetch and will show the offline fallback if visited cold with no connection.

@@ -5,6 +5,13 @@ const config: NextConfig = {
   // The workspace packages ship TypeScript source rather than build output, so
   // Next has to compile them alongside the app.
   transpilePackages: ['@relay/shared'],
+  /*
+   * The dev-mode build indicator is a floating badge in the bottom-left
+   * corner. It is useful while developing and it also lands in the middle of
+   * every screenshot the capture script takes against the dev server, where
+   * it reads as a rendering bug rather than as tooling.
+   */
+  devIndicators: false,
 };
 
 export default config;

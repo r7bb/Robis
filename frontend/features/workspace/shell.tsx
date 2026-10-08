@@ -165,7 +165,11 @@ export function WorkspaceShell({ workspaceId }: { workspaceId: string }) {
     if (rooms.length === 0) return;
     if (channelId && rooms.some((room) => room.id === channelId)) return;
 
-    setChannelId(rooms[0]!.id);
+    // Prefer the room every workspace is created with. The list is sorted by
+    // name, so without this the landing room is whatever sorts first, and a
+    // channel called `#api` would quietly become the front page.
+    const fallback = rooms.find((room) => room.name === 'general') ?? rooms[0]!;
+    setChannelId(fallback.id);
   }, [rooms, channelId]);
 
   // Fall back to the last theme seen so navigating between workspaces does
@@ -220,13 +224,22 @@ export function WorkspaceShell({ workspaceId }: { workspaceId: string }) {
           <TeamRoster members={members.data?.members ?? []} onlineIds={onlineIds} />
 
           {role ? (
-            <div className="mt-auto">
-              <ThemePicker
-                workspaceId={workspaceId}
-                current={theme}
-                canEdit={can(role, 'workspace:update')}
-              />
-            </div>
+            // Collapsed by default. The picker is six labelled buttons, which
+            // is most of a 224px sidebar spent on something changed once per
+            // workspace and then never again.
+            <details className="mt-auto border-t border-line pt-3">
+              <summary className="cursor-pointer list-none text-[11px] font-semibold uppercase tracking-wider text-faint transition-colors hover:text-muted">
+                Theme
+              </summary>
+
+              <div className="mt-2">
+                <ThemePicker
+                  workspaceId={workspaceId}
+                  current={theme}
+                  canEdit={can(role, 'workspace:update')}
+                />
+              </div>
+            </details>
           ) : null}
         </nav>
 

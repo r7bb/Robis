@@ -72,48 +72,54 @@ export function MessageList({
   }, [lastId]);
 
   return (
-    <div ref={scroller} className="flex-1 overflow-y-auto px-4 py-3">
-      {hasOlder ? (
-        <div className="mb-3 text-center">
-          <button
-            type="button"
-            onClick={onLoadOlder}
-            disabled={loadingOlder}
-            className="rounded-full border border-line px-3 py-1 text-xs text-muted transition-colors hover:border-accent-soft hover:text-content disabled:opacity-50"
-          >
-            {loadingOlder ? 'Loading…' : 'Load earlier messages'}
-          </button>
-        </div>
-      ) : null}
+    // `justify-end` on a `min-h-full` inner column is what anchors a short
+    // conversation to the bottom, next to the composer, the way every chat
+    // client does it. Without it two messages hang at the top of a tall
+    // column with the composer stranded far below them.
+    <div ref={scroller} className="flex flex-1 flex-col overflow-y-auto px-4 py-3">
+      <div className="flex min-h-full flex-col justify-end">
+        {hasOlder ? (
+          <div className="mb-3 text-center">
+            <button
+              type="button"
+              onClick={onLoadOlder}
+              disabled={loadingOlder}
+              className="rounded-full border border-line px-3 py-1 text-xs text-muted transition-colors hover:border-accent-soft hover:text-content disabled:opacity-50"
+            >
+              {loadingOlder ? 'Loading…' : 'Load earlier messages'}
+            </button>
+          </div>
+        ) : null}
 
-      {messages.length === 0 ? (
-        <div className="pt-8">
-          <EmptyState>No messages yet. Say something.</EmptyState>
-        </div>
-      ) : null}
+        {messages.length === 0 ? (
+          <div className="pt-8">
+            <EmptyState>No messages yet. Say something.</EmptyState>
+          </div>
+        ) : null}
 
-      <ol className="space-y-0.5">
-        {messages.map((message, index) => {
-          const previous = messages[index - 1];
-          const grouped = groupsWith(message, previous);
-          const newDay = !previous || !isSameDay(previous.createdAt, message.createdAt);
+        <ol className="space-y-0.5">
+          {messages.map((message, index) => {
+            const previous = messages[index - 1];
+            const grouped = groupsWith(message, previous);
+            const newDay = !previous || !isSameDay(previous.createdAt, message.createdAt);
 
-          return (
-            <li key={message.id}>
-              {newDay ? <DaySeparator at={message.createdAt} /> : null}
+            return (
+              <li key={message.id}>
+                {newDay ? <DaySeparator at={message.createdAt} /> : null}
 
-              <MessageRow
-                message={message}
-                grouped={grouped}
-                deletable={canModerate || message.authorId === currentUserId}
-                onDelete={() => onDelete(message.id)}
-              />
-            </li>
-          );
-        })}
-      </ol>
+                <MessageRow
+                  message={message}
+                  grouped={grouped}
+                  deletable={canModerate || message.authorId === currentUserId}
+                  onDelete={() => onDelete(message.id)}
+                />
+              </li>
+            );
+          })}
+        </ol>
 
-      <div ref={bottomAnchor} />
+        <div ref={bottomAnchor} />
+      </div>
     </div>
   );
 }

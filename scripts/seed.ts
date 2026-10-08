@@ -15,8 +15,12 @@
 import { hashPassword } from '@relay/auth';
 import {
   auditEvents,
+  channels,
   createDatabase,
   issues,
+  meetingAttendees,
+  meetings,
+  messages,
   projects,
   users,
   workspaceMembers,
@@ -104,6 +108,90 @@ const PROJECTS: { key: string; name: string; description: string; issues: IssueS
 ];
 
 const WORKSPACE_NAME = 'Engineering';
+
+const CHANNELS: { name: string; topic: string }[] = [
+  { name: 'general', topic: 'Anything that does not belong anywhere else.' },
+  { name: 'offline-sync', topic: 'The mutation queue and the idempotency ledger.' },
+  { name: 'design-review', topic: 'Before it ships.' },
+];
+
+/**
+ * A short thread, written backwards from now.
+ *
+ * Deliberately about the actual work in the seeded issues, so the screenshot
+ * reads as one coherent workspace rather than placeholder chatter sitting
+ * beside unrelated tickets.
+ */
+const CONVERSATION: { channel: string; from: string; minutesAgo: number; body: string }[] = [
+  {
+    channel: 'offline-sync',
+    from: 'alex@relay.dev',
+    minutesAgo: 1_510,
+    body: 'The replay test is green. Queue drains in order after a 40 second disconnect.',
+  },
+  {
+    channel: 'offline-sync',
+    from: 'rohit@relay.dev',
+    minutesAgo: 1_495,
+    body: 'Good. Did you check the ambiguous case, where the response is lost but the write landed?',
+  },
+  {
+    channel: 'offline-sync',
+    from: 'alex@relay.dev',
+    minutesAgo: 1_480,
+    body: 'Yes. Second attempt finds the ledger row and returns the stored response instead of inserting again.',
+  },
+  {
+    channel: 'offline-sync',
+    from: 'john@relay.dev',
+    minutesAgo: 184,
+    body: 'Reading through this now. Is the ledger key per user, or global?',
+  },
+  {
+    channel: 'offline-sync',
+    from: 'alex@relay.dev',
+    minutesAgo: 176,
+    body: 'Global key, but the user id is checked too, so one account cannot probe another’s.',
+  },
+  {
+    channel: 'offline-sync',
+    from: 'rohit@relay.dev',
+    minutesAgo: 41,
+    body: 'Let us walk through the fan-out numbers at standup. p50 to all 50 subscribers is 5.8ms, which I did not expect.',
+  },
+  {
+    channel: 'general',
+    from: 'mia@relay.dev',
+    minutesAgo: 95,
+    body: 'The 404-for-non-members behaviour caught me out in testing. Then I read the comment and it is obviously right.',
+  },
+  {
+    channel: 'general',
+    from: 'rohit@relay.dev',
+    minutesAgo: 88,
+    body: 'That one is worth keeping. A 403 tells you the workspace exists, which is half of what an attacker wants.',
+  },
+];
+
+const MEETINGS: {
+  title: string;
+  agenda: string;
+  hoursAhead: number;
+  durationMinutes: number;
+}[] = [
+  {
+    title: 'Sync protocol walkthrough',
+    agenda: 'Queue ordering, the idempotency ledger, and what happens on a partial drain.',
+    hoursAhead: 3,
+    durationMinutes: 45,
+  },
+  {
+    title: 'Board drag and drop review',
+    agenda: 'Pointer handling and what the optimistic update should do when the write fails.',
+    hoursAhead: 27,
+    durationMinutes: 30,
+  },
+];
 
 const { db, close } = createDatabase(DATABASE_URL);
 
@@ -224,6 +312,90 @@ try {
   await db
     .insert(auditEvents)
     .values(trail.map((entry) => ({ ...entry, workspaceId: workspace!.id, actorId: ownerId })));
+
+  /*
+   * Chat and meetings.
+   *
+   * Seeded last because both need the member ids, and seeded at all because
+   * an empty centre column misrepresents the product -- the shell is built
+   * around a conversation, and a screenshot of it with no messages shows a
+   * layout rather than a thing anyone would use.
+   *
+   * Timestamps are spread backwards from now so the transcript has a shape:
+   * a day separator, a couple of grouped runs from one person, and a gap.
+   */
+  const roster = await db
+    .select({ id: users.id, email: users.email })
+    .from(users)
+    .where(
+      inArray(
+        users.email,
+        PEOPLE.map((person) => person.email),
+      ),
+    );
+
+  const idByEmail = new Map(roster.map((row) => [row.email, row.id]));
+  const personId = (email: string) => idByEmail.get(email) ?? ownerId;
+
+  const createdChannels = await db
+    .insert(channels)
+    .values(
+      CHANNELS.map((channel) => ({
+        workspaceId: workspace!.id,
+        name: channel.name,
+        topic: channel.topic,
+        createdById: ownerId,
+      })),
+    )
+    .returning({ id: channels.id, name: channels.name });
+
+  const channelByName = new Map(createdChannels.map((row) => [row.name, row.id]));
+
+  const transcript = CONVERSATION.filter(
+    // A message from a teammate who was never created would violate the
+    // author foreign key, so without `--team` the thread is just the owner.
+    (line) => WITH_TEAM || line.from === OWNER.email,
+  );
+
+  if (transcript.length > 0) {
+    await db.insert(messages).values(
+      transcript.map((line) => ({
+        workspaceId: workspace!.id,
+        channelId: channelByName.get(line.channel) ?? createdChannels[0]!.id,
+        authorId: personId(line.from),
+        body: line.body,
+        createdAt: new Date(Date.now() - line.minutesAgo * 60_000),
+      })),
+    );
+  }
+
+  const scheduled = await db
+    .insert(meetings)
+    .values(
+      MEETINGS.map((meeting) => ({
+        workspaceId: workspace!.id,
+        title: meeting.title,
+        agenda: meeting.agenda,
+        startsAt: new Date(Date.now() + meeting.hoursAhead * 3_600_000),
+        durationMinutes: meeting.durationMinutes,
+        organizerId: ownerId,
+      })),
+    )
+    .returning({ id: meetings.id });
+
+  await db.insert(meetingAttendees).values(
+    scheduled.flatMap((meeting) => [
+      { meetingId: meeting.id, userId: ownerId, response: 'yes' as const, respondedAt: new Date() },
+      ...roster
+        .filter((person) => person.id !== ownerId)
+        .map((person, index) => ({
+          meetingId: meeting.id,
+          userId: person.id,
+          // A mix, so the "2 of 4 going" line has something to say.
+          response: (['yes', 'pending', 'maybe'] as const)[index % 3]!,
+        })),
+    ]),
+  );
 
   const who = WITH_TEAM ? `${PEOPLE.length} users` : '1 user';
   console.log(
