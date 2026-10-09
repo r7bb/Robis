@@ -1,6 +1,7 @@
 'use client';
 
-import type { Role } from '@robis/shared';
+import { can, type Role } from '@robis/shared';
+import Link from 'next/link';
 import { type KeyboardEvent, useRef, useState } from 'react';
 import { ActivityFeed } from '../../components/activity-feed.tsx';
 import { MemberList } from '../../components/member-list.tsx';
@@ -124,7 +125,22 @@ export function SidePanel({
         ) : null}
 
         {active === 'Team' ? <MemberList workspaceId={workspaceId} viewerRole={role} /> : null}
-        {active === 'Activity' ? <ActivityFeed workspaceId={workspaceId} /> : null}
+        {active === 'Activity' ? (
+          <>
+            {can(role, 'audit:read') ? (
+              <Link
+                href={`/workspaces/${workspaceId}/security`}
+                className="block rounded-md border border-line bg-raised px-3 py-2 text-xs text-muted transition-colors hover:border-accent-soft hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+              >
+                <span className="font-medium text-content">Security view</span>
+                <span className="block text-faint">
+                  The full trail, its chain check, and export.
+                </span>
+              </Link>
+            ) : null}
+            <ActivityFeed workspaceId={workspaceId} />
+          </>
+        ) : null}
       </div>
     </aside>
   );

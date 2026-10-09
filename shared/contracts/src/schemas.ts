@@ -324,3 +324,28 @@ export const similarIssuesQuerySchema = z.object({
   description: z.string().trim().max(20_000).nullable().optional(),
 });
 export type SimilarIssuesQuery = z.infer<typeof similarIssuesQuerySchema>;
+
+/**
+ * A page of the audit trail.
+ *
+ * `after` reads forwards from a seq (0 for the start), which is how an
+ * exporter keeps its place. Otherwise the page is newest first, optionally
+ * `before` a seq. Both at once has no sensible order, so it is refused.
+ */
+export const auditEventsQuerySchema = z
+  .object({
+    // Bounded so a huge number is a 400 here rather than a bigint overflow
+    // in Postgres.
+    after: z.coerce.number().int().min(0).max(Number.MAX_SAFE_INTEGER).optional(),
+    before: z.coerce.number().int().min(1).max(Number.MAX_SAFE_INTEGER).optional(),
+    limit: z.coerce.number().int().min(1).max(500).default(100),
+    actorId: uuid.optional(),
+    entityType: z
+      .string()
+      .regex(/^[a-z_]{1,40}$/)
+      .optional(),
+  })
+  .refine((query) => query.after === undefined || query.before === undefined, {
+    message: 'Use after or before, not both',
+  });
+export type AuditEventsQuery = z.infer<typeof auditEventsQuerySchema>;

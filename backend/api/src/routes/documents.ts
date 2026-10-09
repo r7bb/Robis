@@ -4,12 +4,14 @@ import {
   documentText,
   loadDocument,
   publishEvent,
+  recordAudit,
 } from '@robis/database';
 import { createDocumentSchema, isUuid, updateDocumentSchema } from '@robis/shared';
 import { and, desc, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../errors.ts';
 import {
+  auditActor,
   currentMembership,
   currentUser,
   requireAuth,
@@ -60,15 +62,27 @@ export async function documentRoutes(app: FastifyInstance, opts: { db: Database 
       const { workspaceId } = currentMembership(request);
       const input = parse(createDocumentSchema, request.body);
 
-      const [document] = await db
-        .insert(documents)
-        .values({
+      const document = await db.transaction(async (tx) => {
+        const [row] = await tx
+          .insert(documents)
+          .values({
+            workspaceId,
+            projectId: input.projectId ?? null,
+            title: input.title,
+            createdBy: user.id,
+          })
+          .returning();
+
+        await recordAudit(tx, auditActor(request), {
           workspaceId,
-          projectId: input.projectId ?? null,
-          title: input.title,
-          createdBy: user.id,
-        })
-        .returning();
+          entityType: 'document',
+          entityId: row!.id,
+          eventType: 'document.created',
+          payload: { title: row!.title },
+        });
+
+        return row;
+      });
 
       await publishEvent(db, {
         type: 'document.created',
@@ -106,13 +120,32 @@ export async function documentRoutes(app: FastifyInstance, opts: { db: Database 
       const { documentId } = request.params as { documentId: string };
       const input = parse(updateDocumentSchema, request.body);
 
-      await loadMeta(workspaceId, documentId);
+      const before = await loadMeta(workspaceId, documentId);
 
-      const [updated] = await db
-        .update(documents)
-        .set({ ...input, updatedAt: new Date() })
-        .where(and(eq(documents.id, documentId), eq(documents.workspaceId, workspaceId)))
-        .returning();
+      /*
+       * Metadata only. The text itself changes through the realtime gateway
+       * as a stream of CRDT updates, which are their own durable log; an
+       * audit event per keystroke would bury everything else in the trail.
+       */
+      const updated = await db.transaction(async (tx) => {
+        const [row] = await tx
+          .update(documents)
+          .set({ ...input, updatedAt: new Date() })
+          .where(and(eq(documents.id, documentId), eq(documents.workspaceId, workspaceId)))
+          .returning();
+
+        if (!row) throw ApiError.notFound('Document not found');
+
+        await recordAudit(tx, auditActor(request), {
+          workspaceId,
+          entityType: 'document',
+          entityId: documentId,
+          eventType: 'document.updated',
+          payload: { from: before.title, to: row.title },
+        });
+
+        return row;
+      });
 
       return { document: updated };
     },
@@ -125,12 +158,25 @@ export async function documentRoutes(app: FastifyInstance, opts: { db: Database 
       const { workspaceId } = currentMembership(request);
       const { documentId } = request.params as { documentId: string };
 
-      await loadMeta(workspaceId, documentId);
+      const document = await loadMeta(workspaceId, documentId);
 
       // The update log goes with it via ON DELETE CASCADE.
-      await db
-        .delete(documents)
-        .where(and(eq(documents.id, documentId), eq(documents.workspaceId, workspaceId)));
+      await db.transaction(async (tx) => {
+        const deleted = await tx
+          .delete(documents)
+          .where(and(eq(documents.id, documentId), eq(documents.workspaceId, workspaceId)))
+          .returning({ id: documents.id });
+
+        if (deleted.length === 0) throw ApiError.notFound('Document not found');
+
+        await recordAudit(tx, auditActor(request), {
+          workspaceId,
+          entityType: 'document',
+          entityId: documentId,
+          eventType: 'document.deleted',
+          payload: { title: document.title },
+        });
+      });
 
       return reply.status(204).send();
     },

@@ -23,6 +23,15 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-09',
     area: 'Security',
+    title: 'A tamper-evident audit trail',
+    summary:
+      'Every change in a workspace is recorded in the same transaction as the change, numbered, and chained with SHA-256, so an edited or deleted event is named when the chain is checked. Admins get a security view and an export, and an operator can stream the trail to a SIEM over HTTPS.',
+    checked:
+      'Tests tamper with the trail three ways and verification names each one; a stand-in receiver gets every event exactly once by key after a forced retry through the job queue; a rolled-back change leaves no event.',
+  },
+  {
+    date: '2026-10-09',
+    area: 'Security',
     title: 'Request hardening',
     summary:
       'The API no longer trusts any client to name its own address, every request carries an id from the API through to the ML service, and pages with a token in the link send no referrer and are never cached.',

@@ -8,6 +8,7 @@ import { ApiError } from './errors.ts';
 import { requestIdFrom, trustProxySetting } from './hardening.ts';
 import { createMetrics, registerMetrics } from './metrics.ts';
 import { attachUser } from './plugins/authz.ts';
+import { auditRoutes } from './routes/audit.ts';
 import { authRoutes } from './routes/auth.ts';
 import { authRecoveryRoutes } from './routes/auth-recovery.ts';
 import { channelRoutes } from './routes/channels.ts';
@@ -40,12 +41,18 @@ export type RateLimits = {
    * from being mail-bombed by callers who each stay under their own limit.
    */
   passwordForgotPerHourPerAddress: number;
+  /**
+   * Audit chain verifications, per account. Each one walks and hashes the
+   * workspace's whole trail, so it is the costliest read an admin can ask for.
+   */
+  auditVerifyPerMinute: number;
 };
 
 export const DEFAULT_RATE_LIMITS: RateLimits = {
   authPerMinute: 10,
   searchPerMinute: 60,
   passwordForgotPerHourPerAddress: 3,
+  auditVerifyPerMinute: 10,
 };
 
 export type AppDeps = {
@@ -164,6 +171,7 @@ export function buildApp({
   app.register(channelRoutes, { db });
   app.register(meetingRoutes, { db });
   app.register(notificationRoutes, { db });
+  app.register(auditRoutes, { db, limits });
   app.register(searchRoutes, { db, limits });
 
   return app;

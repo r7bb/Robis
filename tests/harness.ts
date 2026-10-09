@@ -181,11 +181,17 @@ export async function getMailer(): Promise<MemoryMailer> {
 export async function resetDatabase() {
   const { db, mailer } = await getHarness();
   mailer.clear();
-  // One statement so it is a single round trip and a single implicit
-  // transaction; RESTART IDENTITY keeps sequences predictable across tests.
-  await db.execute(
-    `TRUNCATE TABLE ${TABLES.map((t) => `"${t}"`).join(', ')} RESTART IDENTITY CASCADE`,
-  );
+  // RESTART IDENTITY keeps sequences predictable across tests. The audit
+  // trail refuses TRUNCATE by trigger -- that is the point of it -- so the
+  // guard is lifted for this one statement, inside the same transaction, and
+  // is back in place before anything else can see the table.
+  await db.transaction(async (tx) => {
+    await tx.execute('ALTER TABLE "audit_events" DISABLE TRIGGER "audit_events_no_truncate"');
+    await tx.execute(
+      `TRUNCATE TABLE ${TABLES.map((t) => `"${t}"`).join(', ')} RESTART IDENTITY CASCADE`,
+    );
+    await tx.execute('ALTER TABLE "audit_events" ENABLE TRIGGER "audit_events_no_truncate"');
+  });
 }
 
 export async function closeHarness() {

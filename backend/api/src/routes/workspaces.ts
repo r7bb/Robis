@@ -3,6 +3,7 @@ import {
   channels,
   type Database,
   type Executor,
+  recordAudit,
   users,
   workspaceMembers,
   workspaces,
@@ -16,6 +17,7 @@ import { desc, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../errors.ts';
 import {
+  auditActor,
   currentMembership,
   currentUser,
   requireAuth,
@@ -106,13 +108,12 @@ export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database
         createdById: user.id,
       });
 
-      await tx.insert(auditEvents).values({
+      await recordAudit(tx, auditActor(request), {
         workspaceId: created.id,
-        actorId: user.id,
         entityType: 'workspace',
         entityId: created.id,
         eventType: 'workspace.created',
-        payload: JSON.stringify({ name: created.name, slug: created.slug }),
+        payload: { name: created.name, slug: created.slug },
       });
 
       return created;
@@ -143,27 +144,31 @@ export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database
     '/workspaces/:workspaceId',
     { preHandler: [requireAuth, requireMembership(db, 'workspace:update')] },
     async (request) => {
-      const user = currentUser(request);
       const { workspaceId } = currentMembership(request);
       const input = parse(updateWorkspaceSchema, request.body);
 
-      const [updated] = await db
-        .update(workspaces)
-        // Spread rather than naming fields: the payload is partial, and
-        // Drizzle skips undefined keys, so absent fields stay untouched.
-        .set({ ...input, updatedAt: new Date() })
-        .where(eq(workspaces.id, workspaceId))
-        .returning();
+      const updated = await db.transaction(async (tx) => {
+        const [row] = await tx
+          .update(workspaces)
+          // Spread rather than naming fields: the payload is partial, and
+          // Drizzle skips undefined keys, so absent fields stay untouched.
+          .set({ ...input, updatedAt: new Date() })
+          .where(eq(workspaces.id, workspaceId))
+          .returning();
 
-      if (!updated) throw ApiError.notFound('Workspace not found');
+        if (!row) throw ApiError.notFound('Workspace not found');
 
-      await db.insert(auditEvents).values({
-        workspaceId,
-        actorId: user.id,
-        entityType: 'workspace',
-        entityId: workspaceId,
-        eventType: 'workspace.updated',
-        payload: JSON.stringify(input),
+        await recordAudit(tx, auditActor(request), {
+          workspaceId,
+          entityType: 'workspace',
+          entityId: workspaceId,
+          eventType: 'workspace.updated',
+          // Named fields rather than the request body, so a field added to the
+          // schema later is not copied into the trail without anyone deciding to.
+          payload: { name: row.name, fields: Object.keys(input) },
+        });
+
+        return row;
       });
 
       return { workspace: updated };
@@ -178,6 +183,9 @@ export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database
 
       // Projects, issues, comments and memberships go with it via ON DELETE
       // CASCADE, so there is no application-level fan-out to keep in sync.
+      // So does the audit trail, which is why this one change records no
+      // event: there would be nowhere left to keep it. A SIEM stream is where
+      // a deleted workspace's history survives.
       await db.delete(workspaces).where(eq(workspaces.id, workspaceId));
 
       return reply.status(204).send();
@@ -207,7 +215,7 @@ export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database
         .from(auditEvents)
         .leftJoin(users, eq(users.id, auditEvents.actorId))
         .where(eq(auditEvents.workspaceId, workspaceId))
-        .orderBy(desc(auditEvents.createdAt))
+        .orderBy(desc(auditEvents.seq))
         .limit(100);
 
       return { events: events.map((e) => ({ ...e, payload: JSON.parse(e.payload) })) };

@@ -172,6 +172,7 @@ describe('updates', () => {
     expect(statusEvents[0].payload).toEqual({
       key: issue.key,
       title: issue.title,
+      fields: ['status'],
       from: 'TODO',
       to: 'IN_PROGRESS',
     });

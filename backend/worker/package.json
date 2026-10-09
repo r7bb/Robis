@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./audit-stream": "./src/audit-stream.ts",
     "./runner": "./src/runner.ts",
     "./handlers": "./src/handlers.ts",
     "./nudges": "./src/nudges.ts"

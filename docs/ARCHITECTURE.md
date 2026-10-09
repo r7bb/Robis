@@ -866,3 +866,35 @@ runtime and no admin rights. Two wrinkles are handled in `scripts/`:
 
 CI uses a plain Postgres service container instead, since it already has one.
 
+
+### The audit trail is a hash chain per workspace, not a ledger service
+
+Each workspace's events are numbered 1, 2, 3 and chained: an event's hash
+covers its own fields and the previous event's hash. Edit a stored event and
+its hash stops matching; delete one and the numbering has a hole; rewrite one
+with a fresh hash and the next event no longer points at it.
+`verifyAuditChain` walks the chain and names the first of those it finds.
+
+The append runs inside the transaction that makes the change, under a
+per-workspace advisory lock held to commit. That one lock does two jobs: two
+writers cannot both claim event 42, and event 43 cannot be numbered until 42
+is committed and visible, so numbers follow commit order. That ordering is
+what lets the SIEM stream keep a simple "delivered up to N" cursor without
+skipping a late-committing event, which is the usual trap with
+sequence-numbered outboxes. The cost is that writes in one workspace queue
+behind each other for the audit insert, which is why it comes last in each
+transaction.
+
+A separate ledger service or an external timestamping authority would make
+the trail resistant to someone who controls the database. This does not, and
+says so: a table owner can rewrite every event from an edit onwards, or drop
+the newest ones, and leave a consistent chain. The defence is a copy held
+elsewhere — the head hash the Security view offers to copy, or the SIEM
+stream. A trigger refuses ordinary updates and deletes, which stops a
+mistaken query rather than a determined owner.
+
+The hash is computed in TypeScript for every new row. A SQL copy,
+`robis_audit_hash`, exists only to backfill rows written before the chain,
+and a test holds the two to the same answer, Unicode included. Timestamps are
+stored at millisecond precision so the value hashed is exactly the value a
+JavaScript `Date` reads back.

@@ -14,7 +14,6 @@
  */
 import { hashPassword } from '@robis/auth';
 import {
-  auditEvents,
   channels,
   createDatabase,
   issues,
@@ -22,6 +21,7 @@ import {
   meetings,
   messages,
   projects,
+  recordAudit,
   users,
   workspaceMembers,
   workspaces,
@@ -309,9 +309,17 @@ try {
     issueCount += spec.issues.length;
   }
 
-  await db
-    .insert(auditEvents)
-    .values(trail.map((entry) => ({ ...entry, workspaceId: workspace!.id, actorId: ownerId })));
+  // Through `recordAudit`, like the routes, so the seeded rows form a valid
+  // hash chain rather than rows a verifier would reject.
+  await db.transaction(async (tx) => {
+    for (const entry of trail) {
+      await recordAudit(
+        tx,
+        { id: ownerId, kind: 'human' },
+        { ...entry, workspaceId: workspace!.id, payload: JSON.parse(entry.payload) },
+      );
+    }
+  });
 
   /*
    * Chat and meetings.

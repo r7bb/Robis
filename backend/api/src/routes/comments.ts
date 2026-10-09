@@ -1,9 +1,18 @@
-import { comments, type Database, enqueue, issues, publishEvent, users } from '@robis/database';
+import {
+  comments,
+  type Database,
+  enqueue,
+  issues,
+  publishEvent,
+  recordAudit,
+  users,
+} from '@robis/database';
 import { can, createCommentSchema, isUuid } from '@robis/shared';
 import { and, asc, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../errors.ts';
 import {
+  auditActor,
   currentMembership,
   currentUser,
   requireAuth,
@@ -71,6 +80,17 @@ export async function commentRoutes(app: FastifyInstance, opts: { db: Database }
           .returning();
 
         await enqueue(tx, 'notify.mentions', { commentId: row!.id });
+
+        // Which issue, not what was said: the comment is the record of its
+        // own words, and the trail outlives a deleted comment.
+        await recordAudit(tx, auditActor(request), {
+          workspaceId,
+          entityType: 'comment',
+          entityId: row!.id,
+          eventType: 'comment.created',
+          payload: { issueId },
+        });
+
         return row;
       });
 
@@ -103,7 +123,7 @@ export async function commentRoutes(app: FastifyInstance, opts: { db: Database }
       if (!isUuid(commentId)) throw ApiError.notFound('Comment not found');
 
       const [comment] = await db
-        .select({ id: comments.id, authorId: comments.authorId })
+        .select({ id: comments.id, authorId: comments.authorId, issueId: comments.issueId })
         .from(comments)
         .where(and(eq(comments.id, commentId), eq(comments.workspaceId, workspaceId)))
         .limit(1);
@@ -115,9 +135,24 @@ export async function commentRoutes(app: FastifyInstance, opts: { db: Database }
 
       if (!allowed) throw ApiError.forbidden();
 
-      await db
-        .delete(comments)
-        .where(and(eq(comments.id, commentId), eq(comments.workspaceId, workspaceId)));
+      await db.transaction(async (tx) => {
+        const deleted = await tx
+          .delete(comments)
+          .where(and(eq(comments.id, commentId), eq(comments.workspaceId, workspaceId)))
+          .returning({ id: comments.id });
+
+        // A concurrent delete got there first and recorded it.
+        if (deleted.length === 0) throw ApiError.notFound('Comment not found');
+
+        await recordAudit(tx, auditActor(request), {
+          workspaceId,
+          entityType: 'comment',
+          entityId: commentId,
+          eventType: 'comment.deleted',
+          // Moderation is the case an administrator will come looking for.
+          payload: { issueId: comment.issueId, authorId: comment.authorId, moderated: !isAuthor },
+        });
+      });
 
       return reply.status(204).send();
     },

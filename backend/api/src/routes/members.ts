@@ -1,8 +1,8 @@
 import {
-  auditEvents,
   type Database,
   type Executor,
   publishEvent,
+  recordAudit,
   users,
   workspaceMembers,
 } from '@robis/database';
@@ -17,6 +17,7 @@ import { and, count, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../errors.ts';
 import {
+  auditActor,
   currentMembership,
   currentUser,
   requireAuth,
@@ -124,23 +125,26 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
 
       if (!invitee) throw ApiError.notFound('No account exists with that email');
 
-      const [added] = await db
-        .insert(workspaceMembers)
-        .values({ workspaceId, userId: invitee.id, role: input.role })
-        .onConflictDoNothing({
-          target: [workspaceMembers.workspaceId, workspaceMembers.userId],
-        })
-        .returning({ role: workspaceMembers.role });
+      const added = await db.transaction(async (tx) => {
+        const [row] = await tx
+          .insert(workspaceMembers)
+          .values({ workspaceId, userId: invitee.id, role: input.role })
+          .onConflictDoNothing({
+            target: [workspaceMembers.workspaceId, workspaceMembers.userId],
+          })
+          .returning({ role: workspaceMembers.role });
 
-      if (!added) throw ApiError.conflict('That user is already a member', 'already_member');
+        if (!row) throw ApiError.conflict('That user is already a member', 'already_member');
 
-      await db.insert(auditEvents).values({
-        workspaceId,
-        actorId: actor.id,
-        entityType: 'member',
-        entityId: invitee.id,
-        eventType: 'member.added',
-        payload: JSON.stringify({ email: invitee.email, role: input.role }),
+        await recordAudit(tx, auditActor(request), {
+          workspaceId,
+          entityType: 'member',
+          entityId: invitee.id,
+          eventType: 'member.added',
+          payload: { email: invitee.email, role: input.role },
+        });
+
+        return row;
       });
 
       await publishEvent(db, { type: 'member.changed', workspaceId, actorId: actor.id });
@@ -181,26 +185,26 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
         throw ApiError.conflict('A workspace must keep at least one owner', 'last_owner');
       }
 
-      const [updated] = await db
-        .update(workspaceMembers)
-        .set({ role: input.role })
-        .where(
-          and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, userId)),
-        )
-        .returning({ role: workspaceMembers.role });
+      const updated = await db.transaction(async (tx) => {
+        const [row] = await tx
+          .update(workspaceMembers)
+          .set({ role: input.role })
+          .where(
+            and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, userId)),
+          )
+          .returning({ role: workspaceMembers.role });
 
-      await db.insert(auditEvents).values({
-        workspaceId,
-        actorId: actor.id,
-        entityType: 'member',
-        entityId: userId,
-        eventType: 'member.role_changed',
-        payload: JSON.stringify({
-          email: target.email,
-          name: target.name,
-          from: target.role,
-          to: input.role,
-        }),
+        if (!row) throw ApiError.notFound('That user is not a member of this workspace');
+
+        await recordAudit(tx, auditActor(request), {
+          workspaceId,
+          entityType: 'member',
+          entityId: userId,
+          eventType: 'member.role_changed',
+          payload: { email: target.email, name: target.name, from: target.role, to: input.role },
+        });
+
+        return row;
       });
 
       await publishEvent(db, { type: 'member.changed', workspaceId, actorId: actor.id });
@@ -230,19 +234,25 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
         throw ApiError.conflict('A workspace must keep at least one owner', 'last_owner');
       }
 
-      await db
-        .delete(workspaceMembers)
-        .where(
-          and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, userId)),
-        );
+      await db.transaction(async (tx) => {
+        const removed = await tx
+          .delete(workspaceMembers)
+          .where(
+            and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, userId)),
+          )
+          .returning({ userId: workspaceMembers.userId });
 
-      await db.insert(auditEvents).values({
-        workspaceId,
-        actorId: actor.id,
-        entityType: 'member',
-        entityId: userId,
-        eventType: 'member.removed',
-        payload: JSON.stringify({ email: target.email, name: target.name, role: target.role }),
+        if (removed.length === 0) {
+          throw ApiError.notFound('That user is not a member of this workspace');
+        }
+
+        await recordAudit(tx, auditActor(request), {
+          workspaceId,
+          entityType: 'member',
+          entityId: userId,
+          eventType: 'member.removed',
+          payload: { email: target.email, name: target.name, role: target.role },
+        });
       });
 
       return reply.status(204).send();
@@ -268,11 +278,29 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
         );
       }
 
-      await db
-        .delete(workspaceMembers)
-        .where(
-          and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, actor.id)),
-        );
+      await db.transaction(async (tx) => {
+        const left = await tx
+          .delete(workspaceMembers)
+          .where(
+            and(
+              eq(workspaceMembers.workspaceId, workspaceId),
+              eq(workspaceMembers.userId, actor.id),
+            ),
+          )
+          .returning({ userId: workspaceMembers.userId });
+
+        if (left.length === 0) throw ApiError.notFound('Workspace not found');
+
+        // The actor is the person leaving, so their id is already on the
+        // event; the role is the only fact worth adding.
+        await recordAudit(tx, auditActor(request), {
+          workspaceId,
+          entityType: 'member',
+          entityId: actor.id,
+          eventType: 'member.left',
+          payload: { role },
+        });
+      });
 
       return reply.status(204).send();
     },

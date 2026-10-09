@@ -1,6 +1,7 @@
 import { ISSUE_PRIORITIES, ISSUE_STATUSES, ROLES } from '@robis/shared';
 import { relations, sql } from 'drizzle-orm';
 import {
+  bigint,
   bigserial,
   boolean,
   customType,
@@ -296,9 +297,23 @@ export const comments = pgTable(
   ],
 );
 
+/** Who acted: a person, an agent acting through a token, or Robis itself. */
+export const ACTOR_KINDS = ['human', 'agent', 'system'] as const;
+export const actorKind = pgEnum('actor_kind', ACTOR_KINDS);
+
 /**
  * Append-only activity trail. Written in the same transaction as the mutation
  * it describes, so an event exists if and only if the change committed.
+ *
+ * Tamper-evident, per workspace: `seq` counts 1, 2, 3 with no gaps, and each
+ * row's `hash` covers its own fields and the previous row's hash. Editing or
+ * deleting a row breaks the chain at that point, unless whoever did it also
+ * rewrote every later row; an outside copy catches that. See `audit.ts`.
+ *
+ * `actor_id` deliberately has no foreign key. With `ON DELETE SET NULL`,
+ * deleting an account would rewrite every row it appears in, which is both
+ * an edit to a hashed field and a trail that forgets who did what. The trail
+ * is meant to outlive the account.
  */
 export const auditEvents = pgTable(
   'audit_events',
@@ -307,15 +322,43 @@ export const auditEvents = pgTable(
     workspaceId: uuid('workspace_id')
       .notNull()
       .references(() => workspaces.id, { onDelete: 'cascade' }),
-    actorId: uuid('actor_id').references(() => users.id, { onDelete: 'set null' }),
+    seq: bigint('seq', { mode: 'number' }).notNull(),
+    actorId: uuid('actor_id'),
+    actorKind: actorKind('actor_kind').notNull().default('human'),
+    /** The API request that caused it, to join the trail against logs. */
+    requestId: text('request_id'),
     entityType: text('entity_type').notNull(),
     entityId: uuid('entity_id').notNull(),
     eventType: text('event_type').notNull(),
     payload: text('payload').notNull().default(sql`'{}'`),
     createdAt: createdAt(),
+    /** The previous event's hash; null only for the first event. */
+    prevHash: text('prev_hash'),
+    hash: text('hash').notNull(),
   },
-  (t) => [index('audit_events_workspace_created_idx').on(t.workspaceId, t.createdAt)],
+  (t) => [
+    uniqueIndex('audit_events_workspace_seq_key').on(t.workspaceId, t.seq),
+    // The security view's two filters. Without these, asking for a rarely
+    // seen actor walks the workspace's whole chain before filling a page.
+    index('audit_events_workspace_actor_seq_idx').on(t.workspaceId, t.actorId, t.seq),
+    index('audit_events_workspace_entity_seq_idx').on(t.workspaceId, t.entityType, t.seq),
+  ],
 );
+
+/**
+ * How far the SIEM stream has delivered, per workspace.
+ *
+ * Advanced only after the receiver acknowledges a batch, so a crash between
+ * the two resends rather than skips. Each event carries its id as an
+ * idempotency key for exactly that case.
+ */
+export const auditStreamCursors = pgTable('audit_stream_cursors', {
+  workspaceId: uuid('workspace_id')
+    .primaryKey()
+    .references(() => workspaces.id, { onDelete: 'cascade' }),
+  deliveredSeq: bigint('delivered_seq', { mode: 'number' }).notNull().default(0),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
 
 /**
  * Collaboratively edited documents, stored as Yjs CRDT state.

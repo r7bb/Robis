@@ -71,6 +71,20 @@
       "when": 1791433076781,
       "tag": "0009_collaboration_surface",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791540731958,
+      "tag": "0010_audit_chain",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791542873541,
+      "tag": "0011_audit_hardening",
+      "breakpoints": true
     }
   ]
 }

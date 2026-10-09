@@ -5,6 +5,7 @@ import {
   encodeCursor,
   messages,
   publishEvent,
+  recordAudit,
   users,
 } from '@robis/database';
 import {
@@ -19,6 +20,7 @@ import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../errors.ts';
 import {
+  auditActor,
   currentMembership,
   currentUser,
   requireAuth,
@@ -95,20 +97,32 @@ export async function channelRoutes(app: FastifyInstance, opts: { db: Database }
        * both insert. Letting the constraint reject one and translating that
        * into a 409 is the only version without a race.
        */
-      const [created] = await db
-        .insert(channels)
-        .values({
-          workspaceId,
-          name: input.name,
-          topic: input.topic ?? null,
-          createdById: user.id,
-        })
-        .onConflictDoNothing({ target: [channels.workspaceId, channels.name] })
-        .returning();
+      const created = await db.transaction(async (tx) => {
+        const [row] = await tx
+          .insert(channels)
+          .values({
+            workspaceId,
+            name: input.name,
+            topic: input.topic ?? null,
+            createdById: user.id,
+          })
+          .onConflictDoNothing({ target: [channels.workspaceId, channels.name] })
+          .returning();
 
-      if (!created) {
-        throw ApiError.conflict(`There is already a #${input.name} channel`, 'channel_exists');
-      }
+        if (!row) {
+          throw ApiError.conflict(`There is already a #${input.name} channel`, 'channel_exists');
+        }
+
+        await recordAudit(tx, auditActor(request), {
+          workspaceId,
+          entityType: 'channel',
+          entityId: row.id,
+          eventType: 'channel.created',
+          payload: { name: row.name },
+        });
+
+        return row;
+      });
 
       await publishEvent(db, {
         type: 'channel.created',
@@ -129,13 +143,27 @@ export async function channelRoutes(app: FastifyInstance, opts: { db: Database }
       const { channelId } = request.params as { channelId: string };
       const input = parse(updateChannelSchema, request.body);
 
-      await loadChannel(db, workspaceId, channelId);
+      const before = await loadChannel(db, workspaceId, channelId);
 
-      const [updated] = await db
-        .update(channels)
-        .set({ ...input, updatedAt: new Date() })
-        .where(and(eq(channels.id, channelId), eq(channels.workspaceId, workspaceId)))
-        .returning();
+      const updated = await db.transaction(async (tx) => {
+        const [row] = await tx
+          .update(channels)
+          .set({ ...input, updatedAt: new Date() })
+          .where(and(eq(channels.id, channelId), eq(channels.workspaceId, workspaceId)))
+          .returning();
+
+        if (!row) throw ApiError.notFound('Channel not found');
+
+        await recordAudit(tx, auditActor(request), {
+          workspaceId,
+          entityType: 'channel',
+          entityId: channelId,
+          eventType: 'channel.updated',
+          payload: { from: before.name, name: row.name, fields: Object.keys(input) },
+        });
+
+        return row;
+      });
 
       return { channel: updated };
     },
@@ -149,15 +177,28 @@ export async function channelRoutes(app: FastifyInstance, opts: { db: Database }
       const { workspaceId } = currentMembership(request);
       const { channelId } = request.params as { channelId: string };
 
-      await loadChannel(db, workspaceId, channelId);
+      const channel = await loadChannel(db, workspaceId, channelId);
 
       // Messages go with it, by the foreign key's cascade. That is the
       // intent: a deleted channel leaving orphaned transcripts behind would
       // be worse than losing them, because nothing would ever show them again
       // and nobody would know they were still stored.
-      await db
-        .delete(channels)
-        .where(and(eq(channels.id, channelId), eq(channels.workspaceId, workspaceId)));
+      await db.transaction(async (tx) => {
+        const deleted = await tx
+          .delete(channels)
+          .where(and(eq(channels.id, channelId), eq(channels.workspaceId, workspaceId)))
+          .returning({ id: channels.id });
+
+        if (deleted.length === 0) throw ApiError.notFound('Channel not found');
+
+        await recordAudit(tx, auditActor(request), {
+          workspaceId,
+          entityType: 'channel',
+          entityId: channelId,
+          eventType: 'channel.deleted',
+          payload: { name: channel.name },
+        });
+      });
 
       await publishEvent(db, {
         type: 'channel.deleted',
@@ -281,9 +322,32 @@ export async function channelRoutes(app: FastifyInstance, opts: { db: Database }
 
       if (!allowed) throw ApiError.forbidden();
 
-      await db
-        .delete(messages)
-        .where(and(eq(messages.id, messageId), eq(messages.workspaceId, workspaceId)));
+      /*
+       * Deletes are recorded; posts are not. A message is already the record
+       * of itself, and copying every one into the trail would make it a
+       * second transcript. A removal is the opposite: afterwards the trail is
+       * the only place that says the message existed, and who took it down.
+       */
+      await db.transaction(async (tx) => {
+        const deleted = await tx
+          .delete(messages)
+          .where(and(eq(messages.id, messageId), eq(messages.workspaceId, workspaceId)))
+          .returning({ id: messages.id });
+
+        if (deleted.length === 0) throw ApiError.notFound('Message not found');
+
+        await recordAudit(tx, auditActor(request), {
+          workspaceId,
+          entityType: 'message',
+          entityId: messageId,
+          eventType: 'message.deleted',
+          payload: {
+            channelId: message.channelId,
+            authorId: message.authorId,
+            moderated: !isAuthor,
+          },
+        });
+      });
 
       await publishEvent(db, {
         type: 'message.deleted',

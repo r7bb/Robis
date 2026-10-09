@@ -3,6 +3,7 @@ import {
   meetingAttendees,
   meetings,
   publishEvent,
+  recordAudit,
   users,
   workspaceMembers,
 } from '@robis/database';
@@ -17,6 +18,7 @@ import { and, asc, eq, gte, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../errors.ts';
 import {
+  auditActor,
   currentMembership,
   currentUser,
   requireAuth,
@@ -37,7 +39,13 @@ import { parse } from '../validate.ts';
 /** How long a finished meeting keeps showing in the upcoming list. */
 const GRACE_MINUTES = 30;
 
-type MeetingRow = { id: string; organizerId: string | null; canceledAt: Date | null };
+type MeetingRow = {
+  id: string;
+  title: string;
+  startsAt: Date;
+  organizerId: string | null;
+  canceledAt: Date | null;
+};
 
 async function loadMeeting(
   db: Database,
@@ -49,6 +57,8 @@ async function loadMeeting(
   const [meeting] = await db
     .select({
       id: meetings.id,
+      title: meetings.title,
+      startsAt: meetings.startsAt,
       organizerId: meetings.organizerId,
       canceledAt: meetings.canceledAt,
     })
@@ -217,6 +227,18 @@ export async function meetingRoutes(app: FastifyInstance, opts: { db: Database }
             ...invitees.map((invitee) => ({ meetingId: meeting!.id, userId: invitee.userId })),
           ]);
 
+        await recordAudit(tx, auditActor(request), {
+          workspaceId,
+          entityType: 'meeting',
+          entityId: meeting!.id,
+          eventType: 'meeting.created',
+          payload: {
+            title: meeting!.title,
+            startsAt: meeting!.startsAt.toISOString(),
+            invited: invitees.length,
+          },
+        });
+
         return meeting!;
       });
 
@@ -247,30 +269,50 @@ export async function meetingRoutes(app: FastifyInstance, opts: { db: Database }
         throw ApiError.conflict('That meeting was cancelled', 'meeting_canceled');
       }
 
-      const [updated] = await db
-        .update(meetings)
-        .set({ ...input, updatedAt: new Date() })
-        .where(and(eq(meetings.id, meetingId), eq(meetings.workspaceId, workspaceId)))
-        .returning();
+      const updated = await db.transaction(async (tx) => {
+        const [row] = await tx
+          .update(meetings)
+          .set({ ...input, updatedAt: new Date() })
+          .where(and(eq(meetings.id, meetingId), eq(meetings.workspaceId, workspaceId)))
+          .returning();
 
-      /*
-       * Moving a meeting resets everyone else's answer.
-       *
-       * "Yes" meant yes to a particular time. Carrying it across a reschedule
-       * would show the organiser a room full of confirmed attendees who never
-       * agreed to the new slot. The organiser's own row is left alone.
-       */
-      if (input.startsAt) {
-        await db
-          .update(meetingAttendees)
-          .set({ response: 'pending', respondedAt: null })
-          .where(
-            and(
-              eq(meetingAttendees.meetingId, meetingId),
-              sql`${meetingAttendees.userId} <> ${user.id}::uuid`,
-            ),
-          );
-      }
+        if (!row) throw ApiError.notFound('Meeting not found');
+
+        /*
+         * Moving a meeting resets everyone else's answer.
+         *
+         * "Yes" meant yes to a particular time. Carrying it across a reschedule
+         * would show the organiser a room full of confirmed attendees who never
+         * agreed to the new slot. The organiser's own row is left alone.
+         */
+        if (input.startsAt) {
+          await tx
+            .update(meetingAttendees)
+            .set({ response: 'pending', respondedAt: null })
+            .where(
+              and(
+                eq(meetingAttendees.meetingId, meetingId),
+                sql`${meetingAttendees.userId} <> ${user.id}::uuid`,
+              ),
+            );
+        }
+
+        await recordAudit(tx, auditActor(request), {
+          workspaceId,
+          entityType: 'meeting',
+          entityId: meetingId,
+          eventType: 'meeting.updated',
+          payload: {
+            title: row.title,
+            fields: Object.keys(input),
+            ...(input.startsAt
+              ? { from: meeting.startsAt.toISOString(), to: input.startsAt.toISOString() }
+              : {}),
+          },
+        });
+
+        return row;
+      });
 
       await publishEvent(db, {
         type: 'meeting.changed',
@@ -301,17 +343,31 @@ export async function meetingRoutes(app: FastifyInstance, opts: { db: Database }
       const meeting = await loadMeeting(db, workspaceId, meetingId);
       assertCanManage(meeting, user.id, role);
 
-      await db
-        .update(meetings)
-        .set({ canceledAt: new Date(), updatedAt: new Date() })
-        .where(
-          and(
-            eq(meetings.id, meetingId),
-            eq(meetings.workspaceId, workspaceId),
-            // Keeps the first cancellation's timestamp if this runs twice.
-            isNull(meetings.canceledAt),
-          ),
-        );
+      await db.transaction(async (tx) => {
+        const canceled = await tx
+          .update(meetings)
+          .set({ canceledAt: new Date(), updatedAt: new Date() })
+          .where(
+            and(
+              eq(meetings.id, meetingId),
+              eq(meetings.workspaceId, workspaceId),
+              // Keeps the first cancellation's timestamp if this runs twice.
+              isNull(meetings.canceledAt),
+            ),
+          )
+          .returning({ id: meetings.id });
+
+        // A repeat cancel changed nothing, so it records nothing.
+        if (canceled.length === 0) return;
+
+        await recordAudit(tx, auditActor(request), {
+          workspaceId,
+          entityType: 'meeting',
+          entityId: meetingId,
+          eventType: 'meeting.canceled',
+          payload: { title: meeting.title, startsAt: meeting.startsAt.toISOString() },
+        });
+      });
 
       await publishEvent(db, {
         type: 'meeting.changed',
@@ -347,18 +403,28 @@ export async function meetingRoutes(app: FastifyInstance, opts: { db: Database }
         throw ApiError.conflict('That meeting was cancelled', 'meeting_canceled');
       }
 
-      await db
-        .insert(meetingAttendees)
-        .values({
-          meetingId,
-          userId: user.id,
-          response: input.response,
-          respondedAt: new Date(),
-        })
-        .onConflictDoUpdate({
-          target: [meetingAttendees.meetingId, meetingAttendees.userId],
-          set: { response: input.response, respondedAt: new Date() },
+      await db.transaction(async (tx) => {
+        await tx
+          .insert(meetingAttendees)
+          .values({
+            meetingId,
+            userId: user.id,
+            response: input.response,
+            respondedAt: new Date(),
+          })
+          .onConflictDoUpdate({
+            target: [meetingAttendees.meetingId, meetingAttendees.userId],
+            set: { response: input.response, respondedAt: new Date() },
+          });
+
+        await recordAudit(tx, auditActor(request), {
+          workspaceId,
+          entityType: 'meeting',
+          entityId: meetingId,
+          eventType: 'meeting.responded',
+          payload: { title: meeting.title, response: input.response },
         });
+      });
 
       return { ok: true, response: input.response };
     },

@@ -1,5 +1,4 @@
 import {
-  auditEvents,
   type Database,
   decodeCursor,
   type Executor,
@@ -7,6 +6,7 @@ import {
   issues,
   projects,
   publishEvent,
+  recordAudit,
   users,
   workspaceMembers,
 } from '@robis/database';
@@ -21,6 +21,7 @@ import { and, desc, eq, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../errors.ts';
 import {
+  auditActor,
   currentMembership,
   currentUser,
   requireAuth,
@@ -243,16 +244,12 @@ export async function issueRoutes(
             })
             .returning();
 
-          await tx.insert(auditEvents).values({
+          await recordAudit(tx, auditActor(request), {
             workspaceId,
-            actorId: user.id,
             entityType: 'issue',
             entityId: created!.id,
             eventType: 'issue.created',
-            payload: JSON.stringify({
-              key: `${bumped.key}-${bumped.number}`,
-              title: created!.title,
-            }),
+            payload: { key: `${bumped.key}-${bumped.number}`, title: created!.title },
           });
 
           return { ...created!, key: `${bumped.key}-${bumped.number}` };
@@ -298,33 +295,53 @@ export async function issueRoutes(
 
       if (input.assigneeId) await assertAssignable(db, workspaceId, input.assigneeId);
 
-      const [updated] = await db
-        .update(issues)
-        .set({ ...input, updatedAt: new Date() })
-        .where(and(eq(issues.id, issueId), eq(issues.workspaceId, workspaceId)))
-        .returning();
+      // The key is resolved and stored now rather than joined at read time,
+      // so the entry still names the issue after the issue is deleted.
+      const project = await loadProject(db, workspaceId, before.projectId);
 
-      // Status is the field the activity feed cares about; recording every
-      // text edit would drown it.
-      if (input.status && input.status !== before.status) {
-        // The key is resolved and stored now rather than joined at read time,
-        // so the entry still names the issue after the issue is deleted.
-        const project = await loadProject(db, workspaceId, before.projectId);
+      const updated = await db.transaction(async (tx) => {
+        /*
+         * The status being moved *from* is read again here, under a row
+         * lock. The copy loaded above is from before the transaction, and two
+         * people moving the same issue at once would both record leaving the
+         * same column.
+         */
+        const [current] = await tx
+          .select({ status: issues.status })
+          .from(issues)
+          .where(and(eq(issues.id, issueId), eq(issues.workspaceId, workspaceId)))
+          .for('update');
 
-        await db.insert(auditEvents).values({
+        if (!current) throw ApiError.notFound('Issue not found');
+        const statusChanged = input.status !== undefined && input.status !== current.status;
+
+        const [row] = await tx
+          .update(issues)
+          .set({ ...input, updatedAt: new Date() })
+          .where(and(eq(issues.id, issueId), eq(issues.workspaceId, workspaceId)))
+          .returning();
+
+        /*
+         * A status move keeps its own event type, because it is what the
+         * activity feed narrates ("moved WEB-4 to done"). Any other edit is
+         * `issue.updated` with the names of the fields touched -- not their
+         * new text, which is content the trail has no reason to copy.
+         */
+        await recordAudit(tx, auditActor(request), {
           workspaceId,
-          actorId: user.id,
           entityType: 'issue',
           entityId: issueId,
-          eventType: 'issue.status_changed',
-          payload: JSON.stringify({
+          eventType: statusChanged ? 'issue.status_changed' : 'issue.updated',
+          payload: {
             key: `${project.key}-${before.number}`,
             title: before.title,
-            from: before.status,
-            to: input.status,
-          }),
+            fields: Object.keys(input),
+            ...(statusChanged ? { from: current.status, to: input.status } : {}),
+          },
         });
-      }
+
+        return row;
+      });
 
       await publishEvent(db, {
         type: 'issue.updated',
@@ -346,10 +363,25 @@ export async function issueRoutes(
       const { issueId } = request.params as { issueId: string };
 
       const issue = await loadIssue(db, workspaceId, issueId);
+      const project = await loadProject(db, workspaceId, issue.projectId);
 
-      await db
-        .delete(issues)
-        .where(and(eq(issues.id, issueId), eq(issues.workspaceId, workspaceId)));
+      await db.transaction(async (tx) => {
+        const deleted = await tx
+          .delete(issues)
+          .where(and(eq(issues.id, issueId), eq(issues.workspaceId, workspaceId)))
+          .returning({ id: issues.id });
+
+        // A concurrent delete got there first and recorded it.
+        if (deleted.length === 0) throw ApiError.notFound('Issue not found');
+
+        await recordAudit(tx, auditActor(request), {
+          workspaceId,
+          entityType: 'issue',
+          entityId: issueId,
+          eventType: 'issue.deleted',
+          payload: { key: `${project.key}-${issue.number}`, title: issue.title },
+        });
+      });
 
       await publishEvent(db, {
         type: 'issue.deleted',

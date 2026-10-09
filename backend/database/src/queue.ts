@@ -192,6 +192,24 @@ export async function pendingCount(db: Executor, now: Date = new Date()): Promis
   return rows.length;
 }
 
+/**
+ * Whether a job of this kind is waiting or running.
+ *
+ * For recurring jobs that start themselves at boot: without this check every
+ * restart adds another self-rescheduling chain beside the ones already
+ * running. A claimed job stays `pending` until it completes, so a job in
+ * flight counts too.
+ */
+export async function hasPendingJob(db: Executor, kind: string): Promise<boolean> {
+  const [row] = await db
+    .select({ id: jobs.id })
+    .from(jobs)
+    .where(and(eq(jobs.kind, kind), eq(jobs.status, 'pending')))
+    .limit(1);
+
+  return row !== undefined;
+}
+
 export async function deadLetterCount(db: Executor): Promise<number> {
   const rows = await db.select({ id: jobs.id }).from(jobs).where(eq(jobs.status, 'failed'));
   return rows.length;

@@ -17,7 +17,14 @@ each choice is in [ARCHITECTURE.md](ARCHITECTURE.md).
 app, CI running lint, typecheck, tests and a production build.
 
 **Tenancy and authorisation.** Workspaces, four roles, one declarative
-permission matrix, 404-not-403 for non-members, an append-only audit trail.
+permission matrix, 404-not-403 for non-members.
+
+**Audit trail.** Every workspace change recorded in the transaction that
+makes it, numbered per workspace and chained with SHA-256; an append-only
+trigger; a verify endpoint that names the first broken link; a keyset-paged
+export; an at-least-once HTTPS stream to a SIEM with an idempotency key per
+event; a Security view for admins. Gaps and limits are listed in
+`docs/PLATFORM_PLAN.md`, Phase 2.
 
 **Accounts.** Argon2id passwords, opaque sessions, login timing equalisation,
 password reset and email verification behind a `Mailer` port, account
@@ -114,10 +121,8 @@ something (invitations, perhaps) or say in the UI that it is informational.
 
 ### 5. Deferred review findings
 
-- Pin `trustProxy` rather than leaving it at the default.
-- `Referrer-Policy: no-referrer` and `Cache-Control: no-store` on pages that
-  carry a token in the query string.
 - Migrate the login page onto `AuthShell` so all five auth surfaces share one.
+- (Done: `trustProxy` pinned, and no-referrer / no-store on token pages.)
 
 ---
 
@@ -127,6 +132,9 @@ something (invitations, perhaps) or say in the UI that it is informational.
 Request ids now span the API and the ML service; the gateway and worker are
 next. Rate limits key on the full IPv6 address, so a client holding a /64
 can rotate within it; key on the /64 instead.
+
+**Security.** Account-level events (sign-in, password change, sessions
+revoked) in a trail of their own, since they belong to no workspace.
 
 **Product.** Drag-and-drop on the board. A dedicated search results page.
 Issue filtering by label. Bulk actions.

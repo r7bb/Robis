@@ -47,6 +47,43 @@ the headers are present, and a request id round-trips.
 Done when: a test tampers with a row and verification names it; a local
 fake receiver gets every event exactly once by key despite a forced retry.
 
+**Shipped 2026-10-09.** `backend/database/src/audit.ts`, migration 0010,
+`/audit/events` and `/audit/verify` (admins and owners), the worker's
+`audit.stream` job, and the Security view. Tests: `tests/audit.test.ts`
+(every route, rollback, 20 concurrent writers, three kinds of tampering, the
+SQL and application hashes agreeing) and `tests/audit-stream.test.ts`.
+
+Deliberate gaps, stated rather than hidden:
+
+- Posting a chat message and typing in a document record no event. The
+  message and the CRDT log are their own record; deletes and renames are
+  recorded.
+- Deleting a workspace deletes its trail with it, so that one change is not
+  in the trail. The SIEM copy is where it survives.
+- Sign-in, password and session events are account-level, not
+  workspace-level, so they are not in this trail yet.
+- Rows written before the chain existed were numbered by timestamp; rows
+  that shared one were ordered by id, since nothing recorded their real
+  order.
+- Appends take a per-workspace lock until commit, so writes in one workspace
+  queue behind each other for the length of the audit insert. A writer waits
+  at most 5 seconds for it.
+
+Left open from review, for a later pass:
+
+- The app connects as the table's owner, so the append-only trigger is the
+  only database-side guard. A separate runtime role without `UPDATE`,
+  `DELETE` or `TRUNCATE` on `audit_events` is the stronger setup.
+- The hash is unkeyed. An HMAC with a key held outside the database would
+  stop someone with database access from rewriting the chain consistently.
+- Reading or exporting the trail is not itself recorded.
+- Member events copy the member's email and name, and the trail outlives
+  accounts. Erasure requests need a redaction strategy: flagged for legal
+  review.
+- The security view's "who" filter lists current members only.
+- Verification walks the whole chain each time, which is why it is
+  rate-limited; a stored checkpoint would make it incremental.
+
 ## Phase 2b. Profiles, photos and stories (M to L)
 
 Inside the workspace only: Robis's tenancy and 404-not-403 rules stay as

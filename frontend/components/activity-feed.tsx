@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { type ActivityEvent, api } from '../lib/api.ts';
+import { describeEvent } from '../lib/audit-events.ts';
 
 /**
  * The workspace audit trail.
@@ -17,42 +18,8 @@ import { type ActivityEvent, api } from '../lib/api.ts';
  * what the values were at the time rather than pointing at what they are now.
  */
 
-/** One phrasing per event type. Unknown types fall back to the raw name. */
-function describe(event: ActivityEvent): string {
-  const payload = event.payload;
-
-  switch (event.eventType) {
-    case 'issue.created':
-      return `created ${payload.key ?? 'an issue'}${payload.title ? ` · ${payload.title}` : ''}`;
-    case 'issue.status_changed':
-      return `moved ${payload.key ?? 'an issue'} from ${label(payload.from)} to ${label(payload.to)}`;
-    case 'project.created':
-      return `created the project ${payload.name ?? ''}`.trim();
-    case 'project.deleted':
-      return `deleted the project ${payload.name ?? ''}`.trim();
-    case 'workspace.created':
-      return 'created this workspace';
-    case 'workspace.updated':
-      return 'updated the workspace';
-    case 'member.added':
-      return `added ${payload.email ?? 'a member'} as ${label(payload.role)}`;
-    case 'member.removed':
-      return `removed ${payload.email ?? 'a member'}`;
-    case 'member.role_changed':
-      return `changed ${payload.email ?? 'a member'} from ${label(payload.from)} to ${label(payload.to)}`;
-    default:
-      // Better to show an unstyled truth than to drop an event because this
-      // component has not been taught about it yet.
-      return event.eventType;
-  }
-}
-
-function label(value: string | undefined): string {
-  return value ? value.toLowerCase().replaceAll('_', ' ') : 'unknown';
-}
-
 /** Relative time, because "3 hours ago" is what a feed is read for. */
-function ago(iso: string): string {
+export function ago(iso: string): string {
   const seconds = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
 
   const steps: [number, Intl.RelativeTimeFormatUnit][] = [
@@ -99,7 +66,7 @@ export function ActivityFeed({ workspaceId }: { workspaceId: string }) {
 
       {events.length === 0 && !activity.isPending && (
         <p className="mt-3 rounded-lg border border-line bg-raised px-4 py-6 text-center text-sm text-faint">
-          Nothing recorded yet. Changes to issues, projects and members show up here.
+          Nothing recorded yet. Changes across the workspace show up here.
         </p>
       )}
 
@@ -107,7 +74,9 @@ export function ActivityFeed({ workspaceId }: { workspaceId: string }) {
         {events.slice(0, 20).map((event) => (
           <li key={event.id} className="flex items-baseline gap-2 px-4 py-2.5 text-sm">
             <span className="font-medium text-content">{event.actorName ?? 'Someone'}</span>
-            <span className="min-w-0 flex-1 text-muted">{describe(event)}</span>
+            <span className="min-w-0 flex-1 text-muted">
+              {describeEvent(event.eventType, event.payload)}
+            </span>
             <time
               dateTime={event.createdAt}
               title={new Date(event.createdAt).toLocaleString()}

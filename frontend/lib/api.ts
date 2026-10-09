@@ -165,6 +165,37 @@ export type ActivityEvent = {
   createdAt: string;
 };
 
+/** One audit event, in the shape the export API and the SIEM stream share. */
+export type AuditEvent = {
+  key: string;
+  workspaceId: string;
+  seq: number;
+  occurredAt: string;
+  actor: { id: string | null; kind: 'human' | 'agent' | 'system' };
+  actorName: string | null;
+  requestId: string | null;
+  entity: { type: string; id: string };
+  type: string;
+  payload: Record<string, unknown>;
+  prevHash: string | null;
+  hash: string;
+};
+
+export type AuditPage = { events: AuditEvent[]; nextCursor: number | null };
+
+/** What `/audit/verify` found. `broken` names the first bad link, if any. */
+export type ChainReport = {
+  ok: boolean;
+  checked: number;
+  head: { seq: number; hash: string } | null;
+  broken: {
+    seq: number;
+    eventId: string | null;
+    reason: 'missing' | 'altered' | 'relinked';
+    detail: string;
+  } | null;
+};
+
 /** One active browser session. Token hashes never reach the client. */
 export type SessionSummary = {
   id: string;

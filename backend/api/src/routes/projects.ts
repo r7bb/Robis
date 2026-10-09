@@ -1,16 +1,17 @@
 import {
-  auditEvents,
   type Database,
   type Executor,
   issues,
   projects,
   publishEvent,
+  recordAudit,
 } from '@robis/database';
 import { createProjectSchema, deriveProjectKey, isUuid, updateProjectSchema } from '@robis/shared';
 import { and, count, eq, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../errors.ts';
 import {
+  auditActor,
   currentMembership,
   currentUser,
   requireAuth,
@@ -126,13 +127,12 @@ export async function projectRoutes(app: FastifyInstance, opts: { db: Database }
           throw ApiError.conflict(`Project key "${key}" is already used here`, 'key_taken');
         }
 
-        await tx.insert(auditEvents).values({
+        await recordAudit(tx, auditActor(request), {
           workspaceId,
-          actorId: user.id,
           entityType: 'project',
           entityId: created.id,
           eventType: 'project.created',
-          payload: JSON.stringify({ key: created.key, name: created.name }),
+          payload: { key: created.key, name: created.name },
         });
 
         return created;
@@ -168,13 +168,30 @@ export async function projectRoutes(app: FastifyInstance, opts: { db: Database }
       const { projectId } = request.params as { projectId: string };
       const input = parse(updateProjectSchema, request.body);
 
-      await loadProject(db, workspaceId, projectId);
+      const before = await loadProject(db, workspaceId, projectId);
 
-      const [updated] = await db
-        .update(projects)
-        .set({ ...input, updatedAt: new Date() })
-        .where(and(eq(projects.id, projectId), eq(projects.workspaceId, workspaceId)))
-        .returning();
+      const updated = await db.transaction(async (tx) => {
+        const [row] = await tx
+          .update(projects)
+          .set({ ...input, updatedAt: new Date() })
+          .where(and(eq(projects.id, projectId), eq(projects.workspaceId, workspaceId)))
+          .returning();
+
+        // Deleted since it was loaded: there is nothing to record.
+        if (!row) throw ApiError.notFound('Project not found');
+
+        await recordAudit(tx, auditActor(request), {
+          workspaceId,
+          entityType: 'project',
+          entityId: projectId,
+          eventType: 'project.updated',
+          // Which fields, not their new text: a description is content, and
+          // the trail records that something changed rather than copying it.
+          payload: { key: before.key, name: row.name, fields: Object.keys(input) },
+        });
+
+        return row;
+      });
 
       return { project: updated };
     },
@@ -190,17 +207,22 @@ export async function projectRoutes(app: FastifyInstance, opts: { db: Database }
 
       const project = await loadProject(db, workspaceId, projectId);
 
-      await db
-        .delete(projects)
-        .where(and(eq(projects.id, projectId), eq(projects.workspaceId, workspaceId)));
+      await db.transaction(async (tx) => {
+        const deleted = await tx
+          .delete(projects)
+          .where(and(eq(projects.id, projectId), eq(projects.workspaceId, workspaceId)))
+          .returning({ id: projects.id });
 
-      await db.insert(auditEvents).values({
-        workspaceId,
-        actorId: user.id,
-        entityType: 'project',
-        entityId: projectId,
-        eventType: 'project.deleted',
-        payload: JSON.stringify({ key: project.key, name: project.name }),
+        // A concurrent delete got there first and recorded it.
+        if (deleted.length === 0) throw ApiError.notFound('Project not found');
+
+        await recordAudit(tx, auditActor(request), {
+          workspaceId,
+          entityType: 'project',
+          entityId: projectId,
+          eventType: 'project.deleted',
+          payload: { key: project.key, name: project.name },
+        });
       });
 
       await publishEvent(db, {

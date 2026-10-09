@@ -59,6 +59,9 @@ export const PERMISSIONS = [
   'meeting:manage_own',
   /** Reschedule or cancel anyone's meeting. */
   'meeting:manage_any',
+
+  /** Read the full audit trail, export it, and verify its chain. */
+  'audit:read',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -113,6 +116,9 @@ const ADMIN: readonly Permission[] = [
   'channel:delete',
   'message:delete_any',
   'meeting:manage_any',
+  // Who did what is an administrator's question. Members still see the
+  // workspace's activity feed; the full trail and its export are not theirs.
+  'audit:read',
 ];
 
 /** Owners differ from admins only by being able to destroy the workspace. */

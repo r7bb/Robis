@@ -24,6 +24,11 @@ Sign in as `rohit@robis.test` with `robis-demo-password`.
 Newest first. The same list is on the landing page, where each entry opens to
 show how it was checked.
 
+- **A tamper-evident audit trail** (2026-10-09). Every change in a workspace
+  is recorded in the same transaction, numbered, and chained with SHA-256,
+  so an edited or deleted event is named when the chain is checked. Admins
+  get a security view and an export; an operator can stream the trail to a
+  SIEM over HTTPS, with an idempotency key per event.
 - **Request hardening** (2026-10-09). The API no longer trusts any client to
   name its own address (`TRUST_PROXY` now defaults to no proxy), every
   request carries an id from the API through to the ML service, and pages
@@ -49,6 +54,12 @@ What comes next is in [docs/PLATFORM_PLAN.md](docs/PLATFORM_PLAN.md).
 > shares one rate-limit bucket. Set the number of trusted hops (`1` for one
 > proxy) or the proxy's addresses, and keep the API port unreachable except
 > through that proxy.
+
+> **Streaming the audit trail to a SIEM.** Set `AUDIT_STREAM_URL` (https, or
+> http to localhost only) and optionally `AUDIT_STREAM_TOKEN` for the worker.
+> It POSTs `{ "source": "robis", "events": [...] }` in batches of up to 100
+> and moves on only after a 2xx. Delivery is at-least-once: after a lost
+> response the batch is sent again, so deduplicate on each event's `key`.
 
 ---
 
@@ -77,6 +88,19 @@ yes, because a yes was for a time.
 full-text search.
 
 ![Search](imgs/18-search.png)
+
+**An audit trail you can check.** Every change is written in the same
+transaction as the change itself, so a rolled-back edit leaves no event. Each
+workspace's events are numbered 1, 2, 3 and chained: every event stores a
+SHA-256 hash of itself and of the one before. Admins open **Security** from
+the Activity tab to see who did what, filter it, check the chain, and export
+it as JSON lines. Edit a row behind the app's back and the check names the
+event and says how it was changed.
+
+What it does not catch on its own: someone with database access who rewrites
+every event from the edit onwards, or drops the newest ones. That is what an
+outside copy is for — the head hash shown in the security view, or the SIEM
+stream below.
 
 ---
 
@@ -183,7 +207,7 @@ figures. See **[robis-ml/README.md](robis-ml/README.md)**.
 
 | Command               | What it does                         |
 | --------------------- | ------------------------------------ |
-| `bun test`            | over 460 tests                       |
+| `bun test`            | over 500 tests                       |
 | `bun run typecheck`   | every package                        |
 | `bun run lint`        | Biome                                |
 | `bun run loadtest`    | the benchmark above                  |
@@ -205,5 +229,10 @@ rather than printing reset links into a log.
 
 Nothing here is a security or compliance claim. It describes what the code does
 and what was measured.
+
+The audit trail keeps the names and emails of members who were added,
+removed or changed role, and it is built to outlive the accounts it names.
+How long to keep it, and how that sits with a request to erase someone's
+data, needs a legal review before any real users.
 
 What is next is in **[docs/ROADMAP.md](docs/ROADMAP.md)**.

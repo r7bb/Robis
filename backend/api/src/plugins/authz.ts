@@ -1,5 +1,5 @@
 import { type AuthenticatedUser, resolveSession, SESSION_COOKIE } from '@robis/auth';
-import { type Database, findMembership } from '@robis/database';
+import { type AuditActor, type Database, findMembership } from '@robis/database';
 import { can, type Permission, type Role } from '@robis/shared';
 import type { FastifyReply, FastifyRequest, preHandlerHookHandler } from 'fastify';
 import { ApiError } from '../errors.ts';
@@ -22,6 +22,16 @@ export function currentUser(request: FastifyRequest): AuthenticatedUser {
 export function currentMembership(request: FastifyRequest) {
   if (!request.membership) throw new Error('requireMembership did not run for this route');
   return request.membership;
+}
+
+/**
+ * Who the audit trail should name for this request.
+ *
+ * The one place that decides it, so when agents act through tokens (they
+ * will record `kind: 'agent'`) no route has to change.
+ */
+export function auditActor(request: FastifyRequest): AuditActor {
+  return { id: currentUser(request).id, kind: 'human', requestId: request.id };
 }
 
 /**
