@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { type RefObject, useEffect, useRef, useState } from 'react';
 
 /**
  * A live field of points behind the hero, drawn with raw WebGL.
@@ -25,6 +25,8 @@ const ROWS = 70;
 const MAX_DPR = 1.5;
 /** Seconds the merge ring takes to fade out. */
 const PULSE_SECONDS = 2.4;
+/** How fast a keystroke's swell dies away, in milliseconds per e-fold. */
+const ACTIVITY_DECAY_MS = 320;
 
 /*
  * Two rules the shaders below follow, each learnt by the field silently
@@ -45,6 +47,7 @@ uniform float uAspect;
 uniform float uOffline;
 uniform float uPulse;
 uniform float uDpr;
+uniform float uActivity;
 uniform vec2 uMouse;
 varying float vGlow;
 varying float vDepth;
@@ -63,7 +66,7 @@ void main() {
   float k = (r - uPulse * 1.1) * 7.0;
   float ring = exp(-k * k) * exp(-uPulse * 1.2);
 
-  float h = wave * mix(1.0, 0.25, uOffline) + ripple + ring * 1.2;
+  float h = wave * mix(1.0, 0.25, uOffline) * (1.0 + uActivity * 0.7) + ripple + ring * 1.2;
 
   float depth = (g.y + 1.0) * 0.5;
   float z = mix(6.0, 1.05, depth);
@@ -71,7 +74,7 @@ void main() {
 
   gl_Position = vec4(w.x / (w.z * uAspect) * 1.6, w.y / w.z * 1.6 + 0.42, 0.0, 1.0);
   gl_PointSize = 7.5 / w.z * uDpr * (1.0 + ripple * 0.8 + ring);
-  vGlow = clamp(h * 0.8 + ripple + ring, 0.0, 1.5);
+  vGlow = clamp(h * 0.8 + ripple + ring + uActivity * 0.35, 0.0, 1.5);
   vDepth = depth;
   vOffline = uOffline;
 }`;
@@ -115,6 +118,16 @@ function accentColour(): [number, number, number] {
   return [parts[0]! / 255, parts[1]! / 255, parts[2]! / 255];
 }
 
+/** Seconds since the last merge, capped so the ring term stays finite. */
+function pulseAge(now: number, pulseAt: number): number {
+  return Math.min((now - pulseAt) / 1000, PULSE_SECONDS * 4);
+}
+
+/** 1 at a keystroke, decaying towards 0. */
+function activitySwell(now: number, activityAt: number): number {
+  return Math.exp(-(now - activityAt) / ACTIVITY_DECAY_MS);
+}
+
 function gridPoints(): Float32Array {
   const points = new Float32Array(COLS * ROWS * 2);
   let i = 0;
@@ -130,11 +143,18 @@ function gridPoints(): Float32Array {
 export function Field({
   offline,
   pulse,
+  activityAt,
   className = '',
 }: {
   offline: boolean;
   /** Bumped on every merge; each change sends one ring out. */
   pulse: number;
+  /**
+   * When the last keystroke happened, as `performance.now()`. A ref rather
+   * than a prop value: keystrokes arrive every few dozen milliseconds, and
+   * the render loop reads this each frame without React rendering at all.
+   */
+  activityAt?: RefObject<number>;
   className?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -158,7 +178,7 @@ export function Field({
     if (pulse > 0) live.current.pulseAt = performance.now();
   }, [pulse]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `generation` is the canvas's key; a new value means a new canvas element, and this effect must rebuild on it.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `generation` is the canvas's key; a new value means a new canvas element, and this effect must rebuild on it. `activityAt` is a ref object that never changes identity.
   useEffect(() => {
     const canvas = canvasRef.current;
     // The content sits above the canvas, so pointer events bubble to the
@@ -194,6 +214,7 @@ export function Field({
       offline: at('uOffline'),
       pulse: at('uPulse'),
       dpr: at('uDpr'),
+      activity: at('uActivity'),
       mouse: at('uMouse'),
       accent: at('uAccent'),
     };
@@ -208,22 +229,30 @@ export function Field({
     let offlineMix = live.current.offline ? 1 : 0;
     let frame = 0;
     let visible = true;
+    // Decided once rather than per frame: under reduced motion time stands
+    // still, swells are off, and state changes land at once.
+    const motion = reduced ? 0 : 1;
+    const settle = reduced ? 1 : 0.06;
 
     function draw(now: number) {
       if (!canvas || !gl) return;
-      const target = live.current.offline ? 1 : 0;
-      offlineMix = reduced ? target : offlineMix + (target - offlineMix) * 0.06;
+      const target = Number(live.current.offline);
+      offlineMix += (target - offlineMix) * settle;
       mouse.x += (mouse.tx - mouse.x) * 0.08;
       mouse.y += (mouse.ty - mouse.y) * 0.08;
 
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.uniform1f(u.time, reduced ? 0 : (now - started) / 1000);
+      gl.uniform1f(u.time, (motion * (now - started)) / 1000);
       gl.uniform1f(u.aspect, canvas.width / Math.max(canvas.height, 1));
       gl.uniform1f(u.offline, offlineMix);
-      gl.uniform1f(u.pulse, Math.min((now - live.current.pulseAt) / 1000, PULSE_SECONDS * 4));
+      gl.uniform1f(u.pulse, pulseAge(now, live.current.pulseAt));
       gl.uniform1f(u.dpr, dpr);
+      gl.uniform1f(
+        u.activity,
+        motion * activitySwell(now, activityAt?.current ?? Number.NEGATIVE_INFINITY),
+      );
       gl.uniform2f(u.mouse, mouse.x, mouse.y);
       gl.drawArrays(gl.POINTS, 0, COLS * ROWS);
     }
@@ -303,7 +332,7 @@ export function Field({
       // twice on the same canvas, and a context lost on the first cleanup is
       // the one the second run gets back, which leaves the field blank.
     };
-  }, [generation]);
+  }, [generation, activityAt]);
 
   return (
     // Hidden from assistive technology by the caller's wrapper, which is

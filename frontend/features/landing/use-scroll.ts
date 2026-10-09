@@ -78,12 +78,16 @@ export function useInView<T extends HTMLElement>(): [RefObject<T | null>, boolea
 }
 
 /**
- * True once the page has scrolled away from the very top.
+ * True once the sentinel has scrolled up past the top of the viewport.
  *
- * Driven by a sentinel element at the top of the document rather than by
- * reading `scrollY`: the observer fires twice in a session, once when the
- * sentinel leaves and once when it comes back, where a scroll handler would
- * run on every frame to answer the same yes/no question.
+ * The landing page puts the sentinel under its wordmark, so this answers
+ * "has the name scrolled away", which is when the header takes over.
+ *
+ * Driven by an observer rather than by reading `scrollY`: it fires only when
+ * the sentinel crosses the edge, where a scroll handler would run on every
+ * frame to answer the same yes/no question. "Above" is checked explicitly,
+ * because a sentinel below the fold, on a very short viewport, is also not
+ * intersecting and must not count as scrolled.
  */
 export function useScrolled(): [RefObject<HTMLDivElement | null>, boolean] {
   const sentinel = useRef<HTMLDivElement>(null);
@@ -93,9 +97,13 @@ export function useScrolled(): [RefObject<HTMLDivElement | null>, boolean] {
     const element = sentinel.current;
     if (!element || typeof IntersectionObserver === 'undefined') return;
 
-    const observer = new IntersectionObserver(([entry]) => setScrolled(!entry?.isIntersecting), {
-      threshold: 0,
-    });
+    const observer = new IntersectionObserver(
+      ([entry]) =>
+        setScrolled(Boolean(entry && !entry.isIntersecting && entry.boundingClientRect.top < 0)),
+      {
+        threshold: 0,
+      },
+    );
 
     observer.observe(element);
     return () => observer.disconnect();

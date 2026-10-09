@@ -52,19 +52,23 @@ export default function Home() {
     // read as deliberate, and the system stack renders it differently on
     // every OS. The signed-in app keeps the system font it was designed in.
     <div className={`min-h-[100dvh] bg-surface ${GeistSans.className}`}>
-      {/* Watched instead of the scroll position: this element leaving the
-          viewport is exactly the question the nav needs answered. */}
-      <div ref={sentinel} aria-hidden="true" className="absolute top-0 h-px w-full" />
-
+      {/*
+       * No header on the first screen. The wordmark is the name and the hero
+       * carries both actions, so a nav bar above them would say everything
+       * twice. Once the wordmark has scrolled away the header slides in and
+       * takes the name over as a link. `scrolled` flips when the sentinel
+       * under the wordmark leaves the top of the viewport.
+       *
+       * `inert` while hidden: an invisible header whose links still take
+       * focus would be a keyboard trap nobody can see.
+       */}
       <header
-        data-nav=""
-        className={`sticky top-0 z-40 border-b backdrop-blur-xl ${
-          scrolled
-            ? 'border-line/70 bg-surface/80 shadow-lg shadow-black/20'
-            : 'border-transparent bg-transparent shadow-none'
-        }`}
+        data-landing-nav=""
+        data-shown={scrolled}
+        inert={!scrolled}
+        className="fixed inset-x-0 top-0 z-40 border-b border-line/70 bg-surface/80 shadow-lg shadow-black/20 backdrop-blur-xl"
       >
-        <nav className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-6">
+        <nav className="mx-auto flex h-16 max-w-[1400px] items-center gap-6 px-[clamp(1rem,3vw,2.5rem)]">
           <Link
             href="/"
             className="text-content transition-opacity duration-[var(--micro)] ease-[var(--ease)] hover:opacity-80"
@@ -99,7 +103,7 @@ export default function Home() {
       </header>
 
       <main>
-        <Hero href={href} label={label} />
+        <Hero href={href} label={label} sentinel={sentinel} />
         <OfflineStory />
         <Stack />
         <Documents />

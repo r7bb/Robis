@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { type RefObject, useRef, useState } from 'react';
 import { FILLED, OUTLINED } from './band.tsx';
 import { Field } from './field.tsx';
 import { Counter, Reveal } from './motion.tsx';
@@ -29,28 +29,44 @@ const HERO_PROOF = [
   { value: 5.8, decimals: 1, suffix: 'ms', label: 'to reach everyone' },
 ] as const;
 
-export function Hero({ href, label }: { href: string; label: string }) {
+export function Hero({
+  href,
+  label,
+  sentinel,
+}: {
+  href: string;
+  label: string;
+  /** Placed under the wordmark; the page shows its header once this scrolls away. */
+  sentinel: RefObject<HTMLDivElement | null>;
+}) {
   const [offline, setOffline] = useState(false);
   const [pulse, setPulse] = useState(0);
+  // Keystrokes go straight to the field through a ref; a state update per
+  // keystroke would re-render the whole hero every few dozen milliseconds.
+  const lastKeystroke = useRef(Number.NEGATIVE_INFINITY);
 
   return (
     <section className="relative isolate overflow-hidden bg-[#08090c]">
       {/* The field covers the first screen only, so the plane sits behind
           the grid and the demo rather than far down behind the screenshot. */}
       <div aria-hidden="true" className="absolute inset-x-0 top-0 -z-10 h-[min(100dvh,62rem)]">
-        <Field offline={offline} pulse={pulse} />
+        <Field offline={offline} pulse={pulse} activityAt={lastKeystroke} />
         {/* Darkens the top for the wordmark and fades only the last strip
             into the band, so the near edge of the plane stays visible. */}
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgb(8_9_12/0.55),transparent_32%,transparent_82%,#08090c)]" />
       </div>
 
       <div className="mx-auto w-full max-w-[1400px] px-[clamp(1rem,3vw,2.5rem)]">
-        <Reveal className="pt-[clamp(0.25rem,1.5vw,1.25rem)]">
-          <Wordmark />
-        </Reveal>
+        {/* No header above it on arrival, so the name gets the top of the
+            screen to itself. The letters run their own entrance. */}
+        <Wordmark className="pb-[clamp(0.4rem,1.2vw,0.9rem)] pt-[clamp(1.5rem,4vw,3.5rem)]" />
+        <div ref={sentinel} aria-hidden="true" className="h-px" />
 
-        <div className="grid border-t border-white/10 lg:grid-cols-12">
-          <div className="py-[clamp(2rem,5vh,3.5rem)] lg:col-span-5 lg:border-r lg:border-white/10 lg:pr-10">
+        {/* One horizontal rule under the name and none between the columns:
+            the gap does that job, and a vertical line cut the demo off from
+            the claim it is there to prove. */}
+        <div className="grid border-t border-white/10 lg:grid-cols-12 lg:gap-x-12">
+          <div className="py-[clamp(2rem,5vh,3.5rem)] lg:col-span-5">
             <Reveal delay={60}>
               {/*
                * The proposition, not the product name. The name is already
@@ -79,12 +95,15 @@ export function Hero({ href, label }: { href: string; label: string }) {
             </Reveal>
           </div>
 
-          <div className="border-t border-white/10 py-[clamp(2rem,5vh,3.5rem)] lg:col-span-7 lg:border-t-0 lg:pl-10">
+          <div className="border-t border-white/10 py-[clamp(2rem,5vh,3.5rem)] lg:col-span-7 lg:border-t-0">
             <Reveal delay={240}>
               <SyncDemo
                 onNetwork={({ online, merged }) => {
                   setOffline(!online);
                   if (online && merged > 0) setPulse((count) => count + 1);
+                }}
+                onActivity={() => {
+                  lastKeystroke.current = performance.now();
                 }}
               />
             </Reveal>

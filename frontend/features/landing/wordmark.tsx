@@ -1,33 +1,40 @@
 /**
  * The name, set edge to edge.
  *
- * SVG text with `textLength` rather than a font size guessed per
- * breakpoint: the browser spaces the five letters to fill the width exactly,
- * at every viewport, and the `viewBox` scales the height with it. CSS has no
- * way to fit a line of type to its container without measuring it in
- * JavaScript, which would flash at the wrong size first.
+ * Five letters sized in container-query units and spread with
+ * `justify-between`, so the word spans its column at every width without a
+ * font size guessed per breakpoint, and without measuring in JavaScript. It
+ * was a single SVG `<text>` before, which fitted the width just as well but
+ * left nothing to hold on to: each letter is its own element now, so each
+ * can rise in on load and answer the cursor.
  *
- * Decorative to assistive technology: the page's real heading is the
- * proposition underneath, and "Robis" is already in the header logo.
+ * The motion is CSS only (see `[data-wordmark]` in `globals.css`): a
+ * staggered rise on arrival, a lift under the pointer, and a scroll-driven
+ * shrink as it leaves the top of the screen, where the header takes over
+ * the name. All of it is off under `prefers-reduced-motion`.
+ *
+ * Decorative to assistive technology: the header carries the name as a
+ * link, and the page's heading is the proposition underneath.
  */
+
+import type { CSSProperties } from 'react';
+
+const LETTERS = ['R', 'O', 'B', 'I', 'S'] as const;
+
 export function Wordmark({ className = '' }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 1000 172"
-      aria-hidden="true"
-      focusable="false"
-      className={`block h-auto w-full select-none text-content ${className}`}
-    >
-      <text
-        x="0"
-        y="166"
-        textLength="1000"
-        lengthAdjust="spacing"
-        fill="currentColor"
-        style={{ fontSize: 228, fontWeight: 800, letterSpacing: '-0.02em' }}
+    <div className={`[container-type:inline-size] ${className}`}>
+      <div
+        data-wordmark=""
+        aria-hidden="true"
+        className="flex select-none justify-between text-[17cqw] font-extrabold leading-[0.78] tracking-[-0.02em] text-content"
       >
-        ROBIS
-      </text>
-    </svg>
+        {LETTERS.map((letter, index) => (
+          <span key={letter} data-letter="" style={{ '--letter-index': index } as CSSProperties}>
+            {letter}
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }

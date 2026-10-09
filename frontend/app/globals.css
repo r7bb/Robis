@@ -165,3 +165,85 @@ body {
     transition: none;
   }
 }
+
+/*
+ * The landing wordmark.
+ *
+ * Three moments, all on the compositor (transform and opacity only):
+ *
+ * - Arrival. The letters rise in one after another. `backwards`, not
+ *   `both`: a fill that outlived the animation would pin `transform` and
+ *   stop the hover below from moving anything.
+ * - Hover. A letter lifts and takes the accent, so the name answers the
+ *   cursor the way the field behind it does.
+ * - Leaving. As the word scrolls off the top it shrinks towards the corner
+ *   where the header's own "Robis" appears, so the name reads as handing
+ *   over rather than vanishing. Scroll-driven, so no script runs per frame;
+ *   browsers without `animation-timeline` keep it still.
+ */
+[data-wordmark] [data-letter] {
+  display: inline-block;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-wordmark] [data-letter] {
+    animation: letter-rise 900ms var(--ease) backwards;
+    animation-delay: calc(var(--letter-index) * 70ms + 60ms);
+    transition:
+      transform var(--quick) var(--ease),
+      color var(--quick) var(--ease);
+  }
+
+  [data-wordmark] [data-letter]:hover {
+    transform: translateY(-7%);
+    color: rgb(var(--accent-soft));
+  }
+
+  @supports (animation-timeline: view()) {
+    [data-wordmark] {
+      transform-origin: left top;
+      animation: wordmark-exit linear both;
+      animation-timeline: view();
+      animation-range: exit 0% exit 100%;
+    }
+  }
+}
+
+@keyframes letter-rise {
+  from {
+    opacity: 0;
+    transform: translateY(22%);
+  }
+}
+
+@keyframes wordmark-exit {
+  to {
+    opacity: 0.1;
+    transform: scale(0.82) translateY(-10%);
+  }
+}
+
+/*
+ * The landing header, hidden until the wordmark has scrolled away.
+ *
+ * It slides down from above rather than fading in place, so it reads as
+ * arriving to take the name over. `inert` on the element (set in React)
+ * keeps its links out of the tab order and the accessibility tree while it
+ * is hidden; this only moves it.
+ */
+[data-landing-nav] {
+  transition:
+    transform var(--entrance) var(--ease),
+    opacity var(--entrance) var(--ease);
+}
+
+[data-landing-nav][data-shown="false"] {
+  transform: translateY(-100%);
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-landing-nav] {
+    transition: none;
+  }
+}

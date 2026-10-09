@@ -1,7 +1,14 @@
 'use client';
 
 import { diffEdit } from '@robis/shared';
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { type Side, SyncPair, shiftCaret } from './sync-pair.ts';
 
 /**
@@ -20,6 +27,18 @@ const SEED = `Launch checklist
 /** How long the "merged" confirmation stays up. */
 const MERGED_NOTICE_MS = 2600;
 
+/**
+ * What Mia types on her own, once, shortly after the page loads.
+ *
+ * A demo that sits still until someone touches it reads as a picture of a
+ * demo. Watching a line appear in your pane as she types it is the whole
+ * claim in two seconds. It stops for good the moment the visitor types or
+ * flips the switch, because from then on the demo is theirs.
+ */
+const MIA_LINE = '\n- Mia: reconnect toast reads well';
+const MIA_START_MS = 1600;
+const MIA_KEY_MS = 55;
+
 const PEOPLE: Record<Side, { name: string; initials: string; tint: string }> = {
   you: { name: 'You', initials: 'YO', tint: 'bg-accent text-accent-contrast' },
   mia: { name: 'Mia', initials: 'ML', tint: 'bg-emerald-500 text-emerald-950' },
@@ -27,7 +46,14 @@ const PEOPLE: Record<Side, { name: string; initials: string; tint: string }> = {
 
 export type NetworkEvent = { online: boolean; merged: number };
 
-export function SyncDemo({ onNetwork }: { onNetwork?: (event: NetworkEvent) => void }) {
+export function SyncDemo({
+  onNetwork,
+  onActivity,
+}: {
+  onNetwork?: (event: NetworkEvent) => void;
+  /** Called on every keystroke, from either side. */
+  onActivity?: () => void;
+}) {
   // One pair per mount, left to the garbage collector when the page goes. A
   // module-level pair would survive client navigation and keep the last
   // visitor's edits. There is nothing to tear down: two in-memory documents
@@ -43,6 +69,44 @@ export function SyncDemo({ onNetwork }: { onNetwork?: (event: NetworkEvent) => v
   );
 
   const [mergedNotice, setMergedNotice] = useState<number | null>(null);
+  const [miaTyping, setMiaTyping] = useState(false);
+
+  // The latest callback, so the autoplay timer never calls a stale one.
+  const activity = useRef(onActivity);
+  // Updated after render, not during it: a render React discards must not
+  // leave the ref pointing at its callback.
+  useLayoutEffect(() => {
+    activity.current = onActivity;
+  });
+  /** Set by any visitor input; ends the autoplay for good. */
+  const touched = useRef(false);
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    let typed = 0;
+    let timer = setTimeout(function tick() {
+      if (touched.current || typed >= MIA_LINE.length) {
+        setMiaTyping(false);
+        return;
+      }
+      setMiaTyping(true);
+      typed += 1;
+      pair.edit('mia', pair.text('mia') + MIA_LINE.slice(typed - 1, typed));
+      activity.current?.();
+      timer = setTimeout(tick, MIA_KEY_MS);
+    }, MIA_START_MS);
+
+    return () => {
+      clearTimeout(timer);
+      setMiaTyping(false);
+    };
+  }, [pair]);
+
+  const onEdit = useCallback(() => {
+    touched.current = true;
+    activity.current?.();
+  }, []);
 
   useEffect(() => {
     if (mergedNotice === null) return;
@@ -51,6 +115,7 @@ export function SyncDemo({ onNetwork }: { onNetwork?: (event: NetworkEvent) => v
   }, [mergedNotice]);
 
   function toggle() {
+    touched.current = true;
     const next = !online;
     const { merged } = pair.setOnline(next);
     // Going offline again retires the "back online" notice at once rather
@@ -88,8 +153,8 @@ export function SyncDemo({ onNetwork }: { onNetwork?: (event: NetworkEvent) => v
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <Pane pair={pair} side="you" online={online} />
-        <Pane pair={pair} side="mia" online={online} />
+        <Pane pair={pair} side="you" online={online} onEdit={onEdit} />
+        <Pane pair={pair} side="mia" online={online} onEdit={onEdit} typing={miaTyping} />
       </div>
 
       {/* A minimum, not a fixed height: on a narrow phone the longer
@@ -112,7 +177,20 @@ export function SyncDemo({ onNetwork }: { onNetwork?: (event: NetworkEvent) => v
   );
 }
 
-function Pane({ pair, side, online }: { pair: SyncPair; side: Side; online: boolean }) {
+function Pane({
+  pair,
+  side,
+  online,
+  onEdit,
+  typing = false,
+}: {
+  pair: SyncPair;
+  side: Side;
+  online: boolean;
+  onEdit: () => void;
+  /** Shown while this side is typing on its own. */
+  typing?: boolean;
+}) {
   const field = useRef<HTMLTextAreaElement>(null);
   const person = PEOPLE[side];
 
@@ -158,7 +236,13 @@ function Pane({ pair, side, online }: { pair: SyncPair; side: Side; online: bool
         </span>
         <span className="text-content">{person.name}</span>
         <span className="ml-auto tabular-nums text-faint">
-          {online ? 'synced' : waiting === 0 ? 'offline' : `${waiting} waiting`}
+          {typing
+            ? 'typing…'
+            : online
+              ? 'synced'
+              : waiting === 0
+                ? 'offline'
+                : `${waiting} waiting`}
         </span>
       </span>
 
@@ -173,7 +257,10 @@ function Pane({ pair, side, online }: { pair: SyncPair; side: Side; online: bool
         defaultValue={pair.text(side)}
         spellCheck={false}
         aria-label={`${person.name}'s copy of the shared note`}
-        onInput={(event) => pair.edit(side, event.currentTarget.value)}
+        onInput={(event) => {
+          onEdit();
+          pair.edit(side, event.currentTarget.value);
+        }}
         // 16px on a phone: iOS Safari zooms the page into any field smaller
         // than that on focus, which throws the whole layout sideways.
         className="resize-none bg-transparent px-3 py-2.5 font-mono text-base leading-relaxed text-content outline-none sm:min-h-[10.5rem] sm:text-[13px]"
