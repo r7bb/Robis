@@ -87,9 +87,19 @@ export function SayIt() {
           this plainly, and a name with a reason behind it is easier to
           remember than one chosen because the domain was free.
         */}
-        <p className="mx-auto mt-8 max-w-[42ch] text-sm leading-relaxed text-faint">
-          <span className="text-muted">Robis</span> — said{' '}
-          <span className="text-muted">ROH-biss</span>. Built by, and named for, Rohit Biju.
+        {/* The name never breaks across lines: "Rohit" on one line and
+            "Biju." alone on the next read as two people. Each sentence is
+            kept whole too, so on a phone the break falls between them. */}
+        <p className="mx-auto mt-8 max-w-[60ch] text-balance text-sm leading-relaxed text-faint">
+          <span className="whitespace-nowrap">
+            <span translate="no" className="text-muted">
+              Robis
+            </span>
+            , said <span className="text-muted">ROH-biss</span>.
+          </span>{' '}
+          <span className="whitespace-nowrap">
+            Built by, and named for, <span className="text-muted">Rohit Biju</span>.
+          </span>
         </p>
       </Reveal>
     </Band>

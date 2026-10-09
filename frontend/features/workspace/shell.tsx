@@ -37,24 +37,45 @@ function TopBar({
   userId: string | null;
 }) {
   return (
-    <header className="flex shrink-0 items-center gap-4 border-b border-line bg-raised px-4 py-2">
-      <nav className="flex min-w-0 items-center gap-2 text-sm">
+    /*
+     * Three columns with equal outer tracks, so the search box sits on the
+     * true centre of the window whatever the breadcrumb and the right-hand
+     * cluster measure. With `ml-auto` it was pushed against the presence
+     * avatars and its placeholder was cut off mid-word.
+     *
+     * Below `md` the search box drops to its own full-width row instead of
+     * disappearing: on a phone it is the fastest way to anything that is not
+     * in the channel list.
+     */
+    <header className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 border-b border-line bg-raised px-4 py-2 md:grid-cols-[minmax(0,1fr)_minmax(16rem,26rem)_minmax(0,1fr)] xl:grid-cols-[minmax(0,1fr)_minmax(18rem,34rem)_minmax(0,1fr)]">
+      {/* Every cell is placed explicitly. Left to auto-placement, the search
+          box (the one item with a fixed row) claims the first column. */}
+      <nav className="col-start-1 row-start-1 flex min-w-0 items-center gap-2 text-sm">
+        {/* On a phone the word "Workspaces" left the workspace's own name
+            one letter wide, so it shrinks to a back arrow there. */}
         <Link href="/workspaces" className="shrink-0 text-faint hover:text-muted">
-          Workspaces
+          <span aria-hidden="true" className="sm:hidden">
+            ‹
+          </span>
+          {/* The same word for everyone: hidden visually on a phone, still
+              read aloud, so speech and screen-reader users hear the label a
+              sighted user sees from `sm` up. */}
+          <span className="sr-only sm:not-sr-only">Workspaces</span>
         </Link>
-        <span className="text-faint">/</span>
+        <span className="hidden text-faint sm:inline">/</span>
         <span className="truncate font-medium text-content">{workspaceName}</span>
         {role ? <RoleBadge role={role} /> : null}
       </nav>
 
-      <div className="ml-auto flex min-w-0 items-center gap-3">
-        {/* Hidden rather than wrapped on a narrow screen: the breadcrumb and
-            presence matter more than search at that width. */}
-        <div className="hidden w-64 md:block">
-          <SearchBox workspaceId={workspaceId} />
-        </div>
+      <div className="col-span-2 col-start-1 row-start-2 md:col-span-1 md:col-start-2 md:row-start-1">
+        <SearchBox workspaceId={workspaceId} />
+      </div>
 
-        <PresenceBar users={presence} state={realtimeState} />
+      <div className="col-start-2 row-start-1 flex min-w-0 items-center justify-end gap-3 md:col-start-3">
+        {/* You are already the account avatar beside it. Listing yourself in
+            the presence row as well put the same initials in the header
+            twice; the count still includes you. */}
+        <PresenceBar users={presence} state={realtimeState} excludeUserId={userId} />
         <NotificationBell />
 
         <Link
@@ -112,6 +133,50 @@ function TeamRoster({ members, onlineIds }: { members: Member[]; onlineIds: Set<
         })}
       </ul>
     </section>
+  );
+}
+
+/**
+ * The rooms, as one scrollable row, for screens too narrow for the sidebar.
+ *
+ * Only switching lives here. Creating a channel stays in the sidebar, which
+ * is a rare action and not worth a second form on a phone.
+ */
+function RoomStrip({
+  rooms,
+  activeId,
+  onSelect,
+}: {
+  rooms: { id: string; name: string }[];
+  activeId: string | null;
+  onSelect: (id: string) => void;
+}) {
+  if (rooms.length === 0) return null;
+
+  return (
+    <nav
+      aria-label="Channels"
+      className="flex shrink-0 gap-1.5 overflow-x-auto border-b border-line bg-raised px-3 py-2 md:hidden"
+    >
+      {rooms.map((room) => (
+        <button
+          key={room.id}
+          type="button"
+          onClick={() => onSelect(room.id)}
+          aria-pressed={room.id === activeId}
+          className={`shrink-0 rounded-full px-3 py-1 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft ${
+            room.id === activeId
+              ? 'bg-accent/15 text-content'
+              : 'text-faint hover:bg-surface hover:text-muted'
+          }`}
+        >
+          <span aria-hidden="true" className="text-faint">
+            #
+          </span>
+          {room.name}
+        </button>
+      ))}
+    </nav>
   );
 }
 
@@ -201,7 +266,10 @@ export function WorkspaceShell({ workspaceId }: { workspaceId: string }) {
       />
 
       <div className="flex min-h-0 flex-1">
-        <nav className="flex w-56 shrink-0 flex-col gap-4 overflow-y-auto border-r border-line bg-raised p-3">
+        {/* A 224px sidebar on a 390px phone left the conversation about 160px,
+            which wrapped messages one letter per line. Below `md` the rooms
+            move into a strip above the chat instead (`RoomStrip`). */}
+        <nav className="hidden w-56 shrink-0 flex-col gap-4 overflow-y-auto border-r border-line bg-raised p-3 md:flex">
           <ChannelList
             channels={rooms}
             activeId={channelId}
@@ -243,12 +311,15 @@ export function WorkspaceShell({ workspaceId }: { workspaceId: string }) {
         </nav>
 
         {role ? (
-          <ChatView
-            workspaceId={workspaceId}
-            channel={activeChannel}
-            role={role}
-            currentUserId={currentUserId}
-          />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <RoomStrip rooms={rooms} activeId={channelId} onSelect={setChannelId} />
+            <ChatView
+              workspaceId={workspaceId}
+              channel={activeChannel}
+              role={role}
+              currentUserId={currentUserId}
+            />
+          </div>
         ) : (
           <div className="flex-1" />
         )}

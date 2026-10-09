@@ -22,14 +22,25 @@ export function PresenceBar({
   state,
   /** When set, users reporting this location get a "here" ring. */
   here,
+  /** Left out of the avatars, but still counted, when shown elsewhere already. */
+  excludeUserId,
 }: {
   users: PresenceUser[];
   state: ConnectionState;
   here?: string | null;
+  excludeUserId?: string | null;
 }) {
+  const shown = excludeUserId ? users.filter((user) => user.userId !== excludeUserId) : users;
+
+  // With yourself left out and nobody else here, "1 online" beside no
+  // avatars reads like a glitch. Say what it means.
+  const alone = Boolean(excludeUserId) && users.length > 0 && shown.length === 0;
+
   const label =
     state === 'live'
-      ? `${users.length} online`
+      ? alone
+        ? 'Just you'
+        : `${users.length} online`
       : state === 'connecting'
         ? 'Connecting…'
         : 'Reconnecting…';
@@ -37,7 +48,7 @@ export function PresenceBar({
   return (
     <div className="flex items-center gap-3">
       <div className="flex -space-x-2">
-        {users.map((user) => (
+        {shown.map((user) => (
           // `Avatar` renders initials and is `aria-hidden`, so the name is
           // carried by the wrapper: a tooltip for a mouse, and text for a
           // screen reader, which a bare `title` would not reliably give.

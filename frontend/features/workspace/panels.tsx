@@ -111,15 +111,16 @@ export function ProjectsPanel({ workspaceId, role }: { workspaceId: string; role
           {rows.map((project) => (
             <li
               key={project.id}
-              className="group relative rounded-lg border border-line bg-surface transition-colors hover:border-faint"
+              className="group flex items-center rounded-lg border border-line bg-surface transition-colors hover:border-faint"
             >
               {/* The delete control is a sibling of the link, not a child:
                   a button inside an anchor is invalid HTML, and intercepting
                   the click to work around it is worse than laying it out
-                  correctly. */}
+                  correctly. A flex row rather than an absolute corner, so it
+                  sits centred beside the text instead of under the key. */}
               <Link
                 href={`/workspaces/${workspaceId}/projects/${project.id}`}
-                className="block px-3 py-2"
+                className="block min-w-0 flex-1 px-3 py-2"
               >
                 <span className="flex items-baseline justify-between gap-2">
                   <span className="truncate text-sm font-medium text-content">{project.name}</span>
@@ -137,7 +138,7 @@ export function ProjectsPanel({ workspaceId, role }: { workspaceId: string; role
                 name={project.name}
                 cascade="Every issue and comment in this project is deleted with it."
                 onConfirm={() => remove.mutateAsync(project.id)}
-                className="absolute bottom-1.5 right-1.5"
+                className="mr-1.5 shrink-0"
               />
             </li>
           ))}
