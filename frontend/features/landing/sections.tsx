@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { BANDS, Band, FILLED, Headline, OUTLINED, Shot, Subhead } from './band.tsx';
-import { Counter, Reveal } from './motion.tsx';
+import { Reveal } from './motion.tsx';
 import { StackMarquee } from './stack.tsx';
 import { useActiveStep } from './use-scroll.ts';
 
@@ -25,105 +25,6 @@ import { useActiveStep } from './use-scroll.ts';
  */
 
 export const REPO = 'https://github.com/r7bb/Robis';
-
-/** Three measured figures, short enough to read in a glance. */
-const HERO_PROOF = [
-  { value: 6.4, decimals: 1, suffix: 'ms', label: 'to read a board' },
-  { value: 4400, decimals: 0, suffix: '', label: 'requests a second' },
-  { value: 5.8, decimals: 1, suffix: 'ms', label: 'to reach everyone' },
-] as const;
-
-export function Hero({ href, label }: { href: string; label: string }) {
-  return (
-    <Band tone="black" className="relative">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-[34rem] bg-[radial-gradient(55%_55%_at_50%_0%,rgb(var(--accent)/0.3),transparent_72%)]"
-      />
-
-      <div className="relative">
-        <Reveal>
-          {/*
-           * The proposition, not the product name. An earlier version made
-           * this "Robis" with "Never offline." underneath, which works for
-           * Apple because everyone already knows what an iPhone is. Nobody
-           * knows what Robis is, so the first line has to say.
-           */}
-          <h1 className="mx-auto max-w-[18ch] text-balance text-[clamp(2.5rem,5.5vw,5rem)] font-semibold leading-[1.04] tracking-[-0.035em] text-content">
-            Never lose a change.
-          </h1>
-        </Reveal>
-
-        <Reveal delay={70}>
-          <Subhead>
-            Issues, documents, chat and meetings that keep working when the network does not.
-          </Subhead>
-        </Reveal>
-
-        <Reveal delay={140}>
-          <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
-            <Link href={href} className={FILLED}>
-              {label}
-            </Link>
-            <Link href="/how-it-works" className={OUTLINED}>
-              How it works
-            </Link>
-          </div>
-        </Reveal>
-
-        {/*
-         * The board, not the chat. The chat screenshot is mostly an empty
-         * message pane, which at hero size reads as an unfinished product;
-         * the board is dense and colourful and shows the work.
-         */}
-        {/*
-         * The first screen has to do the selling. Headline, subhead and
-         * buttons ended at 394px of a 758px viewport, and the rest of the
-         * fold was the top 44% of a screenshot, which reads as a cropped
-         * image rather than a deliberate peek. These are the most
-         * convincing things Robis has and they are measured, so they go
-         * above the fold and the screenshot starts under it on purpose.
-         */}
-        <Reveal delay={200}>
-          <dl className="mx-auto mt-10 flex max-w-2xl flex-wrap items-baseline justify-center gap-x-10 gap-y-3">
-            {HERO_PROOF.map((item) => (
-              <div key={item.label} className="flex items-baseline gap-2">
-                <dt className="sr-only">{item.label}</dt>
-                <dd className="font-mono text-lg font-semibold text-amber-200">
-                  <Counter value={item.value} decimals={item.decimals} suffix={item.suffix} />
-                </dd>
-                <dd className="text-sm text-muted">{item.label}</dd>
-              </div>
-            ))}
-          </dl>
-          <p className="mt-3 text-xs text-faint">Measured by the benchmark in this repository.</p>
-        </Reveal>
-
-        {/*
-         * Cropped, not scaled. The board screenshot is 16:10 and its lower
-         * third is empty column space, which at hero size reads as a
-         * product with nothing in it. A 2:1 window with `object-top` keeps
-         * the columns and their cards and drops the tail, so what is shown
-         * is deliberate rather than whatever the capture happened to
-         * include.
-         */}
-        <Reveal delay={260} className="mt-[clamp(2.5rem,6vh,4.5rem)]">
-          <div className="relative mx-auto aspect-[2/1] w-full overflow-hidden rounded-xl border border-white/10 shadow-2xl shadow-black/60">
-            <Image
-              src="/shots/board.png"
-              alt="The Robis issue board, with a column per status and coloured priority badges."
-              width={1440}
-              height={900}
-              priority
-              sizes="(max-width: 1024px) 100vw, 1100px"
-              className="absolute inset-0 h-full w-full object-cover object-top"
-            />
-          </div>
-        </Reveal>
-      </div>
-    </Band>
-  );
-}
 
 const OFFLINE_STEPS = [
   {

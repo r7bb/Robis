@@ -204,6 +204,14 @@ describe('no hardcoded colours outside the palette', () => {
      * every screenshot rather than against a workspace's surface.
      */
     'frontend/features/landing/band.tsx',
+    /*
+     * The hero and its live demo, moved out of `sections.tsx` and allowed
+     * for the same reason: they sit on the landing page's fixed near-black,
+     * and their hairlines and the switch's white knob have to read against
+     * the moving field behind them, not against a workspace theme.
+     */
+    'frontend/features/landing/hero.tsx',
+    'frontend/features/landing/sync-demo.tsx',
   ]);
 
   function sourceFiles(): string[] {

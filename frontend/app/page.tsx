@@ -1,17 +1,18 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { GeistSans } from 'geist/font/sans';
 import Link from 'next/link';
 import { Logo } from '../components/brand/logo.tsx';
 import { Faq } from '../features/landing/faq.tsx';
 import { SiteFooter } from '../features/landing/footer.tsx';
+import { Hero } from '../features/landing/hero.tsx';
 import { SayIt } from '../features/landing/say-it.tsx';
 import {
   Capabilities,
   Closing,
   Decisions,
   Documents,
-  Hero,
   OfflineStory,
   REPO,
   Stack,
@@ -47,7 +48,10 @@ export default function Home() {
   const label = signedIn ? 'Open your workspaces' : 'Get started';
 
   return (
-    <div className="min-h-[100dvh] bg-surface">
+    // Geist on the landing page only. The wordmark needs a heavy grotesk to
+    // read as deliberate, and the system stack renders it differently on
+    // every OS. The signed-in app keeps the system font it was designed in.
+    <div className={`min-h-[100dvh] bg-surface ${GeistSans.className}`}>
       {/* Watched instead of the scroll position: this element leaving the
           viewport is exactly the question the nav needs answered. */}
       <div ref={sentinel} aria-hidden="true" className="absolute top-0 h-px w-full" />
