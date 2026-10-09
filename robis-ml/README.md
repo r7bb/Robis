@@ -12,7 +12,7 @@ cd robis-ml
 uv venv --python 3.11 .venv
 uv pip install --python .venv/bin/python -e ".[dev]"
 
-.venv/bin/python -m pytest                    # 86 tests
+.venv/bin/python -m pytest                    # 95 tests
 
 # local only; anywhere else, set ROBIS_ML_TOKEN instead
 ROBIS_ML_ALLOW_ANONYMOUS=1 .venv/bin/python -m uvicorn robis_ml.service:app --port 8000
@@ -152,6 +152,78 @@ suite fails, so the constant cannot quietly go back to being a guess. The
 same command will judge an embedding model, and lexical-gap recall is the
 number to beat.
 
+### Character n-grams do not close the gap
+
+```bash
+.venv/bin/python -m robis_ml.duplicate_eval --compare
+```
+
+The roadmap set the question before anything was run: adopt a representation
+only if lexical-gap recall rises *without* hard-negative false alarms rising
+with it. Five representations were fixed in advance, in `REPRESENTATIONS`:
+the current word TF-IDF, character n-grams (`char_wb`, 3–5 and 2–4), and each
+of those combined with the word features. Each one is held to its own
+best-F1 threshold on dev.
+
+| Representation | Gap recall, dev | Gap recall, test\* | Hard-negative false alarms, dev / test\* |
+| --- | --- | --- | --- |
+| word 1–2 (current) | 0 / 7 | 0 / 7 | 4 / 11, 4 / 11 |
+| char_wb 3–5 | 0 / 7 | 0 / 7 | 2 / 11, 2 / 11 |
+| char_wb 2–4 | **3 / 7** | 0 / 7 | 5 / 11, 6 / 11 |
+| word + char_wb 3–5 | 0 / 7 | 0 / 7 | 4 / 11, 2 / 11 |
+| word + char_wb 2–4 | 0 / 7 | 0 / 7 | 4 / 11, 3 / 11 |
+
+\* The test half was read when the threshold above was reported, so it is no
+longer untouched. Here it shows only whether a dev difference survives. It
+cannot confirm one.
+
+**None of them meets the rule, so production stays on word TF-IDF.** The one
+dev gain was `char_wb 2-4` finding 3 gaps. Hard-negative false alarms rose
+with it, so it fails the rule on dev alone, before test is consulted.
+
+Two caveats on how this was run:
+
+- **Thresholds were picked by F1, not by the rule.** Each representation is
+  held to its own best-F1 threshold on dev, and the adopt-or-not rule is then
+  read off the result at that threshold.
+- **Five representations against one small set has a multiplicity cost.**
+  The test half had also been seen once already.
+
+**One thing the set cannot answer.** Sorting the 14 gap queries by hand,
+after the fact:
+
+- **4 are word forms of the target's words.** "authentication" against
+  "auth", "paging" against "pagination", "authenticator" against
+  "authentication", "attachment" against "attachments". By the set's own
+  definition ("almost no shared content words"), these are borderline, and
+  arguably paraphrases.
+- **The other 10 are synonyms.** "night" against "dark", "throttle" against
+  "rate limit", "RAM" against "memory", "GMT" against "timezone", and so on.
+  These share no characters.
+
+All 4 word-form queries happened to land in the dev half. That imbalance was
+not noticed when the set was written, and it may explain on its own why the
+dev gain vanished on test, since test has no word-form gap to find. The 3 dev
+hits were among those 4. That fits sub-word pieces bridging word forms, but
+with 3 queries it is a hypothesis, not a mechanism. Overlap at a loose 0.40
+threshold would explain it too.
+
+What this does **not** show:
+
+- That character n-grams fail in general. The claim is only about this small,
+  author-written set, whose 40-issue corpus gives IDF weights that will not
+  carry over to a real workspace.
+- Anything about stemming. It was not tried, because it needs a new
+  dependency, and the reading above predicts it could help with word forms.
+- That embeddings would fix the synonym kind. That is the next experiment,
+  not a finding.
+
+**A side result, not adopted.** `char_wb 3-5` alone had fewer hard-negative
+false alarms than the current model: 2 of 11 against 4 of 11, on both halves.
+That is two queries, with heavily overlapping intervals. The combined
+variants do not show it on dev. It was not the question asked, so it is an
+unconfirmed candidate to re-test on a set somebody else writes, not a change.
+
 ## Priority triage
 
 Multinomial logistic regression over the same features. Linear and
@@ -288,7 +360,7 @@ robis_ml/
 tests/
   test_model.py          17 tests, in-memory, no database
   test_service.py        18 tests: auth, tenant isolation, cache
-  test_duplicate_eval.py 51 tests: the metrics, the set's integrity, the threshold
+  test_duplicate_eval.py 60 tests: metrics, set integrity, threshold, comparison
 ```
 
 `compose_text` is shared by the corpus and the query on purpose. They were two

@@ -15,7 +15,7 @@ Written to be checkable. Every row names a file you can open.
 | Services | 4 (web, API, realtime gateway, worker) plus an optional ML service |
 | Database tables | 18 |
 | HTTP endpoints | 60+ |
-| Tests | 400 TypeScript, 86 Python |
+| Tests | 400 TypeScript, 95 Python |
 | Screenshots | 28, all captured from the running app |
 | Measured throughput | ~4,400 req/s, zero errors |
 

@@ -23,7 +23,9 @@ and ``evaluate.py`` exists so that comparison can be made on numbers.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any, Protocol
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
@@ -116,8 +118,16 @@ class Similar:
     score: float
 
 
-def _vectorizer() -> TfidfVectorizer:
-    """Shared text representation.
+class TextVectorizer(Protocol):
+    """Anything that turns documents into rows: TF-IDF, a union of several."""
+
+    def fit_transform(self, raw_documents: list[str]) -> Any: ...
+
+    def transform(self, raw_documents: list[str]) -> Any: ...
+
+
+def word_vectorizer() -> TfidfVectorizer:
+    """Shared text representation, and the one both models use in production.
 
     ``sublinear_tf`` because a word repeated nine times in a bug report is
     not nine times as important as one mentioned once. ``min_df=1`` because
@@ -142,9 +152,19 @@ class DuplicateFinder:
     would mean neither worked until both could.
     """
 
-    def __init__(self, issues: list[Issue]) -> None:
+    def __init__(
+        self,
+        issues: list[Issue],
+        vectorizer: Callable[[], TextVectorizer] = word_vectorizer,
+    ) -> None:
+        """Index ``issues`` for nearest-neighbour search.
+
+        ``vectorizer`` exists so `duplicate_eval` can compare alternatives
+        through this class rather than a copy of it. Production never passes
+        one.
+        """
         self._issues = issues
-        self._vectorizer = _vectorizer()
+        self._vectorizer = vectorizer()
         self._matrix = self._fit(issues)
 
     def _fit(self, issues: list[Issue]):
@@ -159,8 +179,11 @@ class DuplicateFinder:
         if not issues:
             return None
 
+        # A list, not a generator: a vectorizer that reads its input more
+        # than once (a FeatureUnion does, once per branch) gets nothing on
+        # every pass after the first, and fits an index of zeros.
         try:
-            return self._vectorizer.fit_transform(i.text for i in issues)
+            return self._vectorizer.fit_transform([i.text for i in issues])
         except ValueError:
             return None
 
@@ -206,7 +229,7 @@ class TriageModel:
     """
 
     def __init__(self) -> None:
-        self._vectorizer = _vectorizer()
+        self._vectorizer = word_vectorizer()
         self._classifier: LogisticRegression | None = None
         self._trained_on = 0
 
@@ -239,7 +262,8 @@ class TriageModel:
             self._trained_on = len(labelled)
             return False
 
-        features = self._vectorizer.fit_transform(i.text for i in labelled)
+        # A list for the same reason as in `DuplicateFinder._fit`.
+        features = self._vectorizer.fit_transform([i.text for i in labelled])
         self._classifier = LogisticRegression(
             max_iter=1000,
             class_weight="balanced",

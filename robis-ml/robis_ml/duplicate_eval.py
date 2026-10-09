@@ -34,10 +34,13 @@ from __future__ import annotations
 import json
 import math
 import sys
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, NoReturn
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.pipeline import FeatureUnion
 
 from .model import (
     DEFAULT_DUPLICATE_THRESHOLD,
@@ -45,7 +48,9 @@ from .model import (
     DuplicateFinder,
     Issue,
     Similar,
+    TextVectorizer,
     compose_text,
+    word_vectorizer,
 )
 
 DEFAULT_SET = Path(__file__).parent / "datasets" / "duplicates.json"
@@ -74,10 +79,53 @@ API_MAX_SUGGESTIONS = 3
 DISPLAYED_LIMIT = min(API_MAX_SUGGESTIONS, DEFAULT_SIMILAR_LIMIT)
 
 #: The candidate thresholds, 0.10 to 0.60 in steps of 0.05.
-THRESHOLDS = tuple(round(0.10 + 0.05 * step, 2) for step in range(11))
+THRESHOLD_STEP = 0.05
+
+
+def _threshold_grid(low: float, high: float) -> tuple[float, ...]:
+    steps = round((high - low) / THRESHOLD_STEP)
+    return tuple(round(low + THRESHOLD_STEP * step, 2) for step in range(steps + 1))
+
+
+THRESHOLDS = _threshold_grid(0.10, 0.60)
 
 #: Two-sided 95%.
 Z_95 = 1.96
+
+
+def _char_vectorizer(low: int, high: int) -> TfidfVectorizer:
+    """Character n-grams inside word boundaries.
+
+    Shares sub-word pieces, so "pagination" and "paging" overlap where
+    whole-word TF-IDF sees two unrelated tokens.
+    """
+    return TfidfVectorizer(
+        lowercase=True,
+        analyzer="char_wb",
+        ngram_range=(low, high),
+        min_df=1,
+        sublinear_tf=True,
+    )
+
+
+#: The representations ``--compare`` measures, fixed before any of them was
+#: scored so the list cannot grow until one of them wins. The first is what
+#: production uses.
+REPRESENTATIONS: dict[str, Callable[[], TextVectorizer]] = {
+    "word 1-2 (current)": word_vectorizer,
+    "char_wb 3-5": lambda: _char_vectorizer(3, 5),
+    "char_wb 2-4": lambda: _char_vectorizer(2, 4),
+    "word + char_wb 3-5": lambda: FeatureUnion(
+        [("word", word_vectorizer()), ("char", _char_vectorizer(3, 5))]
+    ),
+    "word + char_wb 2-4": lambda: FeatureUnion(
+        [("word", word_vectorizer()), ("char", _char_vectorizer(2, 4))]
+    ),
+}
+
+#: Wider than `THRESHOLDS`, because character n-grams score systematically
+#: higher than whole words, and a grid tuned for words would cap them.
+COMPARISON_THRESHOLDS = _threshold_grid(0.10, 0.90)
 
 
 @dataclass(frozen=True)
@@ -227,9 +275,12 @@ def load_labelled_set(path: Path = DEFAULT_SET) -> LabelledSet:
     return LabelledSet(corpus=corpus, queries=queries)
 
 
-def score_queries(labelled: LabelledSet) -> list[Scored]:
+def score_queries(
+    labelled: LabelledSet,
+    vectorizer: Callable[[], TextVectorizer] = word_vectorizer,
+) -> list[Scored]:
     """Rank the whole corpus against every query, through the real model."""
-    finder = DuplicateFinder(list(labelled.corpus))
+    finder = DuplicateFinder(list(labelled.corpus), vectorizer=vectorizer)
     everything = len(labelled.corpus)
 
     return [
@@ -404,19 +455,64 @@ def evaluate(labelled: LabelledSet) -> int:
     return 0
 
 
+def _comparison_row(name: str, split: str, m: Metrics) -> str:
+    gap = m.recall_by_category.get("lexical_gap", (0, 0))
+    paraphrase = m.recall_by_category.get("paraphrase", (0, 0))
+    hard = m.false_alarms_by_category.get("hard_negative", (0, 0))
+    unrelated = m.false_alarms_by_category.get("unrelated", (0, 0))
+    precision = f"{m.precision:.2f}" if m.precision is not None else " n/a"
+    return (
+        f"  {name:<20} {split:<5} {m.threshold:.2f}   {precision}  {m.recall:.2f}  {m.f1:.2f}"
+        f"   {paraphrase[0]:>2}/{paraphrase[1]:<2}  {gap[0]:>2}/{gap[1]:<2}"
+        f"     {hard[0]:>2}/{hard[1]:<2}     {unrelated[0]:>2}/{unrelated[1]}"
+    )
+
+
+def compare(labelled: LabelledSet) -> int:
+    """Every representation in `REPRESENTATIONS`, each at its own dev-best threshold.
+
+    The test rows are labelled exploratory. The test half was read when the
+    current threshold was reported, so it can no longer act as an untouched
+    holdout for choosing between representations. It shows whether a dev
+    difference survives at all, nothing stronger.
+    """
+    print("representation        split  thr    P     R     F1    para   gap   hard FA  unrel FA")
+    for name, factory in REPRESENTATIONS.items():
+        results = score_queries(labelled, vectorizer=factory)
+        dev = [r for r in results if r.query.split == "dev"]
+        test = [r for r in results if r.query.split == "test"]
+
+        chosen = choose_threshold(dev, COMPARISON_THRESHOLDS)
+        print(_comparison_row(name, "dev", chosen))
+        print(_comparison_row(name, "test*", metrics_at(test, chosen.threshold)))
+
+    print("\n* test is exploratory here: it was already seen, so it confirms nothing.")
+    return 0
+
+
+USAGE = "usage: python -m robis_ml.duplicate_eval [--compare] [labelled-set.json]"
+
+
 def main() -> int:
-    if len(sys.argv) > 2:
-        print("usage: python -m robis_ml.duplicate_eval [labelled-set.json]", file=sys.stderr)
+    args = sys.argv[1:]
+    comparing = args.count("--compare") == 1
+    flags = [a for a in args if a.startswith("-")]
+    paths = [a for a in args if not a.startswith("-")]
+
+    # Anything flag-shaped but unknown is a mistake, not a file name: read
+    # as a path it would fail later with a confusing "no such file".
+    if len(paths) > 1 or flags not in ([], ["--compare"]):
+        print(USAGE, file=sys.stderr)
         return 2
 
-    path = Path(sys.argv[1]) if len(sys.argv) == 2 else DEFAULT_SET
+    path = Path(paths[0]) if paths else DEFAULT_SET
     try:
         labelled = load_labelled_set(path)
     except (OSError, json.JSONDecodeError, ValueError) as error:
         print(str(error), file=sys.stderr)
         return 1
 
-    return evaluate(labelled)
+    return compare(labelled) if comparing else evaluate(labelled)
 
 
 if __name__ == "__main__":

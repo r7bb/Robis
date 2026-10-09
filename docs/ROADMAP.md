@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status: **400 TypeScript tests, 86 Python tests, lint and typecheck clean,
+Status: **400 TypeScript tests, 95 Python tests, lint and typecheck clean,
 production build passing.**
 
 A full inventory of what exists is in
@@ -67,24 +67,36 @@ fingerprint rather than a timer.
 
 ## Pick up here next session
 
-### 1. Close the lexical gap, and measure it
+### 1. A labelled set somebody else wrote
 
-Duplicate detection finds none of the 7 lexical-gap duplicates in the test
-half ("auth" against "authentication"). Two candidates need no model
-download and can be judged with `python -m robis_ml.duplicate_eval` today:
+Now the most useful next step, because the current set has reached what it
+can say:
 
-- character n-grams (`analyzer="char_wb"`), alone or alongside word n-grams
-- stemming before the word vectorizer
+- **Its author built the model.** A second author, or real duplicate pairs
+  from a live workspace, would test whether these numbers survive somebody
+  else's wording.
+- **Its test half has been read**, so it can no longer confirm a change.
+- **All 4 word-form gap queries landed in dev**, so test cannot measure
+  word-form gaps at all.
 
-Adopt one only if lexical-gap recall rises without the hard-negative false
-alarms (currently 4 of 11) rising with it. An embedding model stays blocked
-until weights can be downloaded.
+Write the new set with the split stratified by gap kind as well as category.
+Then re-test the one unconfirmed candidate: `char_wb 3-5`, which had 2 of 11
+hard-negative false alarms against 4 of 11 on both halves of the current set.
 
-### 2. A labelled set somebody else wrote
+### 2. Stemming, then embeddings, for the lexical gap
 
-The current set was written by the same person who built the model. A second
-author, or real duplicate pairs from a live workspace, would test whether
-these numbers survive contact with somebody else's wording.
+Character n-grams were tried, through `python -m robis_ml.duplicate_eval
+--compare`. None met the rule fixed in advance: lexical-gap recall up, with
+hard-negative false alarms not up. Production stays on word TF-IDF. The
+write-up is in [robis-ml/README.md](../robis-ml/README.md).
+
+What is left:
+
+- **Stemming** may help the word-form kind ("paging" against "pagination").
+  It needs a new dependency, so record its licence before adding it.
+- **Embeddings** are the experiment for the synonym kind ("throttle" against
+  "rate limit"), which shares no characters. They stay blocked until weights
+  can be downloaded.
 
 ### 3. An SMTP driver for the `Mailer` port
 

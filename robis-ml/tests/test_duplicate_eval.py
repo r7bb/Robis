@@ -19,6 +19,7 @@ from robis_ml.duplicate_eval import (
     CATEGORIES,
     DISPLAYED_LIMIT,
     POSITIVE_CATEGORIES,
+    REPRESENTATIONS,
     THRESHOLDS,
     LabelledQuery,
     LabelledSet,
@@ -37,6 +38,7 @@ from robis_ml.model import (
     Issue,
     Similar,
     compose_text,
+    word_vectorizer,
 )
 
 REPO = Path(__file__).resolve().parents[2]
@@ -405,6 +407,78 @@ class TestMatchesTheComposer:
         # Above the default, the API would be filtering hints this
         # evaluation counts as shown.
         assert self._constant("MIN_SCORE") <= DEFAULT_DUPLICATE_THRESHOLD
+
+
+class TestRepresentations:
+    def test_the_finder_accepts_a_combined_vectorizer(self) -> None:
+        # A FeatureUnion hands the same input to every branch. Given a
+        # generator, the first branch consumed it and the second saw nothing,
+        # which produced an all-zero index rather than an error.
+        corpus = [
+            Issue(id="1", title="Offline queue drops writes", description=None),
+            Issue(id="2", title="Dark theme contrast on the board", description=None),
+        ]
+        finder = DuplicateFinder(corpus, vectorizer=REPRESENTATIONS["word + char_wb 3-5"])
+
+        matches = finder.query("Offline writes get dropped from the queue", threshold=0.1)
+
+        assert [m.id for m in matches][:1] == ["1"]
+
+    def test_the_default_representation_still_gives_the_published_numbers(
+        self, shipped: LabelledSet
+    ) -> None:
+        # Pinned to the figures the README quotes, so a change to the default
+        # representation fails here rather than silently invalidating them.
+        test = [r for r in score_queries(shipped) if r.query.split == "test"]
+
+        m = metrics_at(test, DEFAULT_DUPLICATE_THRESHOLD)
+
+        assert (m.true_positives, m.predicted, m.labelled) == (15, 19, 24)
+        assert m.recall_by_category["lexical_gap"] == (0, 7)
+        assert m.false_alarms_by_category["hard_negative"] == (4, 11)
+
+    def test_the_first_representation_is_the_one_in_production(self) -> None:
+        name, factory = next(iter(REPRESENTATIONS.items()))
+
+        assert factory is word_vectorizer
+        assert "current" in name
+
+    def test_scoring_uses_the_representation_it_is_given(self, shipped: LabelledSet) -> None:
+        word = score_queries(shipped)
+        char = score_queries(shipped, vectorizer=REPRESENTATIONS["char_wb 3-5"])
+
+        assert [r.ranked for r in word] != [r.ranked for r in char]
+
+    def test_compare_reports_every_representation_and_marks_test_as_seen(
+        self, shipped: LabelledSet, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        code = duplicate_eval.compare(shipped)
+        out = capsys.readouterr().out
+
+        assert code == 0
+        for name in REPRESENTATIONS:
+            assert name in out
+        assert "exploratory" in out
+
+    def test_main_runs_the_comparison_on_request(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        monkeypatch.setattr("sys.argv", ["duplicate_eval", "--compare"])
+
+        code = duplicate_eval.main()
+        out = capsys.readouterr().out
+
+        assert code == 0
+        assert out.startswith("representation")
+        assert "best F1 on dev" not in out
+
+    @pytest.mark.parametrize("flag", ["--help", "--comapre", "-x"])
+    def test_main_rejects_an_unknown_flag_instead_of_reading_it_as_a_path(
+        self, monkeypatch: pytest.MonkeyPatch, flag: str
+    ) -> None:
+        monkeypatch.setattr("sys.argv", ["duplicate_eval", flag])
+
+        assert duplicate_eval.main() == 2
 
 
 class TestReport:
