@@ -12,7 +12,7 @@ import { Chapter, ChapterTitle } from './chapter.tsx';
  * so it works the same from a keyboard and a screen reader as it does with
  * a mouse. The data is shared with the README (see `changelog.ts`).
  */
-export function WhatsNew() {
+export function WhatsNew({ standalone = false }: { standalone?: boolean }) {
   const [area, setArea] = useState<Area | null>(null);
   const [open, setOpen] = useState<string | null>(CHANGELOG[0]?.title ?? null);
   const baseId = useId();
@@ -21,13 +21,22 @@ export function WhatsNew() {
   const areas = AREAS.filter((candidate) => CHANGELOG.some((entry) => entry.area === candidate));
 
   return (
-    <Chapter>
+    <Chapter ruled={!standalone}>
       <div className="grid gap-[clamp(2.5rem,5vw,5rem)] lg:grid-cols-12">
         <div className="lg:col-span-4">
           <div className="lg:sticky lg:top-28">
-            <ChapterTitle aside="Each entry says how it was checked, not just what it does.">
-              What is new.
-            </ChapterTitle>
+            {/* On its own page the page's h1 is the title; here it would be a
+                second heading saying the same thing. */}
+            {standalone ? (
+              <p className="max-w-[40ch] text-base leading-relaxed text-muted">
+                Everything that has shipped, newest first: features, measurements, and the things
+                tried and not adopted. Each entry says how it was checked.
+              </p>
+            ) : (
+              <ChapterTitle aside="Each entry says how it was checked, not just what it does.">
+                What is new.
+              </ChapterTitle>
+            )}
 
             <fieldset className="mt-8 flex flex-wrap gap-2">
               <legend className="sr-only">Filter by area</legend>

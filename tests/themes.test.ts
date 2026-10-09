@@ -224,6 +224,8 @@ describe('no hardcoded colours outside the palette', () => {
     'frontend/features/landing/faq.tsx',
     'frontend/features/landing/say-it.tsx',
     'frontend/features/landing/whats-new.tsx',
+    'frontend/features/landing/shipped.tsx',
+    'frontend/app/whats-new/page.tsx',
   ]);
 
   function sourceFiles(): string[] {

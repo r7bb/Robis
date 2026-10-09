@@ -17,8 +17,8 @@ import {
   REPO,
   Stack,
 } from '../features/landing/sections.tsx';
+import { ShippedFeatures } from '../features/landing/shipped.tsx';
 import { useScrolled } from '../features/landing/use-scroll.ts';
-import { WhatsNew } from '../features/landing/whats-new.tsx';
 import { api, type Me } from '../lib/api.ts';
 
 /**
@@ -79,6 +79,12 @@ export default function Home() {
 
           <div className="ml-auto flex items-center gap-5 text-sm">
             <Link
+              href="/whats-new"
+              className="text-muted transition-colors duration-[var(--micro)] ease-[var(--ease)] hover:text-content"
+            >
+              What's new
+            </Link>
+            <Link
               href="/how-it-works"
               className="hidden text-muted transition-colors duration-[var(--micro)] ease-[var(--ease)] hover:text-content sm:block"
             >
@@ -113,7 +119,7 @@ export default function Home() {
             exactly what is missing from this list. */}
         <Stack />
         <SayIt />
-        <WhatsNew />
+        <ShippedFeatures />
         <Faq />
         <Closing href={href} label={label} />
       </main>
