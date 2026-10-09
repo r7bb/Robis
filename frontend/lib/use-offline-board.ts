@@ -23,7 +23,7 @@ export type BoardState = {
   pending: number;
   /** True until the first local read resolves. */
   loading: boolean;
-  createIssue: (input: { title: string }) => Promise<void>;
+  createIssue: (input: { title: string; priority?: IssuePriority }) => Promise<void>;
   updateIssue: (
     issueId: string,
     input: Partial<{ title: string; status: IssueStatus; priority: IssuePriority }>,
@@ -119,7 +119,7 @@ export function useOfflineBoard(workspaceId: string, projectId: string): BoardSt
   }, [hasInterface, sync]);
 
   const createIssue = useCallback(
-    async (input: { title: string }) => {
+    async (input: { title: string; priority?: IssuePriority }) => {
       await engine.createIssue(workspaceId, projectId, input);
       // Repaint from the local store before the network is touched.
       await readLocal();

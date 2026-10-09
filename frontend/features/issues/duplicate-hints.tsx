@@ -2,8 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
 import { api } from '../../lib/api.ts';
+import { useDebounced } from '../../lib/use-debounced.ts';
 
 /**
  * "You may already have filed this."
@@ -27,24 +27,6 @@ const MIN_LENGTH = 12;
 const DEBOUNCE_MS = 400;
 
 type SimilarIssue = { id: string; title: string; score: number };
-
-/**
- * The title, but only after the typing stops.
- *
- * A debounce rather than a per-keystroke query: this runs while somebody is
- * mid-sentence, and the answer for a half-written word is both wasted and
- * distracting.
- */
-function useDebounced(value: string, delayMs: number): string {
-  const [settled, setSettled] = useState(value);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setSettled(value), delayMs);
-    return () => clearTimeout(timer);
-  }, [value, delayMs]);
-
-  return settled;
-}
 
 export function DuplicateHints({ workspaceId, title }: { workspaceId: string; title: string }) {
   const settled = useDebounced(title.trim(), DEBOUNCE_MS);

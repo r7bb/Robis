@@ -191,6 +191,17 @@ class TestRequestValidation:
         assert response["score"] is None
         assert str(model.MIN_TRAINING_EXAMPLES) in response["reason"]
 
+    def test_triage_reports_how_many_labelled_issues_it_needs(self, client: TestClient) -> None:
+        # The API turns a refusal into "suggestions start at 40 triaged issues
+        # (9 so far)". It reads the minimum from here rather than keeping its
+        # own copy that could drift from the model's.
+        response = client.post(
+            f"/workspaces/{ALPHA}/triage", json={"title": "x"}, headers=auth_header()
+        ).json()
+
+        assert response["needed"] == model.MIN_TRAINING_EXAMPLES
+        assert response["trained_on"] < response["needed"]
+
 
 class TestCacheInvalidation:
     """The staleness bug: a just-filed issue must be findable immediately."""

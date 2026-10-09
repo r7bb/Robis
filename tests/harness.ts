@@ -10,7 +10,7 @@
  */
 import { buildApp } from '@robis/api/app';
 import { loadEnv } from '@robis/api/env';
-import type { SimilarIssue } from '@robis/api/suggestions';
+import type { SimilarIssue, TriageSuggestion } from '@robis/api/suggestions';
 import { createDatabase, type Database } from '@robis/database';
 import { runMigrations } from '@robis/database/migrate';
 import { MemoryMailer } from '@robis/mailer';
@@ -100,6 +100,35 @@ export function breakSuggestions() {
   suggestionCalls.length = 0;
 }
 
+/** What the priority model "returns", and what it was asked. */
+export const triageCalls: SuggestionCall[] = [];
+
+let triageAnswer: TriageSuggestion | null = null;
+let triageThrows = false;
+
+/** Matches `SuggestionClient['triage']`. */
+async function triageStub(
+  workspaceId: string,
+  title: string,
+  _description?: string | null,
+): Promise<TriageSuggestion | null> {
+  triageCalls.push({ workspaceId, title });
+
+  if (triageThrows) throw new Error('connection refused');
+  return triageAnswer;
+}
+
+export function setTriage(answer: TriageSuggestion | null) {
+  triageAnswer = answer;
+  triageThrows = false;
+  triageCalls.length = 0;
+}
+
+export function breakTriage() {
+  triageThrows = true;
+  triageCalls.length = 0;
+}
+
 /** Built once and shared; each test isolates itself with `resetDatabase`. */
 export async function getHarness() {
   if (handle) return handle;
@@ -129,7 +158,7 @@ export async function getHarness() {
     // A stub, never the real client: the suite must not depend on a Python
     // service being up, and must never reach the network. `suggestionStub`
     // below lets one test decide what it answers.
-    suggestions: { similar: suggestionStub },
+    suggestions: { similar: suggestionStub, triage: triageStub },
     rateLimits: {
       authPerMinute: 100_000,
       searchPerMinute: 100_000,

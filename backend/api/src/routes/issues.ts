@@ -101,6 +101,33 @@ export async function issueRoutes(
     },
   );
 
+  /**
+   * A suggested priority for the issue being written, or why there is none.
+   *
+   * Same shape and same rules as the duplicate hints above: a GET over the
+   * draft, membership checked here because the ML service trusts the id it
+   * is handed, and no failure of that service ever reaches the composer.
+   * `suggestion: null` means "nothing to say"; a refusal for lack of
+   * training data comes through as its own answer with the counts.
+   */
+  app.get(
+    '/workspaces/:workspaceId/issues/triage',
+    { preHandler: [requireAuth, requireMembership(db, 'issue:read')] },
+    async (request) => {
+      const { workspaceId } = currentMembership(request);
+      const query = parse(similarIssuesQuerySchema, request.query);
+
+      try {
+        return {
+          suggestion: await suggestions.triage(workspaceId, query.title, query.description),
+        };
+      } catch (error) {
+        request.log.warn({ err: error }, 'priority suggestion failed');
+        return { suggestion: null };
+      }
+    },
+  );
+
   app.get(
     '/workspaces/:workspaceId/projects/:projectId/issues',
     { preHandler: [requireAuth, requireMembership(db, 'issue:read')] },

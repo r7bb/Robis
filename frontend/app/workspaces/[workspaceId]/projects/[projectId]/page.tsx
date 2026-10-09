@@ -1,6 +1,6 @@
 'use client';
 
-import { BOARD_COLUMNS, can, type IssueStatus } from '@robis/shared';
+import { BOARD_COLUMNS, can, type IssuePriority, type IssueStatus } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -11,6 +11,7 @@ import { SyncStatus } from '../../../../../components/sync-status.tsx';
 import { PriorityBadge, StatusHeading } from '../../../../../components/ui/badges.tsx';
 import { ErrorState } from '../../../../../components/ui/primitives.tsx';
 import { DuplicateHints } from '../../../../../features/issues/duplicate-hints.tsx';
+import { PriorityHint } from '../../../../../features/issues/priority-hint.tsx';
 import { api, type WorkspaceSummary } from '../../../../../lib/api.ts';
 import { useRealtime } from '../../../../../lib/realtime.ts';
 import { lastTheme, useApplyTheme } from '../../../../../lib/theme.ts';
@@ -27,6 +28,11 @@ const COLUMN_LABELS: Record<IssueStatus, string> = {
 export default function BoardPage() {
   const { workspaceId, projectId } = useParams<{ workspaceId: string; projectId: string }>();
   const [title, setTitle] = useState('');
+  // Picked from the priority hint, or not at all; never guessed silently.
+  // Kept with the title it was picked for: a suggestion is about that text,
+  // so rewriting the title drops it rather than filing a stale priority.
+  const [chosen, setChosen] = useState<{ priority: IssuePriority; forTitle: string } | null>(null);
+  const priority = chosen && chosen.forTitle === title ? chosen.priority : null;
 
   // The board reads from IndexedDB rather than the network, so it renders with
   // no connection and survives a reload mid-edit.
@@ -59,7 +65,8 @@ export default function BoardPage() {
     if (!trimmed) return;
 
     setTitle('');
-    void board.createIssue({ title: trimmed });
+    setChosen(null);
+    void board.createIssue({ title: trimmed, ...(priority ? { priority } : {}) });
   }
 
   const role = workspace.data?.workspace.role;
@@ -106,6 +113,12 @@ export default function BoardPage() {
           {/* Below the form, never inside it: a hint must not be reachable
               by Tab between the field and the submit button, and must not
               move the button as it appears and disappears. */}
+          <PriorityHint
+            workspaceId={workspaceId}
+            title={title}
+            chosen={priority}
+            onChoose={(next) => setChosen(next ? { priority: next, forTitle: title } : null)}
+          />
           <DuplicateHints workspaceId={workspaceId} title={title} />
         </div>
       )}

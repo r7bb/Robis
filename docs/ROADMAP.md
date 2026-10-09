@@ -51,7 +51,10 @@ published numbers, a screenshot script that drives a real browser.
 **Machine learning.** `robis-ml/`: duplicate detection and priority triage,
 behind a service token, wired into the issue composer. Typing a title shows
 possible duplicates with a match percentage; a missing or broken ML service
-degrades to no hints and never blocks filing. Triage evaluation is repeated
+degrades to no hints and never blocks filing. The priority model is wired in
+the same way: the composer offers a suggested priority with its score, filed
+only if somebody presses Use, and below the 40-issue training minimum it says
+so with the counts instead of guessing. Triage evaluation is repeated
 stratified k-fold against a stratified-random baseline with a margin gate, a
 time-ordered holdout, and a Brier score. Duplicate detection is measured
 against a labelled set of 84 queries: pair-level precision and recall, with a

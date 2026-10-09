@@ -222,6 +222,10 @@ class TriageResponse(BaseModel):
     #: Why there is no prediction, when there is none.
     reason: str | None = None
     trained_on: int
+    #: Labelled issues the model needs before it will suggest anything. Sent
+    #: with every answer so a caller can say "9 of 40" without keeping its
+    #: own copy of the minimum.
+    needed: int = MIN_TRAINING_EXAMPLES
     model_age_seconds: int
 
 
