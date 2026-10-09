@@ -10,6 +10,7 @@ import {
   useSyncExternalStore,
 } from 'react';
 import { type Side, SyncPair, shiftCaret } from './sync-pair.ts';
+import { useInView } from './use-scroll.ts';
 
 /**
  * Two editors and a network switch: the claim on this page, made testable.
@@ -36,7 +37,7 @@ const MERGED_NOTICE_MS = 2600;
  * flips the switch, because from then on the demo is theirs.
  */
 const MIA_LINE = '\n- Mia: reconnect toast reads well';
-const MIA_START_MS = 1600;
+const MIA_START_MS = 900;
 const MIA_KEY_MS = 55;
 
 const PEOPLE: Record<Side, { name: string; initials: string; tint: string }> = {
@@ -81,7 +82,13 @@ export function SyncDemo({
   /** Set by any visitor input; ends the autoplay for good. */
   const touched = useRef(false);
 
+  // Mia waits to be seen. Typing to an empty room, while the visitor is
+  // still reading the name above, would spend the one moment that shows the
+  // demo is live on nobody.
+  const [demo, seen] = useInView<HTMLDivElement>();
+
   useEffect(() => {
+    if (!seen) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     let typed = 0;
@@ -101,7 +108,7 @@ export function SyncDemo({
       clearTimeout(timer);
       setMiaTyping(false);
     };
-  }, [pair]);
+  }, [pair, seen]);
 
   const onEdit = useCallback(() => {
     touched.current = true;
@@ -125,7 +132,7 @@ export function SyncDemo({
   }
 
   return (
-    <div className="text-left">
+    <div ref={demo} className="text-left">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted">Cut the network, type on both sides, then reconnect.</p>
 

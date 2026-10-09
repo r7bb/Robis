@@ -1,114 +1,49 @@
 'use client';
 
 import { type RefObject, useEffect, useRef, useState } from 'react';
+import {
+  FIELD_MODES,
+  type FieldMode,
+  ringAge,
+  type SurfaceState,
+  stepSurface,
+} from './field-modes.ts';
+import { compile, FRAGMENT, VERTEX } from './field-shaders.ts';
 
 /**
  * A live field of points behind the hero, drawn with raw WebGL.
  *
- * It is not decoration for its own sake: it mirrors the demo in front of it.
- * Online, the surface moves and answers the cursor. Cut the network and it
- * slows, flattens and greys out. Reconnect and a ring travels out from the
- * centre as the two documents merge. Motion that reports state.
+ * It is not decoration for its own sake: it acts out whatever the page is
+ * talking about. As each letter of the name takes its turn the surface takes
+ * that letter's formation (`field-modes.ts`): faster for realtime, grey and
+ * flat for offline, four lanes for the board, one repeated ring for
+ * idempotent, two converging fronts for sync. Further down it mirrors the
+ * live demo: cut the network and it greys, type and it swells, merge and a
+ * ring goes out.
  *
  * Raw WebGL rather than Three.js. One draw call of points with the work in
- * the vertex shader is about a hundred lines, and a 3D engine would add
- * roughly 150 KB to the landing page for the same picture.
+ * the vertex shader, and a 3D engine would add roughly 150 KB to the
+ * landing page for the same picture.
  *
  * Cheap by construction: it renders only while on screen and the tab is
- * visible, caps the pixel ratio, and under `prefers-reduced-motion` draws a
- * single still frame. Without WebGL it renders nothing and the band's own
+ * visible, caps the pixel ratio, and under `prefers-reduced-motion` draws
+ * still frames only. Without WebGL it renders nothing and the band's own
  * background shows through.
  */
 
 const COLS = 140;
 const ROWS = 70;
 const MAX_DPR = 1.5;
-/** Seconds the merge ring takes to fade out. */
-const PULSE_SECONDS = 2.4;
 /** How fast a keystroke's swell dies away, in milliseconds per e-fold. */
 const ACTIVITY_DECAY_MS = 320;
-
-/*
- * Two rules the shaders below follow, each learnt by the field silently
- * rendering nothing:
- *
- * - The merge ring squares its distance by hand. `pow` with a negative base
- *   is undefined in GLSL, and the NaN some drivers return takes every point
- *   off the screen.
- * - The offline amount reaches the fragment shader as a varying, not as a
- *   second `uOffline` uniform. A uniform shared by both stages must have the
- *   same precision in each, and WebGL 1 refuses to link highp in one and
- *   mediump in the other.
+/**
+ * How quickly the surface blends from one formation to the next, per
+ * second. Applied as `1 - e^(-rate * elapsed)` rather than a fixed fraction
+ * per frame, so a 120 Hz screen blends at the same pace as a 60 Hz one.
  */
-const VERTEX = `
-attribute vec2 aGrid;
-uniform float uTime;
-uniform float uAspect;
-uniform float uOffline;
-uniform float uPulse;
-uniform float uDpr;
-uniform float uActivity;
-uniform vec2 uMouse;
-varying float vGlow;
-varying float vDepth;
-varying float vOffline;
-
-void main() {
-  vec2 g = aGrid;
-  float t = uTime * mix(0.35, 0.05, uOffline);
-  float wave = sin(g.x * 3.2 + t * 1.7) * cos(g.y * 4.1 - t * 1.3) * 0.5
-             + sin((g.x + g.y) * 6.0 + t * 2.3) * 0.18;
-
-  vec2 d = (g - uMouse) * vec2(1.0, 0.6);
-  float ripple = exp(-dot(d, d) * 9.0) * 0.9 * (1.0 - uOffline);
-
-  float r = length(g * vec2(1.0, 0.7));
-  float k = (r - uPulse * 1.1) * 7.0;
-  float ring = exp(-k * k) * exp(-uPulse * 1.2);
-
-  float h = wave * mix(1.0, 0.25, uOffline) * (1.0 + uActivity * 0.7) + ripple + ring * 1.2;
-
-  float depth = (g.y + 1.0) * 0.5;
-  float z = mix(6.0, 1.05, depth);
-  vec3 w = vec3(g.x * 3.6, h * 0.22 - 0.9, z);
-
-  gl_Position = vec4(w.x / (w.z * uAspect) * 1.6, w.y / w.z * 1.6 + 0.42, 0.0, 1.0);
-  gl_PointSize = 7.5 / w.z * uDpr * (1.0 + ripple * 0.8 + ring);
-  vGlow = clamp(h * 0.8 + ripple + ring + uActivity * 0.35, 0.0, 1.5);
-  vDepth = depth;
-  vOffline = uOffline;
-}`;
-
-const FRAGMENT = `
-precision mediump float;
-uniform vec3 uAccent;
-varying float vGlow;
-varying float vDepth;
-varying float vOffline;
-
-void main() {
-  float a = smoothstep(0.5, 0.0, length(gl_PointCoord - 0.5));
-  vec3 hot = mix(uAccent, vec3(1.0), 0.45);
-  vec3 grey = vec3(0.45, 0.48, 0.55);
-  vec3 colour = mix(mix(uAccent, hot, clamp(vGlow, 0.0, 1.0)), grey, vOffline * 0.85);
-  float alpha = a * mix(0.22, 0.9, vDepth) * (0.5 + 0.5 * clamp(vGlow, 0.0, 1.0))
-              * mix(1.0, 0.5, vOffline);
-  gl_FragColor = vec4(colour * alpha, alpha);
-}`;
-
-function compile(gl: WebGLRenderingContext, type: number, source: string): WebGLShader | null {
-  const shader = gl.createShader(type);
-  if (!shader) return null;
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (gl.getShaderParameter(shader, gl.COMPILE_STATUS)) return shader;
-
-  // The page is fine without the field, so this degrades rather than
-  // throwing. But a shader that fails to build is a bug, and the only way
-  // anyone sees it is if it is said out loud.
-  console.warn('[field] shader did not compile:', gl.getShaderInfoLog(shader));
-  return null;
-}
+const MODE_BLEND_PER_SECOND = 3;
+/** Per-frame easing of the cursor ripple towards the pointer. */
+const POINTER_EASE = 0.08;
 
 /** The page's accent token, so the field never drifts off the palette. */
 function accentColour(): [number, number, number] {
@@ -116,11 +51,6 @@ function accentColour(): [number, number, number] {
   const parts = raw.split(/\s+/).map(Number);
   if (parts.length !== 3 || parts.some(Number.isNaN)) return [0.39, 0.4, 0.95];
   return [parts[0]! / 255, parts[1]! / 255, parts[2]! / 255];
-}
-
-/** Seconds since the last merge, capped so the ring term stays finite. */
-function pulseAge(now: number, pulseAt: number): number {
-  return Math.min((now - pulseAt) / 1000, PULSE_SECONDS * 4);
 }
 
 /** 1 at a keystroke, decaying towards 0. */
@@ -140,13 +70,28 @@ function gridPoints(): Float32Array {
   return points;
 }
 
+function linkProgram(gl: WebGLRenderingContext): WebGLProgram | null {
+  const vertex = compile(gl, gl.VERTEX_SHADER, VERTEX);
+  const fragment = compile(gl, gl.FRAGMENT_SHADER, FRAGMENT);
+  const program = gl.createProgram();
+  if (!vertex || !fragment || !program) return null;
+
+  gl.attachShader(program, vertex);
+  gl.attachShader(program, fragment);
+  gl.linkProgram(program);
+  if (gl.getProgramParameter(program, gl.LINK_STATUS)) return program;
+
+  console.warn('[field] shaders did not link:', gl.getProgramInfoLog(program));
+  return null;
+}
+
 export function Field({
-  offline,
+  mode,
   pulse,
   activityAt,
   className = '',
 }: {
-  offline: boolean;
+  mode: FieldMode;
   /** Bumped on every merge; each change sends one ring out. */
   pulse: number;
   /**
@@ -167,12 +112,12 @@ export function Field({
   const [generation, setGeneration] = useState(0);
   // Read by the render loop. Refs, not state: the loop runs every frame and
   // must never cause a React render.
-  const live = useRef({ offline, pulseAt: Number.NEGATIVE_INFINITY, redraw: () => {} });
+  const live = useRef({ mode, pulseAt: Number.NEGATIVE_INFINITY, redraw: () => {} });
 
   useEffect(() => {
-    live.current.offline = offline;
+    live.current.mode = mode;
     live.current.redraw();
-  }, [offline]);
+  }, [mode]);
 
   useEffect(() => {
     if (pulse > 0) live.current.pulseAt = performance.now();
@@ -187,17 +132,8 @@ export function Field({
     const gl = canvas?.getContext('webgl', { antialias: false, premultipliedAlpha: true });
     if (!canvas || !host || !gl) return;
 
-    const vertex = compile(gl, gl.VERTEX_SHADER, VERTEX);
-    const fragment = compile(gl, gl.FRAGMENT_SHADER, FRAGMENT);
-    const program = gl.createProgram();
-    if (!vertex || !fragment || !program) return;
-    gl.attachShader(program, vertex);
-    gl.attachShader(program, fragment);
-    gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      console.warn('[field] shaders did not link:', gl.getProgramInfoLog(program));
-      return;
-    }
+    const program = linkProgram(gl);
+    if (!program) return;
     // biome-ignore lint/correctness/useHookAtTopLevel: `useProgram` is a WebGL call, not a React hook; the rule matches on the `use` prefix.
     gl.useProgram(program);
 
@@ -212,42 +148,58 @@ export function Field({
       time: at('uTime'),
       aspect: at('uAspect'),
       offline: at('uOffline'),
+      columns: at('uColumns'),
+      merge: at('uMerge'),
       pulse: at('uPulse'),
       dpr: at('uDpr'),
       activity: at('uActivity'),
       mouse: at('uMouse'),
-      accent: at('uAccent'),
     };
-    gl.uniform3fv(u.accent, accentColour());
+    gl.uniform3fv(at('uAccent'), accentColour());
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
-    const started = performance.now();
+    // Decided once rather than per frame: under reduced motion time stands
+    // still, swells and repeating rings are off, and formations land at once.
+    const motion = reduced ? 0 : 1;
+
+    const first = FIELD_MODES[live.current.mode];
+    let surface: SurfaceState = {
+      phase: 0,
+      speed: first.speed,
+      offline: first.offline,
+      columns: first.columns,
+      merge: first.merge,
+    };
     const mouse = { x: 0, y: 2, tx: 0, ty: 2 };
-    let offlineMix = live.current.offline ? 1 : 0;
+    let last = performance.now();
     let frame = 0;
     let visible = true;
-    // Decided once rather than per frame: under reduced motion time stands
-    // still, swells are off, and state changes land at once.
-    const motion = reduced ? 0 : 1;
-    const settle = reduced ? 1 : 0.06;
 
     function draw(now: number) {
       if (!canvas || !gl) return;
-      const target = Number(live.current.offline);
-      offlineMix += (target - offlineMix) * settle;
-      mouse.x += (mouse.tx - mouse.x) * 0.08;
-      mouse.y += (mouse.ty - mouse.y) * 0.08;
+      const targets = FIELD_MODES[live.current.mode];
+      // Clamped, so a tab returning from the background does not lurch the
+      // phase forward by however long it was away.
+      const seconds = Math.min((now - last) / 1000, 0.1);
+      last = now;
+      // Under reduced motion formations land at once and the phase holds.
+      const blend = reduced ? 1 : 1 - Math.exp(-MODE_BLEND_PER_SECOND * seconds);
+      surface = stepSurface(surface, targets, blend, seconds * motion);
+      mouse.x += (mouse.tx - mouse.x) * POINTER_EASE;
+      mouse.y += (mouse.ty - mouse.y) * POINTER_EASE;
 
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.uniform1f(u.time, (motion * (now - started)) / 1000);
+      gl.uniform1f(u.time, surface.phase);
       gl.uniform1f(u.aspect, canvas.width / Math.max(canvas.height, 1));
-      gl.uniform1f(u.offline, offlineMix);
-      gl.uniform1f(u.pulse, pulseAge(now, live.current.pulseAt));
+      gl.uniform1f(u.offline, surface.offline);
+      gl.uniform1f(u.columns, surface.columns);
+      gl.uniform1f(u.merge, surface.merge);
+      gl.uniform1f(u.pulse, ringAge(now, live.current.pulseAt, targets.repeatRing, motion));
       gl.uniform1f(u.dpr, dpr);
       gl.uniform1f(
         u.activity,
@@ -267,7 +219,12 @@ export function Field({
         draw(performance.now());
         return;
       }
-      if (!frame) frame = requestAnimationFrame(loop);
+      if (!frame) {
+        // Restarting after a pause: measure the next frame from now, not
+        // from whenever the loop last ran.
+        last = performance.now();
+        frame = requestAnimationFrame(loop);
+      }
     }
 
     live.current.redraw = () => start();

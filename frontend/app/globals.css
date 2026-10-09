@@ -185,13 +185,47 @@ body {
   display: inline-block;
 }
 
+/*
+ * Steps. While one letter's step is showing, the rest dim and a bar sits
+ * under the lit one. These carry meaning (which letter you are on), so they
+ * apply under reduced motion too; only their transitions are gated below.
+ */
+[data-wordmark][data-has-active="true"] [data-letter]:not([data-active="true"]) {
+  opacity: 0.18;
+}
+
+[data-wordmark] [data-letter][data-active="true"] {
+  color: rgb(var(--accent-soft));
+}
+
+[data-letter-bar] {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.14em;
+  height: 0.035em;
+  border-radius: 999px;
+  background: rgb(var(--accent));
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+[data-letter][data-active="true"] [data-letter-bar] {
+  transform: scaleX(1);
+}
+
 @media (prefers-reduced-motion: no-preference) {
   [data-wordmark] [data-letter] {
     animation: letter-rise 900ms var(--ease) backwards;
     animation-delay: calc(var(--letter-index) * 70ms + 60ms);
     transition:
       transform var(--quick) var(--ease),
-      color var(--quick) var(--ease);
+      color var(--entrance) var(--ease),
+      opacity var(--entrance) var(--ease);
+  }
+
+  [data-letter-bar] {
+    transition: transform var(--entrance) var(--ease);
   }
 
   [data-wordmark] [data-letter]:hover {
@@ -220,6 +254,29 @@ body {
   to {
     opacity: 0.1;
     transform: scale(0.82) translateY(-10%);
+  }
+}
+
+/*
+ * A letter's caption rises into place under it when its step begins, and
+ * sinks away when the next one takes over. Stacked in one grid cell, so only
+ * opacity and transform change and nothing around it moves.
+ */
+[data-caption] {
+  opacity: 0;
+  transform: translateY(0.9rem);
+}
+
+[data-caption][data-active="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-caption] {
+    transition:
+      opacity var(--entrance) var(--ease),
+      transform var(--entrance) var(--ease);
   }
 }
 
