@@ -66,6 +66,7 @@ def labelled_issues(issues: list[Issue]) -> list[Issue]:
     """Issues a human actually assigned a priority to."""
     return [i for i in issues if i.priority in PRIORITIES]
 
+
 #: Below this many labelled issues the triage model declines to predict.
 #:
 #: A classifier fitted on a handful of examples will still return a label and
@@ -75,10 +76,22 @@ def labelled_issues(issues: list[Issue]) -> list[Issue]:
 MIN_TRAINING_EXAMPLES = 40
 
 #: Cosine similarity above which two issues are worth showing as possible
-#: duplicates. Tuned by hand against the seeded corpus; it is a product
-#: threshold, not a learned one, and the API returns the score so a caller
-#: can apply its own.
-DEFAULT_DUPLICATE_THRESHOLD = 0.35
+#: duplicates.
+#:
+#: Chosen by `duplicate_eval.py` as the best F1 on the dev half of the
+#: labelled set, and a test asserts the two still agree. Read it as "the
+#: numbers do not argue for anything else", not as a sharp optimum: dev
+#: preferred it to the old hand-tuned 0.35 by 0.02 F1, and the held-out test
+#: half preferred 0.35 by 0.04. Both gaps are a pair or two, inside the
+#: noise. The threshold was not re-picked on test, because that would make
+#: the test number meaningless. The API returns the score, so a caller can
+#: still apply its own bar.
+DEFAULT_DUPLICATE_THRESHOLD = 0.40
+
+#: How many possible duplicates to return by default, here and from the
+#: service's ``/similar`` route. The API keeps fewer of them than this for
+#: the composer; `duplicate_eval.DISPLAYED_LIMIT` is what reaches the screen.
+DEFAULT_SIMILAR_LIMIT = 5
 
 
 @dataclass(frozen=True)
@@ -154,7 +167,7 @@ class DuplicateFinder:
     def query(
         self,
         text: str,
-        limit: int = 5,
+        limit: int = DEFAULT_SIMILAR_LIMIT,
         threshold: float = DEFAULT_DUPLICATE_THRESHOLD,
         exclude_id: str | None = None,
     ) -> list[Similar]:

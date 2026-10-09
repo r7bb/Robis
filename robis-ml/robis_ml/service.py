@@ -32,6 +32,7 @@ from .auth import check_configuration, require_service_token
 from .data import corpus_fingerprint, load_issues
 from .model import (
     DEFAULT_DUPLICATE_THRESHOLD,
+    DEFAULT_SIMILAR_LIMIT,
     MIN_TRAINING_EXAMPLES,
     DuplicateFinder,
     TriageModel,
@@ -254,7 +255,7 @@ def health() -> dict[str, object]:
 def similar(
     workspace_id: str,
     request: TextRequest,
-    limit: int = 5,
+    limit: int = DEFAULT_SIMILAR_LIMIT,
     threshold: float = DEFAULT_DUPLICATE_THRESHOLD,
 ) -> SimilarResponse:
     """Issues that look like this one.

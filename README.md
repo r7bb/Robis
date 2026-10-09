@@ -138,8 +138,13 @@ than returning a confident-looking guess.
 
 It sits behind a shared service token and is wired into the issue composer:
 typing a title shows possible duplicates. If the service is missing, slow or
-broken, the hints disappear and filing still works. Duplicate detection has no
-precision or recall figure yet. See **[robis-ml/README.md](robis-ml/README.md)**.
+broken, the hints disappear and filing still works.
+
+Duplicate detection is measured against a small labelled set, with the
+threshold chosen on one half and reported on the other. It catches most
+reworded duplicates and **none of the 7 that share almost no words** with the
+original. The set was written by the author, so these are not production
+figures. See **[robis-ml/README.md](robis-ml/README.md)**.
 
 ---
 

@@ -1,0 +1,758 @@
+{
+  "about": "Labelled duplicate pairs for DuplicateFinder. Corpus: the 10 issue titles from scripts/db/seed.ts verbatim (s01-s10, no descriptions, as seeded) plus 30 written issues (w01-w30). Queries are bare titles, as typed into the composer. Categories: paraphrase (same intent, shares some content words), lexical_gap (same intent, shares almost no content words), hard_negative (shares vocabulary, different intent), unrelated. Every label and every dev/test split was fixed when the query was written, before any score was computed. Written by the project author, so it is not an independent benchmark.",
+  "corpus": [
+    { "id": "s01", "title": "Fix OAuth refresh-token bug" },
+    { "id": "s02", "title": "Reproduce Safari authentication issue" },
+    { "id": "s03", "title": "Search across issues and documents" },
+    { "id": "s04", "title": "Keyboard shortcuts for the board" },
+    { "id": "s05", "title": "Billing settings page" },
+    { "id": "s06", "title": "Dark mode" },
+    { "id": "s07", "title": "Rate limit the auth endpoints" },
+    { "id": "s08", "title": "Audit log retention policy" },
+    { "id": "s09", "title": "Cursor pagination for issue lists" },
+    { "id": "s10", "title": "Session cleanup job" },
+    {
+      "id": "w01",
+      "title": "Offline queue drops writes after a browser restart",
+      "description": "Mutations queued in IndexedDB disappear when the tab is closed before reconnecting."
+    },
+    {
+      "id": "w02",
+      "title": "Document cursors flicker when two people type",
+      "description": "Remote carets in the Yjs editor jump to the start of the paragraph on every update."
+    },
+    {
+      "id": "w03",
+      "title": "Chat messages arrive out of order after reconnect",
+      "description": "Messages sent while the socket was down show up above older ones."
+    },
+    {
+      "id": "w04",
+      "title": "Meeting reschedule does not notify attendees",
+      "description": "Moving a meeting clears RSVPs but sends nobody a notification."
+    },
+    {
+      "id": "w05",
+      "title": "Mention notifications are sent twice",
+      "description": "An @mention in an edited comment notifies the person again."
+    },
+    {
+      "id": "w06",
+      "title": "Board columns overflow on small screens",
+      "description": "The status columns scroll off the right edge below 768px."
+    },
+    {
+      "id": "w07",
+      "title": "Password reset email link expires too early",
+      "description": "Reset links stop working after a few minutes instead of thirty."
+    },
+    {
+      "id": "w08",
+      "title": "Search ignores document titles",
+      "description": "Full-text search only matches document bodies."
+    },
+    {
+      "id": "w09",
+      "title": "Presence shows people who left hours ago",
+      "description": "The online indicator keeps users whose socket closed."
+    },
+    {
+      "id": "w10",
+      "title": "Export issues to CSV",
+      "description": "Download the current board as a CSV file."
+    },
+    {
+      "id": "w11",
+      "title": "Invite members by email",
+      "description": "Admins should be able to invite someone who has no account yet."
+    },
+    {
+      "id": "w12",
+      "title": "Slow first load of the workspace page",
+      "description": "The workspace page takes several seconds before showing anything."
+    },
+    {
+      "id": "w13",
+      "title": "Comment editor loses text on navigation",
+      "description": "A half-written comment is gone after switching issues."
+    },
+    {
+      "id": "w14",
+      "title": "Websocket gateway memory grows without bound",
+      "description": "Gateway RSS climbs steadily over a day under normal load."
+    },
+    {
+      "id": "w15",
+      "title": "Drag and drop issues between columns",
+      "description": "Move an issue to another status by dragging its card."
+    },
+    {
+      "id": "w16",
+      "title": "Two-factor authentication for accounts",
+      "description": "Support TOTP codes at sign in."
+    },
+    {
+      "id": "w17",
+      "title": "Stale issue nudges fire on closed issues",
+      "description": "The nudge job reminds assignees about issues already done."
+    },
+    {
+      "id": "w18",
+      "title": "Document history and restore",
+      "description": "Let editors see earlier versions of a document and roll back."
+    },
+    {
+      "id": "w19",
+      "title": "Filter the board by label",
+      "description": "Show only issues carrying a chosen label."
+    },
+    {
+      "id": "w20",
+      "title": "Rate limit message sending in chat",
+      "description": "One client can flood a channel with hundreds of messages a second."
+    },
+    {
+      "id": "w21",
+      "title": "Session expires while typing a long document",
+      "description": "Users get logged out mid-edit and lose the last minute of changes."
+    },
+    {
+      "id": "w22",
+      "title": "Metrics endpoint exposes per-user labels",
+      "description": "Prometheus labels include user ids, which explodes cardinality."
+    },
+    {
+      "id": "w23",
+      "title": "Archive a project",
+      "description": "Hide a finished project without deleting its issues."
+    },
+    {
+      "id": "w24",
+      "title": "Timezone wrong on meeting times",
+      "description": "Meetings show in UTC instead of the viewer's local time."
+    },
+    {
+      "id": "w25",
+      "title": "Duplicate issue created when retrying offline",
+      "description": "Reconnecting after a timeout files the same issue twice."
+    },
+    {
+      "id": "w26",
+      "title": "Service worker serves stale JavaScript after deploy",
+      "description": "Users keep running the old bundle until a hard refresh."
+    },
+    {
+      "id": "w27",
+      "title": "Login page accessibility issues",
+      "description": "Form fields have no labels and focus order is wrong."
+    },
+    {
+      "id": "w28",
+      "title": "Workspace themes reset to default",
+      "description": "The chosen theme is lost after signing out."
+    },
+    {
+      "id": "w29",
+      "title": "Bulk change status of selected issues",
+      "description": "Select several issues and move them all to Done."
+    },
+    {
+      "id": "w30",
+      "title": "Upload attachments to issues",
+      "description": "Attach screenshots and files to an issue."
+    }
+  ],
+  "queries": [
+    {
+      "id": "p01",
+      "title": "OAuth refresh token stops working",
+      "category": "paraphrase",
+      "duplicates": ["s01"],
+      "split": "dev"
+    },
+    {
+      "id": "p02",
+      "title": "Refresh token bug in the OAuth flow",
+      "category": "paraphrase",
+      "duplicates": ["s01"],
+      "split": "test"
+    },
+    {
+      "id": "p03",
+      "title": "Authentication fails in Safari",
+      "category": "paraphrase",
+      "duplicates": ["s02"],
+      "split": "dev"
+    },
+    {
+      "id": "p04",
+      "title": "Search documents and issues together",
+      "category": "paraphrase",
+      "duplicates": ["s03"],
+      "split": "test"
+    },
+    {
+      "id": "p05",
+      "title": "Add keyboard shortcuts to move around the board",
+      "category": "paraphrase",
+      "duplicates": ["s04"],
+      "split": "dev"
+    },
+    {
+      "id": "p06",
+      "title": "Settings page for billing details",
+      "category": "paraphrase",
+      "duplicates": ["s05"],
+      "split": "test"
+    },
+    {
+      "id": "p07",
+      "title": "Add a dark mode theme",
+      "category": "paraphrase",
+      "duplicates": ["s06"],
+      "split": "dev"
+    },
+    {
+      "id": "p08",
+      "title": "Auth endpoints need rate limiting",
+      "category": "paraphrase",
+      "duplicates": ["s07"],
+      "split": "test"
+    },
+    {
+      "id": "p09",
+      "title": "Retention policy for the audit log",
+      "category": "paraphrase",
+      "duplicates": ["s08"],
+      "split": "dev"
+    },
+    {
+      "id": "p10",
+      "title": "Issue lists should use cursor pagination",
+      "category": "paraphrase",
+      "duplicates": ["s09"],
+      "split": "test"
+    },
+    {
+      "id": "p11",
+      "title": "Job to clean up expired sessions",
+      "category": "paraphrase",
+      "duplicates": ["s10"],
+      "split": "dev"
+    },
+    {
+      "id": "p12",
+      "title": "Offline writes lost when the browser restarts",
+      "category": "paraphrase",
+      "duplicates": ["w01"],
+      "split": "test"
+    },
+    {
+      "id": "p13",
+      "title": "Queued offline changes vanish after closing the tab",
+      "category": "paraphrase",
+      "duplicates": ["w01"],
+      "split": "dev"
+    },
+    {
+      "id": "p14",
+      "title": "Cursors flicker in shared documents",
+      "category": "paraphrase",
+      "duplicates": ["w02"],
+      "split": "test"
+    },
+    {
+      "id": "p15",
+      "title": "Chat messages out of order after reconnecting",
+      "category": "paraphrase",
+      "duplicates": ["w03"],
+      "split": "dev"
+    },
+    {
+      "id": "p16",
+      "title": "Attendees not notified when a meeting is rescheduled",
+      "category": "paraphrase",
+      "duplicates": ["w04"],
+      "split": "test"
+    },
+    {
+      "id": "p17",
+      "title": "Mentions notify people twice",
+      "category": "paraphrase",
+      "duplicates": ["w05"],
+      "split": "dev"
+    },
+    {
+      "id": "p18",
+      "title": "Board columns overflow on mobile",
+      "category": "paraphrase",
+      "duplicates": ["w06"],
+      "split": "test"
+    },
+    {
+      "id": "p19",
+      "title": "Password reset link expires too quickly",
+      "category": "paraphrase",
+      "duplicates": ["w07"],
+      "split": "dev"
+    },
+    {
+      "id": "p20",
+      "title": "Search should match document titles",
+      "category": "paraphrase",
+      "duplicates": ["w08"],
+      "split": "test"
+    },
+    {
+      "id": "p21",
+      "title": "Presence still shows people who left",
+      "category": "paraphrase",
+      "duplicates": ["w09"],
+      "split": "dev"
+    },
+    {
+      "id": "p22",
+      "title": "CSV export of issues",
+      "category": "paraphrase",
+      "duplicates": ["w10"],
+      "split": "test"
+    },
+    {
+      "id": "p23",
+      "title": "Invite new members by email",
+      "category": "paraphrase",
+      "duplicates": ["w11"],
+      "split": "dev"
+    },
+    {
+      "id": "p24",
+      "title": "Workspace page loads slowly",
+      "category": "paraphrase",
+      "duplicates": ["w12"],
+      "split": "test"
+    },
+    {
+      "id": "p25",
+      "title": "Comment text lost when navigating away",
+      "category": "paraphrase",
+      "duplicates": ["w13"],
+      "split": "dev"
+    },
+    {
+      "id": "p26",
+      "title": "Gateway memory leak",
+      "category": "paraphrase",
+      "duplicates": ["w14"],
+      "split": "test"
+    },
+    {
+      "id": "p27",
+      "title": "Drag issues between board columns",
+      "category": "paraphrase",
+      "duplicates": ["w15"],
+      "split": "dev"
+    },
+    {
+      "id": "p28",
+      "title": "Nudges sent for closed issues",
+      "category": "paraphrase",
+      "duplicates": ["w17"],
+      "split": "test"
+    },
+    {
+      "id": "p29",
+      "title": "Restore an earlier version of a document",
+      "category": "paraphrase",
+      "duplicates": ["w18"],
+      "split": "dev"
+    },
+    {
+      "id": "p30",
+      "title": "Board filter by label",
+      "category": "paraphrase",
+      "duplicates": ["w19"],
+      "split": "test"
+    },
+    {
+      "id": "p31",
+      "title": "Limit how fast messages can be sent in chat",
+      "category": "paraphrase",
+      "duplicates": ["w20"],
+      "split": "dev"
+    },
+    {
+      "id": "p32",
+      "title": "Logged out while editing a long document",
+      "category": "paraphrase",
+      "duplicates": ["w21"],
+      "split": "test"
+    },
+    {
+      "id": "p33",
+      "title": "Retrying offline creates duplicate issues",
+      "category": "paraphrase",
+      "duplicates": ["w25"],
+      "split": "dev"
+    },
+    {
+      "id": "p34",
+      "title": "Stale JavaScript served by the service worker after deploy",
+      "category": "paraphrase",
+      "duplicates": ["w26"],
+      "split": "test"
+    },
+
+    {
+      "id": "g01",
+      "title": "Throttle the authentication API against brute force",
+      "category": "lexical_gap",
+      "duplicates": ["s07"],
+      "split": "dev"
+    },
+    {
+      "id": "g02",
+      "title": "Brute-force protection for sign in",
+      "category": "lexical_gap",
+      "duplicates": ["s07"],
+      "split": "test"
+    },
+    {
+      "id": "g03",
+      "title": "Night theme for the interface",
+      "category": "lexical_gap",
+      "duplicates": ["s06"],
+      "split": "dev"
+    },
+    {
+      "id": "g04",
+      "title": "Users signed out whenever their access credential renews",
+      "category": "lexical_gap",
+      "duplicates": ["s01"],
+      "split": "test"
+    },
+    {
+      "id": "g05",
+      "title": "Keyset paging for ticket listings",
+      "category": "lexical_gap",
+      "duplicates": ["s09"],
+      "split": "dev"
+    },
+    {
+      "id": "g06",
+      "title": "Purge expired logins periodically",
+      "category": "lexical_gap",
+      "duplicates": ["s10"],
+      "split": "test"
+    },
+    {
+      "id": "g07",
+      "title": "2FA with authenticator app codes",
+      "category": "lexical_gap",
+      "duplicates": ["w16"],
+      "split": "dev"
+    },
+    {
+      "id": "g08",
+      "title": "Spreadsheet download of tickets",
+      "category": "lexical_gap",
+      "duplicates": ["w10"],
+      "split": "test"
+    },
+    {
+      "id": "g09",
+      "title": "Ticket attachment support",
+      "category": "lexical_gap",
+      "duplicates": ["w30"],
+      "split": "dev"
+    },
+    {
+      "id": "g10",
+      "title": "Realtime server RAM keeps climbing",
+      "category": "lexical_gap",
+      "duplicates": ["w14"],
+      "split": "test"
+    },
+    {
+      "id": "g11",
+      "title": "Calendar events shown in GMT",
+      "category": "lexical_gap",
+      "duplicates": ["w24"],
+      "split": "dev"
+    },
+    {
+      "id": "g12",
+      "title": "Mass-edit state for many tickets at once",
+      "category": "lexical_gap",
+      "duplicates": ["w29"],
+      "split": "test"
+    },
+    {
+      "id": "g13",
+      "title": "Each @-tag pings the person two times",
+      "category": "lexical_gap",
+      "duplicates": ["w05"],
+      "split": "dev"
+    },
+    {
+      "id": "g14",
+      "title": "Long wait before the dashboard renders",
+      "category": "lexical_gap",
+      "duplicates": ["w12"],
+      "split": "test"
+    },
+
+    {
+      "id": "h01",
+      "title": "Rate limit the search endpoint",
+      "category": "hard_negative",
+      "duplicates": [],
+      "split": "dev"
+    },
+    {
+      "id": "h02",
+      "title": "Audit log export to CSV",
+      "category": "hard_negative",
+      "duplicates": [],
+      "split": "test"
+    },
+    {
+      "id": "h03",
+      "title": "Search within a single document",
+      "category": "hard_negative",
+      "duplicates": [],
+      "split": "dev"
+    },
+    {
+      "id": "h04",
+      "title": "Dark mode contrast on code blocks",
+      "category": "hard_negative",
+      "duplicates": [],
+      "split": "test"
+    },
+    {
+      "id": "h05",
+      "title": "Keyboard shortcut to open search",
+      "category": "hard_negative",
+      "duplicates": [],
+      "split": "dev"
+    },
+    {
+      "id": "h06",
+      "title": "Billing invoice PDF download",
+      "category": "hard_negative",
+      "duplicates": [],
+      "split": "test"
+    },
+    {
+      "id": "h07",
+      "title": "Session replay for debugging",
+      "category": "hard_negative",
+      "duplicates": [],
+      "split": "dev"
+    },
+    {
+      "id": "h08",
+      "title": "OAuth login with GitHub",
+      "category": "hard_negative",
+      "duplicates": [],
+      "split": "test"
+    },
+    {
+      "id": "h09",
+      "title": "Pagination for chat history",
+      "category": "hard_negative",
+      "duplicates": [],
+      "split": "dev"
+    },
+    {
+      "id": "h10",
+      "title": "Cursor color picker in documents",
+      "category": "hard_negative",
+      "duplicates": [],
+      "split": "test"
+    },
+    {
+      "id": "h11",
+      "title": "Offline support for meetings",
+      "category": "hard_negative",
+      "duplicates": [],
+      "split": "dev"
+    },
+    {
+      "id": "h12",
+      "title": "Chat messages lose formatting",
+      "category": "hard_negative",
+      "duplicates": [],
+      "split": "test"
+    },
+    {
+      "id": "h13",
+      "title": "Meeting agenda template",
+      "category": "hard_negative",
+      "duplicates": [],
+      "split": "dev"
+    },
+    {
+      "id": "h14",
+      "title": "Password strength meter on sign up",
+      "category": "hard_negative",
+      "duplicates": [],
+      "split": "test"
+    },
+    {
+      "id": "h15",
+      "title": "Presence avatars on the board",
+      "category": "hard_negative",
+      "duplicates": [],
+      "split": "dev"
+    },
+    {
+      "id": "h16",
+      "title": "Export a document as Markdown",
+      "category": "hard_negative",
+      "duplicates": [],
+      "split": "test"
+    },
+    {
+      "id": "h17",
+      "title": "Invite link expires too early",
+      "category": "hard_negative",
+      "duplicates": [],
+      "split": "dev"
+    },
+    {
+      "id": "h18",
+      "title": "Memory usage dashboard for the worker",
+      "category": "hard_negative",
+      "duplicates": [],
+      "split": "test"
+    },
+    {
+      "id": "h19",
+      "title": "Drag to reorder chat channels",
+      "category": "hard_negative",
+      "duplicates": [],
+      "split": "dev"
+    },
+    {
+      "id": "h20",
+      "title": "Label colors are hard to read in dark mode",
+      "category": "hard_negative",
+      "duplicates": [],
+      "split": "test"
+    },
+    {
+      "id": "h21",
+      "title": "Session timeout setting for admins",
+      "category": "hard_negative",
+      "duplicates": [],
+      "split": "dev"
+    },
+    {
+      "id": "h22",
+      "title": "Archive old chat channels",
+      "category": "hard_negative",
+      "duplicates": [],
+      "split": "test"
+    },
+
+    {
+      "id": "u01",
+      "title": "Translate the interface into Spanish",
+      "category": "unrelated",
+      "duplicates": [],
+      "split": "dev"
+    },
+    {
+      "id": "u02",
+      "title": "Add a changelog page",
+      "category": "unrelated",
+      "duplicates": [],
+      "split": "test"
+    },
+    {
+      "id": "u03",
+      "title": "Emoji picker",
+      "category": "unrelated",
+      "duplicates": [],
+      "split": "dev"
+    },
+    {
+      "id": "u04",
+      "title": "Upgrade the Postgres driver",
+      "category": "unrelated",
+      "duplicates": [],
+      "split": "test"
+    },
+    {
+      "id": "u05",
+      "title": "Onboarding tour for new users",
+      "category": "unrelated",
+      "duplicates": [],
+      "split": "dev"
+    },
+    {
+      "id": "u06",
+      "title": "Print stylesheet",
+      "category": "unrelated",
+      "duplicates": [],
+      "split": "test"
+    },
+    {
+      "id": "u07",
+      "title": "Weekly digest newsletter",
+      "category": "unrelated",
+      "duplicates": [],
+      "split": "dev"
+    },
+    {
+      "id": "u08",
+      "title": "Custom font choice",
+      "category": "unrelated",
+      "duplicates": [],
+      "split": "test"
+    },
+    {
+      "id": "u09",
+      "title": "Integrate with Slack",
+      "category": "unrelated",
+      "duplicates": [],
+      "split": "dev"
+    },
+    {
+      "id": "u10",
+      "title": "Sound effects on completion",
+      "category": "unrelated",
+      "duplicates": [],
+      "split": "test"
+    },
+    {
+      "id": "u11",
+      "title": "Pin favourite projects to the sidebar",
+      "category": "unrelated",
+      "duplicates": [],
+      "split": "dev"
+    },
+    {
+      "id": "u12",
+      "title": "Right-to-left language support",
+      "category": "unrelated",
+      "duplicates": [],
+      "split": "test"
+    },
+    {
+      "id": "u13",
+      "title": "Confetti animation",
+      "category": "unrelated",
+      "duplicates": [],
+      "split": "dev"
+    },
+    {
+      "id": "u14",
+      "title": "Move CI to a faster runner",
+      "category": "unrelated",
+      "duplicates": [],
+      "split": "test"
+    }
+  ]
+}

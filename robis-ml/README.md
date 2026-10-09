@@ -12,7 +12,7 @@ cd robis-ml
 uv venv --python 3.11 .venv
 uv pip install --python .venv/bin/python -e ".[dev]"
 
-.venv/bin/python -m pytest                    # 35 tests
+.venv/bin/python -m pytest                    # 86 tests
 
 # local only; anywhere else, set ROBIS_ML_TOKEN instead
 ROBIS_ML_ALLOW_ANONYMOUS=1 .venv/bin/python -m uvicorn robis_ml.service:app --port 8000
@@ -50,14 +50,107 @@ clearly:
 
 Same intent, same best match, less than half the score, because `auth` and
 `authentication` are different tokens and TF-IDF has no idea they are related.
-This is the strongest argument for sentence embeddings, and it is why
-`evaluate.py` exists: so that swap can be judged on numbers rather than on
-taste.
+This is the strongest argument for sentence embeddings, and the measurement
+below now puts a number on it.
 
-**There is no precision or recall figure for this model.** That would need a
-labelled set of true duplicate pairs, which does not exist here. Until it
-does, this is not a validated model, and the 0.35 default threshold is a
-product guess tuned by eye, not a learned one.
+### Measured against a labelled set
+
+```bash
+.venv/bin/python -m robis_ml.duplicate_eval
+```
+
+No database needed. The labelled set is
+[`robis_ml/datasets/duplicates.json`](robis_ml/datasets/duplicates.json):
+
+- **Corpus:** 40 issues, the 10 seeded titles verbatim (a test checks them
+  against `scripts/db/seed.ts`) plus 30 written in Robis's own domain.
+- **Queries:** 84 bare titles, as somebody types them into the composer:
+  - 34 paraphrases
+  - 14 lexical gaps: same intent, almost no shared words
+  - 22 hard negatives: shared words, different intent
+  - 14 unrelated
+
+Each query is scored the way the composer shows it: a bare title embedded
+with `compose_text`, cut at the threshold, then at the three hints the API
+keeps. Tests check that this matches `DuplicateFinder.query` result for
+result. Other tests read the API's own display limit and score floor from
+`backend/api/src/suggestions.ts`, so the evaluation cannot drift from what
+reaches the screen.
+Precision counts hints shown. Recall counts duplicate pairs. A false alarm is
+a query with no duplicate that still gets a hint, counted once per query.
+These are different denominators and are never combined into one number.
+
+**The threshold is chosen on one half and reported on the other.** Every
+query was put in `dev` or `test` when it was written, before any score
+existed. The rule was fixed in advance too: the best pair F1 on dev, with
+ties going to the stricter threshold. F1 is a neutral default here, not a
+rule derived from the product.
+
+That rule picks **0.40**, which is now the default. On the test half, with
+Wilson 95% intervals:
+
+| At 0.40, test half | Rate | 95% interval | Count |
+| --- | --- | --- | --- |
+| Precision | 0.79 | 0.57–0.91 | 15 / 19 hints |
+| Recall | 0.62 | 0.43–0.79 | 15 / 24 pairs |
+| Recall, paraphrases | 0.88 | 0.66–0.97 | 15 / 17 |
+| **Recall, lexical gaps** | **0.00** | 0.00–0.35 | 0 / 7 |
+| False alarms, hard negatives | 0.36 | 0.15–0.65 | 4 / 11 queries |
+| False alarms, unrelated | 0.00 | 0.00–0.35 | 0 / 7 queries |
+
+The split holds out *queries*, not *issues*. Both halves search the same
+corpus, as production does, and 5 corpus issues are the target of a query in
+each half. There is no single false-alarm rate worth quoting, because the
+overall figure (4 of 18) depends on how many hard negatives the set's author
+chose to write.
+
+The full dev sweep, for anybody who wants to argue for a different rule:
+
+| Threshold | Precision | Recall | F1 | False alarms |
+| --- | --- | --- | --- | --- |
+| 0.25 | 0.53 | 0.67 | 0.59 | 0.33 |
+| 0.30 | 0.54 | 0.58 | 0.56 | 0.33 |
+| 0.35 | 0.68 | 0.54 | 0.60 | 0.22 |
+| **0.40** | 0.72 | 0.54 | **0.62** | 0.22 |
+| 0.45 | 0.79 | 0.46 | 0.58 | 0.17 |
+| 0.50 | 0.91 | 0.42 | 0.57 | 0.06 |
+| 0.55 | 1.00 | 0.33 | 0.50 | 0.00 |
+
+A hint is advisory and cheap to ignore, but an unwanted one still costs
+attention. A rule that capped false alarms first would land nearer 0.50.
+That is a reasonable product choice. It was not the rule fixed in advance,
+so it is not the default.
+
+What this does and does not show:
+
+- **When the words overlap, it mostly works. When they don't, it found
+  nothing.** It caught 15 of 17 paraphrases and none of the 7 lexical-gap
+  duplicates. Dropping to 0.20 finds 1 of 7, at the cost of an unwanted hint
+  on more than half of the queries that have no duplicate. The missing
+  stemming is a plausible cause, but that has not been tested.
+- **Shared vocabulary causes the false alarms.** Every false alarm came from
+  a hard negative, such as "Rate limit the search endpoint" matching "Rate
+  limit the auth endpoints". None came from an unrelated title.
+- **0.40 is not shown to be better than the old 0.35.** It was chosen on dev
+  under the rule fixed in advance, and the test half did not confirm it. Dev
+  preferred 0.40 by 0.02 F1. Test preferred 0.35 by 0.04 (0.74 against
+  0.70), which is two pairs and one false alarm. Both gaps are inside the
+  noise. The threshold was not re-picked on test, because that would make
+  the test numbers meaningless. Now that test has been seen, any further
+  change to the threshold is exploratory.
+- **This is not an independent benchmark.** The same person wrote the set
+  and the model. They chose the split before seeing any score, but they knew
+  how TF-IDF behaves. The intervals are wide because the set is small.
+- **It measures title-only matching on clean titles.** Ten corpus issues are
+  seed titles with no description. Real issues have descriptions, typos and
+  vocabulary nobody anticipated. These numbers are not a prediction of how
+  it does in a real workspace.
+
+A test asserts that `DEFAULT_DUPLICATE_THRESHOLD` still equals the dev
+choice. If the data or the model changes and the best threshold moves, the
+suite fails, so the constant cannot quietly go back to being a guess. The
+same command will judge an embedding model, and lexical-gap recall is the
+number to beat.
 
 ## Priority triage
 
@@ -142,9 +235,8 @@ Four deliberate choices:
 triaged issues, which is below the threshold to fit at all. Quoting a metric
 computed on nine rows would be the dishonest part of this module.
 
-Still missing: `DuplicateFinder` has no precision or recall figure, because
-no labelled set of true duplicate pairs exists. Until one does, it is not a
-validated model and the 0.35 threshold remains a guess tuned by eye.
+`DuplicateFinder` is measured separately, against a labelled set rather than
+a workspace. See [Measured against a labelled set](#measured-against-a-labelled-set).
 
 ## Multi-tenancy, and what is not protected
 
@@ -186,14 +278,17 @@ answering.
 
 ```
 robis_ml/
-  model.py      DuplicateFinder, TriageModel, compose_text, the vectorizer
-  data.py       read-only Postgres loader, scoped by workspace
-  evaluate.py   stratified split, macro-F1 vs baseline
-  service.py    FastAPI: /health, /similar, /triage
-  auth.py       shared bearer token
+  model.py           DuplicateFinder, TriageModel, compose_text, the vectorizer
+  data.py            read-only Postgres loader, scoped by workspace
+  evaluate.py        triage: repeated stratified k-fold against a baseline
+  duplicate_eval.py  duplicates: precision and recall on the labelled set
+  datasets/          the labelled duplicate set
+  service.py         FastAPI: /health, /similar, /triage
+  auth.py            shared bearer token
 tests/
-  test_model.py   17 tests, in-memory, no database
-  test_service.py 18 tests: auth, tenant isolation, cache
+  test_model.py          17 tests, in-memory, no database
+  test_service.py        18 tests: auth, tenant isolation, cache
+  test_duplicate_eval.py 51 tests: the metrics, the set's integrity, the threshold
 ```
 
 `compose_text` is shared by the corpus and the query on purpose. They were two

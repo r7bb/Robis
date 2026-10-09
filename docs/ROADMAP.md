@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status: **400 TypeScript tests, 35 Python tests, lint and typecheck clean,
+Status: **400 TypeScript tests, 86 Python tests, lint and typecheck clean,
 production build passing.**
 
 A full inventory of what exists is in
@@ -51,30 +51,40 @@ published numbers, a screenshot script that drives a real browser.
 **Machine learning.** `robis-ml/`: duplicate detection and priority triage,
 behind a service token, wired into the issue composer. Typing a title shows
 possible duplicates with a match percentage; a missing or broken ML service
-degrades to no hints and never blocks filing. Evaluation is repeated
+degrades to no hints and never blocks filing. Triage evaluation is repeated
 stratified k-fold against a stratified-random baseline with a margin gate, a
-time-ordered holdout, and a Brier score. Cached models are invalidated by a
-`(count, max(updated_at))` fingerprint rather than a timer.
+time-ordered holdout, and a Brier score. Duplicate detection is measured
+against a labelled set of 84 queries: pair-level precision and recall, with a
+threshold chosen on a dev half and reported on a test half with Wilson
+intervals. On the test half: precision 0.79, recall 0.62, and 0 of 7 on
+lexical-gap duplicates. The set is small and written by the project author,
+so these are not production figures. The dev-chosen 0.40 was not confirmed
+as better than the old 0.35 on test; the difference is inside the noise. A
+test keeps the default threshold equal to the dev choice. Cached models are invalidated by a `(count, max(updated_at))`
+fingerprint rather than a timer.
 
 ---
 
 ## Pick up here next session
 
-### 1. A labelled duplicate set
+### 1. Close the lexical gap, and measure it
 
-Everything else about the duplicate feature is built and verified end to
-end; what is missing is evidence that it is any good. See item 2.
+Duplicate detection finds none of the 7 lexical-gap duplicates in the test
+half ("auth" against "authentication"). Two candidates need no model
+download and can be judged with `python -m robis_ml.duplicate_eval` today:
 
-### 2. Precision and recall for `DuplicateFinder`
+- character n-grams (`analyzer="char_wb"`), alone or alongside word n-grams
+- stemming before the word vectorizer
 
-The triage model is now measured properly (repeated stratified k-fold against
-a stratified-random baseline, a time-ordered holdout, and a Brier score, with
-a margin the model must clear). The duplicate model is not measured at all,
-because no labelled set of true duplicate pairs exists.
+Adopt one only if lexical-gap recall rises without the hard-negative false
+alarms (currently 4 of 11) rising with it. An embedding model stays blocked
+until weights can be downloaded.
 
-Build one from the seeded corpus plus real paraphrases, then report precision
-and recall at several thresholds. Until that exists, 0.35 is a guess tuned by
-eye and the model is not validated.
+### 2. A labelled set somebody else wrote
+
+The current set was written by the same person who built the model. A second
+author, or real duplicate pairs from a live workspace, would test whether
+these numbers survive contact with somebody else's wording.
 
 ### 3. An SMTP driver for the `Mailer` port
 

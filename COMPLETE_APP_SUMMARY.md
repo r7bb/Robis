@@ -15,7 +15,7 @@ Written to be checkable. Every row names a file you can open.
 | Services | 4 (web, API, realtime gateway, worker) plus an optional ML service |
 | Database tables | 18 |
 | HTTP endpoints | 60+ |
-| Tests | 400 TypeScript, 35 Python |
+| Tests | 400 TypeScript, 86 Python |
 | Screenshots | 28, all captured from the running app |
 | Measured throughput | ~4,400 req/s, zero errors |
 
@@ -153,6 +153,7 @@ JavaScript.
 | Priority triage (logistic regression) | same |
 | Refuses to predict below 40 triaged issues | same |
 | Repeated stratified k-fold against a stratified-random baseline | `robis-ml/robis_ml/evaluate.py` |
+| Duplicate precision and recall on a labelled set, dev/test split | `robis-ml/robis_ml/duplicate_eval.py` |
 | FastAPI service, per-workspace models | `robis-ml/robis_ml/service.py` |
 | Shared bearer token, refuses to start without one | `robis-ml/robis_ml/auth.py` |
 | Duplicate hints in the issue composer | `backend/api/src/suggestions.ts` |
@@ -190,7 +191,7 @@ is.
 | Verified container build | No Docker available |
 | Production mail driver | No SMTP. The API refuses to boot in production without one rather than printing reset links to a log |
 | Deployment | Follows from the above |
-| Duplicate detection accuracy | No labelled duplicate set, so no precision or recall figure |
+| Duplicate detection, reworded intent | Finds 0 of 7 lexical-gap duplicates on the labelled set's test half |
 
 The first four are environment constraints and are stated rather than
 disguised. The last is real work that has not been done.
