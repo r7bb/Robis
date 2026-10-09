@@ -19,6 +19,37 @@ bun run dev:web        # :3000
 
 Sign in as `rohit@robis.test` with `robis-demo-password`.
 
+## What's new
+
+Newest first. The same list is on the landing page, where each entry opens to
+show how it was checked.
+
+- **Request hardening** (2026-10-09). The API no longer trusts any client to
+  name its own address (`TRUST_PROXY` now defaults to no proxy), every
+  request carries an id from the API through to the ML service, and pages
+  with a token in the link send no referrer and are never cached.
+- **Priority suggestions in the composer** (2026-10-09). Typing an issue
+  title offers a suggested priority with its score, filed only if you press
+  Use. Below 40 triaged issues the model says so instead of guessing.
+- **Duplicate detection, measured** (2026-10-09). A labelled set of 84
+  queries, threshold chosen on one half and reported on the other: precision
+  0.79, recall 0.62, and none of the 7 duplicates that share almost no words.
+- **Character n-grams tried, and not adopted** (2026-10-09). None of five
+  representations found more reworded duplicates without more false alarms.
+- **A live landing page** (2026-10-09). The name letter by letter over a
+  WebGL field, and a demo where you cut the network and watch it merge.
+- **An authenticated ML service** (2026-10-08). A token it refuses to start
+  without, and duplicate hints that degrade to nothing when it is down.
+
+What comes next is in [docs/PLATFORM_PLAN.md](docs/PLATFORM_PLAN.md).
+
+> **Behind a proxy, set `TRUST_PROXY`.** It defaults to trusting no proxy,
+> which is right when the API faces clients directly. Behind a load balancer
+> left unset, every client appears to come from the proxy's address and
+> shares one rate-limit bucket. Set the number of trusted hops (`1` for one
+> proxy) or the proxy's addresses, and keep the API port unreachable except
+> through that proxy.
+
 ---
 
 ## What it does
@@ -137,7 +168,7 @@ same intent. Below 40 triaged issues the model **declines to predict** rather
 than returning a confident-looking guess.
 
 It sits behind a shared service token and is wired into the issue composer:
-typing a title shows possible duplicates. If the service is missing, slow or
+typing a title shows possible duplicates and a suggested priority. If the service is missing, slow or
 broken, the hints disappear and filing still works.
 
 Duplicate detection is measured against a small labelled set, with the
@@ -152,7 +183,7 @@ figures. See **[robis-ml/README.md](robis-ml/README.md)**.
 
 | Command               | What it does                         |
 | --------------------- | ------------------------------------ |
-| `bun test`            | 400 tests                            |
+| `bun test`            | over 460 tests                       |
 | `bun run typecheck`   | every package                        |
 | `bun run lint`        | Biome                                |
 | `bun run loadtest`    | the benchmark above                  |

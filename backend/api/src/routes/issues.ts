@@ -93,7 +93,11 @@ export async function issueRoutes(
        * filing an issue never sees an error from a hint.
        */
       try {
-        return { similar: await suggestions.similar(workspaceId, query.title, query.description) };
+        return {
+          similar: await suggestions.similar(workspaceId, query.title, query.description, {
+            requestId: request.id,
+          }),
+        };
       } catch (error) {
         request.log.warn({ err: error }, 'suggestion lookup failed');
         return { similar: [] };
@@ -119,7 +123,9 @@ export async function issueRoutes(
 
       try {
         return {
-          suggestion: await suggestions.triage(workspaceId, query.title, query.description),
+          suggestion: await suggestions.triage(workspaceId, query.title, query.description, {
+            requestId: request.id,
+          }),
         };
       } catch (error) {
         request.log.warn({ err: error }, 'priority suggestion failed');

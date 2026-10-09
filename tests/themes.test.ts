@@ -223,6 +223,7 @@ describe('no hardcoded colours outside the palette', () => {
     'frontend/features/landing/live-paragraph.tsx',
     'frontend/features/landing/faq.tsx',
     'frontend/features/landing/say-it.tsx',
+    'frontend/features/landing/whats-new.tsx',
   ]);
 
   function sourceFiles(): string[] {

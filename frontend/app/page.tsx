@@ -18,6 +18,7 @@ import {
   Stack,
 } from '../features/landing/sections.tsx';
 import { useScrolled } from '../features/landing/use-scroll.ts';
+import { WhatsNew } from '../features/landing/whats-new.tsx';
 import { api, type Me } from '../lib/api.ts';
 
 /**
@@ -112,6 +113,7 @@ export default function Home() {
             exactly what is missing from this list. */}
         <Stack />
         <SayIt />
+        <WhatsNew />
         <Faq />
         <Closing href={href} label={label} />
       </main>

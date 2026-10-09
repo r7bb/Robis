@@ -21,6 +21,7 @@
         "@types/bun": "latest",
         "drizzle-orm": "^0.38.0",
         "embedded-postgres": "18.4.0-beta.17",
+        "fastify": "^5.2.0",
         "postgres": "^3.4.9",
         "typescript": "^5.7.0",
       },

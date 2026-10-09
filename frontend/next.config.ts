@@ -25,6 +25,25 @@ const config: NextConfig = {
    * it reads as a rendering bug rather than as tooling.
    */
   devIndicators: false,
+  /*
+   * The reset and verification pages carry a single-use token in the URL.
+   * `no-referrer` stops a link clicked on the page from handing that URL,
+   * token and all, to whatever site it leads to; `no-store` stops a shared
+   * or browser cache keeping a copy of a page whose whole point is that it
+   * works once.
+   */
+  async headers() {
+    const tokenPage = [
+      { key: 'Referrer-Policy', value: 'no-referrer' },
+      { key: 'Cache-Control', value: 'no-store' },
+    ];
+    // The bare path and anything under it, so a future sub-route keeps the
+    // same protection. Query strings are covered either way.
+    return ['/reset-password', '/verify-email'].flatMap((path) => [
+      { source: path, headers: tokenPage },
+      { source: `${path}/:path*`, headers: tokenPage },
+    ]);
+  },
 };
 
 export default config;

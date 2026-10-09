@@ -4,6 +4,12 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   API_PORT: z.coerce.number().int().min(1).max(65535).default(4000),
   API_HOST: z.string().default('127.0.0.1'),
+  /**
+   * Which proxies may set the client address through X-Forwarded-For.
+   * Empty trusts none; a number trusts that many hops; otherwise addresses or
+   * CIDRs, comma-separated. See `trustProxySetting`.
+   */
+  TRUST_PROXY: z.string().default(''),
   WEB_ORIGIN: z.string().default('http://localhost:3000'),
   /** Session cookies are HTTPS-only unless explicitly relaxed for local dev. */
   COOKIE_SECURE: z

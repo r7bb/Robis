@@ -236,10 +236,12 @@ describe('the real suggestion client', () => {
   // than replaced by a stub.
   let answer: { status: number; body: unknown } = { status: 200, body: {} };
   const seen: { path: string; auth: string | null }[] = [];
+  let lastRequestId: string | null = null;
   const server = Bun.serve({
     port: 0,
     fetch(req) {
       seen.push({ path: new URL(req.url).pathname, auth: req.headers.get('authorization') });
+      lastRequestId = req.headers.get('x-request-id');
       return new Response(JSON.stringify(answer.body), { status: answer.status });
     },
   });
@@ -271,6 +273,14 @@ describe('the real suggestion client', () => {
 
     expect(await client.triage('ws-1', 'x')).toBeNull();
     expect(await client.similar('ws-1', 'x')).toEqual([]);
+  });
+
+  test('forwards the request id, so one trace spans the API and the model', async () => {
+    answer = { status: 200, body: { similar: [] } };
+
+    await client.similar('ws-1', 'x', null, { requestId: 'trace-abc-12345' });
+
+    expect(lastRequestId).toBe('trace-abc-12345');
   });
 
   test('a malformed answer becomes no suggestion', async () => {

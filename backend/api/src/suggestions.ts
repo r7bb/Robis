@@ -38,12 +38,21 @@ export type TriageSuggestion =
   | { priority: PredictedPriority; score: number }
   | { priority: null; trainedOn: number; needed: number };
 
+/** Carried to the ML service so one request id spans both processes' logs. */
+export type CallContext = { requestId?: string };
+
 export type SuggestionClient = {
-  similar(workspaceId: string, title: string, description?: string | null): Promise<SimilarIssue[]>;
+  similar(
+    workspaceId: string,
+    title: string,
+    description?: string | null,
+    context?: CallContext,
+  ): Promise<SimilarIssue[]>;
   triage(
     workspaceId: string,
     title: string,
     description?: string | null,
+    context?: CallContext,
   ): Promise<TriageSuggestion | null>;
 };
 
@@ -157,7 +166,8 @@ export function createSuggestionClient(
     workspaceId: string,
     endpoint: 'similar' | 'triage',
     title: string,
-    description?: string | null,
+    description: string | null | undefined,
+    context: CallContext | undefined,
   ): Promise<unknown> {
     // `AbortSignal.timeout` rather than a racing promise, so the socket is
     // actually closed when the deadline passes instead of being left to
@@ -171,6 +181,7 @@ export function createSuggestionClient(
         headers: {
           'content-type': 'application/json',
           ...(config.token ? { authorization: `Bearer ${config.token}` } : {}),
+          ...(context?.requestId ? { 'x-request-id': context.requestId } : {}),
         },
         body: JSON.stringify({ title, description: description ?? null }),
       });
@@ -191,11 +202,11 @@ export function createSuggestionClient(
   }
 
   return {
-    async similar(workspaceId, title, description) {
-      return parse(await ask(workspaceId, 'similar', title, description));
+    async similar(workspaceId, title, description, context) {
+      return parse(await ask(workspaceId, 'similar', title, description, context));
     },
-    async triage(workspaceId, title, description) {
-      return parseTriage(await ask(workspaceId, 'triage', title, description));
+    async triage(workspaceId, title, description, context) {
+      return parseTriage(await ask(workspaceId, 'triage', title, description, context));
     },
   };
 }

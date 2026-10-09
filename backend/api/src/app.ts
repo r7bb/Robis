@@ -2,9 +2,10 @@ import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import type { Database } from '@robis/database';
 import { ConsoleMailer, type Mailer } from '@robis/mailer';
-import Fastify, { type FastifyInstance } from 'fastify';
+import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
 import type { Env } from './env.ts';
 import { ApiError } from './errors.ts';
+import { requestIdFrom, trustProxySetting } from './hardening.ts';
 import { createMetrics, registerMetrics } from './metrics.ts';
 import { attachUser } from './plugins/authz.ts';
 import { authRoutes } from './routes/auth.ts';
@@ -78,7 +79,21 @@ export function buildApp({
   suggestions,
 }: AppDeps): FastifyInstance {
   const limits: RateLimits = { ...DEFAULT_RATE_LIMITS, ...rateLimits };
-  const app = Fastify({ logger, trustProxy: true });
+  // Typed as plain HTTP/1 options so Fastify picks that overload: a union
+  // in `trustProxy` alone otherwise steers inference towards HTTP/2.
+  const options: FastifyServerOptions = {
+    logger,
+    trustProxy: trustProxySetting(env.TRUST_PROXY),
+    // Every log line for a request carries this id, and so does the
+    // response. A well-formed incoming one is kept so a trace can cross
+    // services; anything else is replaced (see `requestIdFrom`).
+    genReqId: (req) => requestIdFrom(req.headers['x-request-id']),
+  };
+  const app = Fastify(options);
+
+  app.addHook('onRequest', async (request, reply) => {
+    reply.header('x-request-id', request.id);
+  });
 
   app.register(cookie);
   app.register(cors, {

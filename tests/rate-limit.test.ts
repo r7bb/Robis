@@ -42,9 +42,11 @@ const register = (app: Awaited<ReturnType<typeof throttledApp>>, ip = '10.0.0.1'
   app.inject({
     method: 'POST',
     url: '/auth/register',
-    // Fastify reads the client address from this when `trustProxy` is on,
-    // which is how one test can pretend to be several callers.
-    headers: { 'x-forwarded-for': ip },
+    // The socket address itself, which is what the limiter keys on now that
+    // no proxy is trusted by default. It used to set X-Forwarded-For, which
+    // only worked because any client could: the hole this test now proves
+    // closed from the other side (see tests/hardening.test.ts).
+    remoteAddress: ip,
     payload: {
       email: `limited${++counter}-${Date.now()}@robis.test`,
       name: 'Limited',

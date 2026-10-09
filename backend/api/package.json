@@ -6,6 +6,7 @@
   "exports": {
     "./app": "./src/app.ts",
     "./env": "./src/env.ts",
+    "./hardening": "./src/hardening.ts",
     "./rate-limit": "./src/plugins/rate-limit.ts",
     "./suggestions": "./src/suggestions.ts"
   },

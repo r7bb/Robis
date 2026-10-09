@@ -124,7 +124,9 @@ something (invitations, perhaps) or say in the UI that it is informational.
 ## Remaining backlog
 
 **Operations.** Distributed tracing across API, gateway and worker.
-Structured request logging with correlation ids.
+Request ids now span the API and the ML service; the gateway and worker are
+next. Rate limits key on the full IPv6 address, so a client holding a /64
+can rotate within it; key on the /64 instead.
 
 **Product.** Drag-and-drop on the board. A dedicated search results page.
 Issue filtering by label. Bulk actions.
