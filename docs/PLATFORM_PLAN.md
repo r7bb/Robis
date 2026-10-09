@@ -87,7 +87,23 @@ Left open from review, for a later pass:
 ## Phase 2b. Profiles, photos and stories (M to L)
 
 Inside the workspace only: Robis's tenancy and 404-not-403 rules stay as
-they are, so nothing here is public.
+they are, so nothing here is public. The intent, in the owner's words: a mix
+of social media and work.
+
+Order of work, decided 2026-10-09:
+
+1. **App-specific usernames.** Every account gets a unique `@handle`
+   (lowercase letters, digits, `_` and `.`, 3 to 30 characters), chosen at
+   sign-up and backfilled for existing accounts from the email's local part.
+   From then on the audit trail records the handle, never an email or real
+   name, which removes the erasure problem Phase 2 left open for new events.
+   Mentions move to `@handle`. Sign-up keeps its age confirmation and
+   terms/privacy links, flagged for review.
+2. **A picture before you start.** A new member adds at least one image
+   before using the workspace: upload a photo, take one with the camera, or
+   pick a generated avatar. The avatar is per account and is served only to
+   people who share a workspace with its owner.
+3. **Photos and stories**, as below.
 
 - Rich profiles: photo, cover, role, a "working on" line, recent activity,
   and a grid of what the person has shared.

@@ -26,14 +26,14 @@ describe('the changelog', () => {
     for (const entry of CHANGELOG) expect(entry.checked.length).toBeGreaterThan(20);
   });
 
-  test('every end-to-end feature says where to find it and what each layer does', () => {
+  test('every feature says where to find it and what each layer does', () => {
     const features = CHANGELOG.flatMap((entry) => (entry.feature ? [entry.feature] : []));
     expect(features.length).toBeGreaterThan(0);
 
     for (const feature of features) {
       expect(feature.where.length).toBeGreaterThan(10);
       expect(feature.layers.length).toBeGreaterThanOrEqual(2);
-      // The landing page splits each layer on its first ": " into label and text.
+      // The What's new page splits each layer on its first ": " into label and text.
       for (const layer of feature.layers) expect(layer).toMatch(/^[A-Z][\w ]+: \S/);
     }
   });

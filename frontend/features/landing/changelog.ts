@@ -13,9 +13,9 @@ export type Area = 'Product' | 'ML' | 'Security' | 'Site';
 /**
  * A feature someone can use today, from the screen down to the database.
  *
- * Only entries with one appear on the landing page. Measurements, refusals
- * and hardening stay on the What's new page: they are real work, but there
- * is nothing to click.
+ * Shown on the What's new page as where to find it and what each layer does.
+ * Measurements, refusals and hardening have none: they are real work, but
+ * there is nothing to click.
  */
 export type Feature = {
   /** What a person would call it. */

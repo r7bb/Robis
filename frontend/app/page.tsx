@@ -17,7 +17,6 @@ import {
   REPO,
   Stack,
 } from '../features/landing/sections.tsx';
-import { ShippedFeatures } from '../features/landing/shipped.tsx';
 import { useScrolled } from '../features/landing/use-scroll.ts';
 import { api, type Me } from '../lib/api.ts';
 
@@ -119,7 +118,6 @@ export default function Home() {
             exactly what is missing from this list. */}
         <Stack />
         <SayIt />
-        <ShippedFeatures />
         <Faq />
         <Closing href={href} label={label} />
       </main>

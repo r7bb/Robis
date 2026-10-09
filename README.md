@@ -21,9 +21,9 @@ Sign in as `rohit@robis.test` with `robis-demo-password`.
 
 ## What's new
 
-Newest first. The same list is the site's What's new page, where each entry
-opens to show how it was checked. The landing page shows only the entries
-that work end to end, with where to find each and what every layer does.
+Newest first. The same list is the site's What's new page, linked from the
+header, where each entry opens to show how it was checked and, for features,
+where to find it and what each layer does.
 
 - **A tamper-evident audit trail** (2026-10-09). Every change in a workspace
   is recorded in the same transaction, numbered, and chained with SHA-256,

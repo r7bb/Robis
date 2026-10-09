@@ -74,6 +74,14 @@ const CAPABILITIES = [
   { title: 'Meetings', body: 'Schedule, invite and answer. Moving the time clears every yes.' },
   { title: 'Four roles', body: 'One permission matrix. A stranger gets a 404, never a 403.' },
   { title: 'Search', body: 'Issues, documents and comments, through Postgres full-text search.' },
+  {
+    title: 'Hints as you type',
+    body: 'A new issue shows likely duplicates and a suggested priority. Nothing is set until you choose.',
+  },
+  {
+    title: 'An audit trail',
+    body: 'Every change, chained so an edit shows. Admins check it, export it, or stream it to a SIEM.',
+  },
 ] as const;
 
 /**

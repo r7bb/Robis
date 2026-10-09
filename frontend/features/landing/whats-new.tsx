@@ -93,7 +93,26 @@ export function WhatsNew({ standalone = false }: { standalone?: boolean }) {
                   <p className="max-w-[62ch] text-base leading-relaxed text-muted">
                     {entry.summary}
                   </p>
-                  <p className="mt-3 max-w-[62ch] border-l-2 border-accent/40 pl-4 text-sm leading-relaxed text-faint">
+                  {entry.feature ? (
+                    <div className="mt-4 max-w-[62ch]">
+                      <p className="text-sm text-faint">
+                        <span className="text-muted">Try it. </span>
+                        {entry.feature.where}
+                      </p>
+                      <dl className="mt-3 space-y-2 text-sm leading-relaxed">
+                        {entry.feature.layers.map((layer) => {
+                          const [label, ...rest] = layer.split(': ');
+                          return (
+                            <div key={layer} className="grid grid-cols-[7rem_minmax(0,1fr)] gap-3">
+                              <dt className="font-medium text-content">{label}</dt>
+                              <dd className="text-muted">{rest.join(': ')}</dd>
+                            </div>
+                          );
+                        })}
+                      </dl>
+                    </div>
+                  ) : null}
+                  <p className="mt-4 max-w-[62ch] border-l-2 border-accent/40 pl-4 text-sm leading-relaxed text-faint">
                     <span className="text-muted">How it was checked. </span>
                     {entry.checked}
                   </p>
