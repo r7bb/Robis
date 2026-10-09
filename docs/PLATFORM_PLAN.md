@@ -98,7 +98,14 @@ Order of work, decided 2026-10-09:
    From then on the audit trail records the handle, never an email or real
    name, which removes the erasure problem Phase 2 left open for new events.
    Mentions move to `@handle`. Sign-up keeps its age confirmation and
-   terms/privacy links, flagged for review.
+   terms/privacy links, flagged for review. **Shipped 2026-10-09.** Emails
+   are now shown only to admins in the member list.
+   Left open from review: a released username is free at once, so a new
+   holder inherits how old `@mentions` read (a hold period and a history
+   table would fix it); lookalike names (`ada.l` and `ada_l`) are not
+   blocked; adding someone to a workspace needs no acceptance from them; the
+   age confirmation is not stored with a timestamp or terms version; and
+   accounts that predate usernames are not prompted to choose a new one.
 2. **A picture before you start.** A new member adds at least one image
    before using the workspace: upload a photo, take one with the camera, or
    pick a generated avatar. The avatar is per account and is served only to

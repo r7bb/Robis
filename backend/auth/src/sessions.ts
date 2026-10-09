@@ -6,6 +6,8 @@ export type AuthenticatedUser = {
   id: string;
   email: string;
   name: string;
+  /** The app-specific `@handle`. */
+  username: string;
 };
 
 /** Only refresh `last_used_at` once an hour, to keep reads from becoming writes. */
@@ -42,6 +44,7 @@ export async function resolveSession(
       id: users.id,
       email: users.email,
       name: users.name,
+      username: users.username,
     })
     .from(sessions)
     .innerJoin(users, eq(users.id, sessions.userId))
@@ -56,7 +59,7 @@ export async function resolveSession(
     await db.update(sessions).set({ lastUsedAt: new Date() }).where(eq(sessions.id, row.sessionId));
   }
 
-  return { id: row.id, email: row.email, name: row.name };
+  return { id: row.id, email: row.email, name: row.name, username: row.username };
 }
 
 export async function revokeSession(db: Executor, token: string): Promise<void> {

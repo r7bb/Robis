@@ -25,6 +25,11 @@ Newest first. The same list is the site's What's new page, linked from the
 header, where each entry opens to show how it was checked and, for features,
 where to find it and what each layer does.
 
+- **Usernames** (2026-10-09). Everyone picks an `@username` at sign-up;
+  teammates add and mention each other by it. Email addresses are shown only
+  to workspace admins, and the audit trail names people by username, not
+  email. Sign-up now asks for an age confirmation and links draft terms and
+  privacy pages, both marked for legal review.
 - **A tamper-evident audit trail** (2026-10-09). Every change in a workspace
   is recorded in the same transaction, numbered, and chained with SHA-256,
   so an edited or deleted event is named when the chain is checked. Admins
@@ -231,9 +236,11 @@ rather than printing reset links into a log.
 Nothing here is a security or compliance claim. It describes what the code does
 and what was measured.
 
-The audit trail keeps the names and emails of members who were added,
-removed or changed role, and it is built to outlive the accounts it names.
-How long to keep it, and how that sits with a request to erase someone's
-data, needs a legal review before any real users.
+The audit trail is built to outlive the accounts it names. New member events
+record a username rather than an email or real name; events written before
+usernames existed still hold the email they recorded. How long to keep the
+trail, and how that sits with a request to erase someone's data, needs a
+legal review before any real users. The terms and privacy pages are drafts
+for the same review, and the minimum age (16) is a placeholder.
 
 What is next is in **[docs/ROADMAP.md](docs/ROADMAP.md)**.

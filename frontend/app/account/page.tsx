@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useId, useState } from 'react';
+import { UsernameField } from '../../features/account/username-field.tsx';
 import { ApiError, api, type Me, type SessionSummary } from '../../lib/api.ts';
 import { lastTheme, useApplyTheme } from '../../lib/theme.ts';
 
@@ -55,17 +56,28 @@ export default function AccountPage() {
 
 function ProfileSection({ user, onSaved }: { user: Me['user']; onSaved: () => void }) {
   const [name, setName] = useState(user.name);
+  const [username, setUsername] = useState(user.username);
   const [saved, setSaved] = useState(false);
 
+  const nextUsername = username.trim().toLowerCase();
+
   const save = useMutation({
-    mutationFn: () => api<Me>('/auth/me', { method: 'PATCH', body: { name: name.trim() } }),
+    mutationFn: () =>
+      api<Me>('/auth/me', {
+        method: 'PATCH',
+        body: {
+          ...(name.trim() !== user.name ? { name: name.trim() } : {}),
+          ...(nextUsername !== user.username ? { username: nextUsername } : {}),
+        },
+      }),
     onSuccess: () => {
       setSaved(true);
       onSaved();
     },
   });
 
-  const unchanged = name.trim() === user.name || name.trim() === '';
+  const unchanged =
+    name.trim() === '' || (name.trim() === user.name && nextUsername === user.username);
 
   return (
     <Section title="Profile">
@@ -111,6 +123,15 @@ function ProfileSection({ user, onSaved }: { user: Me['user']; onSaved: () => vo
             />
           )}
         </Labelled>
+
+        <UsernameField
+          value={username}
+          onChange={(next) => {
+            setUsername(next);
+            setSaved(false);
+          }}
+          current={user.username}
+        />
 
         <Row>
           <button

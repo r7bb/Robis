@@ -51,6 +51,15 @@ describe('describing audit events', () => {
     expect(describeEvent('toString', {})).toBe('toString');
   });
 
+  test('member events name the username, and older ones the email they recorded', () => {
+    expect(describeEvent('member.added', { username: 'ada', role: 'MEMBER' })).toBe(
+      'added @ada as member',
+    );
+    expect(describeEvent('member.removed', { email: 'old@robis.test' })).toBe(
+      'removed old@robis.test',
+    );
+  });
+
   test('a status move names both ends', () => {
     expect(
       describeEvent('issue.status_changed', { key: 'WEB-4', from: 'IN_REVIEW', to: 'DONE' }),

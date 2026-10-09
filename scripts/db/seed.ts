@@ -209,7 +209,15 @@ try {
 
   const createdUsers = await db
     .insert(users)
-    .values(PEOPLE.map((person) => ({ email: person.email, name: person.name, passwordHash })))
+    .values(
+      PEOPLE.map((person) => ({
+        email: person.email,
+        name: person.name,
+        // Seeded people get the plain local part; real sign-ups choose theirs.
+        username: person.email.split('@')[0]!,
+        passwordHash,
+      })),
+    )
     .returning({ id: users.id, email: users.email });
 
   const userIdByEmail = new Map(createdUsers.map((user) => [user.email, user.id]));
@@ -247,7 +255,7 @@ try {
       entityType: 'member',
       entityId: userIdByEmail.get(person.email)!,
       eventType: 'member.added',
-      payload: JSON.stringify({ email: person.email, name: person.name, role: person.role }),
+      payload: JSON.stringify({ username: person.email.split('@')[0], role: person.role }),
     })),
   ];
 

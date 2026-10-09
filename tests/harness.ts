@@ -205,6 +205,7 @@ export type Actor = {
   id: string;
   email: string;
   name: string;
+  username: string;
   /** Ready-to-send `cookie` header carrying this actor's session. */
   cookie: string;
 };
@@ -215,11 +216,19 @@ let userCounter = 0;
 export async function createActor(name = `User ${++userCounter}`): Promise<Actor> {
   const { app } = await getHarness();
   const email = `user${userCounter}-${Date.now()}@robis.test`;
+  // Unique per run, like the email, and always a valid username.
+  const username = `user${userCounter}_${Date.now()}`;
 
   const response = await app.inject({
     method: 'POST',
     url: '/auth/register',
-    payload: { email, name, password: 'correct-horse-battery-staple' },
+    payload: {
+      email,
+      name,
+      username,
+      password: 'correct-horse-battery-staple',
+      ageConfirmed: true,
+    },
   });
 
   if (response.statusCode !== 201) {
@@ -232,7 +241,7 @@ export async function createActor(name = `User ${++userCounter}`): Promise<Actor
 
   const user = response.json().user as { id: string };
 
-  return { id: user.id, email, name, cookie: raw.split(';')[0]! };
+  return { id: user.id, email, name, username, cookie: raw.split(';')[0]! };
 }
 
 type RequestOptions = {

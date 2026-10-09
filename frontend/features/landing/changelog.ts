@@ -40,6 +40,24 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-09',
+    area: 'Product',
+    title: 'Usernames',
+    summary:
+      'Everyone picks an @username when they sign up, and that is how teammates find, add and mention each other. Email addresses are now shown only to workspace admins, and the audit trail names people by username instead of by email.',
+    checked:
+      'Tests cover the rule, taken and reserved names, changing a username, adding someone by username, admins-only email in the member list, and that member events carry no email or real name. Signed up through the real form in a browser.',
+    feature: {
+      name: 'An @username for everyone',
+      where: 'Sign up, or Account to change it. Add teammates by @username from Team.',
+      layers: [
+        'Sign up: a username field that says while you type whether the name is free, plus an age confirmation.',
+        'API: unique usernames, an availability check, add-by-username, and emails sent only to admins.',
+        'Database: existing accounts got a username derived safely from their email, with no collisions.',
+      ],
+    },
+  },
+  {
+    date: '2026-10-09',
     area: 'Security',
     title: 'A tamper-evident audit trail',
     summary:

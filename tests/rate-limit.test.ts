@@ -50,7 +50,9 @@ const register = (app: Awaited<ReturnType<typeof throttledApp>>, ip = '10.0.0.1'
     payload: {
       email: `limited${++counter}-${Date.now()}@robis.test`,
       name: 'Limited',
+      username: `limited${counter}_${Date.now()}`,
       password: 'correct-horse-battery-staple',
+      ageConfirmed: true,
     },
   });
 

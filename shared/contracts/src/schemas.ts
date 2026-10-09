@@ -11,6 +11,7 @@ import {
 } from './limits.ts';
 import { ROLES } from './rbac.ts';
 import { THEME_IDS } from './themes.ts';
+import { usernameSchema } from './usernames.ts';
 
 /**
  * Wire contracts shared by the API and the web client. The API validates every
@@ -38,9 +39,13 @@ export const passwordSchema = z
  * round-trip that does not exist yet. Offering a field that silently breaks
  * both would be worse than not offering it.
  */
-export const updateProfileSchema = z.object({
-  name: z.string().trim().min(1).max(80),
-});
+export const updateProfileSchema = z
+  .object({
+    name: z.string().trim().min(1).max(80),
+    username: usernameSchema,
+  })
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, { message: 'No fields to update' });
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 
 /**
@@ -87,7 +92,14 @@ export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
 export const registerSchema = z.object({
   email: z.email().max(254).toLowerCase().trim(),
   name: z.string().trim().min(1).max(80),
+  username: usernameSchema,
   password: passwordSchema,
+  /**
+   * The person confirms they meet the minimum age. Required as `true`, not
+   * merely present, so a client cannot skip the question by omitting it.
+   * The age itself (16) is a placeholder pending legal review.
+   */
+  ageConfirmed: z.literal(true, { message: 'Please confirm your age to continue' }),
 });
 export type RegisterInput = z.infer<typeof registerSchema>;
 
@@ -116,10 +128,21 @@ export const updateWorkspaceSchema = z
   .partial()
   .refine((v) => Object.keys(v).length > 0, { message: 'No fields to update' });
 
-export const inviteMemberSchema = z.object({
-  email: z.email().max(254).toLowerCase().trim(),
-  role: z.enum(ROLES),
-});
+/**
+ * Add someone by email or by username, exactly one.
+ *
+ * A username is the friendlier ask -- it is what people know each other by
+ * in here -- and saves passing email addresses around a team.
+ */
+export const inviteMemberSchema = z
+  .object({
+    email: z.email().max(254).toLowerCase().trim().optional(),
+    username: usernameSchema.optional(),
+    role: z.enum(ROLES),
+  })
+  .refine((v) => (v.email === undefined) !== (v.username === undefined), {
+    message: 'Give an email or a username, not both',
+  });
 export type InviteMemberInput = z.infer<typeof inviteMemberSchema>;
 
 export const setMemberRoleSchema = z.object({

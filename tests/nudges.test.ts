@@ -222,7 +222,7 @@ describe('not being spam', () => {
 
     await request(`/workspaces/${workspace.id}/issues/${issue.id}/comments`, {
       method: 'POST',
-      payload: { body: `@${member.email.split('@')[0]} look` },
+      payload: { body: `@${member.username} look` },
       actor: owner,
     });
 

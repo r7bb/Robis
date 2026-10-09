@@ -53,7 +53,7 @@ export const notifyMentions = async (payload: unknown, { db }: { db: Database })
   // Only workspace members can be mentioned: resolving against all users would
   // let a comment notify someone who cannot even see the issue.
   const members = await db
-    .select({ id: users.id, email: users.email })
+    .select({ id: users.id, username: users.username })
     .from(workspaceMembers)
     .innerJoin(users, eq(users.id, workspaceMembers.userId))
     .where(

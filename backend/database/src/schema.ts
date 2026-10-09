@@ -54,6 +54,13 @@ export const users = pgTable(
     // `Ada@x.com` and `ada@x.com` becoming two accounts.
     email: text('email').notNull(),
     name: text('name').notNull(),
+    /**
+     * The app-specific `@handle`. Stored lowercase; the format is enforced by
+     * `usernameSchema` at the edge and uniqueness by the index below. It is
+     * what mentions, member lists and the audit trail name a person by, so
+     * none of them carries an email address.
+     */
+    username: text('username').notNull(),
     passwordHash: text('password_hash').notNull(),
     /**
      * When this address was confirmed, or null if it never was.
@@ -66,7 +73,10 @@ export const users = pgTable(
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [uniqueIndex('users_email_key').on(t.email)],
+  (t) => [
+    uniqueIndex('users_email_key').on(t.email),
+    uniqueIndex('users_username_key').on(t.username),
+  ],
 );
 
 /** What a one-time token is for. Narrow, so the column cannot drift. */

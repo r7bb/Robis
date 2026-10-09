@@ -306,8 +306,10 @@ describe('the audit trail', () => {
     );
 
     // "changed a member from member to admin" records that something happened
-    // and not what; the email is what makes the row an audit entry.
-    expect(changed.payload.email).toBe(target.email);
+    // and not what; the username is what makes the row an audit entry. Not
+    // the email: the trail outlives the account and should not keep it.
+    expect(changed.payload.username).toBe(target.username);
+    expect(changed.payload.email).toBeUndefined();
     expect(changed.payload.from).toBe('MEMBER');
     expect(changed.payload.to).toBe('ADMIN');
   });

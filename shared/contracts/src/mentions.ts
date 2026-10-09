@@ -70,31 +70,25 @@ export function parseMentions(text: string): string[] {
 }
 
 /**
- * The handle a user answers to: the local part of their email.
- *
- * Names are not usable as handles -- they collide, contain spaces, and change.
- * The email local part is unique per user in practice and stable.
- */
-export function handleFor(email: string): string {
-  return email.split('@')[0]!.toLowerCase();
-}
-
-/**
  * Resolve handles against a member list.
+ *
+ * Handles are app-specific usernames, never derived from an email address.
  *
  * Ambiguity is dropped rather than guessed: if two members share a handle,
  * silently notifying the wrong person is worse than notifying nobody. Unknown
  * handles are dropped too -- `@here` and typos are not errors worth failing a
  * comment over.
  */
-export function resolveMentions<T extends { id: string; email: string }>(
+export function resolveMentions<T extends { id: string; username: string }>(
   text: string,
   members: readonly T[],
 ): T[] {
   const byHandle = new Map<string, T | null>();
 
   for (const member of members) {
-    const handle = handleFor(member.email);
+    // Usernames are unique, so a collision only happens with stale data;
+    // the ambiguity rule below still applies rather than trusting that.
+    const handle = member.username.toLowerCase();
     // Second occurrence marks the handle ambiguous.
     byHandle.set(handle, byHandle.has(handle) ? null : member);
   }

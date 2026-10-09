@@ -36,6 +36,16 @@ function channel(payload: Payload, verb: string): string {
   return name ? `${verb} #${name}` : `${verb} a channel`;
 }
 
+/**
+ * Who a member event is about. Newer events carry the username; events
+ * written before usernames existed carry an email, shown as it was recorded.
+ */
+function who(payload: Payload): string {
+  const username = text(payload, 'username');
+  if (username) return `@${username}`;
+  return text(payload, 'email') ?? 'a member';
+}
+
 function removal(payload: Payload, what: string): string {
   return payload.moderated === true ? `removed someone's ${what}` : `deleted a ${what}`;
 }
@@ -51,10 +61,10 @@ const PHRASES: Record<string, (payload: Payload) => string> = {
   'project.deleted': (p) => named('deleted the project', text(p, 'name')),
   'workspace.created': () => 'created this workspace',
   'workspace.updated': () => 'updated the workspace',
-  'member.added': (p) => `added ${text(p, 'email') ?? 'a member'} as ${label(text(p, 'role'))}`,
-  'member.removed': (p) => `removed ${text(p, 'email') ?? 'a member'}`,
+  'member.added': (p) => `added ${who(p)} as ${label(text(p, 'role'))}`,
+  'member.removed': (p) => `removed ${who(p)}`,
   'member.left': () => 'left the workspace',
-  'member.role_changed': (p) => `changed ${text(p, 'email') ?? 'a member'} ${moved(p)}`,
+  'member.role_changed': (p) => `changed ${who(p)} ${moved(p)}`,
   'comment.created': () => 'commented on an issue',
   'comment.deleted': (p) => removal(p, 'comment'),
   'message.deleted': (p) => removal(p, 'message'),

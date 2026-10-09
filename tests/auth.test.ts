@@ -11,7 +11,13 @@ describe('registration', () => {
   test('creates an account and starts a session', async () => {
     const response = await request('/auth/register', {
       method: 'POST',
-      payload: { email: 'ada@robis.test', name: 'Ada', password: PASSWORD },
+      payload: {
+        email: 'ada@robis.test',
+        name: 'Ada',
+        password: PASSWORD,
+        username: 'ada',
+        ageConfirmed: true,
+      },
     });
 
     expect(response.statusCode).toBe(201);
@@ -25,7 +31,13 @@ describe('registration', () => {
   test('never returns the password hash', async () => {
     const response = await request('/auth/register', {
       method: 'POST',
-      payload: { email: 'ada@robis.test', name: 'Ada', password: PASSWORD },
+      payload: {
+        email: 'ada@robis.test',
+        name: 'Ada',
+        password: PASSWORD,
+        username: 'ada',
+        ageConfirmed: true,
+      },
     });
 
     expect(response.body).not.toContain('argon2');
@@ -35,12 +47,24 @@ describe('registration', () => {
   test('rejects a duplicate email regardless of casing', async () => {
     await request('/auth/register', {
       method: 'POST',
-      payload: { email: 'ada@robis.test', name: 'Ada', password: PASSWORD },
+      payload: {
+        email: 'ada@robis.test',
+        name: 'Ada',
+        password: PASSWORD,
+        username: 'ada',
+        ageConfirmed: true,
+      },
     });
 
     const response = await request('/auth/register', {
       method: 'POST',
-      payload: { email: 'ADA@Robis.test', name: 'Impostor', password: PASSWORD },
+      payload: {
+        email: 'ADA@Robis.test',
+        name: 'Impostor',
+        password: PASSWORD,
+        username: 'impostor',
+        ageConfirmed: true,
+      },
     });
 
     expect(response.statusCode).toBe(409);
@@ -50,7 +74,13 @@ describe('registration', () => {
   test('rejects a password below the length floor', async () => {
     const response = await request('/auth/register', {
       method: 'POST',
-      payload: { email: 'ada@robis.test', name: 'Ada', password: 'short' },
+      payload: {
+        email: 'ada@robis.test',
+        name: 'Ada',
+        password: 'short',
+        username: 'ada',
+        ageConfirmed: true,
+      },
     });
 
     expect(response.statusCode).toBe(400);
@@ -80,12 +110,18 @@ describe('login', () => {
 
     const wrongPassword = await request('/auth/login', {
       method: 'POST',
-      payload: { email: actor.email, password: 'not-the-right-password' },
+      payload: {
+        email: actor.email,
+        password: 'not-the-right-password',
+      },
     });
 
     const unknownAccount = await request('/auth/login', {
       method: 'POST',
-      payload: { email: 'nobody@robis.test', password: 'not-the-right-password' },
+      payload: {
+        email: 'nobody@robis.test',
+        password: 'not-the-right-password',
+      },
     });
 
     expect(wrongPassword.statusCode).toBe(401);
@@ -112,7 +148,13 @@ describe('sessions', () => {
 
   test('a forged session token is rejected', async () => {
     const response = await request('/auth/me', {
-      actor: { id: '', email: '', name: '', cookie: `${SESSION_COOKIE}=not-a-real-token` },
+      actor: {
+        id: '',
+        email: '',
+        name: '',
+        username: '',
+        cookie: `${SESSION_COOKIE}=not-a-real-token`,
+      },
     });
 
     expect(response.statusCode).toBe(401);

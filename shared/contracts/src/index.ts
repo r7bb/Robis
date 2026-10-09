@@ -9,4 +9,5 @@ export * from './slug.ts';
 export * from './stats.ts';
 export * from './text.ts';
 export * from './themes.ts';
+export * from './usernames.ts';
 export * from './uuid.ts';

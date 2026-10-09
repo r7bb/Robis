@@ -119,7 +119,7 @@ export function CommentThread({
 
           <div className="mt-2 flex items-center justify-between">
             <span className="text-xs text-faint">
-              Mentions notify workspace members by the first part of their email.
+              Mention a teammate by @username to notify them.
             </span>
 
             <button

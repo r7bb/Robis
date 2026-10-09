@@ -52,6 +52,8 @@ export type Me = {
     id: string;
     email: string;
     name: string;
+    /** The app-specific `@handle`. */
+    username: string;
     /** Whether the address has been confirmed. Nothing is gated on it yet. */
     emailVerified: boolean;
     emailVerifiedAt: string | null;
@@ -77,8 +79,10 @@ export type ProjectSummary = {
 
 export type Member = {
   userId: string;
-  email: string;
+  /** Only admins and owners are sent addresses; everyone else gets null. */
+  email: string | null;
   name: string;
+  username: string;
   role: Role;
 };
 

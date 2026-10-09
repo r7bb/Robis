@@ -7,6 +7,7 @@ import {
   workspaceMembers,
 } from '@robis/database';
 import {
+  can,
   inviteMemberSchema,
   outranks,
   type Role,
@@ -23,7 +24,11 @@ import {
   requireAuth,
   requireMembership,
 } from '../plugins/authz.ts';
+import { rateLimit } from '../plugins/rate-limit.ts';
 import { parse } from '../validate.ts';
+
+/** Generous for a person setting up a team, tight for anyone sweeping names. */
+const INVITES_PER_MINUTE = 30;
 
 async function ownerCount(db: Executor, workspaceId: string): Promise<number> {
   const [row] = await db
@@ -40,12 +45,12 @@ async function ownerCount(db: Executor, workspaceId: string): Promise<number> {
  * The identity is joined here rather than looked up at the call sites because
  * the audit trail needs it: an entry reading "changed a member from admin to
  * member" without naming the member records that something happened and not
- * what. Audit payloads store the values as they were, so the trail stays
- * truthful after the account is renamed or removed.
+ * what. The trail names them by username, never by email or real name, and
+ * stores it as it was, so the entry stays truthful after a rename.
  */
 async function findMember(db: Executor, workspaceId: string, userId: string) {
   const [row] = await db
-    .select({ role: workspaceMembers.role, email: users.email, name: users.name })
+    .select({ role: workspaceMembers.role, username: users.username })
     .from(workspaceMembers)
     .innerJoin(users, eq(users.id, workspaceMembers.userId))
     .where(and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, userId)))
@@ -83,13 +88,14 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
     '/workspaces/:workspaceId/members',
     { preHandler: [requireAuth, requireMembership(db, 'member:read')] },
     async (request) => {
-      const { workspaceId } = currentMembership(request);
+      const { workspaceId, role } = currentMembership(request);
 
       const members = await db
         .select({
           userId: users.id,
           email: users.email,
           name: users.name,
+          username: users.username,
           role: workspaceMembers.role,
           joinedAt: workspaceMembers.createdAt,
         })
@@ -98,7 +104,15 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
         .where(eq(workspaceMembers.workspaceId, workspaceId))
         .orderBy(workspaceMembers.createdAt);
 
-      return { members };
+      /*
+       * Teammates know each other by username. Email addresses are for the
+       * people who manage membership; everyone else sees null, so an address
+       * is not handed to every guest in the room.
+       */
+      const seesEmail = can(role, 'member:invite');
+      return {
+        members: members.map((member) => ({ ...member, email: seesEmail ? member.email : null })),
+      };
     },
   );
 
@@ -109,7 +123,15 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
    */
   app.post(
     '/workspaces/:workspaceId/members',
-    { preHandler: [requireAuth, requireMembership(db, 'member:invite')] },
+    {
+      preHandler: [
+        requireAuth,
+        requireMembership(db, 'member:invite'),
+        // Adding someone needs only their username, and any account can own a
+        // workspace, so this is throttled like a lookup rather than trusted.
+        rateLimit({ name: 'member-invite', limit: INVITES_PER_MINUTE, windowMs: 60_000 }),
+      ],
+    },
     async (request, reply) => {
       const actor = currentUser(request);
       const { workspaceId, role: actorRole } = currentMembership(request);
@@ -118,12 +140,20 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
       assertCanGrant(actorRole, input.role);
 
       const [invitee] = await db
-        .select({ id: users.id, email: users.email, name: users.name })
+        .select({ id: users.id, email: users.email, name: users.name, username: users.username })
         .from(users)
-        .where(eq(users.email, input.email))
+        .where(
+          input.username
+            ? eq(users.username, input.username)
+            : eq(users.email, input.email as string),
+        )
         .limit(1);
 
-      if (!invitee) throw ApiError.notFound('No account exists with that email');
+      if (!invitee) {
+        throw ApiError.notFound(
+          input.username ? 'No account has that username' : 'No account exists with that email',
+        );
+      }
 
       const added = await db.transaction(async (tx) => {
         const [row] = await tx
@@ -141,7 +171,7 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
           entityType: 'member',
           entityId: invitee.id,
           eventType: 'member.added',
-          payload: { email: invitee.email, role: input.role },
+          payload: { username: invitee.username, role: input.role },
         });
 
         return row;
@@ -150,7 +180,16 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
       await publishEvent(db, { type: 'member.changed', workspaceId, actorId: actor.id });
 
       return reply.status(201).send({
-        member: { userId: invitee.id, email: invitee.email, name: invitee.name, role: added.role },
+        member: {
+          userId: invitee.id,
+          // Only the address the inviter already typed. Adding by username
+          // must not turn into a way to look up anyone's email: any account
+          // can create a workspace and so hold `member:invite` somewhere.
+          email: input.email ? invitee.email : null,
+          name: invitee.name,
+          username: invitee.username,
+          role: added.role,
+        },
       });
     },
   );
@@ -201,7 +240,7 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
           entityType: 'member',
           entityId: userId,
           eventType: 'member.role_changed',
-          payload: { email: target.email, name: target.name, from: target.role, to: input.role },
+          payload: { username: target.username, from: target.role, to: input.role },
         });
 
         return row;
@@ -251,7 +290,7 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
           entityType: 'member',
           entityId: userId,
           eventType: 'member.removed',
-          payload: { email: target.email, name: target.name, role: target.role },
+          payload: { username: target.username, role: target.role },
         });
       });
 

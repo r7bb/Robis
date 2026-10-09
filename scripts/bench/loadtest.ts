@@ -163,6 +163,7 @@ async function setupFixture(db: Database, count: number): Promise<Fixture> {
       Array.from({ length: count }, (_, i) => ({
         email: `loadtest-${runId}-${i}@robis.invalid`,
         name: `Load ${i}`,
+        username: `loadtest_${runId}_${i}`,
         passwordHash,
       })),
     )

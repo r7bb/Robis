@@ -10,6 +10,8 @@
  */
 import { hashPassword } from '@robis/auth';
 import { createDatabase, users, workspaceMembers, workspaces } from '@robis/database';
+import { usernameProblem } from '@robis/shared';
+import { eq } from 'drizzle-orm';
 
 const [emailArg, nameArg, passwordArg] = process.argv.slice(2);
 
@@ -20,6 +22,18 @@ if (!emailArg) {
 
 const email = emailArg.trim().toLowerCase();
 const name = nameArg?.trim() || email.split('@')[0]!;
+// The same derivation the usernames migration uses for existing accounts:
+// trimmed to the allowed characters, then numbered until it is valid and
+// free (see `freeUsername` below). Only used when the account is new; an
+// existing one keeps its username.
+const usernameBase =
+  email
+    .split('@')[0]!
+    .replace(/[^a-z0-9._]/g, '')
+    .replace(/\.{2,}/g, '.')
+    .replace(/^[._]+|[._]+$/g, '')
+    .slice(0, 24)
+    .replace(/[._]+$/g, '') || 'member';
 const password = passwordArg ?? 'robis-demo-password';
 
 const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://robis:robis@localhost:5433/robis';
@@ -28,11 +42,26 @@ const { db, close } = createDatabase(DATABASE_URL);
 try {
   const passwordHash = await hashPassword(password);
 
+  async function freeUsername(): Promise<string> {
+    for (let n = 1; ; n++) {
+      const candidate = n === 1 ? usernameBase : `${usernameBase}${n}`;
+      if (usernameProblem(candidate)) continue;
+      const [taken] = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.username, candidate))
+        .limit(1);
+      if (!taken) return candidate;
+    }
+  }
+
+  const username = await freeUsername();
+
   // Upsert so the script is safe to re-run; an existing account keeps its id
   // (and therefore its issues and comments) and just gets a new password.
   const [user] = await db
     .insert(users)
-    .values({ email, name, passwordHash })
+    .values({ email, name, username, passwordHash })
     .onConflictDoUpdate({ target: users.email, set: { name, passwordHash, updatedAt: new Date() } })
     .returning({ id: users.id, email: users.email, name: users.name });
 

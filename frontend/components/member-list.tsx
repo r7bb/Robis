@@ -36,7 +36,7 @@ export function MemberList({
   });
 
   const invite = useMutation({
-    mutationFn: (body: { email: string; role: Role }) =>
+    mutationFn: (body: { email?: string; username?: string; role: Role }) =>
       api<{ member: Member }>(`/workspaces/${workspaceId}/members`, { method: 'POST', body }),
     onSuccess: () => {
       setEmail('');
@@ -75,7 +75,16 @@ export function MemberList({
 
   function onInvite(event: FormEvent) {
     event.preventDefault();
-    if (email.trim()) invite.mutate({ email: email.trim(), role });
+    // "@ada" or "ada" is a username; anything with an @ in the middle is an
+    // address. The API validates both, so this only has to pick a field.
+    const value = email.trim();
+    if (!value) return;
+    const isAddress = value.includes('@') && !value.startsWith('@');
+    invite.mutate(
+      isAddress
+        ? { email: value, role }
+        : { username: value.replace(/^@/, '').toLowerCase(), role },
+    );
   }
 
   const error = invite.error ?? setMemberRole.error ?? remove.error;
@@ -89,9 +98,11 @@ export function MemberList({
           <input
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            type="email"
-            placeholder="Email of an existing account"
-            aria-label="Invite by email"
+            type="text"
+            autoCapitalize="none"
+            spellCheck={false}
+            placeholder="@username or email"
+            aria-label="Invite by email or username"
             className="min-w-56 flex-1 rounded-md border border-line bg-raised px-3 py-2 text-sm outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
           />
 
@@ -138,7 +149,10 @@ export function MemberList({
             >
               <span>
                 <span className="text-sm text-content">{member.name}</span>
-                <span className="ml-2 text-xs text-faint">{member.email}</span>
+                <span className="ml-2 text-xs text-faint">
+                  @{member.username}
+                  {member.email ? ` · ${member.email}` : ''}
+                </span>
               </span>
 
               <span className="flex items-center gap-2">

@@ -17,8 +17,9 @@ import {
   loginSchema,
   registerSchema,
   updateProfileSchema,
+  usernameProblem,
 } from '@robis/shared';
-import { eq } from 'drizzle-orm';
+import { and, eq, ne } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import type { RateLimits } from '../app.ts';
 import type { Env } from '../env.ts';
@@ -44,6 +45,33 @@ export async function authRoutes(
    */
   const dummyDigest = await hashPassword(randomBytes(32).toString('hex'));
 
+  /** What an API response may say about an account. */
+  const PUBLIC_USER = {
+    id: users.id,
+    email: users.email,
+    name: users.name,
+    username: users.username,
+  };
+
+  /**
+   * Which unique field a failed insert hit. The email check keeps the
+   * existing behaviour (sign-up has always said an address is taken); the
+   * username is public within the app by design.
+   */
+  async function registrationConflict(email: string) {
+    // Email first, in its own lookup: when both clash, the address is the
+    // one the person cannot change their way out of, so it is said first.
+    const [byEmail] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    return byEmail
+      ? ApiError.conflict('An account with that email already exists', 'email_taken')
+      : ApiError.conflict('That username is taken', 'username_taken');
+  }
+
   const cookieOptions = {
     httpOnly: true,
     sameSite: 'lax' as const,
@@ -68,14 +96,14 @@ export async function authRoutes(
 
     const [user] = await db
       .insert(users)
-      .values({ email: input.email, name: input.name, passwordHash })
-      // Losing the race on the unique index returns no row, which we translate
-      // into the same 409 as the checked case. Doing this instead of a
-      // SELECT-then-INSERT removes the race entirely.
-      .onConflictDoNothing({ target: users.email })
-      .returning({ id: users.id, email: users.email, name: users.name });
+      .values({ email: input.email, name: input.name, username: input.username, passwordHash })
+      // Losing the race on either unique index returns no row, which we
+      // translate into the same 409 as the checked case. Doing this instead
+      // of a SELECT-then-INSERT removes the race entirely.
+      .onConflictDoNothing()
+      .returning(PUBLIC_USER);
 
-    if (!user) throw ApiError.conflict('An account with that email already exists', 'email_taken');
+    if (!user) throw await registrationConflict(input.email);
 
     const { token, expiresAt } = await createSession(db, user.id, request.headers['user-agent']);
     reply.setCookie(SESSION_COOKIE, token, { ...cookieOptions, expires: expiresAt });
@@ -102,12 +130,7 @@ export async function authRoutes(
     const input = parse(loginSchema, request.body);
 
     const [user] = await db
-      .select({
-        id: users.id,
-        email: users.email,
-        name: users.name,
-        passwordHash: users.passwordHash,
-      })
+      .select({ ...PUBLIC_USER, passwordHash: users.passwordHash })
       .from(users)
       .where(eq(users.email, input.email))
       .limit(1);
@@ -121,7 +144,9 @@ export async function authRoutes(
     const { token, expiresAt } = await createSession(db, user.id, request.headers['user-agent']);
     reply.setCookie(SESSION_COOKIE, token, { ...cookieOptions, expires: expiresAt });
 
-    return { user: { id: user.id, email: user.email, name: user.name } };
+    return {
+      user: { id: user.id, email: user.email, name: user.name, username: user.username },
+    };
   });
 
   app.post('/auth/logout', async (request, reply) => {
@@ -159,17 +184,85 @@ export async function authRoutes(
     };
   });
 
-  app.patch('/auth/me', { preHandler: requireAuth }, async (request) => {
+  /*
+   * Renames are throttled: a username frees the moment it is changed, and an
+   * account cycling through names is either a bug or someone trying to wear
+   * another person's old handle.
+   */
+  const profileLimit = rateLimit({
+    name: 'profile-update',
+    limit: limits.authPerMinute,
+    windowMs: 60_000,
+  });
+
+  app.patch('/auth/me', { preHandler: [requireAuth, profileLimit] }, async (request) => {
     const user = currentUser(request);
     const input = parse(updateProfileSchema, request.body);
 
-    const [updated] = await db
-      .update(users)
-      .set({ name: input.name })
-      .where(eq(users.id, user.id))
-      .returning({ id: users.id, email: users.email, name: users.name });
+    if (input.username && input.username !== user.username) {
+      const [holder] = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(and(eq(users.username, input.username), ne(users.id, user.id)))
+        .limit(1);
+      if (holder) throw ApiError.conflict('That username is taken', 'username_taken');
+    }
 
-    return { user: updated };
+    try {
+      const [updated] = await db
+        .update(users)
+        .set({ ...input, updatedAt: new Date() })
+        .where(eq(users.id, user.id))
+        .returning(PUBLIC_USER);
+
+      return { user: updated };
+    } catch (error) {
+      // Someone took the name between the check and the write; the unique
+      // index decided, and the answer is the same as the checked case.
+      if ((error as { code?: string }).code === '23505') {
+        throw ApiError.conflict('That username is taken', 'username_taken');
+      }
+      throw error;
+    }
+  });
+
+  /**
+   * Whether a username can be had, for the sign-up and settings forms.
+   *
+   * Throttled like the credential routes: usernames are visible inside the
+   * app anyway, but an unthrottled lookup is a cheap way to list them all.
+   */
+  const availabilityLimit = rateLimit({
+    name: 'username-available',
+    limit: limits.authPerMinute * 6,
+    windowMs: 60_000,
+    // By address, signed in or not: per account, a handful of fresh sign-ups
+    // would each bring their own budget and multiply it.
+    key: (request) => request.ip,
+  });
+
+  app.get('/auth/username-available', { preHandler: availabilityLimit }, async (request) => {
+    const { username } = request.query as { username?: unknown };
+    // A repeated parameter arrives as an array; anything but one string is
+    // simply not a username.
+    const candidate = typeof username === 'string' ? username.trim().toLowerCase() : '';
+
+    const problem = usernameProblem(candidate);
+    if (problem) return { username: candidate, available: false, reason: problem };
+
+    const [holder] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.username, candidate))
+      .limit(1);
+
+    // Your own current name counts as available to you.
+    const mine = holder && request.user?.id === holder.id;
+    return {
+      username: candidate,
+      available: !holder || Boolean(mine),
+      reason: holder && !mine ? 'taken' : null,
+    };
   });
 
   /**

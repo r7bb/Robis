@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { handleFor, parseMentions, resolveMentions, splitMentions } from '@robis/shared';
+import { parseMentions, resolveMentions, splitMentions } from '@robis/shared';
 
 /**
  * Mention parsing decides who gets notified, so its failure modes are
@@ -58,17 +58,10 @@ describe('parseMentions', () => {
   });
 });
 
-describe('handleFor', () => {
-  test('is the local part of the email, lowercased', () => {
-    expect(handleFor('Rohit@Robis.dev')).toBe('rohit');
-    expect(handleFor('ada.lovelace@robis.test')).toBe('ada.lovelace');
-  });
-});
-
 describe('resolveMentions', () => {
   const members = [
-    { id: 'u1', email: 'rohit@robis.test' },
-    { id: 'u2', email: 'ada@robis.test' },
+    { id: 'u1', username: 'rohit' },
+    { id: 'u2', username: 'ada' },
   ];
 
   test('resolves handles to members', () => {
@@ -80,16 +73,23 @@ describe('resolveMentions', () => {
   });
 
   /**
-   * Two members whose emails share a local part across domains. Guessing would
-   * notify the wrong person, which is worse than notifying neither.
+   * Usernames are unique, so this needs stale or inconsistent data -- but if
+   * it ever happens, guessing would notify the wrong person, which is worse
+   * than notifying neither.
    */
   test('ambiguous handles are dropped rather than guessed', () => {
     const ambiguous = [
-      { id: 'a', email: 'sam@robis.test' },
-      { id: 'b', email: 'sam@example.com' },
+      { id: 'a', username: 'sam' },
+      { id: 'b', username: 'Sam' },
     ];
 
     expect(resolveMentions('@sam look at this', ambiguous)).toEqual([]);
+  });
+
+  test('a handle is the username, never the email local part', () => {
+    const people = [{ id: 'u3', username: 'grace_h' }];
+    expect(resolveMentions('@grace please look', people)).toEqual([]);
+    expect(resolveMentions('@grace_h please look', people).map((m) => m.id)).toEqual(['u3']);
   });
 
   test('an email in prose does not resolve to a member', () => {

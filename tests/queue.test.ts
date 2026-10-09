@@ -237,7 +237,7 @@ describe('mention notifications end to end', () => {
     return { owner, mentioned, workspace, issue };
   }
 
-  const handleOf = (actor: Actor) => actor.email.split('@')[0];
+  const handleOf = (actor: Actor) => actor.username;
 
   test('commenting enqueues a job in the same transaction', async () => {
     const { db } = await getHarness();
@@ -373,7 +373,7 @@ describe('the inbox', () => {
       })
     ).json().issue;
 
-    const handle = reader.email.split('@')[0];
+    const handle = reader.username;
     for (const body of [`@${handle} one`, `@${handle} two`]) {
       await request(`/workspaces/${workspace.id}/issues/${issue.id}/comments`, {
         method: 'POST',
@@ -415,7 +415,7 @@ describe('the inbox', () => {
 
     await request(`/workspaces/${workspace.id}/issues/${issue.id}/comments`, {
       method: 'POST',
-      payload: { body: `@${reader.email.split('@')[0]} secret` },
+      payload: { body: `@${reader.username} secret` },
       actor: owner,
     });
     await new Runner({ db, handlers }).tick();

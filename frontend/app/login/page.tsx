@@ -4,7 +4,11 @@ import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
+import { UsernameField } from '../../features/account/username-field.tsx';
 import { ApiError, api, type Me } from '../../lib/api.ts';
+
+/** A placeholder pending legal review, as is the wording beside it. */
+const MINIMUM_AGE = 16;
 
 type Mode = 'login' | 'register';
 
@@ -15,6 +19,8 @@ export default function LoginPage() {
   const [mode, setMode] = useState<Mode>('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -25,7 +31,10 @@ export default function LoginPage() {
     setSubmitting(true);
 
     try {
-      const body = mode === 'register' ? { name, email, password } : { email, password };
+      const body =
+        mode === 'register'
+          ? { name, email, username: username.trim().toLowerCase(), password, ageConfirmed }
+          : { email, password };
       await api<Me>(`/auth/${mode}`, { method: 'POST', body });
 
       // The session cookie changed, so anything cached under the old identity
@@ -61,6 +70,8 @@ export default function LoginPage() {
             required
           />
 
+          {mode === 'register' && <UsernameField value={username} onChange={setUsername} />}
+
           <Field
             label="Password"
             type="password"
@@ -69,6 +80,29 @@ export default function LoginPage() {
             autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
             required
           />
+
+          {mode === 'register' && (
+            <label className="flex items-start gap-2 text-sm text-muted">
+              <input
+                type="checkbox"
+                checked={ageConfirmed}
+                onChange={(event) => setAgeConfirmed(event.target.checked)}
+                required
+                className="mt-0.5 h-4 w-4 accent-[var(--accent,currentColor)]"
+              />
+              <span>
+                I am at least {MINIMUM_AGE}, and I agree to the{' '}
+                <Link href="/terms" className="text-content underline underline-offset-2">
+                  terms
+                </Link>{' '}
+                and the{' '}
+                <Link href="/privacy" className="text-content underline underline-offset-2">
+                  privacy notice
+                </Link>
+                .
+              </span>
+            </label>
+          )}
 
           {error && (
             <p role="alert" className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger-soft">
