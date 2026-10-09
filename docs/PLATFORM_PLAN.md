@@ -47,6 +47,28 @@ the headers are present, and a request id round-trips.
 Done when: a test tampers with a row and verification names it; a local
 fake receiver gets every event exactly once by key despite a forced retry.
 
+## Phase 2b. Profiles, photos and stories (M to L)
+
+Inside the workspace only: Robis's tenancy and 404-not-403 rules stay as
+they are, so nothing here is public.
+
+- Rich profiles: photo, cover, role, a "working on" line, recent activity,
+  and a grid of what the person has shared.
+- Stories: photo or text updates that expire after 24 hours, shown as rings
+  on team avatars, delivered live through the gateway.
+- Capture: camera and pasted screenshots into an issue, a chat message or a
+  story, on phone and desktop.
+- Offline: a photo taken with no signal queues and uploads exactly once on
+  reconnect, through the existing sync queue.
+- Storage on local disk in development behind a storage port, so a real
+  backend can replace it later; images resized with `sharp` (Apache-2.0,
+  recorded in THIRD_PARTY_NOTICES.md).
+- Privacy: location metadata stripped on upload, deletes that remove the
+  file, stories that really expire, and membership checked on every image
+  request so a leaked link alone shows nothing. Every upload and delete
+  lands in the Phase 2 audit trail. Flagged for legal review before any
+  real users, as it handles personal images.
+
 ## Phase 3. Agents as teammates, over MCP (M)
 
 - Users gain a `kind` (human or agent). Agents are workspace members with
