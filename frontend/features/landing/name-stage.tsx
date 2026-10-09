@@ -64,20 +64,6 @@ const SPACERS = [
   'h-[60svh]',
 ];
 
-/*
- * Each caption sits under its own letter, so the word reads as coming out of
- * it: left under R and O, centred under B, right under I and S. Only from
- * `lg`, where the letters are far enough apart for the offset to land under
- * the right one; a phone keeps every caption flush left.
- */
-const PLACEMENT = [
-  'lg:justify-self-start lg:text-left',
-  'lg:justify-self-start lg:text-left lg:ml-[24%]',
-  'lg:justify-self-center lg:text-center',
-  'lg:justify-self-end lg:text-right lg:mr-[16%]',
-  'lg:justify-self-end lg:text-right',
-] as const;
-
 export function NameStage({ onLetter }: { onLetter: (letter: string | null) => void }) {
   // Step 0 is the name on its own; steps 1 to 5 are its letters.
   const [refs, step] = useActiveStep(LETTERS.length + 1);
@@ -133,8 +119,11 @@ export function NameStage({ onLetter }: { onLetter: (letter: string | null) => v
 
   return (
     <div ref={wrapper} className="relative">
-      <div className="sticky top-0 flex h-[100svh] flex-col justify-center px-[clamp(1rem,3vw,2.5rem)]">
-        <div className="mx-auto w-full max-w-[1400px]">
+      {/* The name at the true centre of the screen. The caption hangs below
+          it in its own absolutely placed slot, so a letter's words appearing
+          never push the name off centre. */}
+      <div className="sticky top-0 grid h-[100svh] place-items-center px-[clamp(1rem,3vw,2.5rem)]">
+        <div className="relative w-full max-w-[1400px]">
           <Wordmark letters={LETTERS} active={active} onSelect={jumpTo} />
 
           {/* The captions are hidden from screen readers while they
@@ -145,21 +134,21 @@ export function NameStage({ onLetter }: { onLetter: (letter: string | null) => v
           </p>
 
           {/* Stacked in one grid cell so switching letters cross-fades in
-              place and nothing below moves. */}
-          <div className="mt-[clamp(2rem,6vh,4rem)] grid min-h-[clamp(7.5rem,19vh,11rem)]">
+              place and nothing around it moves. */}
+          <div className="absolute inset-x-0 top-full mt-[clamp(2.25rem,7vh,4.5rem)] grid justify-items-center text-center">
             {LETTERS.map((item, index) => (
               <div
                 key={item.letter}
                 data-caption=""
                 data-active={index === active}
                 aria-hidden={index !== active}
-                className={`col-start-1 row-start-1 ${PLACEMENT[index]}`}
+                className="col-start-1 row-start-1"
               >
-                <p className="text-[clamp(2.25rem,5.2vw,4.75rem)] font-semibold leading-none tracking-[-0.04em] text-content">
+                <p className="text-[clamp(1.75rem,3.4vw,3rem)] font-semibold leading-none tracking-[-0.035em] text-content">
                   <span className="text-accent-soft">{item.letter}</span>
                   {item.word.slice(1)}
                 </p>
-                <p className="mt-4 max-w-[40ch] text-[clamp(1rem,1.4vw,1.25rem)] leading-relaxed text-muted lg:inline-block">
+                <p className="mx-auto mt-4 max-w-[40ch] text-balance text-[clamp(0.98rem,1.2vw,1.15rem)] leading-relaxed text-muted">
                   {item.line}
                 </p>
               </div>

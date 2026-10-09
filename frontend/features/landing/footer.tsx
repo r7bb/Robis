@@ -54,8 +54,10 @@ const LINK =
 
 export function SiteFooter() {
   return (
+    // The page's own 1400px frame, so the footer's edges line up with every
+    // chapter above it rather than sitting on a narrower column of its own.
     <footer className="border-t border-line bg-[#08090c]">
-      <div className="mx-auto max-w-6xl px-6 py-[clamp(3rem,7vh,5rem)]">
+      <div className="mx-auto w-full max-w-[1400px] px-[clamp(1rem,3vw,2.5rem)] py-[clamp(3rem,7vh,5rem)]">
         <div className="grid gap-10 text-left sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <Logo size={28} />

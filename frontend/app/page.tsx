@@ -7,13 +7,13 @@ import { Logo } from '../components/brand/logo.tsx';
 import { Faq } from '../features/landing/faq.tsx';
 import { SiteFooter } from '../features/landing/footer.tsx';
 import { Hero } from '../features/landing/hero.tsx';
+import { OfflineStory } from '../features/landing/offline-story.tsx';
 import { SayIt } from '../features/landing/say-it.tsx';
 import {
   Capabilities,
   Closing,
   Decisions,
   Documents,
-  OfflineStory,
   REPO,
   Stack,
 } from '../features/landing/sections.tsx';
@@ -105,10 +105,12 @@ export default function Home() {
       <main>
         <Hero href={href} label={label} sentinel={sentinel} />
         <OfflineStory />
-        <Stack />
         <Documents />
         <Capabilities />
         <Decisions />
+        {/* Next to the decisions: what the page just argued against is
+            exactly what is missing from this list. */}
+        <Stack />
         <SayIt />
         <Faq />
         <Closing href={href} label={label} />

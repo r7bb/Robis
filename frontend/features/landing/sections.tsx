@@ -1,232 +1,59 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
-import { BANDS, Band, FILLED, Headline, OUTLINED, Shot, Subhead } from './band.tsx';
+import { FILLED, OUTLINED } from './band.tsx';
+import { Chapter, ChapterTitle } from './chapter.tsx';
+import { Field } from './field.tsx';
+import { LiveParagraph } from './live-paragraph.tsx';
 import { Reveal } from './motion.tsx';
 import { StackMarquee } from './stack.tsx';
-import { useActiveStep } from './use-scroll.ts';
+import { useInView } from './use-scroll.ts';
 
 /**
- * The landing page, as a stack of full-bleed bands.
+ * The chapters after the hero.
  *
- * Structure borrowed from apple.com after rendering it: one idea per band,
- * centred, a large tight headline, a short subhead, two pill buttons, the
- * product filling the rest.
- *
- * Sizing took two attempts. The first version pinned each band to `86svh`
- * and centred the content inside, which looks right on one screen and
- * wrong on every other: tall viewports got bands of empty space, short
- * ones pushed content past the band edge and the sticky screenshot bled
- * into the section below. Nothing here has a fixed height any more.
- * Padding and type scale with `clamp`, bands grow to fit their content,
- * and the one viewport-locked element sizes its image with
- * `object-contain` so it fits whatever space is left over.
+ * Each used to be a centred band on its own grey, with its own label
+ * colours, and by the fourth one the page read as a template. They are now
+ * chapters of one document (see `chapter.tsx`): the hero's near-black, its
+ * grid, its single accent, and a section that shows something live
+ * wherever there is something live to show.
  */
 
 export const REPO = 'https://github.com/r7bb/Robis';
 
-const OFFLINE_STEPS = [
+/** What actually happens when two people type in one place. */
+const MERGE_STEPS = [
+  { who: 'You', tint: 'text-accent-soft', body: 'type into the middle of the sentence.' },
+  { who: 'Mia', tint: 'text-emerald-300', body: 'types onto the end of it, at the same moment.' },
   {
-    kicker: 'Online',
-    title: 'File it.',
-    shot: '/shots/board.png',
-    alt: 'The issue board with a live connection, everything synced.',
-    tint: 'text-sky-300',
-  },
-  {
-    kicker: 'Offline',
-    title: 'Keep working.',
-    shot: '/shots/offline.png',
-    alt: 'The board with the network disabled, showing unsynced changes.',
-    tint: 'text-amber-300',
-  },
-  {
-    kicker: 'Reconnected',
-    title: 'Nothing lost.',
-    shot: '/shots/reconnected.png',
-    alt: 'The same board after reconnecting, every queued change applied.',
-    tint: 'text-emerald-300',
+    who: 'Both',
+    tint: 'text-content',
+    body: 'end up with the same document. No lock, no winner, no lost keystroke.',
   },
 ] as const;
 
-/**
- * The one scroll-told band: three states of one board, in order.
- *
- * The stage is a flex column pinned to the viewport. The caption takes the
- * height it needs and the image takes the rest, sized with `object-contain`
- * inside a `min-h-0 flex-1` box. That combination is what makes it work at
- * any height: on a short laptop the image shrinks, on a tall monitor it
- * grows, and it never pushes past the pinned area into the next band,
- * which is exactly what the previous fixed-height version did.
- */
-export function OfflineStory() {
-  const [refs, active] = useActiveStep(OFFLINE_STEPS.length);
-  const step = OFFLINE_STEPS[active] ?? OFFLINE_STEPS[0];
-
-  return (
-    <section className={`relative ${BANDS.base}`}>
-      <div className="mx-auto max-w-6xl px-6">
-        <div className="hidden lg:block">
-          {/*
-            The screenshot fills the stage and the caption sits over it.
-
-            It used to be a caption row above an `object-contain` image,
-            which left the board 477px tall in a 694px stage and
-            letterboxed: the UI was too small to read, which defeats the
-            point of showing it.
-
-            `top-16` with a height reduced to match, because the nav is
-            sticky and 4rem tall. Pinning at `top-0` against a full
-            `100svh` centres against a viewport whose top 64px is covered,
-            which put everything exactly one nav-height too high.
-          */}
-          <div className="sticky top-16 h-[calc(100svh-4rem)] py-[clamp(1rem,3vh,2rem)]">
-            <div className="relative h-full w-full overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-black/60">
-              {OFFLINE_STEPS.map((item, index) => (
-                <Image
-                  key={item.kicker}
-                  src={item.shot}
-                  alt={item.alt}
-                  width={1440}
-                  height={900}
-                  sizes="1100px"
-                  data-frame=""
-                  data-active={index === active}
-                  // Covering, not containing. The stage is about 1087x694
-                  // and the capture is 16:10, so almost nothing is lost to
-                  // the crop and the board lands at close to native scale.
-                  className="absolute inset-0 h-full w-full object-cover object-top"
-                />
-              ))}
-
-              {/*
-                A scrim, not a flat panel. The caption has to stay legible
-                over whichever frame is showing, and the board is busiest
-                at the top where its toolbar is, so the gradient is
-                deepest exactly where the text sits and gone by the cards.
-              */}
-              <div
-                aria-hidden="true"
-                className="absolute inset-x-0 top-0 h-2/5 bg-gradient-to-b from-black via-black/85 to-transparent"
-              />
-
-              <div className="absolute inset-x-0 top-0 px-6 pt-[clamp(1.5rem,4vh,3rem)] text-center">
-                <p
-                  className={`text-sm font-semibold uppercase tracking-[0.22em] transition-colors duration-[var(--entrance)] ease-[var(--ease)] ${step.tint}`}
-                >
-                  {step.kicker}
-                </p>
-                <Headline>{step.title}</Headline>
-              </div>
-            </div>
-          </div>
-
-          {/*
-           * Half a viewport per step after the first, so the whole
-           * sequence costs one screen of scrolling rather than two.
-           *
-           * The arithmetic matters. The sticky stage is in flow and
-           * contributes its own height, so the container is
-           * `stage + spacers` and the distance the stage stays pinned is
-           * just the spacers. Two full-viewport spacers meant two screens
-           * of scrolling to see three images, which is a long time to
-           * hold somebody for one idea.
-           *
-           * Equal spacers, including one for the first step. An earlier
-           * version gave step one no spacer at all and let it win by
-           * default, which left the last step active for only the final
-           * instant before the stage unpinned: sampled across the
-           * sequence it showed 5 frames, 5 frames, then 1.
-           */}
-          {OFFLINE_STEPS.map((item, index) => (
-            <div key={item.kicker} ref={refs[index]} className="h-[34svh]" aria-hidden="true" />
-          ))}
-        </div>
-
-        {/* Below `lg` there is no room to pin anything, so the steps stack. */}
-        <div className="space-y-[clamp(3rem,8vh,5rem)] py-[clamp(4rem,9vh,9rem)] text-center lg:hidden">
-          {OFFLINE_STEPS.map((item) => (
-            <Reveal key={item.kicker}>
-              <p className={`text-sm font-semibold uppercase tracking-[0.22em] ${item.tint}`}>
-                {item.kicker}
-              </p>
-              <Headline>{item.title}</Headline>
-              <div className="mt-6">
-                <Shot src={item.shot} alt={item.alt} />
-              </div>
-            </Reveal>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-export function Stack() {
-  return (
-    <Band tone="raised">
-      <Reveal>
-        <Headline>Built with.</Headline>
-        <Subhead>
-          No framework doing the hard part. The interesting pieces are the ones that are not here:
-          no Redis, no queue broker, no search cluster.
-        </Subhead>
-      </Reveal>
-
-      <StackMarquee />
-    </Band>
-  );
-}
-
-/** What actually happens when two people type in one place. */
-const MERGE_STEPS = [
-  { who: 'You', tint: 'text-sky-300', body: 'insert a word at position 12, offline.' },
-  {
-    who: 'They',
-    tint: 'text-emerald-300',
-    body: 'insert a sentence at position 12, at the same moment.',
-  },
-  {
-    who: 'Both',
-    tint: 'text-violet-300',
-    body: 'end up with the same document. No lock, no winner, no lost keystroke.',
-  },
-];
-
-/**
- * Deliberately not another centred band.
- *
- * Every other section on this page is a centred headline over a wide
- * screenshot, and by the fifth one the rhythm stops being a rhythm and
- * starts being a template. This one splits: the explanation on the left,
- * the product on the right, and the screenshot cropped to the editor
- * rather than showing the chrome around it.
- */
 export function Documents() {
   return (
-    <Band tone="base">
-      <div className="grid items-center gap-[clamp(2.5rem,5vw,4rem)] lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-        <div className="text-left">
-          <Reveal>
-            <h2 className="max-w-[14ch] text-balance text-[clamp(2.25rem,4vw,3.5rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-content">
-              Two cursors. One paragraph.
-            </h2>
-          </Reveal>
+    <Chapter>
+      <div className="grid items-center gap-[clamp(2.5rem,5vw,5rem)] lg:grid-cols-12">
+        <div className="lg:col-span-5">
+          <ChapterTitle>Two cursors. One paragraph.</ChapterTitle>
 
-          <Reveal delay={80}>
-            <dl className="mt-8 space-y-5">
+          <Reveal delay={160}>
+            <dl className="mt-9 space-y-5">
               {MERGE_STEPS.map((step) => (
                 <div key={step.who} className="flex gap-3">
-                  <dt className={`shrink-0 text-base font-semibold ${step.tint}`}>{step.who}</dt>
+                  <dt className={`w-12 shrink-0 text-base font-semibold ${step.tint}`}>
+                    {step.who}
+                  </dt>
                   <dd className="text-base leading-relaxed text-muted">{step.body}</dd>
                 </div>
               ))}
             </dl>
           </Reveal>
 
-          <Reveal delay={160}>
-            <p className="mt-7 border-l-2 border-accent/40 pl-4 text-sm leading-relaxed text-faint">
+          <Reveal delay={240}>
+            <p className="mt-8 max-w-[46ch] text-sm leading-relaxed text-faint">
               Yjs CRDTs over a WebSocket gateway. Convergence is a property of the data structure,
               not of who reached the server first, which is why it still works after an hour
               offline.
@@ -234,113 +61,158 @@ export function Documents() {
           </Reveal>
         </div>
 
-        {/*
-         * Zoomed onto the editor, not merely cropped.
-         *
-         * A 1.75:1 window over a 16:10 (1.6) capture, anchored to the
-         * top. Wider than the source, so `object-cover` trims the bottom
-         * and nothing else. A 4:3 frame was narrower than the source and
-         * cropped the left and right edges instead, taking the breadcrumb
-         * with them.
-         *
-         * Zooming was the first attempt and it was the wrong fix: at
-         * 1.75x the breadcrumb and title were clipped off the left edge
-         * and the editor was still half empty, because the problem was
-         * never the framing. The capture script typed two lines into the
-         * document. It writes several paragraphs now, so there is
-         * something here to frame.
-         */}
-        <Reveal delay={120}>
-          <div className="relative aspect-[1.75] w-full overflow-hidden rounded-xl border border-white/10 shadow-2xl shadow-black/60">
-            <Image
-              src="/shots/document.png"
-              alt="Two people editing the same document, each with their own cursor."
-              width={1440}
-              height={900}
-              sizes="(max-width: 1024px) 100vw, 640px"
-              className="absolute inset-0 h-full w-full origin-[50%_14%] scale-[1.75] object-cover object-top"
-            />
-          </div>
+        <Reveal delay={120} className="lg:col-span-7">
+          <LiveParagraph />
         </Reveal>
       </div>
-    </Band>
+    </Chapter>
   );
 }
 
 const CAPABILITIES = [
-  { title: 'Channels', body: 'Rooms with history and moderation.', tint: 'text-sky-300' },
-  { title: 'Meetings', body: 'Schedule, invite, answer.', tint: 'text-emerald-300' },
-  { title: 'Four roles', body: 'One matrix. 404, never 403.', tint: 'text-rose-300' },
-  { title: 'Search', body: 'Issues, documents and comments.', tint: 'text-violet-300' },
+  { title: 'Channels', body: 'Rooms with history, day separators and moderation.' },
+  { title: 'Meetings', body: 'Schedule, invite and answer. Moving the time clears every yes.' },
+  { title: 'Four roles', body: 'One permission matrix. A stranger gets a 404, never a 403.' },
+  { title: 'Search', body: 'Issues, documents and comments, through Postgres full-text search.' },
 ] as const;
 
+/**
+ * Large rows rather than four small coloured labels. The titles carry the
+ * weight; the rule between rows keeps the list readable as one thing.
+ */
 export function Capabilities() {
   return (
-    <Band tone="raised">
-      <Reveal>
-        <Headline>And the rest of the work.</Headline>
-      </Reveal>
+    <Chapter>
+      <ChapterTitle>And the rest of the work.</ChapterTitle>
 
-      <div className="mt-[clamp(2.5rem,6vh,4rem)] grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+      <ul className="mt-[clamp(2.5rem,6vh,4.5rem)] border-t border-white/10">
         {CAPABILITIES.map((item, index) => (
-          <Reveal key={item.title} delay={index * 80}>
-            <h3 className={`text-xl font-semibold tracking-tight ${item.tint}`}>{item.title}</h3>
-            <p className="mt-2 text-base text-muted">{item.body}</p>
-          </Reveal>
+          // The `li` stays the list's direct child, so the list is still a
+          // list to assistive technology; the reveal goes inside it.
+          <li key={item.title} className="border-b border-white/10">
+            <Reveal
+              delay={index * 70}
+              className="grid gap-2 py-[clamp(1.25rem,3vh,2rem)] sm:grid-cols-12 sm:items-baseline sm:gap-8"
+            >
+              <p className="text-[clamp(1.6rem,3vw,2.75rem)] font-semibold leading-none tracking-[-0.035em] text-content sm:col-span-5">
+                {item.title}
+              </p>
+              <p className="text-base leading-relaxed text-muted sm:col-span-7 sm:text-lg">
+                {item.body}
+              </p>
+            </Reveal>
+          </li>
         ))}
-      </div>
-    </Band>
+      </ul>
+    </Chapter>
   );
 }
 
+/** Each from the README's "instead of" table, so the rejected option is real. */
 const DECISIONS = [
   {
+    instead: 'Redis pub/sub',
     choice: 'Postgres LISTEN/NOTIFY',
     reason: 'The event commits with the write, so it cannot describe a change that rolled back.',
   },
   {
-    choice: 'SKIP LOCKED, not a broker',
+    instead: 'A queue broker',
+    choice: 'SKIP LOCKED',
     reason: 'Jobs enqueue in the same transaction as the work that causes them.',
   },
   {
-    choice: 'Keyset, not OFFSET',
+    instead: 'OFFSET',
+    choice: 'Keyset pagination',
     reason: 'OFFSET shifts under concurrent inserts, so readers skip rows and repeat others.',
   },
   {
-    choice: 'Sessions, not JWTs',
-    reason: 'A session dies when the password changes. A signed token does not.',
+    instead: 'JWTs',
+    choice: 'Opaque sessions',
+    reason: 'A session dies the moment a password changes. A signed token does not.',
+  },
+  {
+    instead: 'Elasticsearch',
+    choice: 'Postgres full-text search',
+    reason: 'A stored generated tsvector cannot drift from the row it describes.',
   },
 ] as const;
 
 export function Decisions() {
   return (
-    <Band tone="base">
-      <Reveal>
-        <Headline>The why is the interesting half.</Headline>
-      </Reveal>
+    <Chapter>
+      <ChapterTitle aside="Every one of these was a choice against something more familiar. The thing turned down is the interesting part.">
+        The why is the interesting half.
+      </ChapterTitle>
 
-      <dl className="mx-auto mt-[clamp(2.5rem,6vh,4rem)] grid max-w-4xl gap-x-12 gap-y-10 text-left sm:grid-cols-2">
-        {DECISIONS.map((decision, index) => (
-          <Reveal key={decision.choice} delay={index * 70}>
-            <dt className="text-lg font-semibold text-content">{decision.choice}</dt>
-            <dd className="mt-2 text-base leading-relaxed text-muted">{decision.reason}</dd>
-          </Reveal>
+      <ul className="mt-[clamp(2.5rem,6vh,4.5rem)] border-t border-white/10">
+        {DECISIONS.map((decision) => (
+          <DecisionRow key={decision.choice} {...decision} />
         ))}
-      </dl>
-    </Band>
+      </ul>
+    </Chapter>
   );
 }
 
+function DecisionRow({ instead, choice, reason }: (typeof DECISIONS)[number]) {
+  const [ref, shown] = useInView<HTMLLIElement>();
+
+  return (
+    <li
+      ref={ref}
+      className="grid gap-2 border-b border-white/10 py-[clamp(1.25rem,3vh,2rem)] lg:grid-cols-12 lg:items-baseline lg:gap-8"
+    >
+      <p className="text-lg text-faint lg:col-span-3">
+        <span className="sr-only">Instead of </span>
+        <span data-struck="" data-shown={shown}>
+          {instead}
+        </span>
+        <span className="sr-only">:</span>
+      </p>
+      <p className="text-[clamp(1.4rem,2.4vw,2.1rem)] font-semibold leading-tight tracking-[-0.03em] text-content lg:col-span-4">
+        {choice}
+      </p>
+      <p className="text-base leading-relaxed text-muted lg:col-span-5">{reason}</p>
+    </li>
+  );
+}
+
+export function Stack() {
+  return (
+    <Chapter>
+      <ChapterTitle aside="No framework doing the hard part. The interesting pieces are the ones that are not here: no Redis, no queue broker, no search cluster.">
+        Built with.
+      </ChapterTitle>
+
+      <StackMarquee />
+    </Chapter>
+  );
+}
+
+/**
+ * The bookend: the name again, over its field, and the two ways in.
+ *
+ * The page opens with the name alone and now closes with it, so the
+ * reader leaves on the same note they arrived on rather than on a button
+ * row in a band of colour.
+ */
 export function Closing({ href, label }: { href: string; label: string }) {
   return (
-    <Band tone="black" className="relative">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-80 bg-[radial-gradient(55%_90%_at_50%_100%,rgb(var(--accent)/0.26),transparent_72%)]"
-      />
+    <section className="relative isolate grid min-h-[85svh] place-items-center overflow-hidden bg-[#08090c] px-[clamp(1rem,3vw,2.5rem)] py-[clamp(5rem,14vh,10rem)]">
+      <div aria-hidden="true" className="absolute inset-0 -z-10">
+        <Field mode="merge" pulse={0} />
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,#08090c,transparent_30%,transparent_80%,#08090c)]" />
+      </div>
 
-      <Reveal className="relative">
-        <Headline>Read it. Run it.</Headline>
+      <Reveal className="text-center">
+        <p
+          aria-hidden="true"
+          className="select-none pl-[0.34em] text-[clamp(2.25rem,5.5vw,5rem)] font-bold leading-none tracking-[0.34em] text-content"
+        >
+          ROBIS
+        </p>
+        <h2 className="mt-[clamp(1.5rem,4vh,2.5rem)] text-[clamp(1.25rem,2vw,1.75rem)] font-medium tracking-[-0.02em] text-muted">
+          Read it. Run it.
+        </h2>
 
         <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
           <Link href={href} className={FILLED}>
@@ -351,6 +223,6 @@ export function Closing({ href, label }: { href: string; label: string }) {
           </a>
         </div>
       </Reveal>
-    </Band>
+    </section>
   );
 }

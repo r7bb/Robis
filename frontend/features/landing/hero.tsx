@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { type RefObject, useCallback, useRef, useState } from 'react';
 import { FILLED, OUTLINED } from './band.tsx';
@@ -116,7 +115,7 @@ export function Hero({
             </div>
           </div>
 
-          <Reveal>
+          <Reveal className="pb-[clamp(3rem,8vh,6rem)]">
             <div className="border-t border-white/10 py-6">
               <dl className="grid gap-x-10 gap-y-3 sm:grid-cols-3">
                 {HERO_PROOF.map((item) => (
@@ -132,25 +131,6 @@ export function Hero({
               <p className="mt-3 text-xs text-faint">
                 Measured by the benchmark in this repository.
               </p>
-            </div>
-          </Reveal>
-
-          {/*
-           * The real app, last. The name and the demo are the claim; this is
-           * the proof that it is a product rather than a toy. Cropped to 2:1
-           * from the top, because the lower third of the board capture is
-           * empty column space.
-           */}
-          <Reveal className="pb-[clamp(4rem,9vh,8rem)]">
-            <div className="relative aspect-[2/1] w-full overflow-hidden rounded-xl border border-white/10 shadow-2xl shadow-black/60">
-              <Image
-                src="/shots/board.png"
-                alt="The Robis issue board, with a column per status and coloured priority badges."
-                width={1440}
-                height={900}
-                sizes="(max-width: 1400px) 100vw, 1400px"
-                className="absolute inset-0 h-full w-full object-cover object-top"
-              />
             </div>
           </Reveal>
         </div>

@@ -304,3 +304,83 @@ body {
     transition: none;
   }
 }
+
+/*
+ * Chapter headings, a word at a time.
+ *
+ * Each word rises from slightly below and fades in, staggered by its index,
+ * once the heading is first seen. The resting state is the visible one, so
+ * a heading never stays hidden if the observer does not fire.
+ */
+[data-words] [data-word] {
+  display: inline-block;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-words] [data-word] {
+    transition:
+      opacity var(--entrance) var(--ease),
+      transform 640ms var(--ease);
+    transition-delay: calc(var(--word-index) * 60ms);
+  }
+
+  [data-words][data-shown="false"] [data-word] {
+    opacity: 0;
+    transform: translateY(0.45em);
+  }
+}
+
+/*
+ * "The why": the alternative that was turned down gets struck through as
+ * the row comes into view, so the choice reads as a decision being made
+ * rather than a list of nouns. A pseudo-element line, drawn left to right.
+ */
+[data-struck] {
+  position: relative;
+  display: inline-block;
+}
+
+[data-struck]::after {
+  content: "";
+  position: absolute;
+  left: -0.05em;
+  right: -0.05em;
+  top: 55%;
+  height: 0.08em;
+  border-radius: 999px;
+  background: currentColor;
+  transform-origin: left;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-struck]::after {
+    transform: scaleX(0);
+    transition: transform 700ms var(--ease) 250ms;
+  }
+
+  [data-struck][data-shown="true"]::after {
+    transform: scaleX(1);
+  }
+}
+
+/*
+ * The offline story's rail. The fill is a 1px line scaled to how far along
+ * the three states the reader is; the steps not yet reached sit back.
+ */
+[data-rail-fill] {
+  transform: scaleY(var(--progress, 0));
+}
+
+[data-step][data-active="false"] {
+  opacity: 0.32;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-rail-fill] {
+    transition: transform var(--entrance) var(--ease);
+  }
+
+  [data-step] {
+    transition: opacity var(--entrance) var(--ease);
+  }
+}

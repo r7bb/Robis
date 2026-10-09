@@ -3,9 +3,11 @@ import type { CSSProperties } from 'react';
 /**
  * The name, set edge to edge, with each letter standing for something.
  *
- * Five letters sized in container-query units and spread with
- * `justify-between`, so the word spans its column at every width without a
- * font size guessed per breakpoint or measured in JavaScript.
+ * Centred and deliberately not screen-filling. A word that fills the
+ * screen shouts; set at a measured size with generous tracking it reads as
+ * a mark, the way a well-made product's name sits on its box. The size
+ * moves continuously with the viewport, and the letter gap is in `em` so
+ * the proportion holds at every width.
  *
  * Each letter is a button. Hover alone meant nothing on a phone and nothing
  * to a keyboard, so a letter is something you can press: it jumps the page
@@ -31,14 +33,14 @@ export function Wordmark({
   className?: string;
 }) {
   return (
-    <div className={`[container-type:inline-size] ${className}`}>
+    <div className={className}>
       {/* A fieldset because it groups buttons; `min-w-0` because a
           fieldset's default minimum is its content's width, which would stop
           the letters shrinking with a narrow screen. */}
       <fieldset
         data-wordmark=""
         data-has-active={active !== null}
-        className="flex min-w-0 select-none justify-between text-[19cqw] font-extrabold sm:text-[17cqw] leading-[0.78] tracking-[-0.02em] text-content"
+        className="flex min-w-0 select-none justify-center gap-[0.34em] text-[clamp(3rem,8vw,8rem)] font-bold leading-[0.8] tracking-[-0.01em] text-content"
       >
         <legend className="sr-only">Robis, letter by letter</legend>
         {letters.map(({ letter, word }, index) => (

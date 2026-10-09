@@ -212,6 +212,17 @@ describe('no hardcoded colours outside the palette', () => {
      */
     'frontend/features/landing/hero.tsx',
     'frontend/features/landing/sync-demo.tsx',
+    /*
+     * The chapters after the hero, on the same fixed near-black, whose
+     * hairline rules are white at 10% for the same reason. The say-it
+     * section's own comment says it stays on tokens; its rule and chips are
+     * now the shared landing hairline, so it moves onto the list.
+     */
+    'frontend/features/landing/chapter.tsx',
+    'frontend/features/landing/offline-story.tsx',
+    'frontend/features/landing/live-paragraph.tsx',
+    'frontend/features/landing/faq.tsx',
+    'frontend/features/landing/say-it.tsx',
   ]);
 
   function sourceFiles(): string[] {
