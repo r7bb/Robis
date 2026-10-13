@@ -384,3 +384,123 @@ body {
     transition: opacity var(--entrance) var(--ease);
   }
 }
+
+/*
+ * The What's new list.
+ *
+ * Opening an entry grows it from nothing to its natural height by
+ * transitioning `grid-template-rows` from 0fr to 1fr -- the one way to
+ * animate to "auto" height without measuring anything in script. The
+ * content inside fades and lifts a few pixels a beat later, so the panel
+ * reads as unfolding rather than snapping.
+ *
+ * The +/- is two bars: the vertical one turns flat when open, so the icon
+ * morphs instead of swapping glyphs. A rail on the left edge grows to mark
+ * the open entry. Changing the filter re-runs a short staggered entrance,
+ * so the list settles instead of jumping.
+ */
+[data-entry-panel] {
+  display: grid;
+  grid-template-rows: 0fr;
+}
+
+[data-entry-panel] > div {
+  min-height: 0;
+  overflow: hidden;
+}
+
+[data-entry-panel][data-open="true"] {
+  grid-template-rows: 1fr;
+}
+
+[data-entry-panel] [data-entry-body] {
+  opacity: 0;
+  transform: translateY(-0.375rem);
+}
+
+[data-entry-panel][data-open="true"] [data-entry-body] {
+  opacity: 1;
+  transform: none;
+}
+
+[data-entry-icon] {
+  position: relative;
+  display: inline-block;
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+[data-entry-icon]::before,
+[data-entry-icon]::after {
+  content: "";
+  position: absolute;
+  inset: 50% 0 auto 0;
+  height: 1.5px;
+  margin-top: -0.75px;
+  border-radius: 1px;
+  background: currentColor;
+}
+
+[data-entry-icon]::after {
+  transform: rotate(90deg);
+}
+
+[data-entry-row][data-open="true"] [data-entry-icon]::after {
+  transform: rotate(0deg);
+}
+
+[data-entry-row] {
+  position: relative;
+}
+
+[data-entry-row]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--accent-rail, rgb(129 140 248 / 0.7));
+  transform: scaleY(0);
+  transform-origin: top;
+}
+
+[data-entry-row][data-open="true"]::before {
+  transform: scaleY(1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-entry-panel] {
+    transition: grid-template-rows var(--entrance) var(--ease);
+  }
+
+  [data-entry-panel] [data-entry-body] {
+    transition:
+      opacity var(--quick) var(--ease),
+      transform var(--entrance) var(--ease);
+  }
+
+  [data-entry-panel][data-open="true"] [data-entry-body] {
+    transition-delay: 80ms;
+  }
+
+  [data-entry-icon]::after {
+    transition: transform var(--quick) var(--ease);
+  }
+
+  [data-entry-row]::before {
+    transition: transform var(--entrance) var(--ease);
+  }
+
+  [data-entry-list] > li {
+    animation: entry-in var(--entrance) var(--ease) backwards;
+    animation-delay: calc(var(--entry-index, 0) * 45ms);
+  }
+}
+
+@keyframes entry-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
