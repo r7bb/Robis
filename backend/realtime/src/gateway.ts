@@ -5,6 +5,7 @@ import {
   publishPresence,
   subscribeToEvents,
   subscribeToPresence,
+  users,
 } from '@robis/database';
 import { Registry } from '@robis/metrics';
 import {
@@ -15,6 +16,7 @@ import {
   type ServerEvent,
   type ServerMessage,
 } from '@robis/shared';
+import { eq } from 'drizzle-orm';
 import type postgres from 'postgres';
 import { DocumentRooms, documentInWorkspace } from './documents.ts';
 import { PresenceRegistry } from './presence.ts';
@@ -51,6 +53,16 @@ const CLIENT_MESSAGE_TYPES: ReadonlySet<string> = new Set<ClientMessage['type']>
  * comfortably below PRESENCE_TTL_MS so peers never expire a live connection. */
 const REANNOUNCE_INTERVAL_MS = 15_000;
 const SWEEP_INTERVAL_MS = 10_000;
+
+/** Whether an account has chosen a picture, read fresh. */
+async function hasPicture(db: Database, userId: string): Promise<boolean> {
+  const [row] = await db
+    .select({ kind: users.avatarKind, ref: users.avatarRef })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  return Boolean(row?.kind && row.ref);
+}
 
 type SocketData = {
   connectionId: string;
@@ -350,6 +362,14 @@ export async function createGateway(options: GatewayOptions) {
 
     if (!membership) {
       return send(socket, { type: 'error', message: 'Not a member of that workspace' });
+    }
+
+    // The same rule as the API's: a member without a picture cannot join a
+    // workspace feed yet, and documents open only through a joined feed.
+    // Read now rather than at connect, so a picture chosen in another tab
+    // counts without reconnecting.
+    if (!(await hasPicture(db, socket.data.userId))) {
+      return send(socket, { type: 'error', message: 'Add a picture before you start' });
     }
 
     const previous = socket.data.workspaceId;

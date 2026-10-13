@@ -12,3 +12,17 @@ Copyright (c) 2023 Vercel, in collaboration with basement.studio
 
 Licensed under the SIL Open Font License, Version 1.1. The full licence text
 is in `node_modules/geist/LICENSE.TXT` and at <https://openfontlicense.org>.
+
+## sharp and libvips
+
+Used by the API to decode, resize and re-encode profile pictures, which is
+also what strips their metadata. `sharp` 0.34.5 is licensed under the Apache
+License 2.0. It loads a prebuilt `libvips` (`@img/sharp-libvips-*`), licensed
+under the GNU LGPL 3.0 or later, as a separate shared library, together with
+the libraries libvips bundles under their own licences (listed in the
+package). Its source is available from <https://github.com/libvips/libvips>.
+
+Flagged for review: LGPL code is used only server-side and dynamically linked,
+and is not modified here. Whether that is enough for a given distribution of
+Robis is a question for whoever ships it, not something this file decides.
+

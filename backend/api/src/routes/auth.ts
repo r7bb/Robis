@@ -24,6 +24,7 @@ import type { FastifyInstance } from 'fastify';
 import type { RateLimits } from '../app.ts';
 import type { Env } from '../env.ts';
 import { ApiError } from '../errors.ts';
+import { avatarOf } from '../media/avatars.ts';
 import { currentUser, requireAuth } from '../plugins/authz.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
 import { parse } from '../validate.ts';
@@ -170,7 +171,12 @@ export async function authRoutes(
     const user = currentUser(request);
 
     const [row] = await db
-      .select({ emailVerifiedAt: users.emailVerifiedAt })
+      .select({
+        emailVerifiedAt: users.emailVerifiedAt,
+        avatarKind: users.avatarKind,
+        avatarRef: users.avatarRef,
+        avatarUpdatedAt: users.avatarUpdatedAt,
+      })
       .from(users)
       .where(eq(users.id, user.id))
       .limit(1);
@@ -180,6 +186,9 @@ export async function authRoutes(
         ...user,
         emailVerified: Boolean(row?.emailVerifiedAt),
         emailVerifiedAt: row?.emailVerifiedAt ?? null,
+        // Null until a picture is chosen, which is what the app's welcome
+        // step checks before letting someone in.
+        avatar: row ? avatarOf({ id: user.id, ...row }) : null,
       },
     };
   });

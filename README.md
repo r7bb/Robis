@@ -25,6 +25,11 @@ Newest first. The same list is the site's What's new page, linked from the
 header, where each entry opens to show how it was checked and, for features,
 where to find it and what each layer does.
 
+- **A picture before you start** (2026-10-13). New members upload a photo,
+  take one with the camera, paste a screenshot or pick a generated pattern
+  before using a workspace; the API and the live feed hold that line too.
+  Photos are re-encoded with all metadata removed, location included, and
+  are shown only to people who share a workspace.
 - **Usernames** (2026-10-09). Everyone picks an `@username` at sign-up;
   teammates add and mention each other by it. Email addresses are shown only
   to workspace admins, and the audit trail names people by username, not
@@ -229,9 +234,10 @@ the real stack. None of them is a mockup.
 
 A portfolio project, built to be read. It runs locally and is tested. It has
 not been deployed, and three things are missing because this machine has no
-Docker and no SMTP: file uploads, a verified container build, and a production
-mail driver. The API **refuses to start in production** without a mail driver
-rather than printing reset links into a log.
+Docker and no SMTP: object storage for uploads (profile pictures are kept on
+local disk behind a storage port; attachments are not built yet), a verified
+container build, and a production mail driver. The API **refuses to start in
+production** without a mail driver rather than printing reset links into a log.
 
 Nothing here is a security or compliance claim. It describes what the code does
 and what was measured.

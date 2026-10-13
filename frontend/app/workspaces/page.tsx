@@ -9,6 +9,7 @@ import { DeleteButton } from '../../components/delete-button.tsx';
 import { NotificationBell } from '../../components/notification-bell.tsx';
 import { RoleBadge } from '../../components/ui/primitives.tsx';
 import { api, type Me, type WorkspaceSummary } from '../../lib/api.ts';
+import { useRequireAvatar } from '../../lib/use-require-avatar.ts';
 
 export default function WorkspacesPage() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function WorkspacesPage() {
   const [name, setName] = useState('');
 
   const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/auth/me'), retry: false });
+  useRequireAvatar(me.data);
 
   const workspaces = useQuery({
     queryKey: ['workspaces'],

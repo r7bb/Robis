@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { api, type Me, type Member } from '../lib/api.ts';
 import { DeleteButton } from './delete-button.tsx';
+import { Avatar } from './ui/avatar.tsx';
 import { RoleBadge } from './ui/primitives.tsx';
 
 /**
@@ -147,7 +148,8 @@ export function MemberList({
               key={member.userId}
               className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5"
             >
-              <span>
+              <span className="flex items-center gap-2.5">
+                <Avatar name={member.name} seed={member.userId} avatar={member.avatar} size="md" />
                 <span className="text-sm text-content">{member.name}</span>
                 <span className="ml-2 text-xs text-faint">
                   @{member.username}

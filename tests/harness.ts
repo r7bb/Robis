@@ -8,8 +8,12 @@
  *
  * Requires the dev server to be up: `bun run db:start`.
  */
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { buildApp } from '@robis/api/app';
 import { loadEnv } from '@robis/api/env';
+import { localDiskStorage } from '@robis/api/media/storage';
 import type { SimilarIssue, TriageSuggestion } from '@robis/api/suggestions';
 import { createDatabase, type Database } from '@robis/database';
 import { runMigrations } from '@robis/database/migrate';
@@ -20,6 +24,9 @@ const ADMIN_URL = process.env.TEST_ADMIN_URL ?? 'postgres://robis:robis@localhos
 const TEST_DB = 'robis_test';
 export const TEST_URL =
   process.env.TEST_DATABASE_URL ?? `postgres://robis:robis@localhost:5433/${TEST_DB}`;
+
+/** Where this run's uploaded pictures go; tests read files back from here. */
+export const MEDIA_ROOT = mkdtempSync(join(tmpdir(), 'robis-media-'));
 
 /** Every table that holds test state, in an order safe for `TRUNCATE CASCADE`. */
 const TABLES = [
@@ -159,6 +166,8 @@ export async function getHarness() {
     // service being up, and must never reach the network. `suggestionStub`
     // below lets one test decide what it answers.
     suggestions: { similar: suggestionStub, triage: triageStub },
+    // Uploads go to a throwaway directory, never into the repository.
+    storage: localDiskStorage(MEDIA_ROOT),
     rateLimits: {
       authPerMinute: 100_000,
       searchPerMinute: 100_000,
@@ -212,8 +221,16 @@ export type Actor = {
 
 let userCounter = 0;
 
-/** Register a fresh user and return their identity plus session cookie. */
-export async function createActor(name = `User ${++userCounter}`): Promise<Actor> {
+/**
+ * Register a fresh user and return their identity plus session cookie.
+ *
+ * Every actor picks a generated avatar straight away, as a real person must
+ * before using a workspace. Pass `withAvatar: false` to test the gate.
+ */
+export async function createActor(
+  name = `User ${++userCounter}`,
+  { withAvatar = true }: { withAvatar?: boolean } = {},
+): Promise<Actor> {
   const { app } = await getHarness();
   const email = `user${userCounter}-${Date.now()}@robis.test`;
   // Unique per run, like the email, and always a valid username.
@@ -241,11 +258,25 @@ export async function createActor(name = `User ${++userCounter}`): Promise<Actor
 
   const user = response.json().user as { id: string };
 
-  return { id: user.id, email, name, username, cookie: raw.split(';')[0]! };
+  const actor = { id: user.id, email, name, username, cookie: raw.split(';')[0]! };
+
+  if (withAvatar) {
+    const avatar = await app.inject({
+      method: 'PUT',
+      url: '/auth/me/avatar/generated',
+      headers: { cookie: actor.cookie },
+      payload: { seed: `actor-${userCounter}` },
+    });
+    if (avatar.statusCode !== 200) {
+      throw new Error(`Failed to set actor avatar: ${avatar.statusCode} ${avatar.body}`);
+    }
+  }
+
+  return actor;
 }
 
 type RequestOptions = {
-  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   payload?: unknown;
   actor?: Actor;
   headers?: Record<string, string>;

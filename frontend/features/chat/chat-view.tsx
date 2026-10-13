@@ -1,5 +1,6 @@
 'use client';
 
+import type { Avatar as AvatarRef } from '@robis/shared';
 import { can, type Role } from '@robis/shared';
 import { ApiError } from '../../lib/api.ts';
 import { Composer } from './composer.tsx';
@@ -27,11 +28,14 @@ export function ChatView({
   channel,
   role,
   currentUserId,
+  avatars,
 }: {
   workspaceId: string;
   channel: ChannelSummary | null;
   role: Role;
   currentUserId: string | null;
+  /** Each member's picture, by user id, from the roster the shell already holds. */
+  avatars?: ReadonlyMap<string, AvatarRef>;
 }) {
   const channelId = channel?.id ?? null;
 
@@ -62,6 +66,7 @@ export function ChatView({
         <MessageList
           messages={messages}
           currentUserId={currentUserId}
+          avatars={avatars}
           canModerate={can(role, 'message:delete_any')}
           onDelete={(messageId) => remove.mutate(messageId)}
           onLoadOlder={() => history.fetchNextPage()}

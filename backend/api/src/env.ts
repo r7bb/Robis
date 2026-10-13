@@ -1,3 +1,4 @@
+import { isAbsolute } from 'node:path';
 import { z } from 'zod';
 
 const envSchema = z.object({
@@ -46,6 +47,8 @@ const envSchema = z.object({
    */
   ML_SERVICE_URL: z.string().default(''),
   ML_SERVICE_TOKEN: z.string().default(''),
+  /** Where uploaded pictures are kept in development. See `media/storage.ts`. */
+  MEDIA_DIR: z.string().default('.media'),
   /** Short: this sits between a keystroke and a hint. */
   ML_TIMEOUT_MS: z.coerce.number().int().min(50).max(5000).default(600),
 });
@@ -72,6 +75,14 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     throw new Error(
       `WEB_ORIGIN must be an https origin in production; got "${parsed.data.WEB_ORIGIN}". ` +
         'It is the origin password-reset links are built from.',
+    );
+  }
+
+  // Relative, it would resolve against whatever directory the process was
+  // started from, and pictures would land somewhere different on each deploy.
+  if (parsed.data.NODE_ENV === 'production' && !isAbsolute(parsed.data.MEDIA_DIR)) {
+    throw new Error(
+      `MEDIA_DIR must be an absolute path in production; got "${parsed.data.MEDIA_DIR}".`,
     );
   }
 

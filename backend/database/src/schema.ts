@@ -38,6 +38,10 @@ const bytea = customType<{ data: Uint8Array; driverData: Buffer }>({
 const tsvector = customType<{ data: string }>({ dataType: () => 'tsvector' });
 
 const id = () => uuid('id').primaryKey().defaultRandom();
+
+/** A photo someone uploaded, or a pattern drawn from a seed. */
+export const AVATAR_KINDS = ['photo', 'generated'] as const;
+export const avatarKind = pgEnum('avatar_kind', AVATAR_KINDS);
 const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
 const updatedAt = () => timestamp('updated_at', { withTimezone: true }).notNull().defaultNow();
 
@@ -61,6 +65,15 @@ export const users = pgTable(
      * none of them carries an email address.
      */
     username: text('username').notNull(),
+    /**
+     * The profile picture: an uploaded photo (`avatar_ref` is its storage
+     * key) or a generated one (`avatar_ref` is the seed it is drawn from).
+     * Null until the person picks one; the app asks before anything else.
+     */
+    avatarKind: avatarKind('avatar_kind'),
+    avatarRef: text('avatar_ref'),
+    /** Changes with every new picture, so a cached old one is not shown. */
+    avatarUpdatedAt: timestamp('avatar_updated_at', { withTimezone: true }),
     passwordHash: text('password_hash').notNull(),
     /**
      * When this address was confirmed, or null if it never was.

@@ -174,6 +174,23 @@ describe('connection', () => {
 
     client.close();
   });
+
+  /** The API refuses a member without a picture; the live feed must too. */
+  test('refuses a member who has not chosen a picture yet', async () => {
+    const owner = await createActor('Owner');
+    const newcomer = await createActor('Newcomer', { withAvatar: false });
+    const workspace = await createWorkspace(owner);
+    await addMember(owner, workspace.id, newcomer, 'MEMBER');
+
+    const client = await TestClient.connect(newcomer);
+    client.send({ type: 'subscribe', workspaceId: workspace.id });
+
+    const error = await client.waitFor(isError);
+    expect(error.message).toContain('picture');
+    expect(client.messages.some((m) => m.type === 'ready')).toBe(false);
+
+    client.close();
+  });
 });
 
 describe('event fan-out', () => {

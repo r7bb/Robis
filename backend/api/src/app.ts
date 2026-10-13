@@ -6,11 +6,13 @@ import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastif
 import type { Env } from './env.ts';
 import { ApiError } from './errors.ts';
 import { requestIdFrom, trustProxySetting } from './hardening.ts';
+import { localDiskStorage, type MediaStorage } from './media/storage.ts';
 import { createMetrics, registerMetrics } from './metrics.ts';
 import { attachUser } from './plugins/authz.ts';
 import { auditRoutes } from './routes/audit.ts';
 import { authRoutes } from './routes/auth.ts';
 import { authRecoveryRoutes } from './routes/auth-recovery.ts';
+import { avatarRoutes } from './routes/avatars.ts';
 import { channelRoutes } from './routes/channels.ts';
 import { commentRoutes } from './routes/comments.ts';
 import { documentRoutes } from './routes/documents.ts';
@@ -75,6 +77,8 @@ export type AppDeps = {
    * the ML service exists.
    */
   suggestions?: SuggestionClient;
+  /** Uploaded files. Local disk under `MEDIA_DIR` unless a test supplies one. */
+  storage?: MediaStorage;
 };
 
 export function buildApp({
@@ -84,6 +88,7 @@ export function buildApp({
   rateLimits,
   mailer = new ConsoleMailer(),
   suggestions,
+  storage = localDiskStorage(env.MEDIA_DIR),
 }: AppDeps): FastifyInstance {
   const limits: RateLimits = { ...DEFAULT_RATE_LIMITS, ...rateLimits };
   // Typed as plain HTTP/1 options so Fastify picks that overload: a union
@@ -172,6 +177,7 @@ export function buildApp({
   app.register(meetingRoutes, { db });
   app.register(notificationRoutes, { db });
   app.register(auditRoutes, { db, limits });
+  app.register(avatarRoutes, { db, storage });
   app.register(searchRoutes, { db, limits });
 
   return app;

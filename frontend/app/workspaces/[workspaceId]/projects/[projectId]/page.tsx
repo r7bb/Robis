@@ -1,6 +1,12 @@
 'use client';
 
-import { BOARD_COLUMNS, can, type IssuePriority, type IssueStatus } from '@robis/shared';
+import {
+  type Avatar as AvatarRef,
+  BOARD_COLUMNS,
+  can,
+  type IssuePriority,
+  type IssueStatus,
+} from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -8,6 +14,7 @@ import { type FormEvent, useEffect, useState } from 'react';
 import { DeleteButton } from '../../../../../components/delete-button.tsx';
 import { PresenceBar } from '../../../../../components/presence.tsx';
 import { SyncStatus } from '../../../../../components/sync-status.tsx';
+import { Avatar } from '../../../../../components/ui/avatar.tsx';
 import { PriorityBadge, StatusHeading } from '../../../../../components/ui/badges.tsx';
 import { ErrorState } from '../../../../../components/ui/primitives.tsx';
 import { DuplicateHints } from '../../../../../features/issues/duplicate-hints.tsx';
@@ -15,6 +22,7 @@ import { PriorityHint } from '../../../../../features/issues/priority-hint.tsx';
 import { api, type WorkspaceSummary } from '../../../../../lib/api.ts';
 import { useRealtime } from '../../../../../lib/realtime.ts';
 import { lastTheme, useApplyTheme } from '../../../../../lib/theme.ts';
+import { useMemberAvatars } from '../../../../../lib/use-member-avatars.ts';
 import { useOfflineBoard } from '../../../../../lib/use-offline-board.ts';
 
 const COLUMN_LABELS: Record<IssueStatus, string> = {
@@ -27,6 +35,7 @@ const COLUMN_LABELS: Record<IssueStatus, string> = {
 
 export default function BoardPage() {
   const { workspaceId, projectId } = useParams<{ workspaceId: string; projectId: string }>();
+  const avatars = useMemberAvatars();
   const [title, setTitle] = useState('');
   // Picked from the priority hint, or not at all; never guessed silently.
   // Kept with the title it was picked for: a suggestion is about that text,
@@ -179,7 +188,7 @@ export default function BoardPage() {
                     )}
 
                     {issue.assigneeName && (
-                      <p className="mt-2 text-xs text-faint">{issue.assigneeName}</p>
+                      <Assignee name={issue.assigneeName} id={issue.assigneeId} avatars={avatars} />
                     )}
 
                     {canEdit && (
@@ -208,5 +217,24 @@ export default function BoardPage() {
         })}
       </div>
     </main>
+  );
+}
+
+/** Who a card is assigned to: their picture and name, quietly. */
+function Assignee({
+  name,
+  id,
+  avatars,
+}: {
+  name: string;
+  id: string | null;
+  avatars: ReadonlyMap<string, AvatarRef>;
+}) {
+  const avatar = id ? (avatars.get(id) ?? null) : null;
+  return (
+    <p className="mt-2 flex items-center gap-1.5 text-xs text-faint">
+      <Avatar name={name} seed={id ?? undefined} avatar={avatar} size="sm" />
+      {name}
+    </p>
   );
 }

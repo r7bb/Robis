@@ -2,6 +2,7 @@
 
 import type { PresenceUser } from '@robis/shared';
 import type { ConnectionState } from '../lib/realtime.ts';
+import { useMemberAvatars } from '../lib/use-member-avatars.ts';
 import { Avatar } from './ui/avatar.tsx';
 
 /*
@@ -30,6 +31,7 @@ export function PresenceBar({
   here?: string | null;
   excludeUserId?: string | null;
 }) {
+  const avatars = useMemberAvatars();
   const shown = excludeUserId ? users.filter((user) => user.userId !== excludeUserId) : users;
 
   // With yourself left out and nobody else here, "1 online" beside no
@@ -56,6 +58,7 @@ export function PresenceBar({
             <Avatar
               name={user.name}
               seed={user.userId}
+              avatar={avatars.get(user.userId) ?? null}
               size="md"
               // The ring marks somebody as looking at this very board. It
               // stays here rather than moving into `Avatar`, because it is a

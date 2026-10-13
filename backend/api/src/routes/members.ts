@@ -17,6 +17,7 @@ import {
 import { and, count, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../errors.ts';
+import { avatarOf } from '../media/avatars.ts';
 import {
   auditActor,
   currentMembership,
@@ -98,6 +99,9 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
           username: users.username,
           role: workspaceMembers.role,
           joinedAt: workspaceMembers.createdAt,
+          avatarKind: users.avatarKind,
+          avatarRef: users.avatarRef,
+          avatarUpdatedAt: users.avatarUpdatedAt,
         })
         .from(workspaceMembers)
         .innerJoin(users, eq(users.id, workspaceMembers.userId))
@@ -111,7 +115,11 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
        */
       const seesEmail = can(role, 'member:invite');
       return {
-        members: members.map((member) => ({ ...member, email: seesEmail ? member.email : null })),
+        members: members.map(({ avatarKind, avatarRef, avatarUpdatedAt, ...member }) => ({
+          ...member,
+          email: seesEmail ? member.email : null,
+          avatar: avatarOf({ id: member.userId, avatarKind, avatarRef, avatarUpdatedAt }),
+        })),
       };
     },
   );
@@ -305,7 +313,12 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
    */
   app.delete(
     '/workspaces/:workspaceId/members/me',
-    { preHandler: [requireAuth, requireMembership(db, 'workspace:read')] },
+    {
+      preHandler: [
+        requireAuth,
+        requireMembership(db, 'workspace:read', { allowWithoutAvatar: true }),
+      ],
+    },
     async (request, reply) => {
       const actor = currentUser(request);
       const { workspaceId, role } = currentMembership(request);

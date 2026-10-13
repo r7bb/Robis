@@ -39,6 +39,24 @@ export type Entry = {
 
 export const CHANGELOG: readonly Entry[] = [
   {
+    date: '2026-10-13',
+    area: 'Product',
+    title: 'A picture before you start',
+    summary:
+      'New members choose how they appear before they use a workspace: upload a photo, take one with the camera, paste a screenshot, or pick a generated pattern. Pictures appear beside everything a person does, and only to people who share a workspace with them.',
+    checked:
+      'Tests prove an uploaded photo keeps none of its metadata, a stranger gets a 404 for it, replacing it deletes the old file, and a member without a picture is refused by the API and the live feed alike. The whole flow, camera included, was driven in a real browser.',
+    feature: {
+      name: 'Put a face to your name',
+      where: 'Signing up, or Account later. The app asks before anything else.',
+      layers: [
+        'Welcome: upload, camera with a live round preview, paste, or a pattern, with one preview.',
+        'API: photos decoded and re-encoded to 512 px with metadata removed; served only to teammates.',
+        'Gate: workspaces stay closed over HTTP and the live feed until a picture is chosen.',
+      ],
+    },
+  },
+  {
     date: '2026-10-09',
     area: 'Product',
     title: 'Usernames',

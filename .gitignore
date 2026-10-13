@@ -28,3 +28,6 @@ __pycache__/
 # such directory: listing them one by one is how .next-build nearly got
 # committed.
 .next-*/
+
+# Uploaded media in development (MEDIA_DIR)
+.media/

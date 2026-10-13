@@ -8,6 +8,11 @@ export type AuthenticatedUser = {
   name: string;
   /** The app-specific `@handle`. */
   username: string;
+  /**
+   * Whether a picture has been chosen. Workspaces are closed to an account
+   * without one; see `requireMembership`.
+   */
+  hasAvatar: boolean;
 };
 
 /** Only refresh `last_used_at` once an hour, to keep reads from becoming writes. */
@@ -45,6 +50,8 @@ export async function resolveSession(
       email: users.email,
       name: users.name,
       username: users.username,
+      avatarKind: users.avatarKind,
+      avatarRef: users.avatarRef,
     })
     .from(sessions)
     .innerJoin(users, eq(users.id, sessions.userId))
@@ -59,7 +66,14 @@ export async function resolveSession(
     await db.update(sessions).set({ lastUsedAt: new Date() }).where(eq(sessions.id, row.sessionId));
   }
 
-  return { id: row.id, email: row.email, name: row.name, username: row.username };
+  return {
+    id: row.id,
+    email: row.email,
+    name: row.name,
+    username: row.username,
+    // Both halves, so a row left half-written can never count as a picture.
+    hasAvatar: row.avatarKind !== null && row.avatarRef !== null,
+  };
 }
 
 export async function revokeSession(db: Executor, token: string): Promise<void> {

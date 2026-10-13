@@ -92,6 +92,13 @@
       "when": 1791545723534,
       "tag": "0012_usernames",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791546551762,
+      "tag": "0013_avatars",
+      "breakpoints": true
     }
   ]
 }

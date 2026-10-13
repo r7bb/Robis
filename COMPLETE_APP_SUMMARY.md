@@ -33,6 +33,12 @@ Written to be checkable. Every row names a file you can open.
 | Email verification | same |
 | Change name, change password | `backend/api/src/routes/account.ts` |
 | Rate limiting, per caller and per recipient address | `backend/api/src/plugins/rate-limit.ts` |
+| App-specific `@usernames`, checked as you type, changeable | `shared/contracts/src/usernames.ts`, `backend/api/src/routes/auth.ts` |
+| Age confirmation at sign-up, enforced by the API (threshold is a placeholder for legal review) | `shared/contracts/src/schemas.ts` |
+| Draft terms and privacy pages, marked for legal review | `frontend/app/terms/`, `frontend/app/privacy/` |
+| A picture before anything else: upload, camera, or a generated pattern | `frontend/app/welcome/`, `backend/api/src/routes/avatars.ts` |
+| Photos re-encoded to 512 px WebP with all metadata removed, location included | `backend/api/src/media/images.ts` |
+| Photos served only to people who share a workspace (404 otherwise) | `backend/api/src/routes/avatars.ts` |
 
 Sessions are opaque rather than JWTs so that changing a password kills every
 existing session immediately. Reset tokens are stored only as a SHA-256 hash,
@@ -48,7 +54,11 @@ second "consumed" state to get wrong.
 | One declarative permission matrix, 30+ permissions | same |
 | 404-not-403 for non-members | `backend/api/src/plugins/authz.ts` |
 | Six per-workspace themes | `shared/contracts/src/themes.ts` |
-| Append-only audit trail | `audit_events` table |
+| Tamper-evident audit trail: per-workspace sequence and SHA-256 chain, append-only by trigger | `backend/database/src/audit.ts` |
+| Security view for admins: filter, chain check, export as JSON lines | `frontend/features/security/` |
+| SIEM stream over HTTPS, at-least-once with an idempotency key per event | `backend/worker/src/audit-stream.ts` |
+| Emails shown only to admins; teammates see usernames | `backend/api/src/routes/members.ts` |
+| No workspace access, over HTTP or the live feed, until a picture is chosen | `backend/api/src/plugins/authz.ts`, `backend/realtime/src/gateway.ts` |
 
 A non-member gets **404, not 403**, because a 403 confirms the workspace
 exists. Rules that depend on more than the actor's role (an admin may not
@@ -156,7 +166,7 @@ JavaScript.
 | Duplicate precision and recall on a labelled set, dev/test split | `robis-ml/robis_ml/duplicate_eval.py` |
 | FastAPI service, per-workspace models | `robis-ml/robis_ml/service.py` |
 | Shared bearer token, refuses to start without one | `robis-ml/robis_ml/auth.py` |
-| Duplicate hints in the issue composer | `backend/api/src/suggestions.ts` |
+| Duplicate hints and a suggested priority in the issue composer | `backend/api/src/suggestions.ts` |
 
 Advisory only. A missing or broken ML service degrades to no hints and never
 blocks filing an issue.
@@ -187,11 +197,12 @@ is.
 
 | Gap | Why |
 | --- | --- |
-| File uploads | No object storage available on this machine |
+| File uploads beyond profile pictures | Pictures are stored on local disk behind a storage port (`backend/api/src/media/storage.ts`); an object-store driver and issue attachments are not built yet |
 | Verified container build | No Docker available |
 | Production mail driver | No SMTP. The API refuses to boot in production without one rather than printing reset links to a log |
 | Deployment | Follows from the above |
 | Duplicate detection, reworded intent | Finds 0 of 7 lexical-gap duplicates on the labelled set's test half |
 
-The first four are environment constraints and are stated rather than
-disguised. The last is real work that has not been done.
+The container build, mail and deployment gaps are environment constraints and
+are stated rather than disguised. Attachments and duplicate recall are real
+work that has not been done.

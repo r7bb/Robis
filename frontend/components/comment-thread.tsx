@@ -4,7 +4,9 @@ import { splitMentions } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { api, type Comment, type Me } from '../lib/api.ts';
+import { useMemberAvatars } from '../lib/use-member-avatars.ts';
 import { DeleteButton } from './delete-button.tsx';
+import { Avatar } from './ui/avatar.tsx';
 
 /** Comments have no title, so the dialog quotes the opening of the body. */
 function preview(body: string): string {
@@ -33,6 +35,7 @@ export function CommentThread({
   const queryClient = useQueryClient();
   const [body, setBody] = useState('');
 
+  const avatars = useMemberAvatars();
   const key = ['comments', workspaceId, issueId] as const;
   const path = `/workspaces/${workspaceId}/issues/${issueId}/comments`;
 
@@ -76,7 +79,15 @@ export function CommentThread({
         {items.map((comment) => (
           <li key={comment.id} className="rounded-lg border border-line bg-raised p-4">
             <div className="flex items-baseline justify-between gap-3">
-              <span className="text-sm font-medium text-content">{comment.authorName}</span>
+              <span className="flex items-center gap-2">
+                <Avatar
+                  name={comment.authorName}
+                  seed={comment.authorId}
+                  avatar={avatars.get(comment.authorId) ?? null}
+                  size="sm"
+                />
+                <span className="text-sm font-medium text-content">{comment.authorName}</span>
+              </span>
 
               <span className="flex items-center gap-3">
                 <time className="text-xs text-faint" dateTime={comment.createdAt}>

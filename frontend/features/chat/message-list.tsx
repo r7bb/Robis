@@ -1,5 +1,6 @@
 'use client';
 
+import type { Avatar as AvatarRef } from '@robis/shared';
 import { useEffect, useRef } from 'react';
 import { Avatar } from '../../components/ui/avatar.tsx';
 import { EmptyState } from '../../components/ui/primitives.tsx';
@@ -30,6 +31,7 @@ function groupsWith(message: ChatMessage, previous: ChatMessage | undefined): bo
 export function MessageList({
   messages,
   currentUserId,
+  avatars,
   canModerate,
   onDelete,
   onLoadOlder,
@@ -38,6 +40,7 @@ export function MessageList({
 }: {
   messages: ChatMessage[];
   currentUserId: string | null;
+  avatars?: ReadonlyMap<string, AvatarRef>;
   canModerate: boolean;
   onDelete: (messageId: string) => void;
   onLoadOlder: () => void;
@@ -109,6 +112,7 @@ export function MessageList({
 
                 <MessageRow
                   message={message}
+                  avatar={avatars?.get(message.authorId) ?? null}
                   grouped={grouped}
                   deletable={canModerate || message.authorId === currentUserId}
                   onDelete={() => onDelete(message.id)}
@@ -138,11 +142,13 @@ function DaySeparator({ at }: { at: string }) {
 
 function MessageRow({
   message,
+  avatar,
   grouped,
   deletable,
   onDelete,
 }: {
   message: ChatMessage;
+  avatar: AvatarRef;
   grouped: boolean;
   deletable: boolean;
   onDelete: () => void;
@@ -158,7 +164,13 @@ function MessageRow({
           {formatTime(message.createdAt)}
         </span>
       ) : (
-        <Avatar name={message.authorName} seed={message.authorId} size="md" className="mt-0.5" />
+        <Avatar
+          name={message.authorName}
+          seed={message.authorId}
+          avatar={avatar}
+          size="md"
+          className="mt-0.5"
+        />
       )}
 
       <div className="min-w-0 flex-1">

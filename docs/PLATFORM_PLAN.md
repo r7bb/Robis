@@ -109,7 +109,10 @@ Order of work, decided 2026-10-09:
 2. **A picture before you start.** A new member adds at least one image
    before using the workspace: upload a photo, take one with the camera, or
    pick a generated avatar. The avatar is per account and is served only to
-   people who share a workspace with its owner.
+   people who share a workspace with its owner. **Shipped 2026-10-13**, with
+   the gate enforced by the API and the realtime gateway as well as the app.
+   Left open: picture changes are not yet in an account trail (B3 in the
+   build plan); storage is local disk only, with no object-store driver yet.
 3. **Photos and stories**, as below.
 
 - Rich profiles: photo, cover, role, a "working on" line, recent activity,

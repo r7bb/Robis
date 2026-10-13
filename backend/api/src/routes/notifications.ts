@@ -3,7 +3,7 @@ import { isUuid } from '@robis/shared';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../errors.ts';
-import { currentUser, requireAuth } from '../plugins/authz.ts';
+import { currentUser, requireAuth, requirePicture } from '../plugins/authz.ts';
 
 /**
  * The signed-in user's inbox.
@@ -16,7 +16,7 @@ import { currentUser, requireAuth } from '../plugins/authz.ts';
 export async function notificationRoutes(app: FastifyInstance, opts: { db: Database }) {
   const { db } = opts;
 
-  app.get('/notifications', { preHandler: requireAuth }, async (request) => {
+  app.get('/notifications', { preHandler: [requireAuth, requirePicture] }, async (request) => {
     const user = currentUser(request);
     const { unread } = request.query as { unread?: string };
 
@@ -50,30 +50,34 @@ export async function notificationRoutes(app: FastifyInstance, opts: { db: Datab
     };
   });
 
-  app.post('/notifications/:notificationId/read', { preHandler: requireAuth }, async (request) => {
-    const user = currentUser(request);
-    const { notificationId } = request.params as { notificationId: string };
+  app.post(
+    '/notifications/:notificationId/read',
+    { preHandler: [requireAuth, requirePicture] },
+    async (request) => {
+      const user = currentUser(request);
+      const { notificationId } = request.params as { notificationId: string };
 
-    if (!isUuid(notificationId)) throw ApiError.notFound('Notification not found');
+      if (!isUuid(notificationId)) throw ApiError.notFound('Notification not found');
 
-    const [updated] = await db
-      .update(notifications)
-      .set({ readAt: new Date() })
-      .where(
-        // Owner is part of the predicate, not a separate check: there is no
-        // way to reach someone else's notification even with its id.
-        and(eq(notifications.id, notificationId), eq(notifications.userId, user.id)),
-      )
-      .returning({ id: notifications.id, readAt: notifications.readAt });
+      const [updated] = await db
+        .update(notifications)
+        .set({ readAt: new Date() })
+        .where(
+          // Owner is part of the predicate, not a separate check: there is no
+          // way to reach someone else's notification even with its id.
+          and(eq(notifications.id, notificationId), eq(notifications.userId, user.id)),
+        )
+        .returning({ id: notifications.id, readAt: notifications.readAt });
 
-    if (!updated) throw ApiError.notFound('Notification not found');
+      if (!updated) throw ApiError.notFound('Notification not found');
 
-    return { notification: updated };
-  });
+      return { notification: updated };
+    },
+  );
 
   app.delete(
     '/notifications/:notificationId',
-    { preHandler: requireAuth },
+    { preHandler: [requireAuth, requirePicture] },
     async (request, reply) => {
       const user = currentUser(request);
       const { notificationId } = request.params as { notificationId: string };
@@ -100,15 +104,19 @@ export async function notificationRoutes(app: FastifyInstance, opts: { db: Datab
     },
   );
 
-  app.post('/notifications/read-all', { preHandler: requireAuth }, async (request) => {
-    const user = currentUser(request);
+  app.post(
+    '/notifications/read-all',
+    { preHandler: [requireAuth, requirePicture] },
+    async (request) => {
+      const user = currentUser(request);
 
-    const updated = await db
-      .update(notifications)
-      .set({ readAt: new Date() })
-      .where(and(eq(notifications.userId, user.id), isNull(notifications.readAt)))
-      .returning({ id: notifications.id });
+      const updated = await db
+        .update(notifications)
+        .set({ readAt: new Date() })
+        .where(and(eq(notifications.userId, user.id), isNull(notifications.readAt)))
+        .returning({ id: notifications.id });
 
-    return { marked: updated.length };
-  });
+      return { marked: updated.length };
+    },
+  );
 }

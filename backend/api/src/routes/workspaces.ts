@@ -17,11 +17,13 @@ import { desc, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../errors.ts';
 import {
+  assertHasAvatar,
   auditActor,
   currentMembership,
   currentUser,
   requireAuth,
   requireMembership,
+  requirePicture,
 } from '../plugins/authz.ts';
 import { parse } from '../validate.ts';
 
@@ -50,7 +52,7 @@ async function availableSlug(db: Executor, base: string): Promise<string> {
 export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database }) {
   const { db } = opts;
 
-  app.get('/workspaces', { preHandler: requireAuth }, async (request) => {
+  app.get('/workspaces', { preHandler: [requireAuth, requirePicture] }, async (request) => {
     const user = currentUser(request);
 
     const rows = await db
@@ -72,6 +74,7 @@ export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database
 
   app.post('/workspaces', { preHandler: requireAuth }, async (request, reply) => {
     const user = currentUser(request);
+    assertHasAvatar(user);
     const input = parse(createWorkspaceSchema, request.body);
 
     const workspace = await db.transaction(async (tx) => {

@@ -3,7 +3,7 @@
 import { can, type PresenceUser, type Role } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { NotificationBell } from '../../components/notification-bell.tsx';
 import { PresenceBar } from '../../components/presence.tsx';
 import { SearchBox } from '../../components/search-box.tsx';
@@ -13,6 +13,7 @@ import { ErrorState, RoleBadge, SectionLabel } from '../../components/ui/primiti
 import { ApiError, api, type Me, type Member, type WorkspaceSummary } from '../../lib/api.ts';
 import { type ConnectionState, useRealtime } from '../../lib/realtime.ts';
 import { lastTheme, rememberTheme, useApplyTheme } from '../../lib/theme.ts';
+import { useRequireAvatar } from '../../lib/use-require-avatar.ts';
 import { ChannelList } from '../chat/channel-list.tsx';
 import { ChatView } from '../chat/chat-view.tsx';
 import { useChannels, useCreateChannel } from '../chat/use-chat.ts';
@@ -27,6 +28,7 @@ function TopBar({
   realtimeState,
   userName,
   userId,
+  userAvatar,
 }: {
   workspaceId: string;
   workspaceName: string;
@@ -35,6 +37,7 @@ function TopBar({
   realtimeState: ConnectionState;
   userName: string | null;
   userId: string | null;
+  userAvatar: Me['user']['avatar'];
 }) {
   return (
     /*
@@ -84,11 +87,16 @@ function TopBar({
           aria-label="Your account"
           title={userName ?? 'Your account'}
         >
-          <Avatar name={userName ?? '?'} seed={userId ?? undefined} size="sm" />
+          <Avatar name={userName ?? '?'} seed={userId ?? undefined} avatar={userAvatar} size="sm" />
         </Link>
       </div>
     </header>
   );
+}
+
+/** Each member's picture by user id, for rows that only carry an author id. */
+function avatarsOf(members: Member[] | undefined) {
+  return new Map((members ?? []).map((member) => [member.userId, member.avatar]));
 }
 
 /**
@@ -111,7 +119,7 @@ function TeamRoster({ members, onlineIds }: { members: Member[]; onlineIds: Set<
           return (
             <li key={member.userId} className="flex items-center gap-2 rounded px-2 py-1 text-sm">
               <span className="relative">
-                <Avatar name={member.name} seed={member.userId} size="sm" />
+                <Avatar name={member.name} seed={member.userId} avatar={member.avatar} size="sm" />
                 {/* A ring in the surface colour cuts the dot out of the
                     avatar, so it reads as a badge rather than a smudge. */}
                 {online ? (
@@ -202,6 +210,7 @@ export function WorkspaceShell({ workspaceId }: { workspaceId: string }) {
   });
 
   const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/auth/me'), retry: false });
+  useRequireAvatar(me.data);
 
   const members = useQuery({
     queryKey: ['members', workspaceId],
@@ -241,6 +250,8 @@ export function WorkspaceShell({ workspaceId }: { workspaceId: string }) {
   const theme = workspace.data?.workspace.theme ?? lastTheme();
   useApplyTheme(theme);
   rememberTheme(workspace.data?.workspace.theme);
+  // Above the early return below: a hook must run on every render.
+  const avatarsById = useMemo(() => avatarsOf(members.data?.members), [members.data]);
 
   if (workspace.isError) {
     return <ErrorState message={(workspace.error as Error).message} />;
@@ -263,6 +274,7 @@ export function WorkspaceShell({ workspaceId }: { workspaceId: string }) {
         realtimeState={realtimeState}
         userName={me.data?.user.name ?? null}
         userId={currentUserId}
+        userAvatar={me.data?.user.avatar ?? null}
       />
 
       <div className="flex min-h-0 flex-1">
@@ -318,6 +330,7 @@ export function WorkspaceShell({ workspaceId }: { workspaceId: string }) {
               channel={activeChannel}
               role={role}
               currentUserId={currentUserId}
+              avatars={avatarsById}
             />
           </div>
         ) : (

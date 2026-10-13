@@ -1,6 +1,6 @@
-import type { IssuePriority, IssueStatus, Role, ThemeId } from '@robis/shared';
+import type { Avatar as AvatarRef, IssuePriority, IssueStatus, Role, ThemeId } from '@robis/shared';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+export const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
 export class ApiError extends Error {
   constructor(
@@ -54,6 +54,8 @@ export type Me = {
     name: string;
     /** The app-specific `@handle`. */
     username: string;
+    /** Null until a picture is chosen; the welcome step asks for one. */
+    avatar: AvatarRef;
     /** Whether the address has been confirmed. Nothing is gated on it yet. */
     emailVerified: boolean;
     emailVerifiedAt: string | null;
@@ -84,6 +86,7 @@ export type Member = {
   name: string;
   username: string;
   role: Role;
+  avatar: AvatarRef;
 };
 
 export type DocumentSummary = {

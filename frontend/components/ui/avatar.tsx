@@ -1,11 +1,20 @@
+'use client';
+
+import type { Avatar as AvatarRef } from '@robis/shared';
+import { type CSSProperties, useState } from 'react';
+import { BASE_URL } from '../../lib/api.ts';
+
 /**
- * Initials in a tinted circle.
+ * A person's picture: their photo, a generated orb, or their initials.
  *
- * Robis has no file uploads, so there are no uploaded photographs to show.
- * Rather than give everyone the same grey silhouette -- which makes a member
- * list unscannable -- each person gets a colour derived from their user id.
- * It is stable across sessions and devices because it is a pure function of
- * the id, with no state to keep in sync.
+ * Photos load from the API with the session cookie, which checks that the
+ * viewer shares a workspace with the person; if that fails for any reason
+ * the initials show instead of a broken image. A generated avatar is drawn
+ * here from its seed, so it costs no request and reveals nothing. Initials
+ * remain for anyone who has not chosen a picture yet.
+ *
+ * Colours come from a hash of the seed (usually the user id), so they are
+ * stable across sessions and devices with no state to keep in sync.
  */
 
 /**
@@ -16,15 +25,39 @@
  */
 const HUES = [210, 260, 320, 10, 35, 90, 150, 185];
 
-function hueFor(seed: string): number {
+function hashOf(seed: string): number {
   let hash = 0;
   for (let i = 0; i < seed.length; i += 1) {
     // Classic 32-bit string hash. Not cryptographic and does not need to be:
     // the only requirement is that it spreads similar ids apart.
     hash = (hash * 31 + seed.charCodeAt(i)) | 0;
   }
+  return Math.abs(hash);
+}
 
-  return HUES[Math.abs(hash) % HUES.length]!;
+function hueFor(seed: string): number {
+  return HUES[hashOf(seed) % HUES.length]!;
+}
+
+/**
+ * The generated avatar: two soft light sources over a deep base, angled by
+ * the seed. Deliberately abstract -- a face or a cartoon would say something
+ * about the person that they did not choose.
+ */
+export function orbStyle(seed: string): CSSProperties {
+  const hash = hashOf(seed);
+  const first = HUES[hash % HUES.length]!;
+  const second = HUES[(hash >> 3) % HUES.length]!;
+  const angle = hash % 360;
+
+  return {
+    backgroundColor: `hsl(${first} 55% 22%)`,
+    backgroundImage: [
+      `radial-gradient(circle at 30% 25%, hsl(${first} 85% 68% / 0.95), transparent 55%)`,
+      `radial-gradient(circle at 75% 80%, hsl(${second} 85% 60% / 0.9), transparent 60%)`,
+      `conic-gradient(from ${angle}deg, hsl(${first} 60% 30%), hsl(${second} 60% 34%), hsl(${first} 60% 30%))`,
+    ].join(', '),
+  };
 }
 
 /** First letters of the first two words -- "Ada Lovelace" becomes "AL". */
@@ -46,6 +79,7 @@ const SIZES = {
   md: 'h-8 w-8 text-xs',
   lg: 'h-12 w-12 text-sm',
   xl: 'h-20 w-20 text-xl',
+  '2xl': 'h-28 w-28 text-3xl',
 } as const;
 
 export type AvatarSize = keyof typeof SIZES;
@@ -53,20 +87,50 @@ export type AvatarSize = keyof typeof SIZES;
 export function Avatar({
   name,
   seed,
+  avatar = null,
   size = 'md',
   className = '',
 }: {
   name: string;
   /** Usually the user id. Falls back to the name when there is no id. */
   seed?: string;
+  /** The chosen picture, when the caller has it. */
+  avatar?: AvatarRef;
   size?: AvatarSize;
   className?: string;
 }) {
+  // Remembered per URL: a new picture (a new `?v=`) gets a fresh attempt
+  // instead of inheriting an earlier failure.
+  const [brokenUrl, setBrokenUrl] = useState<string | null>(null);
+  const base = `inline-flex shrink-0 select-none items-center justify-center overflow-hidden rounded-full font-semibold ${SIZES[size]} ${className}`;
+
+  if (avatar?.kind === 'photo' && brokenUrl !== avatar.url) {
+    return (
+      // A plain img: the bytes come from the API with the session cookie,
+      // which an image optimiser in between would not carry. The name is
+      // always rendered beside it, so the picture itself is decorative.
+      // biome-ignore lint/performance/noImgElement: see above
+      <img
+        src={`${BASE_URL}${avatar.url}`}
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        decoding="async"
+        onError={() => setBrokenUrl(avatar.url)}
+        className={`${base} object-cover`}
+      />
+    );
+  }
+
+  if (avatar?.kind === 'generated') {
+    return <span className={base} style={orbStyle(avatar.seed)} aria-hidden="true" />;
+  }
+
   const hue = hueFor(seed ?? name);
 
   return (
     <span
-      className={`inline-flex shrink-0 select-none items-center justify-center rounded-full font-semibold ${SIZES[size]} ${className}`}
+      className={base}
       style={{
         backgroundColor: `hsl(${hue} 60% 30%)`,
         color: `hsl(${hue} 90% 88%)`,

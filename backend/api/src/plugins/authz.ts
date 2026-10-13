@@ -25,6 +25,28 @@ export function currentMembership(request: FastifyRequest) {
 }
 
 /**
+ * A picture comes before anything else in Robis.
+ *
+ * Enforced here as well as in the app, so calling the API directly cannot
+ * skip it. Applied to every workspace route through `requireMembership` and
+ * to creating a workspace; account routes stay open so the picture can be
+ * chosen in the first place.
+ */
+export function assertHasAvatar(user: AuthenticatedUser) {
+  if (!user.hasAvatar) {
+    throw new ApiError(403, 'avatar_required', 'Add a picture before you start');
+  }
+}
+
+/**
+ * The same gate as a preHandler, for routes outside a workspace path that
+ * still show workspace content: the workspace list and notifications.
+ */
+export const requirePicture: preHandlerHookHandler = async (request: FastifyRequest) => {
+  assertHasAvatar(currentUser(request));
+};
+
+/**
  * Who the audit trail should name for this request.
  *
  * The one place that decides it, so when agents act through tokens (they
@@ -62,7 +84,15 @@ export const requireAuth: preHandlerHookHandler = async (request: FastifyRequest
  * Members who simply lack the permission do get 403, since they already know
  * the workspace exists.
  */
-export function requireMembership(db: Database, permission: Permission): preHandlerHookHandler {
+export function requireMembership(
+  db: Database,
+  permission: Permission,
+  /**
+   * For the one way out: leaving a workspace must not need a picture, or
+   * someone who would rather not add one could not leave.
+   */
+  { allowWithoutAvatar = false }: { allowWithoutAvatar?: boolean } = {},
+): preHandlerHookHandler {
   return async (request: FastifyRequest, _reply: FastifyReply) => {
     const user = currentUser(request);
     const { workspaceId } = request.params as { workspaceId?: string };
@@ -75,6 +105,9 @@ export function requireMembership(db: Database, permission: Permission): preHand
     const member = await findMembership(db, workspaceId, user.id);
 
     if (!member) throw ApiError.notFound('Workspace not found');
+    // After the membership check, so a stranger still learns nothing: only a
+    // member is told why they cannot go in yet.
+    if (!allowWithoutAvatar) assertHasAvatar(user);
     if (!can(member.role, permission)) throw ApiError.forbidden();
 
     request.membership = { workspaceId, role: member.role };
