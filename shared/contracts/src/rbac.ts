@@ -62,6 +62,13 @@ export const PERMISSIONS = [
 
   /** Read the full audit trail, export it, and verify its chain. */
   'audit:read',
+
+  /** Attach an image to an issue or to your own comment. */
+  'attachment:create',
+  /** Remove an attachment you added. */
+  'attachment:delete_own',
+  /** Remove anyone's attachment (moderation). */
+  'attachment:delete_any',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -88,6 +95,9 @@ const GUEST: readonly Permission[] = [
   ...READ_ONLY,
   'comment:create',
   'comment:delete_own',
+  // A guest who can describe a bug in a comment can show it in a screenshot.
+  'attachment:create',
+  'attachment:delete_own',
   'message:create',
   'message:delete_own',
 ];
@@ -116,6 +126,7 @@ const ADMIN: readonly Permission[] = [
   'channel:delete',
   'message:delete_any',
   'meeting:manage_any',
+  'attachment:delete_any',
   // Who did what is an administrator's question. Members still see the
   // workspace's activity feed; the full trail and its export are not theirs.
   'audit:read',

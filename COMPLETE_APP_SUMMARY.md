@@ -74,6 +74,11 @@ they need rather than in the matrix.
 | Per-project issue numbering | same |
 | Board view by status | `frontend/app/workspaces/[workspaceId]/projects/` |
 | Comment threads with `@mentions` | `backend/api/src/routes/comments.ts` |
+| Images on issues and comments: upload, camera, paste, members only | `backend/api/src/routes/attachments.ts`, `frontend/features/issues/attachments.tsx` |
+| Images added offline wait on the device and upload exactly once | `shared/sync/src/engine.ts` |
+| Storage port: local disk or any S3-compatible store, no public URLs | `backend/api/src/media/storage.ts` |
+| Deleting an issue, comment or workspace queues removal of its files | `backend/database/src/files.ts`, `backend/worker/src/storage-purge.ts` |
+| Offline data is bound to its account and cleared on sign-out | `shared/sync/src/engine.ts` |
 | Keyset pagination | `backend/database/src/pagination.ts` |
 
 ## Chat
@@ -197,7 +202,8 @@ is.
 
 | Gap | Why |
 | --- | --- |
-| File uploads beyond profile pictures | Pictures are stored on local disk behind a storage port (`backend/api/src/media/storage.ts`); an object-store driver and issue attachments are not built yet |
+| Storage quotas | Uploads are rate-limited per account, but nothing caps how much a workspace stores |
+| Attachments beyond images | Only images are accepted; PDFs and other files are not, because their metadata cannot be stripped the same way |
 | Verified container build | No Docker available |
 | Production mail driver | No SMTP. The API refuses to boot in production without one rather than printing reset links to a log |
 | Deployment | Follows from the above |

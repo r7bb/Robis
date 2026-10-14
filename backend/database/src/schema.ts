@@ -320,6 +320,40 @@ export const comments = pgTable(
   ],
 );
 
+/**
+ * Images attached to an issue, or to one comment on it.
+ *
+ * The bytes live in object storage under `storage_key`; this row is the only
+ * way to reach them, through a route that checks membership first. Rows go
+ * with their issue, comment or workspace by cascade, and the code that
+ * deletes those queues a job to remove the files, since a cascade cannot.
+ */
+export const attachments = pgTable(
+  'attachments',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    issueId: uuid('issue_id')
+      .notNull()
+      .references(() => issues.id, { onDelete: 'cascade' }),
+    commentId: uuid('comment_id').references(() => comments.id, { onDelete: 'cascade' }),
+    uploaderId: uuid('uploader_id').references(() => users.id, { onDelete: 'set null' }),
+    storageKey: text('storage_key').notNull(),
+    contentType: text('content_type').notNull(),
+    bytes: integer('bytes').notNull(),
+    width: integer('width').notNull(),
+    height: integer('height').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex('attachments_storage_key_key').on(t.storageKey),
+    index('attachments_issue_created_idx').on(t.issueId, t.createdAt),
+    index('attachments_workspace_idx').on(t.workspaceId),
+  ],
+);
+
 /** Who acted: a person, an agent acting through a token, or Robis itself. */
 export const ACTOR_KINDS = ['human', 'agent', 'system'] as const;
 export const actorKind = pgEnum('actor_kind', ACTOR_KINDS);

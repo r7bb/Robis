@@ -1,9 +1,11 @@
 import {
+  attachments,
   type Database,
   type Executor,
   issues,
   projects,
   publishEvent,
+  queueAttachmentPurge,
   recordAudit,
 } from '@robis/database';
 import { createProjectSchema, deriveProjectKey, isUuid, updateProjectSchema } from '@robis/shared';
@@ -208,6 +210,13 @@ export async function projectRoutes(app: FastifyInstance, opts: { db: Database }
       const project = await loadProject(db, workspaceId, projectId);
 
       await db.transaction(async (tx) => {
+        // Its issues cascade, and their attachments with them; the files do
+        // not, so their removal is queued before the rows disappear.
+        await queueAttachmentPurge(
+          tx,
+          sql`${attachments.issueId} in (select id from issues where project_id = ${projectId}::uuid)`,
+        );
+
         const deleted = await tx
           .delete(projects)
           .where(and(eq(projects.id, projectId), eq(projects.workspaceId, workspaceId)))

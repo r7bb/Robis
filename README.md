@@ -25,6 +25,12 @@ Newest first. The same list is the site's What's new page, linked from the
 header, where each entry opens to show how it was checked and, for features,
 where to find it and what each layer does.
 
+- **Images on issues and comments** (2026-10-13). Attach a photo, take one
+  with the camera, or paste a screenshot. Images are stripped of metadata,
+  screenshots stay lossless, and only members can open them. One added with
+  no network waits on the device and uploads exactly once on reconnect.
+  Storage is local disk or any S3-compatible store, and deleting an issue,
+  comment or workspace removes its files.
 - **Documentation that agrees with the code** (2026-10-13). Every relative
   link in every Markdown file resolves, test counts live in one place (the
   roadmap), and CI checks both on every push, including proving the check
@@ -237,10 +243,10 @@ the real stack. None of them is a mockup.
 ## Status
 
 A portfolio project, built to be read. It runs locally and is tested. It has
-not been deployed, and three things are missing because this machine has no
-Docker and no SMTP: object storage for uploads (profile pictures are kept on
-local disk behind a storage port; attachments are not built yet), a verified
-container build, and a production mail driver. The API **refuses to start in
+not been deployed, and two things are missing because this machine has no
+Docker and no SMTP: a verified container build and a production mail driver.
+Uploads work on local disk or any S3-compatible store; the S3 driver is tested
+in CI against S3Mock, not against a cloud provider. The API **refuses to start in
 production** without a mail driver rather than printing reset links into a log.
 
 Nothing here is a security or compliance claim. It describes what the code does

@@ -31,6 +31,16 @@ jobs:
           --health-timeout 5s
           --health-retries 10
 
+      # An S3-compatible server for the storage driver's contract tests.
+      # Adobe S3Mock (Apache-2.0), pinned; MinIO's image is no longer
+      # published on Docker Hub. The bucket is created at start-up.
+      s3:
+        image: adobe/s3mock:5.2.3
+        env:
+          COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: robis-test
+        ports:
+          - 9090:9090
+
     env:
       DATABASE_URL: postgres://robis:robis@localhost:5433/robis
       TEST_ADMIN_URL: postgres://robis:robis@localhost:5433/postgres
@@ -65,8 +75,23 @@ jobs:
       - name: Typecheck
         run: bun run typecheck
 
+      # The image has no health command of its own, so wait for it to answer
+      # before the tests that need it run.
+      - name: Wait for S3Mock
+        run: |
+          for attempt in $(seq 1 30); do
+            curl -sf http://localhost:9090/ >/dev/null && exit 0
+            sleep 2
+          done
+          echo "S3Mock did not start" && exit 1
+
       - name: Test
         run: bun test
+        env:
+          S3_ENDPOINT: http://localhost:9090
+          S3_BUCKET: robis-test
+          S3_ACCESS_KEY_ID: test
+          S3_SECRET_ACCESS_KEY: test
 
       # `bun --filter <pkg> <script>` -- inserting `run` makes Bun look for a
       # script literally named "run".

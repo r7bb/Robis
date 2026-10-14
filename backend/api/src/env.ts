@@ -47,8 +47,17 @@ const envSchema = z.object({
    */
   ML_SERVICE_URL: z.string().default(''),
   ML_SERVICE_TOKEN: z.string().default(''),
-  /** Where uploaded pictures are kept in development. See `media/storage.ts`. */
+  /**
+   * Where uploads are kept: `local` disk under MEDIA_DIR, or `s3` for any
+   * S3-compatible store. See `media/storage.ts`.
+   */
+  STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
   MEDIA_DIR: z.string().default('.media'),
+  S3_ENDPOINT: z.string().default(''),
+  S3_BUCKET: z.string().default(''),
+  S3_ACCESS_KEY_ID: z.string().default(''),
+  S3_SECRET_ACCESS_KEY: z.string().default(''),
+  S3_REGION: z.string().default('us-east-1'),
   /** Short: this sits between a keystroke and a hint. */
   ML_TIMEOUT_MS: z.coerce.number().int().min(50).max(5000).default(600),
 });
@@ -78,9 +87,24 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     );
   }
 
+  // A half-configured object store would fail on the first upload, in front
+  // of a user; refusing to start says so to whoever deployed it instead.
+  if (parsed.data.STORAGE_DRIVER === 's3') {
+    const missing = (
+      ['S3_ENDPOINT', 'S3_BUCKET', 'S3_ACCESS_KEY_ID', 'S3_SECRET_ACCESS_KEY'] as const
+    ).filter((name) => !parsed.data[name]);
+    if (missing.length > 0) {
+      throw new Error(`STORAGE_DRIVER=s3 needs ${missing.join(', ')}.`);
+    }
+  }
+
   // Relative, it would resolve against whatever directory the process was
   // started from, and pictures would land somewhere different on each deploy.
-  if (parsed.data.NODE_ENV === 'production' && !isAbsolute(parsed.data.MEDIA_DIR)) {
+  if (
+    parsed.data.NODE_ENV === 'production' &&
+    parsed.data.STORAGE_DRIVER === 'local' &&
+    !isAbsolute(parsed.data.MEDIA_DIR)
+  ) {
     throw new Error(
       `MEDIA_DIR must be an absolute path in production; got "${parsed.data.MEDIA_DIR}".`,
     );

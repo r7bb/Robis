@@ -9,6 +9,7 @@ import { DeleteButton } from '../../components/delete-button.tsx';
 import { NotificationBell } from '../../components/notification-bell.tsx';
 import { RoleBadge } from '../../components/ui/primitives.tsx';
 import { api, type Me, type WorkspaceSummary } from '../../lib/api.ts';
+import { getSyncEngine } from '../../lib/sync.ts';
 import { useRequireAvatar } from '../../lib/use-require-avatar.ts';
 
 export default function WorkspacesPage() {
@@ -44,7 +45,12 @@ export default function WorkspacesPage() {
   });
 
   const signOut = useMutation({
-    mutationFn: () => api<void>('/auth/logout', { method: 'POST' }),
+    mutationFn: async () => {
+      await api<void>('/auth/logout', { method: 'POST' });
+      // A shared or borrowed computer must not keep this account's cached
+      // issues, queued edits or waiting images for the next person.
+      await getSyncEngine().clearLocal();
+    },
     onSuccess: () => {
       // Navigate before clearing: dropping the cache first makes this still
       // mounted page refetch `/auth/me`, get a 401, and bounce through the

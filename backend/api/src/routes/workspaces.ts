@@ -1,8 +1,10 @@
 import {
+  attachments,
   auditEvents,
   channels,
   type Database,
   type Executor,
+  queueAttachmentPurge,
   recordAudit,
   users,
   workspaceMembers,
@@ -189,7 +191,10 @@ export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database
       // So does the audit trail, which is why this one change records no
       // event: there would be nowhere left to keep it. A SIEM stream is where
       // a deleted workspace's history survives.
-      await db.delete(workspaces).where(eq(workspaces.id, workspaceId));
+      await db.transaction(async (tx) => {
+        await queueAttachmentPurge(tx, eq(attachments.workspaceId, workspaceId));
+        await tx.delete(workspaces).where(eq(workspaces.id, workspaceId));
+      });
 
       return reply.status(204).send();
     },

@@ -40,6 +40,25 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-13',
+    area: 'Product',
+    title: 'Images on issues and comments',
+    summary:
+      'Attach a photo, take one with the camera, or paste a screenshot onto an issue or into a comment. Only members can open them, and one added with no network waits on the device and uploads exactly once when it returns.',
+    checked:
+      'Tests prove a non-member gets a 404 for a valid image, a stored photo keeps no location data, a replayed offline upload stores one file, and deleting an issue removes its files. The S3 driver passes the same contract tests as local disk. Offline upload was driven in a real browser.',
+    feature: {
+      name: 'Show it, do not just describe it',
+      where: 'Any issue: Add image, Camera on a phone, or paste a screenshot anywhere on the page.',
+      layers: [
+        'Issue page: a grid with a full-size viewer, plus images under each comment, with waiting uploads marked.',
+        'Offline queue: the image is kept on the device and sent once, keyed so a retry stores nothing new.',
+        'API: bytes checked and re-encoded with metadata removed, screenshots kept lossless, members only.',
+        'Storage: local disk or any S3-compatible store, files removed by a job when their issue goes.',
+      ],
+    },
+  },
+  {
+    date: '2026-10-13',
     area: 'Site',
     title: 'Documentation that agrees with the code',
     summary:

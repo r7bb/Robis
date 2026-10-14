@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test } from 'bun:test';
 import {
   type LocalIssue,
   MemoryAdapter,
+  STORE_BLOBS,
   STORE_ISSUES,
   SyncEngine,
   SyncError,
@@ -97,6 +98,31 @@ class FakeTransport implements SyncTransport {
     if (!this.serverIssues.delete(issueId)) throw new SyncError('Issue not found', 404);
   }
 
+  /** Uploads the server stored, by idempotency key: a replay stores nothing new. */
+  uploads = new Map<string, { issueId: string; size: number; type: string }>();
+
+  async uploadAttachment(
+    _workspaceId: string,
+    issueId: string,
+    body: Blob,
+    contentType: string,
+    idempotencyKey: string,
+  ) {
+    this.calls.push({ method: 'upload', key: idempotencyKey });
+    if (this.failWith) throw this.failWith;
+
+    if (!this.uploads.has(idempotencyKey)) {
+      this.uploads.set(idempotencyKey, { issueId, size: body.size, type: contentType });
+    }
+
+    if (this.dropNextResponse) {
+      this.dropNextResponse = false;
+      throw new SyncError('network dropped after the server stored it');
+    }
+
+    return { attachment: { id: `att-${idempotencyKey}` } };
+  }
+
   async listIssues(_workspaceId: string, projectId: string) {
     return {
       issues: [...this.serverIssues.values()].filter((i) => i.projectId === projectId),
@@ -156,7 +182,7 @@ describe('flushing', () => {
 
     const result = await engine.flush();
 
-    expect(result).toEqual({ flushed: 2, failed: 0, discarded: 0 });
+    expect(result).toEqual({ flushed: 2, failed: 0, discarded: 0, refused: [] });
     expect(await engine.queue.size()).toBe(0);
     expect((await engine.localIssues(PROJECT)).every((i) => !i.pending)).toBe(true);
   });
@@ -552,5 +578,148 @@ describe('deleting while offline', () => {
   test('deleting something that is not there is a no-op', async () => {
     await engine.deleteIssue(WORKSPACE, 'nonexistent');
     expect(await engine.queue.size()).toBe(0);
+  });
+});
+
+describe('attaching an image offline', () => {
+  const image = () => new Blob([new Uint8Array(2048)], { type: 'image/png' });
+
+  test('the image waits on the device and uploads exactly once on reconnect', async () => {
+    transport.failWith = new SyncError('offline');
+    const id = await engine.queueAttachment(WORKSPACE, 'issue-1', image(), 'image/png');
+
+    expect(await engine.pendingAttachments('issue-1')).toHaveLength(1);
+    expect((await engine.flush()).failed).toBe(1);
+    expect(transport.uploads.size).toBe(0);
+
+    transport.failWith = null;
+    expect((await engine.flush()).flushed).toBe(1);
+
+    expect([...transport.uploads.keys()]).toEqual([id]);
+    expect(transport.uploads.get(id)).toMatchObject({ issueId: 'issue-1', size: 2048 });
+    expect(await engine.pendingAttachments('issue-1')).toEqual([]);
+    expect(await storage.get(STORE_BLOBS, id)).toBeUndefined();
+  });
+
+  test('a lost response is replayed with the same key, so the server keeps one copy', async () => {
+    const id = await engine.queueAttachment(WORKSPACE, 'issue-1', image(), 'image/png');
+
+    transport.dropNextResponse = true;
+    expect((await engine.flush()).failed).toBe(1);
+    expect((await engine.flush()).flushed).toBe(1);
+
+    const uploadCalls = transport.calls.filter((c) => c.method === 'upload');
+    expect(uploadCalls.map((c) => c.key)).toEqual([id, id]);
+    expect(transport.uploads.size).toBe(1);
+  });
+
+  test('an image the server will never take is let go, bytes and all', async () => {
+    transport.failWith = new SyncError('not an image', 400);
+    const id = await engine.queueAttachment(WORKSPACE, 'issue-1', image(), 'image/png');
+
+    expect((await engine.flush()).discarded).toBe(1);
+    expect(await storage.get(STORE_BLOBS, id)).toBeUndefined();
+    expect(await engine.pendingAttachments('issue-1')).toEqual([]);
+  });
+
+  test('an image for an issue created offline goes up after the issue does', async () => {
+    transport.failWith = new SyncError('offline');
+    const issue = await engine.createIssue(WORKSPACE, PROJECT, { title: 'Made on a train' });
+    await engine.queueAttachment(WORKSPACE, issue.id, image(), 'image/png');
+    await engine.flush();
+
+    transport.failWith = null;
+    await engine.flush();
+
+    const order = transport.calls.filter((c) => c.method !== 'list').map((c) => c.method);
+    expect(order.slice(-2)).toEqual(['create', 'upload']);
+  });
+
+  test('a queued image does not hold the issue row back from reconciling', async () => {
+    const issue = await engine.createIssue(WORKSPACE, PROJECT, { title: 'Synced' });
+    await engine.flush();
+    transport.failWith = new SyncError('offline');
+    await engine.queueAttachment(WORKSPACE, issue.id, image(), 'image/png');
+
+    transport.failWith = null;
+    const onServer = transport.serverIssues.get(issue.id)!;
+    transport.serverIssues.set(issue.id, { ...onServer, title: 'Renamed elsewhere' });
+    await engine.reconcile(WORKSPACE, PROJECT);
+
+    const [local] = await engine.localIssues(PROJECT);
+    expect(local?.title).toBe('Renamed elsewhere');
+  });
+});
+
+describe('flushing safely', () => {
+  const image = () => new Blob([new Uint8Array(32)], { type: 'image/png' });
+
+  test('two flushes at once send a queued image once', async () => {
+    await engine.queueAttachment(WORKSPACE, 'issue-1', image(), 'image/png');
+
+    const [a, b] = await Promise.all([engine.flush(), engine.flush()]);
+
+    expect(a).toBe(b);
+    expect(transport.calls.filter((c) => c.method === 'upload')).toHaveLength(1);
+  });
+
+  test('"still in flight" keeps the image queued instead of throwing it away', async () => {
+    transport.failWith = new SyncError('still in progress', 409, 'idempotency_in_flight');
+    await engine.queueAttachment(WORKSPACE, 'issue-1', image(), 'image/png');
+
+    const result = await engine.flush();
+    expect(result).toMatchObject({ failed: 1, discarded: 0 });
+    expect(await engine.pendingAttachments('issue-1')).toHaveLength(1);
+  });
+
+  test('a refusal says what was refused and why', async () => {
+    transport.failWith = new SyncError('That file is a webp, not a jpeg', 400, 'unreadable_image');
+    await engine.queueAttachment(WORKSPACE, 'issue-1', image(), 'image/jpeg');
+
+    const result = await engine.flush();
+    expect(result.refused).toEqual([
+      { kind: 'attachment.upload', message: 'That file is a webp, not a jpeg' },
+    ]);
+  });
+});
+
+describe('whose offline data it is', () => {
+  const image = () => new Blob([new Uint8Array(64)], { type: 'image/png' });
+
+  test('another account signing in on this browser starts with nothing from the last one', async () => {
+    await engine.claimFor('user-a');
+    transport.failWith = new SyncError('offline');
+    await engine.createIssue(WORKSPACE, PROJECT, { title: 'A private draft' });
+    await engine.queueAttachment(WORKSPACE, 'issue-1', image(), 'image/png');
+
+    await engine.claimFor('user-b');
+
+    transport.failWith = null;
+    expect(await engine.localIssues(PROJECT)).toEqual([]);
+    expect(await engine.pendingAttachments('issue-1')).toEqual([]);
+    expect((await engine.flush()).flushed).toBe(0);
+    expect(transport.calls.filter((c) => c.method !== 'list')).toEqual([]);
+  });
+
+  test('the same account signing back in keeps its unsent work', async () => {
+    await engine.claimFor('user-a');
+    transport.failWith = new SyncError('offline');
+    await engine.queueAttachment(WORKSPACE, 'issue-1', image(), 'image/png');
+
+    await engine.claimFor('user-a');
+
+    expect(await engine.pendingAttachments('issue-1')).toHaveLength(1);
+  });
+
+  test('signing out forgets everything on the device', async () => {
+    await engine.claimFor('user-a');
+    await engine.createIssue(WORKSPACE, PROJECT, { title: 'Cached' });
+    await engine.queueAttachment(WORKSPACE, 'issue-1', image(), 'image/png');
+
+    await engine.clearLocal();
+
+    expect(await engine.localIssues(PROJECT)).toEqual([]);
+    expect(await engine.pendingAttachments('issue-1')).toEqual([]);
+    expect(await storage.get(STORE_BLOBS, 'id-2')).toBeUndefined();
   });
 });

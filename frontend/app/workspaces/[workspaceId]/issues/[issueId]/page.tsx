@@ -15,6 +15,7 @@ import { CommentThread } from '../../../../../components/comment-thread.tsx';
 import { DeleteButton } from '../../../../../components/delete-button.tsx';
 import { PresenceBar } from '../../../../../components/presence.tsx';
 import { ErrorState } from '../../../../../components/ui/primitives.tsx';
+import { IssueAttachments } from '../../../../../features/issues/attachments.tsx';
 import {
   api,
   type IssueDetail,
@@ -200,6 +201,8 @@ export default function IssuePage() {
             canEdit={canEdit}
             onSave={(next) => update.mutate({ description: next })}
           />
+
+          <IssueAttachments workspaceId={workspaceId} issueId={issueId} role={role} />
 
           <CommentThread
             workspaceId={workspaceId}

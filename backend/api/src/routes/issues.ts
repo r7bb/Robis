@@ -1,4 +1,5 @@
 import {
+  attachments,
   type Database,
   decodeCursor,
   type Executor,
@@ -6,6 +7,7 @@ import {
   issues,
   projects,
   publishEvent,
+  queueAttachmentPurge,
   recordAudit,
   users,
   workspaceMembers,
@@ -366,6 +368,9 @@ export async function issueRoutes(
       const project = await loadProject(db, workspaceId, issue.projectId);
 
       await db.transaction(async (tx) => {
+        // Before the delete: the cascade takes the rows, not the files.
+        await queueAttachmentPurge(tx, eq(attachments.issueId, issueId));
+
         const deleted = await tx
           .delete(issues)
           .where(and(eq(issues.id, issueId), eq(issues.workspaceId, workspaceId)))

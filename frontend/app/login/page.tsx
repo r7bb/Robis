@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 import { UsernameField } from '../../features/account/username-field.tsx';
 import { ApiError, api, type Me } from '../../lib/api.ts';
+import { getSyncEngine } from '../../lib/sync.ts';
 
 /** A placeholder pending legal review, as is the wording beside it. */
 const MINIMUM_AGE = 16;
@@ -35,7 +36,11 @@ export default function LoginPage() {
         mode === 'register'
           ? { name, email, username: username.trim().toLowerCase(), password, ageConfirmed }
           : { email, password };
-      await api<Me>(`/auth/${mode}`, { method: 'POST', body });
+      const signedIn = await api<Me>(`/auth/${mode}`, { method: 'POST', body });
+
+      // Offline data left by a different account on this browser must not be
+      // shown to this person, or sent under their session.
+      await getSyncEngine().claimFor(signedIn.user.id);
 
       // The session cookie changed, so anything cached under the old identity
       // is stale.

@@ -26,3 +26,11 @@ Flagged for review: LGPL code is used only server-side and dynamically linked,
 and is not modified here. Whether that is enough for a given distribution of
 Robis is a question for whoever ships it, not something this file decides.
 
+## Used only in CI
+
+**Adobe S3Mock** (`adobe/s3mock:5.2.3`), Apache License 2.0. A test double
+for S3 that runs as a service container so the storage driver's contract
+tests run against a real S3-compatible server. It is never shipped with
+Robis. It stands in for MinIO, whose image is no longer published on Docker
+Hub.
+

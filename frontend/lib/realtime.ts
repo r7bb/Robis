@@ -70,6 +70,10 @@ export function useRealtime(
 
       switch (event.type) {
         case 'issue.created':
+        case 'attachment.changed':
+          invalidate(['attachments', event.workspaceId, event.issueId]);
+          return;
+
         case 'issue.updated':
         case 'issue.deleted':
           invalidate(['issues', event.workspaceId, event.projectId]);

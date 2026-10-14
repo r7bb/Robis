@@ -139,7 +139,7 @@ export async function avatarRoutes(
       // place, so a cached URL cannot serve the new picture under the old
       // version or the other way round.
       const key = `avatars/${randomUUID()}.webp`;
-      await storage.put(key, image);
+      await storage.put(key, image, 'image/webp');
 
       try {
         return { avatar: await replace(user.id, 'photo', key) };
@@ -199,8 +199,8 @@ export async function avatarRoutes(
 
     if (row?.kind !== 'photo' || !row.ref) throw ApiError.notFound('Not found');
 
-    const bytes = await storage.get(row.ref);
-    if (!bytes) throw ApiError.notFound('Not found');
+    const object = await storage.open(row.ref);
+    if (!object) throw ApiError.notFound('Not found');
 
     return (
       reply
@@ -212,7 +212,8 @@ export async function avatarRoutes(
         .header('vary', 'Cookie')
         .header('x-content-type-options', 'nosniff')
         .header('cross-origin-resource-policy', 'same-site')
-        .send(Buffer.from(bytes))
+        .header('content-length', String(object.size))
+        .send(object.stream)
     );
   });
 }

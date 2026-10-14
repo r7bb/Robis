@@ -7,7 +7,7 @@ import {
   SyncError,
   type SyncTransport,
 } from '@robis/sync';
-import { ApiError, api } from './api.ts';
+import { ApiError, api, BASE_URL } from './api.ts';
 
 /**
  * Wires the transport-agnostic sync engine to this app's HTTP client and to
@@ -18,7 +18,7 @@ import { ApiError, api } from './api.ts';
 function toSyncError(error: unknown): SyncError {
   // Distinguishing "server refused" from "network unreachable" is what decides
   // whether a queued mutation is retried or discarded.
-  if (error instanceof ApiError) return new SyncError(error.message, error.status);
+  if (error instanceof ApiError) return new SyncError(error.message, error.status, error.code);
   return new SyncError(error instanceof Error ? error.message : 'Network unavailable');
 }
 
@@ -52,6 +52,37 @@ const transport: SyncTransport = {
     } catch (error) {
       throw toSyncError(error);
     }
+  },
+
+  /**
+   * A raw image body rather than JSON, so this bypasses `api()`. The queued
+   * mutation's id is the Idempotency-Key, which is what makes a replay after
+   * a lost response return the first upload instead of storing a second.
+   */
+  async uploadAttachment(workspaceId, issueId, body, contentType, idempotencyKey) {
+    let response: Response;
+    try {
+      response = await fetch(
+        `${BASE_URL}/workspaces/${workspaceId}/issues/${issueId}/attachments`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'content-type': contentType, 'idempotency-key': idempotencyKey },
+          body,
+        },
+      );
+    } catch (error) {
+      throw toSyncError(error);
+    }
+
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new SyncError(
+        payload?.message ?? `Upload failed with ${response.status}`,
+        response.status,
+      );
+    }
+    return payload as { attachment: { id: string } };
   },
 
   async listIssues(workspaceId, projectId) {

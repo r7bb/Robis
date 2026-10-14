@@ -88,6 +88,7 @@
       "name": "@robis/worker",
       "version": "0.0.0",
       "dependencies": {
+        "@robis/api": "workspace:*",
         "@robis/auth": "workspace:*",
         "@robis/database": "workspace:*",
         "@robis/shared": "workspace:*",

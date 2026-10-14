@@ -1,9 +1,11 @@
 import {
+  attachments,
   comments,
   type Database,
   enqueue,
   issues,
   publishEvent,
+  queueAttachmentPurge,
   recordAudit,
   users,
 } from '@robis/database';
@@ -136,6 +138,8 @@ export async function commentRoutes(app: FastifyInstance, opts: { db: Database }
       if (!allowed) throw ApiError.forbidden();
 
       await db.transaction(async (tx) => {
+        await queueAttachmentPurge(tx, eq(attachments.commentId, commentId));
+
         const deleted = await tx
           .delete(comments)
           .where(and(eq(comments.id, commentId), eq(comments.workspaceId, workspaceId)))

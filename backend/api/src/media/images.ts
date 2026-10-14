@@ -1,3 +1,4 @@
+import { sniffImage } from '@robis/shared';
 import sharp from 'sharp';
 
 /**
@@ -38,21 +39,10 @@ export const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/a
 export class UnreadableImageError extends Error {}
 
 /**
- * The format the bytes actually are, by their signature, or null.
- *
- * Checked before anything is decoded, so only these four parsers ever see
- * an upload: a file declared as a PNG that is really an SVG, a TIFF or
- * anything else never reaches a decoder at all.
+ * The format the bytes actually are, by their signature, or null. Checked
+ * before anything is decoded, so only these four parsers ever see an upload.
  */
-export function sniff(bytes: Uint8Array): (typeof ACCEPTED_TYPES)[number] | null {
-  const ascii = (start: number, end: number) => String.fromCharCode(...bytes.subarray(start, end));
-
-  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg';
-  if (ascii(0, 8) === '\x89PNG\r\n\x1a\n') return 'image/png';
-  if (ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WEBP') return 'image/webp';
-  if (ascii(4, 8) === 'ftyp' && ['avif', 'avis'].includes(ascii(8, 12))) return 'image/avif';
-  return null;
-}
+export const sniff = sniffImage;
 
 let active = 0;
 const waiting: (() => void)[] = [];
@@ -93,6 +83,62 @@ export async function toAvatar(input: Uint8Array, declaredType = ''): Promise<Ui
         .webp({ quality: 82 })
         .toBuffer();
       return new Uint8Array(output);
+    } catch {
+      throw new UnreadableImageError('That image could not be read');
+    }
+  });
+}
+
+/** The longest side an attachment is kept at: enough to read a screenshot. */
+const ATTACHMENT_MAX_SIDE = 2560;
+
+export type ProcessedImage = {
+  bytes: Uint8Array;
+  contentType: 'image/png' | 'image/webp';
+  extension: 'png' | 'webp';
+  width: number;
+  height: number;
+};
+
+/**
+ * Turn an uploaded image into an attachment.
+ *
+ * Same checks and the same metadata stripping as an avatar, without the
+ * square crop. A PNG stays a lossless PNG, because that is what screenshots
+ * are and lossy compression smears their text; everything else becomes
+ * WebP. Nothing is enlarged.
+ */
+export async function toAttachment(input: Uint8Array, declaredType = ''): Promise<ProcessedImage> {
+  const actual = sniff(input);
+  if (!actual) throw new UnreadableImageError('Use a JPEG, PNG, WebP or AVIF image');
+
+  const declared = declaredType.split(';')[0]!.trim().toLowerCase();
+  if (declared && declared !== actual) {
+    throw new UnreadableImageError(`That file is a ${actual.slice(6)}, not a ${declared.slice(6)}`);
+  }
+
+  const lossless = actual === 'image/png';
+
+  return withDecodeSlot(async () => {
+    try {
+      const pipeline = sharp(input, { limitInputPixels: MAX_INPUT_PIXELS })
+        .rotate()
+        .resize(ATTACHMENT_MAX_SIDE, ATTACHMENT_MAX_SIDE, {
+          fit: 'inside',
+          withoutEnlargement: true,
+        });
+      const { data, info } = await (lossless
+        ? pipeline.png({ compressionLevel: 9 })
+        : pipeline.webp({ quality: 86 })
+      ).toBuffer({ resolveWithObject: true });
+
+      return {
+        bytes: new Uint8Array(data),
+        contentType: lossless ? 'image/png' : 'image/webp',
+        extension: lossless ? 'png' : 'webp',
+        width: info.width,
+        height: info.height,
+      };
     } catch {
       throw new UnreadableImageError('That image could not be read');
     }

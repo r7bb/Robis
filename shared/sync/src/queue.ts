@@ -41,6 +41,21 @@ export type QueuedMutation =
       queuedAt: number;
       attempts: number;
       lastError?: string;
+    }
+  | {
+      /**
+       * An image attached with no network. The bytes wait in the `blobs`
+       * store under the same id, which is also the Idempotency-Key: a replay
+       * after a lost response returns the first upload, not a second file.
+       */
+      kind: 'attachment.upload';
+      id: string;
+      workspaceId: string;
+      issueId: string;
+      contentType: string;
+      queuedAt: number;
+      attempts: number;
+      lastError?: string;
     };
 
 export class MutationQueue {

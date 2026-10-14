@@ -180,6 +180,53 @@ does not duplicate, and a revoked token that stops working at once.
 - Trigger, condition, action, run on the job queue, with loop detection (a
   rule cannot trigger itself) and idempotent execution.
 
+## Images on issues and comments (A2 in the build plan)
+
+**Shipped 2026-10-13.** A storage port with local-disk and S3 drivers (the S3
+one tested in CI against S3Mock), image attachments on issues and comments,
+offline upload through the sync queue, file removal queued with every
+delete, and offline data bound to its account and cleared on sign-out.
+
+Left open: no storage quota per workspace (only a per-account upload rate);
+images only, since other files' metadata cannot be stripped the same way;
+a file uploaded in the instant between a parent's key lookup and its delete
+can be missed by the purge; no `Range` requests for large images.
+
+## Track F. Store readiness and 2027 rules (from the owner, 2026-10-13)
+
+Most of these apply once Robis ships as a Play Store or App Store app,
+including a wrapped PWA. The dates come from the owner's notes and must be
+checked again before shipping; items touching age, the Cyber Resilience Act
+and the AI Act belong in the legal review the README already flags. Nothing
+here is a claim of compliance with anything.
+
+- **F1. Age signals.** Replace the sign-up checkbox with an age-signal port:
+  Apple Declared Age Range and Google Play Age Signals in the native shells,
+  self-declaration on the web. Store an age bracket, its source, the terms
+  version and the time, never a birthdate. Minimum age 18, minors refused,
+  re-checked at most yearly. Open question first: an 18-plus minimum rules
+  out the coursework and student audience C5 has in mind.
+- **F2. Store-ready native shells.** Android (TWA or Capacitor) with Credential
+  Manager and the Restore Credentials API, backed by a new revocable,
+  hashed, audited credential type; iOS on Capacitor with the iOS 27 SDK and
+  the social-features declaration. Low memory (no WebGL on app screens,
+  lazy routes, sized images), in-app account deletion, content-free push.
+  Needs a deployed backend (A4) first, and the emulator and store
+  validation builds run in CI only: this machine has no mobile toolchain.
+- **F3. Cyber Resilience Act readiness.** A CycloneDX SBOM per release, a
+  stated security support period in SECURITY.md, vulnerability intake and
+  fix notices, secure defaults (two factor offered at sign-up, strict CSP,
+  the demo password refused outside development), and a mapping doc of what
+  each item covers and what still needs legal review.
+- **F4. AI transparency.** Every agent and generated text labelled visibly and
+  flagged in the API and exports, a workspace page listing each AI feature,
+  what it sends and where, and an owner switch for each. Built into B5
+  rather than added after it.
+
+Placement: F1 before real sign-ups, beside the username follow-ups; F3's
+SBOM with the container builds and its defaults with the security track;
+F4 inside the agents phase; F2 after the first deployment.
+
 ---
 
 Each phase updates `docs/ROADMAP.md` and the README when it lands, and

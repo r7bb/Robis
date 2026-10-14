@@ -14,6 +14,13 @@ export const PRESENCE_CHANNEL = 'robis_presence';
 
 /** Server -> client domain events. */
 export type ServerEvent =
+  /** An issue's attachments changed: ids only, the list is re-read. */
+  | {
+      type: 'attachment.changed';
+      workspaceId: string;
+      issueId: string;
+      actorId: string;
+    }
   | {
       type: 'issue.created';
       workspaceId: string;

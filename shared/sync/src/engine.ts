@@ -1,6 +1,15 @@
 import type { IssuePriority, IssueStatus } from '@robis/shared';
 import { MutationQueue, type QueuedMutation } from './queue.ts';
-import { STORE_ISSUES, type StorageAdapter } from './storage.ts';
+import {
+  STORE_BLOBS,
+  STORE_ISSUES,
+  STORE_META,
+  STORE_QUEUE,
+  type StorageAdapter,
+} from './storage.ts';
+
+/** The `meta` entry naming the account this device's offline data belongs to. */
+const OWNER_KEY = 'owner';
 
 /**
  * Offline-first sync engine.
@@ -45,6 +54,14 @@ export interface SyncTransport {
   /** Naturally idempotent, so it takes no idempotency key. */
   deleteIssue(workspaceId: string, issueId: string): Promise<void>;
 
+  uploadAttachment(
+    workspaceId: string,
+    issueId: string,
+    body: Blob,
+    contentType: string,
+    idempotencyKey: string,
+  ): Promise<{ attachment: { id: string } }>;
+
   listIssues(workspaceId: string, projectId: string): Promise<{ issues: LocalIssue[] }>;
 }
 
@@ -53,6 +70,8 @@ export class SyncError extends Error {
     message: string,
     /** HTTP status, when the failure came from the server rather than the network. */
     readonly status?: number,
+    /** The API's error code, when it sent one. */
+    readonly code?: string,
   ) {
     super(message);
     this.name = 'SyncError';
@@ -64,6 +83,8 @@ export type FlushResult = {
   failed: number;
   /** Mutations dropped because the server refused them permanently. */
   discarded: number;
+  /** What was refused and why, so the screen can say so rather than go quiet. */
+  refused: { kind: QueuedMutation['kind']; message: string }[];
 };
 
 /**
@@ -74,6 +95,9 @@ export type FlushResult = {
 function isPermanent(error: unknown): boolean {
   if (!(error instanceof SyncError) || error.status === undefined) return false;
   if (error.status === 408 || error.status === 429) return false;
+  // The same request is still being handled -- usually by this device a
+  // moment ago. Waiting and retrying is right; dropping it would lose it.
+  if (error.code === 'idempotency_in_flight') return false;
   return error.status >= 400 && error.status < 500;
 }
 
@@ -91,12 +115,74 @@ export class SyncEngine {
 
   // ----------------------------------------------------------------- reads
 
+  /**
+   * Bind the device's offline store to one account.
+   *
+   * Everything here -- cached issues, queued edits, images waiting to upload
+   * -- belongs to whoever made it. If a different account signs in on this
+   * browser, it is all discarded before anything can be sent under the new
+   * session or shown to the new person. The same account signing back in
+   * after its session lapsed keeps its unsent work.
+   */
+  async claimFor(userId: string): Promise<void> {
+    const owner = await this.storage.get<string>(STORE_META, OWNER_KEY);
+    if (owner !== undefined && owner !== userId) await this.clearLocal();
+    await this.storage.put(STORE_META, OWNER_KEY, userId);
+  }
+
+  /** Forget everything on this device. Used on sign-out. */
+  async clearLocal(): Promise<void> {
+    for (const store of [STORE_ISSUES, STORE_QUEUE, STORE_BLOBS, STORE_META]) {
+      await this.storage.clear(store);
+    }
+  }
+
   async localIssues(projectId: string): Promise<LocalIssue[]> {
     const all = await this.storage.getAll<LocalIssue>(STORE_ISSUES);
     return all.filter((issue) => issue.projectId === projectId).sort((a, b) => b.number - a.number);
   }
 
   // ---------------------------------------------------------------- writes
+
+  /**
+   * Attach an image to an issue, now or whenever the network returns.
+   *
+   * The bytes are kept on the device until the server has them, so a photo
+   * taken with no signal survives a closed tab. Returns the queued id, which
+   * the screen can use to show the picture as "waiting to upload".
+   */
+  async queueAttachment(
+    workspaceId: string,
+    issueId: string,
+    image: Blob,
+    contentType: string,
+  ): Promise<string> {
+    const id = this.newId();
+
+    await this.storage.put(STORE_BLOBS, id, image);
+    await this.queue.enqueue({
+      kind: 'attachment.upload',
+      id,
+      workspaceId,
+      issueId,
+      contentType,
+      queuedAt: this.now(),
+      attempts: 0,
+    });
+
+    return id;
+  }
+
+  /** Images still waiting to upload for one issue, oldest first. */
+  async pendingAttachments(issueId: string): Promise<{ id: string; image: Blob }[]> {
+    const waiting: { id: string; image: Blob }[] = [];
+    for (const mutation of await this.queue.all()) {
+      if (mutation.kind !== 'attachment.upload' || mutation.issueId !== issueId) continue;
+      const image = await this.storage.get<Blob>(STORE_BLOBS, mutation.id);
+      if (image) waiting.push({ id: mutation.id, image });
+    }
+    return waiting;
+  }
 
   /**
    * Create an issue locally and queue it. Returns immediately -- the caller does
@@ -225,7 +311,18 @@ export class SyncEngine {
    * the queue.
    */
   async flush(): Promise<FlushResult> {
-    const result: FlushResult = { flushed: 0, failed: 0, discarded: 0 };
+    // One drain at a time. Two at once would send the same mutation twice,
+    // and the second would be told the first is still in flight.
+    this.flushing ??= this.drain().finally(() => {
+      this.flushing = null;
+    });
+    return this.flushing;
+  }
+
+  private flushing: Promise<FlushResult> | null = null;
+
+  private async drain(): Promise<FlushResult> {
+    const result: FlushResult = { flushed: 0, failed: 0, discarded: 0, refused: [] };
 
     for (const mutation of await this.queue.all()) {
       try {
@@ -237,6 +334,7 @@ export class SyncEngine {
           await this.queue.remove(mutation.id);
           await this.revert(mutation);
           result.discarded++;
+          result.refused.push({ kind: mutation.kind, message: (error as Error).message });
           continue;
         }
 
@@ -250,6 +348,22 @@ export class SyncEngine {
   }
 
   private async apply(mutation: QueuedMutation): Promise<void> {
+    if (mutation.kind === 'attachment.upload') {
+      const image = await this.storage.get<Blob>(STORE_BLOBS, mutation.id);
+      // The bytes are gone (cleared site data, say): nothing left to send.
+      if (!image) return;
+
+      await this.transport.uploadAttachment(
+        mutation.workspaceId,
+        mutation.issueId,
+        image,
+        mutation.contentType,
+        mutation.id,
+      );
+      await this.storage.delete(STORE_BLOBS, mutation.id);
+      return;
+    }
+
     if (mutation.kind === 'issue.create') {
       // The mutation id is both the issue's uuid and the idempotency key, so a
       // replay after a lost response returns the original result.
@@ -292,6 +406,11 @@ export class SyncEngine {
     if (mutation.kind === 'issue.create') {
       await this.storage.delete(STORE_ISSUES, mutation.id);
     }
+    // A refused image (not readable, too large) will never be accepted, so
+    // its bytes are released rather than kept on the device forever.
+    if (mutation.kind === 'attachment.upload') {
+      await this.storage.delete(STORE_BLOBS, mutation.id);
+    }
     // A refused update is repaired by the next reconcile, which overwrites the
     // local row with the server's version. So is a refused delete -- the row
     // is still on the server, and reconcile puts it back on screen, which is
@@ -313,7 +432,13 @@ export class SyncEngine {
     const { issues } = await this.transport.listIssues(workspaceId, projectId);
 
     const queued = await this.queue.all();
-    const pendingIds = new Set(queued.map((m) => (m.kind === 'issue.create' ? m.id : m.issueId)));
+    // Only edits to the issue itself make its row "pending"; a queued image
+    // does not, so reconcile still refreshes the issue around it.
+    const pendingIds = new Set(
+      queued.flatMap((m) =>
+        m.kind === 'attachment.upload' ? [] : [m.kind === 'issue.create' ? m.id : m.issueId],
+      ),
+    );
 
     const serverIds = new Set(issues.map((i) => i.id));
 

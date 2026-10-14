@@ -25,12 +25,18 @@ const IN_FLIGHT_TIMEOUT_MS = 5_000;
 const POLL_INTERVAL_MS = 100;
 
 function fingerprint(request: FastifyRequest): string {
+  // A binary body (an uploaded image) is hashed as bytes: serialised as JSON
+  // every upload would look alike, and "same key, different file" would
+  // replay the first file's response for the second.
+  const body =
+    request.body instanceof Uint8Array ? request.body : JSON.stringify(request.body ?? null);
+
   return createHash('sha256')
     .update(request.method)
     .update('\n')
     .update(request.url)
     .update('\n')
-    .update(JSON.stringify(request.body ?? null))
+    .update(body)
     .digest('base64url');
 }
 

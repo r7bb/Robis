@@ -58,8 +58,10 @@ export class MemoryAdapter implements StorageAdapter {
 export const STORE_ISSUES = 'issues';
 export const STORE_QUEUE = 'queue';
 export const STORE_META = 'meta';
+/** Image bytes waiting to upload, keyed by their queued mutation's id. */
+export const STORE_BLOBS = 'blobs';
 
-const STORES = [STORE_ISSUES, STORE_QUEUE, STORE_META];
+const STORES = [STORE_ISSUES, STORE_QUEUE, STORE_META, STORE_BLOBS];
 
 /** IndexedDB-backed adapter for the browser. */
 export class IndexedDbAdapter implements StorageAdapter {
@@ -67,7 +69,9 @@ export class IndexedDbAdapter implements StorageAdapter {
 
   constructor(
     private readonly name = 'robis',
-    private readonly version = 1,
+    // 2 added the `blobs` store; bumping the version is what makes an existing
+    // database run `onupgradeneeded` and create it.
+    private readonly version = 2,
   ) {}
 
   private open(): Promise<IDBDatabase> {
@@ -82,8 +86,26 @@ export class IndexedDbAdapter implements StorageAdapter {
         }
       };
 
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const db = request.result;
+        // A newer version opening in another tab: close so it can upgrade,
+        // and reopen on the next call rather than hold it back.
+        db.onversionchange = () => {
+          db.close();
+          this.handle = null;
+        };
+        resolve(db);
+      };
+      request.onerror = () => {
+        this.handle = null;
+        reject(request.error);
+      };
+      // An older tab is holding the previous version open. Fail now with a
+      // reason, instead of leaving every read and write here pending.
+      request.onblocked = () => {
+        this.handle = null;
+        reject(new Error('Close other Robis tabs to finish updating offline storage'));
+      };
     });
 
     return this.handle;

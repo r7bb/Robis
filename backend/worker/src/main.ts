@@ -1,7 +1,14 @@
-import { createDatabase, type EnqueueOptions, enqueue, hasPendingJob } from '@robis/database';
+import {
+  createDatabase,
+  type EnqueueOptions,
+  enqueue,
+  hasPendingJob,
+  STORAGE_PURGE_JOB,
+} from '@robis/database';
 import { auditStreamConfig, httpSink, streamAuditEvents } from './audit-stream.ts';
 import { handlers } from './handlers.ts';
 import { Runner } from './runner.ts';
+import { storagePurgeHandler, workerStorage } from './storage-purge.ts';
 
 const DATABASE_URL = process.env.DATABASE_URL;
 if (!DATABASE_URL) throw new Error('DATABASE_URL is required');
@@ -46,6 +53,9 @@ const reschedule = <T extends keyof typeof handlers>(
     await enqueue(context.db, kind, {}, { ...options, delayMs });
   };
 };
+
+// Files left behind by deleted issues, comments and workspaces.
+handlers[STORAGE_PURGE_JOB] = storagePurgeHandler(workerStorage(process.env));
 
 reschedule('sessions.cleanup', HOUR_MS);
 reschedule('nudges.scan', NUDGE_INTERVAL_MS);
