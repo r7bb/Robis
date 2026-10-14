@@ -11,6 +11,7 @@ import { forgotPasswordSchema, resetPasswordSchema, verifyEmailSchema } from '@r
 import { and, eq, isNull } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import type { RateLimits } from '../app.ts';
+import { assertPasswordAllowed } from '../demo-password.ts';
 import type { Env } from '../env.ts';
 import { ApiError } from '../errors.ts';
 import { currentUser, requireAuth } from '../plugins/authz.ts';
@@ -144,6 +145,7 @@ export async function authRecoveryRoutes(app: FastifyInstance, opts: RecoveryDep
    */
   app.post('/auth/password/reset', { preHandler: perCaller('password-reset') }, async (request) => {
     const input = parse(resetPasswordSchema, request.body);
+    assertPasswordAllowed(env, input.newPassword);
 
     // Hashed before the transaction opens. Argon2 is deliberately slow, and
     // holding a transaction open across it pins a connection for no reason.

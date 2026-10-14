@@ -22,6 +22,7 @@ import {
 import { and, eq, ne } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import type { RateLimits } from '../app.ts';
+import { assertPasswordAllowed, isRefusedDemoPassword } from '../demo-password.ts';
 import type { Env } from '../env.ts';
 import { ApiError } from '../errors.ts';
 import { avatarOf } from '../media/avatars.ts';
@@ -93,6 +94,7 @@ export async function authRoutes(
 
   app.post('/auth/register', { preHandler: credentialLimit }, async (request, reply) => {
     const input = parse(registerSchema, request.body);
+    assertPasswordAllowed(env, input.password);
     const passwordHash = await hashPassword(input.password);
 
     const [user] = await db
@@ -136,7 +138,10 @@ export async function authRoutes(
       .where(eq(users.email, input.email))
       .limit(1);
 
-    const ok = await verifyPassword(user?.passwordHash ?? dummyDigest, input.password);
+    // Verified first either way, so a refused demo password costs the same
+    // time as a wrong one and the answer reveals nothing.
+    const matches = await verifyPassword(user?.passwordHash ?? dummyDigest, input.password);
+    const ok = matches && !isRefusedDemoPassword(env, input.password);
 
     // One message for both failure modes: a distinct "no such account" reply
     // would let anyone test whether an address is registered.
@@ -303,6 +308,8 @@ export async function authRoutes(
       if (!(await verifyPassword(row.passwordHash, input.currentPassword))) {
         throw ApiError.badRequest('Current password is incorrect', 'bad_password');
       }
+
+      assertPasswordAllowed(env, input.newPassword);
 
       // Rejected before hashing, since a no-op change would revoke every
       // session for nothing.

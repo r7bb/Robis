@@ -25,6 +25,9 @@ Newest first. The same list is the site's What's new page, linked from the
 header, where each entry opens to show how it was checked and, for features,
 where to find it and what each layer does.
 
+- **The demo password works only in development** (2026-10-13). Outside
+  development the API refuses the README's demo password everywhere, and the
+  seed script refuses to run against production.
 - **Images on issues and comments** (2026-10-13). Attach a photo, take one
   with the camera, or paste a screenshot. Images are stripped of metadata,
   screenshots stay lossless, and only members can open them. One added with

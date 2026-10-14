@@ -10,7 +10,7 @@
  */
 import { hashPassword } from '@robis/auth';
 import { createDatabase, users, workspaceMembers, workspaces } from '@robis/database';
-import { usernameProblem } from '@robis/shared';
+import { DEMO_PASSWORD, usernameProblem } from '@robis/shared';
 import { eq } from 'drizzle-orm';
 
 const [emailArg, nameArg, passwordArg] = process.argv.slice(2);
@@ -34,7 +34,13 @@ const usernameBase =
     .replace(/^[._]+|[._]+$/g, '')
     .slice(0, 24)
     .replace(/[._]+$/g, '') || 'member';
-const password = passwordArg ?? 'robis-demo-password';
+// No default in production: there the demo password would be refused at
+// sign-in, leaving an owner account nobody can open.
+if (!passwordArg && process.env.NODE_ENV === 'production') {
+  console.error('grant-owner needs an explicit password when NODE_ENV=production.');
+  process.exit(1);
+}
+const password = passwordArg ?? DEMO_PASSWORD;
 
 const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://robis:robis@localhost:5433/robis';
 const { db, close } = createDatabase(DATABASE_URL);

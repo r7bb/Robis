@@ -213,7 +213,8 @@ here is a claim of compliance with anything.
   lazy routes, sized images), in-app account deletion, content-free push.
   Needs a deployed backend (A4) first, and the emulator and store
   validation builds run in CI only: this machine has no mobile toolchain.
-- **F3. Cyber Resilience Act readiness.** A CycloneDX SBOM per release, a
+- **F3. Cyber Resilience Act readiness.** (The demo password refused outside
+  development: shipped 2026-10-13. The rest is open.) A CycloneDX SBOM per release, a
   stated security support period in SECURITY.md, vulnerability intake and
   fix notices, secure defaults (two factor offered at sign-up, strict CSP,
   the demo password refused outside development), and a mapping doc of what

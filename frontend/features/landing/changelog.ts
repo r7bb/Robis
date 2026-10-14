@@ -40,6 +40,15 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-13',
+    area: 'Security',
+    title: 'The demo password works only in development',
+    summary:
+      'The seeded accounts share a password printed in the README. Outside development the API refuses it at sign-in, sign-up, password change and reset, and the seed script will not run against production at all.',
+    checked:
+      'Tests prove signing in with it fails exactly like a wrong password, each way of setting it is refused, a refused reset does not spend the link, and a development app still accepts it.',
+  },
+  {
+    date: '2026-10-13',
     area: 'Product',
     title: 'Images on issues and comments',
     summary:

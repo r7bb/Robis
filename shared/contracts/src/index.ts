@@ -1,4 +1,5 @@
 export * from './avatars.ts';
+export * from './demo.ts';
 export * from './domain.ts';
 export * from './events.ts';
 export * from './images.ts';

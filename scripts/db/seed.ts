@@ -26,11 +26,23 @@ import {
   workspaceMembers,
   workspaces,
 } from '@robis/database';
-import { type IssuePriority, type IssueStatus, type Role, slugify } from '@robis/shared';
+import {
+  DEMO_PASSWORD,
+  type IssuePriority,
+  type IssueStatus,
+  type Role,
+  slugify,
+} from '@robis/shared';
 import { eq, inArray } from 'drizzle-orm';
 
 const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://robis:robis@localhost:5433/robis';
-const PASSWORD = process.env.SEED_PASSWORD ?? 'robis-demo-password';
+// The seed is demo data with a public password; it has no business near a
+// real deployment, and the API would refuse that password there anyway.
+if (process.env.NODE_ENV === 'production') {
+  throw new Error('db:seed refuses to run with NODE_ENV=production.');
+}
+
+const PASSWORD = process.env.SEED_PASSWORD ?? DEMO_PASSWORD;
 
 const WITH_TEAM = process.argv.includes('--team');
 
