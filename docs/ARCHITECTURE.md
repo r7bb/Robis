@@ -39,8 +39,8 @@ The inbox above is showing a nudge rather than a mention, for an honest reason:
 mentioning yourself is not a notification, and the default seed is a single
 account, so there is nobody to mention. Run `bun run db:seed --team` and
 mention a teammate to see that path. The rules themselves are covered by
-[`mentions.test.ts`](tests/mentions.test.ts) and
-[`queue.test.ts`](tests/queue.test.ts).
+[`mentions.test.ts`](../tests/mentions.test.ts) and
+[`queue.test.ts`](../tests/queue.test.ts).
 
 ### Issue descriptions and the activity trail
 
@@ -232,7 +232,7 @@ status dropdown gone — and the API returns `403` even if you send the request 
 hand with `curl`.
 
 The rules themselves are covered by
-[`authorization.test.ts`](tests/authorization.test.ts) regardless of what is
+[`authorization.test.ts`](../tests/authorization.test.ts) regardless of what is
 seeded.
 
 ---
@@ -299,23 +299,27 @@ same port; skip `db:start` in that case.
 ```
 
 ```
-apps/
-  api/          Fastify: routes, guards, mutations
+frontend/       Next.js client
+backend/
+  api/          Fastify: routes, guards, mutations, uploads
   realtime/     Bun WebSocket gateway: fan-out, presence, document rooms
-  worker/       Background job runner and handlers
-  web/          Next.js client
-packages/
-  shared/       Permission matrix, domain enums, wire contracts
-  database/     Drizzle schema, migrations, event bus, CRDT persistence
+  worker/       Background job runner and handlers, audit stream
+  database/     Drizzle schema, migrations, event bus, audit trail, CRDT persistence
   auth/         Argon2 hashing, sessions
-  sync/         Offline store, mutation queue, reconciliation
-scripts/        Dev database lifecycle, seeding, admin bootstrap
+  mailer/       Mail port and drivers
+  metrics/      Prometheus registry
+shared/
+  contracts/    Permission matrix, domain enums, wire contracts (@robis/shared)
+  sync/         Offline store, mutation queue, reconciliation (@robis/sync)
+robis-ml/       Duplicate detection and priority triage (Python)
+scripts/        Dev database lifecycle, seeding, admin bootstrap, docs checks
 tests/          Integration tests against real Postgres
-docs/           Screenshots
+docs/           This document, the roadmap and the platform plan
 ```
 
-`packages/shared` is imported by all three apps, so changing an event shape or a
-request contract is a compile error everywhere rather than a runtime surprise.
+`shared/contracts` is imported by the frontend and every backend service, so
+changing an event shape or a request contract is a compile error everywhere
+rather than a runtime surprise.
 
 ---
 
@@ -329,21 +333,21 @@ The obvious rejection for someone else's workspace is `403 Forbidden`. That
 answer confirms the workspace exists, turning the endpoint into an oracle:
 iterate over ids and the 403/404 split maps out the tenant space.
 
-[`requireMembership`](apps/api/src/plugins/authz.ts) returns **404** when there
+[`requireMembership`](../backend/api/src/plugins/authz.ts) returns **404** when there
 is no membership row, and 403 only when a member lacks a specific permission —
 at which point they already know the workspace exists.
 
 ### Authorization is a matrix, not scattered conditionals
 
 Every check resolves to `can(role, permission)` against a table in
-[`rbac.ts`](packages/shared/src/rbac.ts). Roles are built by extension, and a
+[`rbac.ts`](../shared/contracts/src/rbac.ts). Roles are built by extension, and a
 test asserts they stay cumulative, so no role can ever do something its senior
 cannot. Rules needing more than the actor's role live beside their data: an
 admin cannot promote to owner, nobody can change their own role, and the last
 owner cannot be demoted, removed, or leave.
 
 The gateway and the API share one
-[`findMembership`](packages/database/src/queries.ts) — two copies of an
+[`findMembership`](../backend/database/src/queries.ts) — two copies of an
 authorization query is how they drift apart.
 
 ### Realtime runs on Postgres NOTIFY, not Redis
@@ -355,8 +359,8 @@ reason and one practical one.
 delivered only if that transaction commits. Publishing to Redis from inside a
 database transaction has no such guarantee — the message can go out and then the
 write can roll back, leaving every client refetching stale data. Getting that
-right against Redis needs an outbox table and a robis process; here it is free.
-There is [a test](tests/realtime.test.ts) asserting a rejected write emits no
+right against Redis needs an outbox table and a relay process; here it is free.
+There is [a test](../tests/realtime.test.ts) asserting a rejected write emits no
 event.
 
 **Practically**, it is one fewer service, and this machine has no Redis.
@@ -364,7 +368,7 @@ event.
 The cost is real: notifications are fire-and-forget with no persistence, the
 payload caps at 8000 bytes, and each listener holds an idle connection. At high
 fan-out Redis is the right replacement — but only
-[two functions](packages/database/src/events.ts) would change.
+[two functions](../backend/database/src/events.ts) would change.
 
 ### Events carry ids, never row contents
 
@@ -383,7 +387,7 @@ write-heavy one for data that is meaningless in thirty seconds.
 So it lives in memory per gateway instance, and instances exchange deltas over
 the same NOTIFY channel. A gateway that dies would leave ghosts, so every entry
 carries a `lastSeenAt` refreshed by the client heartbeat and
-[a sweeper](apps/realtime/src/presence.ts) drops stale ones. Redis with per-key
+[a sweeper](../backend/realtime/src/presence.ts) drops stale ones. Redis with per-key
 TTLs would remove the sweep.
 
 ### The gateway is a separate process
@@ -412,10 +416,10 @@ UI, the server is authoritative for the world.** Reconciliation overwrites local
 rows with server state — except rows with unflushed mutations, which keep their
 local values, because discarding them would silently destroy work the user can
 see on screen. There is
-[a test](tests/sync.test.ts) for exactly that.
+[a test](../tests/sync.test.ts) for exactly that.
 
 The engine talks to a
-[`StorageAdapter`](packages/sync/src/storage.ts) and a `SyncTransport` rather
+[`StorageAdapter`](../shared/sync/src/storage.ts) and a `SyncTransport` rather
 than to IndexedDB and `fetch`, so the interesting logic — queue ordering, retry
 policy, convergence — is unit-testable with no browser and no server.
 
@@ -433,7 +437,7 @@ A replayed insert then collides on the primary key instead of producing a second
 row.
 
 **The server keeps an idempotency ledger.** Each mutation carries a stable key;
-[`withIdempotency`](apps/api/src/plugins/idempotency.ts) claims it with an
+[`withIdempotency`](../backend/api/src/plugins/idempotency.ts) claims it with an
 atomic `INSERT ... ON CONFLICT DO NOTHING`, and a replay returns the stored
 response instead of re-running the handler. Reusing a key with a *different*
 body is a 409 rather than a silent replay, because that is a client bug worth
@@ -505,7 +509,7 @@ Delivery is at-least-once: a worker that stalls past the visibility timeout has
 its job reclaimed and re-run, so handlers must be idempotent. The mention
 handler relies on a unique index over `(user_id, kind, entity_id)` to make a
 redelivery a no-op rather than a second notification — there is
-[a test](tests/queue.test.ts) that runs it three times and asserts one row.
+[a test](../tests/queue.test.ts) that runs it three times and asserts one row.
 
 What Postgres does not give: this polls rather than blocking on a socket, and
 throughput is bounded by the database. Those are the numbers to watch before
@@ -702,7 +706,8 @@ body.
 
 ## Testing
 
-**367 tests** against a real Postgres rather than mocks. The behaviour under test
+The tests run against a real Postgres rather than mocks (current counts are in
+[ROADMAP.md](ROADMAP.md), the one place they are kept). The behaviour under test
 — unique constraints, cascades, row locks, transactional `NOTIFY` — is behaviour
 the database provides, so a fake would only prove the fake works.
 
@@ -830,15 +835,18 @@ event-loop lag is reported alongside every result.
 - Load harness with measured throughput and fan-out numbers
 - Prometheus metrics on the API and the gateway
 - Editable issue descriptions, workspace activity feed, account settings
-- 367 tests, CI, linting, typechecking
+- A tamper-evident audit trail with a security view, export and a SIEM stream
+- App-specific usernames, and a picture before you start
+- Tests, CI, linting, typechecking (counts in [ROADMAP.md](ROADMAP.md))
 
 **Next**
 
-- File uploads and email delivery (both need an external service)
+- Object storage for uploads and a production mail driver (both need an
+  external service; pictures are on local disk behind a storage port)
 - Distributed tracing (metrics are in; spans are not)
-- Drag-and-drop board, editable issue descriptions, a search results page
+- Drag-and-drop board and a search results page
 
-See [docs/ROADMAP.md](docs/ROADMAP.md) for the full plan, including an honest
+See [ROADMAP.md](ROADMAP.md) for the full plan, including an honest
 list of what is thin in what already exists.
 
 Collaborative text is the one remaining piece that genuinely needs CRDTs. Issue
@@ -857,11 +865,11 @@ runtime and no admin rights. Two wrinkles are handled in `scripts/`:
 
 - The npm tarball loses the shared-library version symlinks the binaries link
   against, so `initdb` fails with a dyld error.
-  [`fix-pg-dylibs.ts`](scripts/db/fix-pg-dylibs.ts) recreates them from
+  [`fix-pg-dylibs.ts`](../scripts/db/fix-pg-dylibs.ts) recreates them from
   `postinstall`.
 - The package ships only `initdb`, `pg_ctl` and `postgres` — no `createdb` — and
   its JS wrapper spawns Postgres as a direct child, so the server dies with the
-  script. [`dev-db.ts`](scripts/db/dev-db.ts) drives `pg_ctl` directly for a
+  script. [`dev-db.ts`](../scripts/db/dev-db.ts) drives `pg_ctl` directly for a
   properly detached server and creates the database over the wire.
 
 CI uses a plain Postgres service container instead, since it already has one.

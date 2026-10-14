@@ -52,6 +52,16 @@ jobs:
       - name: Lint and format check
         run: bun run lint
 
+      # Every relative link in every Markdown file must resolve, and every
+      # path the app inventory names must exist.
+      - name: Documentation links
+        run: bun run docs:links
+
+      # The same check against a fixture with a known broken link must fail,
+      # so the step above is shown to catch breakage, not assumed to.
+      - name: Documentation link check catches a broken link
+        run: "! bun run scripts/docs/links.ts --root tests/fixtures/doc-links"
+
       - name: Typecheck
         run: bun run typecheck
 

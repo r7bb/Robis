@@ -2,8 +2,10 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status: **400 TypeScript tests, 95 Python tests, lint and typecheck clean,
-production build passing.**
+Status (2026-10-13): **568 TypeScript tests, 96 Python tests, lint and
+typecheck clean, production build passing.** This is the one place test counts are kept; a
+test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
+documents point here instead of drifting.
 
 A full inventory of what exists is in
 [COMPLETE_APP_SUMMARY.md](../COMPLETE_APP_SUMMARY.md). The reasoning behind

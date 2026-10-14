@@ -27,6 +27,7 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
+    "docs:links": "bun run scripts/docs/links.ts",
     "loadtest": "bun run scripts/bench/loadtest.ts",
     "screenshots": "bun run scripts/capture/screenshots.ts"
   },

@@ -25,6 +25,10 @@ Newest first. The same list is the site's What's new page, linked from the
 header, where each entry opens to show how it was checked and, for features,
 where to find it and what each layer does.
 
+- **Documentation that agrees with the code** (2026-10-13). Every relative
+  link in every Markdown file resolves, test counts live in one place (the
+  roadmap), and CI checks both on every push, including proving the check
+  fails on a deliberately broken link.
 - **A picture before you start** (2026-10-13). New members upload a photo,
   take one with the camera, paste a screenshot or pick a generated pattern
   before using a workspace; the API and the live feed hold that line too.
@@ -218,7 +222,7 @@ figures. See **[robis-ml/README.md](robis-ml/README.md)**.
 
 | Command               | What it does                         |
 | --------------------- | ------------------------------------ |
-| `bun test`            | over 500 tests                       |
+| `bun test`            | the suite; counts in the roadmap     |
 | `bun run typecheck`   | every package                        |
 | `bun run lint`        | Biome                                |
 | `bun run loadtest`    | the benchmark above                  |

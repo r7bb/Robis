@@ -15,7 +15,7 @@ Written to be checkable. Every row names a file you can open.
 | Services | 4 (web, API, realtime gateway, worker) plus an optional ML service |
 | Database tables | 18 |
 | HTTP endpoints | 60+ |
-| Tests | 400 TypeScript, 95 Python |
+| Tests | Counted in [docs/ROADMAP.md](docs/ROADMAP.md), the one place they are kept |
 | Screenshots | 28, all captured from the running app |
 | Measured throughput | ~4,400 req/s, zero errors |
 
@@ -26,12 +26,12 @@ Written to be checkable. Every row names a file you can open.
 | Feature | Where |
 | --- | --- |
 | Register, sign in, sign out | `backend/api/src/routes/auth.ts` |
-| Argon2id password hashing | `backend/auth/src/passwords.ts` |
+| Argon2id password hashing | `backend/auth/src/password.ts` |
 | Opaque server-side sessions (SHA-256 token hash) | `backend/auth/src/sessions.ts` |
 | Login timing equalisation | `backend/api/src/routes/auth.ts` |
 | Password reset by email, single-use token | `backend/api/src/routes/auth-recovery.ts` |
 | Email verification | same |
-| Change name, change password | `backend/api/src/routes/account.ts` |
+| Change name, username or password | `backend/api/src/routes/auth.ts` |
 | Rate limiting, per caller and per recipient address | `backend/api/src/plugins/rate-limit.ts` |
 | App-specific `@usernames`, checked as you type, changeable | `shared/contracts/src/usernames.ts`, `backend/api/src/routes/auth.ts` |
 | Age confirmation at sign-up, enforced by the API (threshold is a placeholder for legal review) | `shared/contracts/src/schemas.ts` |

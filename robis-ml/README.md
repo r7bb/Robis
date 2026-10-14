@@ -12,7 +12,7 @@ cd robis-ml
 uv venv --python 3.11 .venv
 uv pip install --python .venv/bin/python -e ".[dev]"
 
-.venv/bin/python -m pytest                    # 95 tests
+.venv/bin/python -m pytest                    # the Python suite; counts in docs/ROADMAP.md
 
 # local only; anywhere else, set ROBIS_ML_TOKEN instead
 ROBIS_ML_ALLOW_ANONYMOUS=1 .venv/bin/python -m uvicorn robis_ml.service:app --port 8000
@@ -358,9 +358,9 @@ robis_ml/
   service.py         FastAPI: /health, /similar, /triage
   auth.py            shared bearer token
 tests/
-  test_model.py          17 tests, in-memory, no database
-  test_service.py        18 tests: auth, tenant isolation, cache
-  test_duplicate_eval.py 60 tests: metrics, set integrity, threshold, comparison
+  test_model.py          the models, in memory, no database
+  test_service.py        auth, tenant isolation, cache
+  test_duplicate_eval.py metrics, set integrity, threshold, comparison
 ```
 
 `compose_text` is shared by the corpus and the query on purpose. They were two

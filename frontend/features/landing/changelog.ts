@@ -40,6 +40,15 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-13',
+    area: 'Site',
+    title: 'Documentation that agrees with the code',
+    summary:
+      'The architecture guide pointed at folders that no longer existed and four documents quoted four different test counts. Every link now resolves, counts live in one place, and CI checks both on every push.',
+    checked:
+      'A link checker runs in CI over every Markdown file and over the paths the app inventory names; a second CI step runs it on a fixture with a known broken link and requires it to fail.',
+  },
+  {
+    date: '2026-10-13',
     area: 'Product',
     title: 'A picture before you start',
     summary:
