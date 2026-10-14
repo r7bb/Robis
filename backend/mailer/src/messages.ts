@@ -9,6 +9,17 @@ import type { Mail } from './mailer.ts';
  * the one that always renders.
  */
 
+/**
+ * A link the recipient can click, from the configured web origin.
+ *
+ * Never from a request's `Host` header: trusting it would let an attacker who
+ * can reach the API request a reset for someone else and have the link point
+ * at a host they control.
+ */
+export function linkFor(webOrigin: string, path: string, token: string): string {
+  return `${webOrigin}${path}?token=${encodeURIComponent(token)}`;
+}
+
 /** "30 minutes" or "24 hours", whichever reads naturally for the duration. */
 function humanDuration(minutes: number): string {
   if (minutes < 60) return minutes === 1 ? '1 minute' : `${minutes} minutes`;

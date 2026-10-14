@@ -1,12 +1,5 @@
-import {
-  consumeAuthToken,
-  hashPassword,
-  issueAuthToken,
-  revokeAllSessions,
-  ttlMinutesFor,
-} from '@robis/auth';
-import { type Database, users } from '@robis/database';
-import { type Mailer, passwordResetMail } from '@robis/mailer';
+import { consumeAuthToken, hashPassword, revokeAllSessions } from '@robis/auth';
+import { type Database, queuePasswordResetMail, users } from '@robis/database';
 import { forgotPasswordSchema, resetPasswordSchema, verifyEmailSchema } from '@robis/shared';
 import { and, eq, isNull } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
@@ -17,7 +10,7 @@ import { ApiError } from '../errors.ts';
 import { currentUser, requireAuth } from '../plugins/authz.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
 import { parse } from '../validate.ts';
-import { createVerificationSender, linkFor } from '../verification.ts';
+import { createVerificationSender } from '../verification.ts';
 
 /**
  * Getting back into an account, and proving an address is yours.
@@ -33,26 +26,32 @@ export type RecoveryDeps = {
   db: Database;
   env: Env;
   limits: RateLimits;
-  mailer: Mailer;
 };
 
 /**
  * Minimum time the forgot-password endpoint takes to answer.
  *
- * The work for a known address (an upsert plus a send) is strictly more than
+ * The work for a known address (a select plus a queue insert) is more than
  * for an unknown one (a single select), so without a floor the response time
- * states whether the account exists. Holding every reply to the same budget
- * removes the signal however slow the mail driver is, which matters because
- * the obvious next driver is SMTP over a network.
+ * states whether the account exists. The send itself happens later, in the
+ * worker, so SMTP latency never reaches this reply; the floor covers the
+ * difference that is left.
  *
- * Long enough to cover a local send, short enough not to be felt.
+ * Long enough to cover an insert under load, short enough not to be felt.
  */
 export const FORGOT_FLOOR_MS = 400;
 
-export async function authRecoveryRoutes(app: FastifyInstance, opts: RecoveryDeps) {
-  const { db, env, limits, mailer } = opts;
+/**
+ * Confirmation emails one account can ask for in an hour. At most one is
+ * ever waiting (the queue keeps one per account), so this bounds how many a
+ * determined clicker can have delivered, not how many are queued.
+ */
+const RESENDS_PER_HOUR = 5;
 
-  const sendVerification = createVerificationSender({ db, env, mailer, log: app.log });
+export async function authRecoveryRoutes(app: FastifyInstance, opts: RecoveryDeps) {
+  const { db, env, limits } = opts;
+
+  const sendVerification = createVerificationSender({ db, log: app.log });
 
   /*
    * Each endpoint gets its own bucket.
@@ -100,26 +99,20 @@ export async function authRecoveryRoutes(app: FastifyInstance, opts: RecoveryDep
 
       if (parsed.success) {
         const [user] = await db
-          .select({ id: users.id, email: users.email })
+          .select({ id: users.id })
           .from(users)
           .where(eq(users.email, parsed.data.email))
           .limit(1);
 
         if (user) {
           try {
-            const { token } = await issueAuthToken(db, user.id, 'password_reset');
-
-            await mailer.send(
-              passwordResetMail(
-                user.email,
-                linkFor(env, '/reset-password', token),
-                ttlMinutesFor('password_reset'),
-              ),
-            );
+            // Queued, not sent: the worker issues the link and mails it, and
+            // retries if the mail server is down.
+            await queuePasswordResetMail(db, user.id);
           } catch (error) {
             // Logged, never surfaced: the reply is fixed by design, and a 500
             // here would itself reveal that the address exists.
-            request.log.error({ err: error }, 'failed to send password reset mail');
+            request.log.error({ err: error }, 'failed to queue password reset mail');
           }
         }
       }
@@ -193,7 +186,13 @@ export async function authRecoveryRoutes(app: FastifyInstance, opts: RecoveryDep
 
   app.post(
     '/auth/email/resend',
-    { preHandler: [requireAuth, perCaller('email-resend')] },
+    {
+      preHandler: [
+        requireAuth,
+        perCaller('email-resend'),
+        rateLimit({ name: 'email-resend-hourly', limit: RESENDS_PER_HOUR, windowMs: 60 * 60_000 }),
+      ],
+    },
     async (request) => {
       const user = currentUser(request);
 
@@ -206,7 +205,7 @@ export async function authRecoveryRoutes(app: FastifyInstance, opts: RecoveryDep
       // Nothing to do, and saying so is safe: the caller is the account holder.
       if (row?.emailVerifiedAt) return { ok: true, alreadyVerified: true };
 
-      await sendVerification(user.id, user.email);
+      await sendVerification(user.id);
       return { ok: true, alreadyVerified: false };
     },
   );

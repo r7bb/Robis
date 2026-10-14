@@ -15,9 +15,11 @@ import { buildApp } from '@robis/api/app';
 import { loadEnv } from '@robis/api/env';
 import { localDiskStorage } from '@robis/api/media/storage';
 import type { SimilarIssue, TriageSuggestion } from '@robis/api/suggestions';
-import { createDatabase, type Database } from '@robis/database';
+import { createDatabase, type Database, MAIL_JOBS } from '@robis/database';
 import { runMigrations } from '@robis/database/migrate';
 import { MemoryMailer } from '@robis/mailer';
+import { mailHandlers } from '@robis/worker/mail';
+import { Runner } from '@robis/worker/runner';
 import postgres from 'postgres';
 
 const ADMIN_URL = process.env.TEST_ADMIN_URL ?? 'postgres://robis:robis@localhost:5433/postgres';
@@ -51,8 +53,10 @@ type App = ReturnType<typeof buildApp>;
 let handle: {
   app: App;
   db: Database;
-  /** Mail the app tried to send, so flows that email a token can be asserted. */
+  /** Mail the worker sent, so flows that email a token can be asserted. */
   mailer: MemoryMailer;
+  /** The worker's mail jobs only, so a test's other queued work stays put. */
+  mailRunner: Runner;
   close: () => Promise<void>;
 } | null = null;
 
@@ -155,13 +159,18 @@ export async function getHarness() {
   // address, and throttling them would test the limiter, not them.
   // Recorded rather than sent: the reset and verification suites read the
   // token out of the message, which proves the address received something it
-  // can act on rather than asserting against a row the user never saw.
+  // can act on rather than asserting against a row the user never saw. The
+  // API only queues mail; this is the worker's half, with the memory driver.
   const mailer = new MemoryMailer();
+  const mailRunner = new Runner({
+    db,
+    handlers: mailHandlers({ mailer, webOrigin: env.WEB_ORIGIN }),
+    kinds: MAIL_JOBS,
+  });
 
   const app = buildApp({
     db,
     env,
-    mailer,
     // A stub, never the real client: the suite must not depend on a Python
     // service being up, and must never reach the network. `suggestionStub`
     // below lets one test decide what it answers.
@@ -178,13 +187,23 @@ export async function getHarness() {
   });
   await app.ready();
 
-  handle = { app, db, mailer, close };
+  handle = { app, db, mailer, mailRunner, close };
   return handle;
 }
 
-/** The recorded outbox. Cleared by `resetDatabase` along with the tables. */
+/** Upper bound on worker passes, so a handler that keeps failing cannot spin. */
+const MAX_MAIL_TICKS = 20;
+
+/**
+ * The recorded outbox, after the worker has sent everything queued so far.
+ * Cleared by `resetDatabase` along with the tables.
+ */
 export async function getMailer(): Promise<MemoryMailer> {
-  return (await getHarness()).mailer;
+  const { mailer, mailRunner } = await getHarness();
+  for (let tick = 0; tick < MAX_MAIL_TICKS; tick++) {
+    if ((await mailRunner.tick()).claimed === 0) break;
+  }
+  return mailer;
 }
 
 export async function resetDatabase() {

@@ -120,6 +120,8 @@ describe('delivery', () => {
       handlers: {
         'audit.stream': async (_p, ctx) => void (await streamAuditEvents(ctx.db, sink, 4)),
       },
+      // The owner's sign-up queued a verification mail; it is not this job.
+      kinds: ['audit.stream'],
     });
 
     await enqueue(db, 'audit.stream', {}, { maxAttempts: 10 });

@@ -25,6 +25,10 @@ Newest first. The same list is the site's What's new page, linked from the
 header, where each entry opens to show how it was checked and, for features,
 where to find it and what each layer does.
 
+- **Reset and confirmation emails over real mail** (2026-10-13). Password
+  resets and address confirmations go out over SMTP, sent by the worker so a
+  slow mail server never slows a request. Failed sends retry, then stay
+  visible as dead letters. `bun run mail:start` runs a local inbox.
 - **The demo password works only in development** (2026-10-13). Outside
   development the API refuses the README's demo password everywhere, and the
   seed script refuses to run against production.
@@ -237,6 +241,13 @@ figures. See **[robis-ml/README.md](robis-ml/README.md)**.
 | `bun run loadtest`    | the benchmark above                  |
 | `bun run screenshots` | recapture every image in this README |
 | `bun run db:reset`    | drop and recreate the dev database   |
+| `bun run mail:start`  | local mail inbox, SMTP on port 1025  |
+
+To send real mail, give the worker `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`,
+`SMTP_PASS` and `MAIL_FROM` (`SMTP_SECURE=true` for port 465). Locally,
+`SMTP_HOST=127.0.0.1 SMTP_PORT=1025` sends to `bun run mail:start`, whose
+inbox is at <http://127.0.0.1:8025>. With no `SMTP_HOST`, mail is printed to
+the worker's log.
 
 Every screenshot here is produced by that script driving a real Chrome against
 the real stack. None of them is a mockup.
@@ -246,11 +257,13 @@ the real stack. None of them is a mockup.
 ## Status
 
 A portfolio project, built to be read. It runs locally and is tested. It has
-not been deployed, and two things are missing because this machine has no
-Docker and no SMTP: a verified container build and a production mail driver.
-Uploads work on local disk or any S3-compatible store; the S3 driver is tested
-in CI against S3Mock, not against a cloud provider. The API **refuses to start in
-production** without a mail driver rather than printing reset links into a log.
+not been deployed, and a verified container build is missing because this
+machine has no Docker. Uploads work on local disk or any S3-compatible store;
+the S3 driver is tested in CI against S3Mock, not against a cloud provider.
+Mail goes out over SMTP, tested against a local SMTP server, not a real
+provider, and nothing here says whether a given provider will deliver it.
+The API and the worker **refuse to start in production** with no mail driver
+configured rather than print reset links into a log.
 
 Nothing here is a security or compliance claim. It describes what the code does
 and what was measured.

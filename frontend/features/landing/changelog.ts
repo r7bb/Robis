@@ -40,6 +40,25 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-13',
+    area: 'Product',
+    title: 'Reset and confirmation emails over real mail',
+    summary:
+      'Password resets and address confirmations now go out over SMTP, sent by the background worker so a slow mail server never slows a request. A failed send is retried and then kept where it can be seen, and a local inbox shows every message during development.',
+    checked:
+      'A test sends a reset through the real SMTP driver to a local mail server, follows the link and signs in with the new password. Another points the driver at a closed port and watches the job retry and then become a dead letter. Production still refuses to start with no mail driver configured.',
+    feature: {
+      name: 'Get back in from your inbox',
+      where: 'Forgot password on the sign-in page, or the confirmation email after sign-up.',
+      layers: [
+        'Screens: the same forms, and the same answer whether or not the address has an account.',
+        'API: queues one job naming the account, never the link, and answers in a fixed time.',
+        'Worker: issues the link when it sends, over SMTP, retrying with backoff before a dead letter.',
+        'Development: bun run mail:start catches every message in a local inbox on port 8025.',
+      ],
+    },
+  },
+  {
+    date: '2026-10-13',
     area: 'Security',
     title: 'The demo password works only in development',
     summary:

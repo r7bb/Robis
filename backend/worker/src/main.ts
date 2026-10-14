@@ -5,8 +5,10 @@ import {
   hasPendingJob,
   STORAGE_PURGE_JOB,
 } from '@robis/database';
+import { mailerFromEnv } from '@robis/mailer';
 import { auditStreamConfig, httpSink, streamAuditEvents } from './audit-stream.ts';
 import { handlers } from './handlers.ts';
+import { mailHandlers, mailOriginFromEnv } from './mail.ts';
 import { Runner } from './runner.ts';
 import { storagePurgeHandler, workerStorage } from './storage-purge.ts';
 
@@ -53,6 +55,17 @@ const reschedule = <T extends keyof typeof handlers>(
     await enqueue(context.db, kind, {}, { ...options, delayMs });
   };
 };
+
+/*
+ * Account mail. The driver comes from the same variables the API checks,
+ * and links are built from WEB_ORIGIN, never from anything a request sent.
+ * In production with no SMTP configured this throws, and the worker refuses
+ * to start rather than quietly print reset links into its log.
+ */
+Object.assign(
+  handlers,
+  mailHandlers({ mailer: mailerFromEnv(process.env), webOrigin: mailOriginFromEnv(process.env) }),
+);
 
 // Files left behind by deleted issues, comments and workspaces.
 handlers[STORAGE_PURGE_JOB] = storagePurgeHandler(workerStorage(process.env));

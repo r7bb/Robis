@@ -2,7 +2,6 @@ import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
 import { buildApp } from '@robis/api/app';
 import { loadEnv } from '@robis/api/env';
 import { resetRateLimits } from '@robis/api/rate-limit';
-import { MemoryMailer } from '@robis/mailer';
 import { closeHarness, getHarness, resetDatabase, TEST_URL } from './harness.ts';
 
 /**
@@ -25,12 +24,11 @@ async function throttledApp(authPerMinute: number) {
     WEB_ORIGIN: 'http://localhost:3000',
   } as NodeJS.ProcessEnv);
 
-  // Recorded, not printed: these cases register accounts, and the console
-  // driver would scatter welcome mail through the test output.
+  // No mailer here: the API only queues account mail, and these cases never
+  // run the worker that would send it.
   const app = buildApp({
     db,
     env,
-    mailer: new MemoryMailer(),
     rateLimits: { authPerMinute, searchPerMinute: authPerMinute },
   });
   await app.ready();

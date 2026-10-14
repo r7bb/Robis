@@ -71,8 +71,10 @@ The confirmation never says whether the address has an account:
 
 ![Link sent](../imgs/25-forgot-password-sent.png)
 
-**There is no mail provider.** Sending is a port with one driver, which prints
-the message to the API log, so the flow is exercisable end to end locally:
+**Mail is sent by the worker.** The API queues a job naming the account, and
+the worker issues the link and sends it over SMTP. With no `SMTP_HOST` it uses
+the console driver, which prints the message to the worker's log, and
+`bun run mail:start` runs a local SMTP inbox to send to instead:
 
 ```
   --- mail ------------------------------------------
@@ -83,10 +85,10 @@ the message to the API log, so the flow is exercisable end to end locally:
   http://localhost:3000/reset-password?token=...
 ```
 
-Adding SMTP is one more driver implementing `send`. Until then the API
-**refuses to start in production** rather than fall back to the console
-driver, because that would mean nobody receives a reset link and anyone with
-log access could take over any account. See
+In production the API and the worker **refuse to start** with no mail driver
+configured rather than fall back to the console driver, because that would
+mean nobody receives a reset link and anyone with log access could take over
+any account. See
 [Mail is a port, and production refuses the console driver](#mail-is-a-port-and-production-refuses-the-console-driver).
 
 ![Address confirmed](../imgs/27-verify-email.png)
@@ -559,18 +561,25 @@ tunable as a purpose-built engine. Those are the reasons to adopt one. The word
 
 ### Mail is a port, and production refuses the console driver
 
-There is no SMTP service reachable from this machine, which is why sending is a
-`Mailer` port with two drivers rather than a call to a provider: a console one
-for development, and an in-memory one so tests can read the token out of the
-message a user would have received.
+Sending is a `Mailer` port with three drivers: SMTP through `nodemailer` for
+anything real, a console one for development, and an in-memory one so tests
+can read the token out of the message a user would have received. One test
+file sends through the SMTP driver to a local `smtp-server` instead.
+
+Every send is a job. The API inserts one row naming the account; the worker
+issues the token at send time and builds the link from its own `WEB_ORIGIN`.
+That keeps SMTP latency out of every request, turns a provider outage into
+retries and then a dead letter rather than a lost email, and means a reset
+link is never written to the jobs table, where a dead letter would keep it.
+A retry issues a fresh link, which replaces the one before it.
 
 The part worth keeping is what happens when the driver is wrong for the
-environment. `buildApp` defaults to the console driver, which is right for
-local work and catastrophic in production: no user receives a link, and anyone
-who can read the logs can take over any account by requesting a reset for its
-address. So `main.ts` refuses to boot in production rather than accept that
-default, and `WEB_ORIGIN` must be an `https` origin there too, because it is
-what every mailed link is built from.
+environment. The console driver is right for local work and catastrophic in
+production: no user receives a link, and anyone who can read the logs can
+take over any account by requesting a reset for its address. So
+`mailerFromEnv` refuses production with no `SMTP_HOST`, and both the API and
+the worker call it at startup. `WEB_ORIGIN` must be an `https` origin there
+too, because it is what every mailed link is built from.
 
 A fail-fast startup error is better than a system whose recovery flow is a
 credential leak, and it keeps the missing piece visible rather than implied.
@@ -608,9 +617,9 @@ also be an answer.
 
 Status and body being identical is not enough on its own. The work for a known
 address is strictly more than for an unknown one, so the *response time* says
-whether the account exists. Every reply is therefore held to a floor, which
-removes the signal regardless of how slow the driver is — the obvious next
-driver is SMTP over a network, where the gap would be unmissable.
+whether the account exists. Every reply is therefore held to a floor. Sending
+happens later, in the worker, so SMTP latency never reaches the reply; the
+floor covers the one queue insert that is left.
 
 The endpoint is also limited per **recipient address**, not only per caller.
 The caller-keyed limit protects the server; it does nothing for the person
@@ -739,6 +748,7 @@ bun test
 | `password-reset.test.ts`| Enumeration, timing floor, mail-bombing, link retirement           |
 | `email-verification.test.ts` | Confirmation, single use, resend, cross-purpose misuse        |
 | `mailer.test.ts`        | Mail port drivers and message bodies                              |
+| `mail.test.ts`          | SMTP to a local server, retries to a dead letter, startup refusal |
 | `uuid.test.ts`          | The id guard every route runs before touching the database       |
 | `idempotency.test.ts`   | Exactly-once mutations, key misuse, client-generated ids         |
 
@@ -837,12 +847,11 @@ event-loop lag is reported alongside every result.
 - Editable issue descriptions, workspace activity feed, account settings
 - A tamper-evident audit trail with a security view, export and a SIEM stream
 - App-specific usernames, and a picture before you start
+- Images on issues and comments, and account mail over SMTP from the worker
 - Tests, CI, linting, typechecking (counts in [ROADMAP.md](ROADMAP.md))
 
 **Next**
 
-- Object storage for uploads and a production mail driver (both need an
-  external service; pictures are on local disk behind a storage port)
 - Distributed tracing (metrics are in; spans are not)
 - Drag-and-drop board and a search results page
 

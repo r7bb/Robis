@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-10-13): **610 TypeScript tests, 96 Python tests, lint and
+Status (2026-10-13): **627 TypeScript tests, 96 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -29,7 +29,7 @@ event; a Security view for admins. Gaps and limits are listed in
 `docs/PLATFORM_PLAN.md`, Phase 2.
 
 **Accounts.** Argon2id passwords, opaque sessions, login timing equalisation,
-password reset and email verification behind a `Mailer` port, account
+password reset and email verification sent by the worker over SMTP, account
 settings.
 
 **Realtime.** Postgres `LISTEN/NOTIFY` as the backplane, a separate Bun
@@ -110,11 +110,11 @@ What is left:
   "rate limit"), which shares no characters. They stay blocked until weights
   can be downloaded.
 
-### 3. An SMTP driver for the `Mailer` port
+### 3. Mail beyond the first driver
 
-The only driver is `ConsoleMailer`, which prints reset links to stdout. The
-API refuses to start in production without a real one. Once SMTP exists, move
-sends onto the job queue and drop the startup refusal.
+SMTP is in, and account mail goes through the job queue. What is left: try a
+real provider, tell someone when a mail job dead-letters, and handle bounces
+before sending anything people did not ask for.
 
 ### 4. Decide what a verified address gates
 
@@ -155,7 +155,6 @@ Not skipped, blocked. Each is stated rather than disguised.
 | --- | --- |
 | File uploads | Object storage |
 | Verified container build | Docker |
-| Production mail | SMTP |
 | Deployment | The above |
 
 ---

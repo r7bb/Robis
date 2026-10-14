@@ -26,6 +26,16 @@ Flagged for review: LGPL code is used only server-side and dynamically linked,
 and is not modified here. Whether that is enough for a given distribution of
 Robis is a question for whoever ships it, not something this file decides.
 
+## Mail
+
+`nodemailer` 10.0.12 sends mail over SMTP from the worker, and `smtp-server`
+3.19.15 runs the local development inbox and the mail tests. Both are
+licensed MIT-0, which asks for no attribution; they are recorded here so the
+licence of everything added is written down. `smtp-server` brings
+`punycode.js` 2.3.1 and `ipv6-normalize` 1.0.1, both MIT. The type packages
+`@types/nodemailer` 8.0.2 and `@types/smtp-server` 3.5.13 are MIT and are used
+only at build time.
+
 ## Used only in CI
 
 **Adobe S3Mock** (`adobe/s3mock:5.2.3`), Apache License 2.0. A test double

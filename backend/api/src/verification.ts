@@ -1,58 +1,38 @@
-import { issueAuthToken, ttlMinutesFor } from '@robis/auth';
-import type { Database } from '@robis/database';
-import { type Mailer, verifyEmailMail } from '@robis/mailer';
+import { type Database, queueVerificationMail } from '@robis/database';
 import type { FastifyBaseLogger } from 'fastify';
-import type { Env } from './env.ts';
 
 /**
- * Sending a verification link.
+ * Asking for a verification email.
  *
  * Lives outside the route files because two of them need it: registration
- * starts the flow, and the account page can restart it. Duplicating the token
- * issue plus the link assembly in both is how the two drift apart.
- */
-
-/**
- * Build a link the recipient can click.
+ * starts the flow, and the account page can restart it.
  *
- * From `WEB_ORIGIN`, never from the request's `Host` header. Trusting the
- * header would let an attacker who can reach the API request a reset for
- * someone else and have the link point at a host they control.
+ * The API only queues the job. The worker issues the token, builds the link
+ * from its own `WEB_ORIGIN` and sends it, so a slow or unreachable mail
+ * server never holds a request open, and a failed send is retried rather
+ * than lost.
  */
-export function linkFor(env: Env, path: string, token: string): string {
-  return `${env.WEB_ORIGIN}${path}?token=${encodeURIComponent(token)}`;
-}
-
-export type VerificationSender = (userId: string, email: string) => Promise<void>;
+export type VerificationSender = (userId: string) => Promise<void>;
 
 /**
  * A sender that never fails its caller.
  *
- * Registration must not roll back because a mail provider is down: an account
- * with an unconfirmed address is still a working account, and nothing in Robis
- * is gated on verification. So the failure is logged and swallowed.
+ * Registration must not roll back because the queue insert failed: an
+ * account with an unconfirmed address is still a working account, and
+ * nothing in Robis is gated on verification. So the failure is logged and
+ * swallowed, and the account page can ask again.
  */
 export function createVerificationSender(deps: {
   db: Database;
-  env: Env;
-  mailer: Mailer;
   log: FastifyBaseLogger;
 }): VerificationSender {
-  const { db, env, mailer, log } = deps;
+  const { db, log } = deps;
 
-  return async (userId, email) => {
+  return async (userId) => {
     try {
-      const { token } = await issueAuthToken(db, userId, 'email_verification');
-
-      await mailer.send(
-        verifyEmailMail(
-          email,
-          linkFor(env, '/verify-email', token),
-          ttlMinutesFor('email_verification'),
-        ),
-      );
+      await queueVerificationMail(db, userId);
     } catch (error) {
-      log.error({ err: error }, 'failed to send verification mail');
+      log.error({ err: error }, 'failed to queue verification mail');
     }
   };
 }

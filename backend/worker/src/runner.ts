@@ -16,6 +16,8 @@ export type RunnerOptions = {
   workerId?: string;
   /** Jobs claimed per tick. */
   batchSize?: number;
+  /** Claim only these kinds. Defaults to every kind. */
+  kinds?: readonly string[];
   /** Gap between polls when the queue is empty. */
   idleDelayMs?: number;
 };
@@ -28,6 +30,7 @@ export class Runner {
   private readonly workerId: string;
   private readonly batchSize: number;
   private readonly idleDelayMs: number;
+  private readonly kinds: readonly string[] | undefined;
 
   private running = false;
 
@@ -37,6 +40,7 @@ export class Runner {
     this.workerId = options.workerId ?? `worker-${crypto.randomUUID().slice(0, 8)}`;
     this.batchSize = options.batchSize ?? 5;
     this.idleDelayMs = options.idleDelayMs ?? 1000;
+    this.kinds = options.kinds;
   }
 
   get id(): string {
@@ -47,7 +51,7 @@ export class Runner {
   async tick(): Promise<TickResult> {
     const result: TickResult = { claimed: 0, completed: 0, failed: 0, dead: 0 };
 
-    const batch = await claimJobs(this.db, this.workerId, this.batchSize);
+    const batch = await claimJobs(this.db, this.workerId, this.batchSize, new Date(), this.kinds);
     result.claimed = batch.length;
 
     // Sequential rather than parallel: these are database-bound, and running a

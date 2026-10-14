@@ -1,7 +1,6 @@
 import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import type { Database } from '@robis/database';
-import { ConsoleMailer, type Mailer } from '@robis/mailer';
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
 import type { Env } from './env.ts';
 import { ApiError } from './errors.ts';
@@ -61,12 +60,6 @@ export const DEFAULT_RATE_LIMITS: RateLimits = {
 export type AppDeps = {
   db: Database;
   env: Env;
-  /**
-   * Where outgoing mail goes. Defaults to the console driver, which is the
-   * right default for a repo with no mail provider configured: the reset link
-   * is printed where a developer will see it rather than silently dropped.
-   */
-  mailer?: Mailer;
   /** Quiet by default in tests; `main.ts` turns logging on. */
   logger?: boolean;
   rateLimits?: Partial<RateLimits>;
@@ -87,7 +80,6 @@ export function buildApp({
   env,
   logger = false,
   rateLimits,
-  mailer = new ConsoleMailer(),
   suggestions,
   storage = storageFromEnv(env),
 }: AppDeps): FastifyInstance {
@@ -166,8 +158,8 @@ export function buildApp({
 
   app.get('/health', async () => ({ status: 'ok' }));
 
-  app.register(authRoutes, { db, env, limits, mailer });
-  app.register(authRecoveryRoutes, { db, env, limits, mailer });
+  app.register(authRoutes, { db, env, limits });
+  app.register(authRecoveryRoutes, { db, env, limits });
   app.register(workspaceRoutes, { db });
   app.register(memberRoutes, { db });
   app.register(projectRoutes, { db });

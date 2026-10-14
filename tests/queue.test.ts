@@ -249,9 +249,10 @@ describe('mention notifications end to end', () => {
       actor: owner,
     });
 
-    const queued = await db.select().from(jobs);
+    // Signing up queues each actor's verification mail; only the comment's
+    // job is the subject here.
+    const queued = await db.select().from(jobs).where(eq(jobs.kind, 'notify.mentions'));
     expect(queued).toHaveLength(1);
-    expect(queued[0]!.kind).toBe('notify.mentions');
   });
 
   test('the worker turns the job into a notification', async () => {
@@ -287,7 +288,7 @@ describe('mention notifications end to end', () => {
     });
 
     // Run the handler three times against the same comment.
-    const [job] = await db.select().from(jobs);
+    const [job] = await db.select().from(jobs).where(eq(jobs.kind, 'notify.mentions'));
     for (let i = 0; i < 3; i++) {
       await handlers['notify.mentions']!({ commentId: JSON.parse(job!.payload).commentId }, { db });
     }

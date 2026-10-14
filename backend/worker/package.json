@@ -6,6 +6,7 @@
   "exports": {
     "./audit-stream": "./src/audit-stream.ts",
     "./handlers": "./src/handlers.ts",
+    "./mail": "./src/mail.ts",
     "./nudges": "./src/nudges.ts",
     "./runner": "./src/runner.ts",
     "./storage-purge": "./src/storage-purge.ts"
@@ -14,6 +15,7 @@
     "@robis/api": "workspace:*",
     "@robis/auth": "workspace:*",
     "@robis/database": "workspace:*",
+    "@robis/mailer": "workspace:*",
     "@robis/shared": "workspace:*",
     "drizzle-orm": "^0.38.0"
   }

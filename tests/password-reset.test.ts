@@ -265,16 +265,35 @@ describe('hardening', () => {
 
   /**
    * Issuing used to delete then insert, which let two concurrent requests
-   * both insert and leave two live links.
+   * both insert and leave two live links. The link is issued by the worker
+   * now, so three workers race to send the three queued requests at once.
    */
   test('concurrent requests leave exactly one live link', async () => {
     const actor = await createActor('Holder');
 
     await Promise.all([forgot(actor.email), forgot(actor.email), forgot(actor.email)]);
 
-    const { authTokens } = await import('@robis/database');
+    const { authTokens, MAIL_JOBS } = await import('@robis/database');
     const { and, eq } = await import('drizzle-orm');
     const { db } = await import('./harness.ts').then((m) => m.getHarness());
+    const { mailHandlers } = await import('@robis/worker/mail');
+    const { Runner } = await import('@robis/worker/runner');
+    const { MemoryMailer } = await import('@robis/mailer');
+
+    const workers = Array.from(
+      { length: 3 },
+      () =>
+        new Runner({
+          db,
+          handlers: mailHandlers({
+            mailer: new MemoryMailer(),
+            webOrigin: 'http://localhost:3000',
+          }),
+          kinds: MAIL_JOBS,
+          batchSize: 1,
+        }),
+    );
+    await Promise.all(workers.map((worker) => worker.tick()));
 
     const rows = await db
       .select({ id: authTokens.id })

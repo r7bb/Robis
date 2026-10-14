@@ -11,7 +11,6 @@ import {
   verifyPassword,
 } from '@robis/auth';
 import { type Database, users } from '@robis/database';
-import type { Mailer } from '@robis/mailer';
 import {
   changePasswordSchema,
   loginSchema,
@@ -33,11 +32,11 @@ import { createVerificationSender } from '../verification.ts';
 
 export async function authRoutes(
   app: FastifyInstance,
-  opts: { db: Database; env: Env; limits: RateLimits; mailer: Mailer },
+  opts: { db: Database; env: Env; limits: RateLimits },
 ) {
-  const { db, env, limits, mailer } = opts;
+  const { db, env, limits } = opts;
 
-  const sendVerification = createVerificationSender({ db, env, mailer, log: app.log });
+  const sendVerification = createVerificationSender({ db, log: app.log });
 
   /**
    * Verified when no user matches, so a login attempt costs the same whether or
@@ -111,20 +110,9 @@ export async function authRoutes(
     const { token, expiresAt } = await createSession(db, user.id, request.headers['user-agent']);
     reply.setCookie(SESSION_COOKIE, token, { ...cookieOptions, expires: expiresAt });
 
-    /*
-     * Awaited, deliberately.
-     *
-     * Not awaiting would keep sign-up fast against a slow provider, which is
-     * the right shape eventually. It is wrong today for two reasons: the only
-     * driver writes to a local stream, so there is nothing to wait for, and a
-     * detached promise makes "did the new account get its link" unobservable
-     * to the caller and to tests.
-     *
-     * When a real driver lands this should become a queued job rather than a
-     * detached promise -- the queue already exists, and it gives retries and
-     * visibility that `void` does not.
-     */
-    await sendVerification(user.id, user.email);
+    // Queued: one insert, so sign-up never waits on a mail server, and the
+    // worker retries a failed send instead of losing the link.
+    await sendVerification(user.id);
 
     return reply.status(201).send({ user });
   });

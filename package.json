@@ -29,7 +29,8 @@
     "format": "biome format --write .",
     "docs:links": "bun run scripts/docs/links.ts",
     "loadtest": "bun run scripts/bench/loadtest.ts",
-    "screenshots": "bun run scripts/capture/screenshots.ts"
+    "screenshots": "bun run scripts/capture/screenshots.ts",
+    "mail:start": "bun run scripts/mail/sink.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.12",
@@ -43,11 +44,14 @@
     "@robis/sync": "workspace:*",
     "@robis/worker": "workspace:*",
     "@types/bun": "latest",
+    "@types/smtp-server": "3.5.13",
     "drizzle-orm": "^0.38.0",
     "embedded-postgres": "18.4.0-beta.17",
     "fastify": "^5.2.0",
+    "nodemailer": "10.0.12",
     "postgres": "^3.4.9",
     "sharp": "0.34.5",
+    "smtp-server": "3.19.15",
     "typescript": "^5.7.0"
   },
   "dependencies": {

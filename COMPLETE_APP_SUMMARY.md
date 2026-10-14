@@ -205,10 +205,10 @@ is.
 | Storage quotas | Uploads are rate-limited per account, but nothing caps how much a workspace stores |
 | Attachments beyond images | Only images are accepted; PDFs and other files are not, because their metadata cannot be stripped the same way |
 | Verified container build | No Docker available |
-| Production mail driver | No SMTP. The API refuses to boot in production without one rather than printing reset links to a log |
+| Mail deliverability | Sent over SMTP and tested against a local SMTP server only. No provider has been tried, and there is no HTML version, bounce handling or unsubscribe |
 | Deployment | Follows from the above |
 | Duplicate detection, reworded intent | Finds 0 of 7 lexical-gap duplicates on the labelled set's test half |
 
-The container build, mail and deployment gaps are environment constraints and
+The container build and deployment gaps are environment constraints and
 are stated rather than disguised. Attachments and duplicate recall are real
 work that has not been done.

@@ -1,14 +1,13 @@
 /**
  * The mail port.
  *
- * There is no SMTP service reachable from this machine, which is exactly why
- * sending is a port rather than a call to a provider: the flows that send mail
- * depend on this one function, and the driver decides whether the message goes
- * to a terminal, to a test, or one day to a real robis.
+ * Sending is a port rather than a call to a provider: the flows that send
+ * mail depend on this one function, and the driver decides whether the
+ * message goes to a terminal, to a test, or to a real mail server.
  *
- * Adding SMTP means one more driver wrapping `nodemailer` and a line of
- * configuration. It is deliberately not here yet -- a dependency that cannot
- * be exercised is a dependency that cannot be trusted.
+ * Three drivers: console (development), memory (tests) and SMTP, chosen by
+ * `mailerFromEnv`. Mail is sent by the worker from the job queue, so a slow
+ * or failing provider never slows a request.
  */
 
 export type Mail = {

@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "jobs_pending_mail_once" ON "jobs" USING btree ("kind","payload") WHERE "jobs"."status" = 'pending' and "jobs"."kind" like 'mail.%';

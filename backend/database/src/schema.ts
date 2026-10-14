@@ -532,6 +532,12 @@ export const jobs = pgTable(
     // The claim query's exact predicate and ordering, so it stays an index
     // scan as the table grows.
     index('jobs_claim_idx').on(t.status, t.runAt),
+    // At most one waiting email per account and kind. Asking again while one
+    // is queued, retrying or in flight adds nothing, so neither a resend
+    // button nor a burst of sign-ups can stack up mail for one inbox.
+    uniqueIndex('jobs_pending_mail_once')
+      .on(t.kind, t.payload)
+      .where(sql`${t.status} = 'pending' and ${t.kind} like 'mail.%'`),
   ],
 );
 

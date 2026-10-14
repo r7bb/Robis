@@ -10,7 +10,7 @@ does lands in a tamper-evident audit trail, and the product measures itself
 in the open.**
 
 Constraints that shape it: no LLM API key, so the demo agent is scripted;
-no Docker, SMTP or OAuth accounts, so integrations are file- and
+no Docker or OAuth accounts, and no mail provider, so integrations are file- and
 endpoint-based and verified against local stand-ins; nothing here claims
 compliance with any standard.
 
@@ -191,6 +191,20 @@ Left open: no storage quota per workspace (only a per-account upload rate);
 images only, since other files' metadata cannot be stripped the same way;
 a file uploaded in the instant between a parent's key lookup and its delete
 can be missed by the purge; no `Range` requests for large images.
+
+## Real mail (A1 in the build plan)
+
+**Shipped 2026-10-13.** An SMTP driver behind the `Mailer` port, through
+`nodemailer`. Every account email is a job: the API queues the account id,
+and the worker issues the link and sends it, retrying with backoff and then
+keeping a dead letter. The forgot-password reply keeps its fixed response
+time and per-recipient limit. `bun run mail:start` runs a local SMTP inbox,
+and one test goes through the real driver to it. Production refuses to start,
+API and worker alike, with no mail driver configured.
+
+Left open: tried against a local server, never a real provider; plain text
+only; no bounce or complaint handling; a dead-lettered email is visible in
+the jobs table but nobody is told.
 
 ## Track F. Store readiness and 2027 rules (from the owner, 2026-10-13)
 

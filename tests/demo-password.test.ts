@@ -3,7 +3,6 @@ import { buildApp } from '@robis/api/app';
 import { loadEnv } from '@robis/api/env';
 import { hashPassword } from '@robis/auth';
 import { users } from '@robis/database';
-import { MemoryMailer } from '@robis/mailer';
 import { DEMO_PASSWORD } from '@robis/shared';
 import { eq } from 'drizzle-orm';
 import {
@@ -118,7 +117,6 @@ describe('in development', () => {
         NODE_ENV: 'development',
         WEB_ORIGIN: 'http://localhost:3000',
       } as NodeJS.ProcessEnv),
-      mailer: new MemoryMailer(),
       // Rate-limit buckets are shared by the whole test process; earlier
       // suites have spent the default budget, as the shared harness avoids.
       rateLimits: { authPerMinute: 100_000 },
