@@ -22,7 +22,7 @@ type Question = { q: string; a: string };
 const QUESTIONS: Question[] = [
   {
     q: 'Can I use this for real work?',
-    a: 'Not yet. Robis runs locally and is covered by over 400 tests, but it has never been deployed: there is no hosted instance and no verified container build. It is a portfolio project built to be read as much as run.',
+    a: 'Not yet. Robis runs locally and is covered by over 400 tests, but it has never been deployed: its container images are built and tested in CI, and there is no hosted instance yet. It is a portfolio project built to be read as much as run.',
   },
   {
     q: 'Does it genuinely work offline, or is that a cache?',

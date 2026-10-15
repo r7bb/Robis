@@ -94,7 +94,9 @@ export function parseMessage(raw: string) {
   };
 }
 
-export async function startMailSink(options: { port?: number } = {}): Promise<MailSink> {
+export async function startMailSink(
+  options: { port?: number; host?: string } = {},
+): Promise<MailSink> {
   const messages: SunkMessage[] = [];
   let nextId = 1;
 
@@ -130,8 +132,10 @@ export async function startMailSink(options: { port?: number } = {}): Promise<Ma
 
   await new Promise<void>((resolve, reject) => {
     server.once('error', reject);
-    // Loopback only: this accepts mail from anyone who can reach it.
-    server.listen(options.port ?? 0, '127.0.0.1', () => resolve());
+    // Loopback unless told otherwise: this accepts mail from anyone who can
+    // reach it. The container sets 0.0.0.0, behind a port published on the
+    // host's loopback only.
+    server.listen(options.port ?? 0, options.host ?? '127.0.0.1', () => resolve());
   });
 
   const { port } = server.server.address() as AddressInfo;

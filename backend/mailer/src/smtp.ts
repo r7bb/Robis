@@ -6,6 +6,12 @@ export type SmtpOptions = {
   port: number;
   /** TLS from the first byte (port 465). Otherwise STARTTLS is used when offered. */
   secure: boolean;
+  /**
+   * Refuse to send without TLS. Defaults to on for every host but this
+   * machine; `mailerFromEnv` lets development turn it off for a sink on a
+   * private network (`SMTP_REQUIRE_TLS=0`) and refuses that in production.
+   */
+  requireTLS?: boolean;
   user?: string;
   pass?: string;
   /** The From header, e.g. `Robis <no-reply@example.com>`. */
@@ -66,7 +72,7 @@ export class SmtpMailer implements Mailer {
       secure: options.secure,
       // Without this, a server (or anyone in the path) that leaves STARTTLS
       // out of its greeting gets the password and the reset links in clear.
-      requireTLS: !options.secure && !isLoopback(options.host),
+      requireTLS: !options.secure && (options.requireTLS ?? !isLoopback(options.host)),
       auth: options.user ? { user: options.user, pass: options.pass ?? '' } : undefined,
       connectionTimeout: TIMEOUT_MS,
       greetingTimeout: TIMEOUT_MS,

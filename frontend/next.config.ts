@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import type { NextConfig } from 'next';
 
 const config: NextConfig = {
@@ -14,6 +15,18 @@ const config: NextConfig = {
    * any time without touching what dev is serving.
    */
   distDir: process.env.NEXT_DIST_DIR ?? '.next',
+  /*
+   * The container image sets `NEXT_OUTPUT=standalone`: a self-contained
+   * server with only the files it imports, traced from the repository root
+   * because Bun hoists the workspace's packages there. Local builds and
+   * `next start` are unchanged.
+   */
+  ...(process.env.NEXT_OUTPUT === 'standalone'
+    ? {
+        output: 'standalone' as const,
+        outputFileTracingRoot: fileURLToPath(new URL('..', import.meta.url)),
+      }
+    : {}),
   reactStrictMode: true,
   // The workspace packages ship TypeScript source rather than build output, so
   // Next has to compile them alongside the app.

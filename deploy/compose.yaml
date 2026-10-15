@@ -1,0 +1,141 @@
+# The whole Robis stack from its container images, for CI and for trying it
+# on one machine:
+#
+#   docker compose -f deploy/compose.yaml up --build --wait
+#   bun run scripts/smoke/stack.ts
+#
+# Every image is the production build. The services run in development mode
+# because this stack speaks plain http on loopback, and production refuses
+# anything but an https origin; CI boots the API image in production mode
+# separately to show that refusal holds. Every port is published on
+# 127.0.0.1 only, and must stay that way: the mail sink in particular hands
+# live verification links to anyone who can reach it. STACK_WEB_PORT moves
+# the web app if 3000 is taken.
+#
+# The credentials below are throwaway values for a stack that lives for one
+# CI run. A deployment sets its own, from a secret store.
+
+name: robis
+
+x-app-env: &app-env
+  NODE_ENV: development
+  DATABASE_URL: postgres://robis:robis@postgres:5432/robis
+  WEB_ORIGIN: http://localhost:${STACK_WEB_PORT:-3000}
+  # Uploads in an S3-compatible store: S3Mock stands in for one here.
+  STORAGE_DRIVER: s3
+  S3_ENDPOINT: http://s3:9090
+  S3_BUCKET: robis
+  S3_ACCESS_KEY_ID: robis-stack
+  S3_SECRET_ACCESS_KEY: robis-stack
+  S3_REGION: us-east-1
+
+# Robis's own services need no Linux capabilities and never gain privileges.
+x-hardened: &hardened
+  security_opt: ['no-new-privileges:true']
+  cap_drop: [ALL]
+
+x-backend-build: &backend-build
+  context: ..
+  dockerfile: deploy/docker/backend.Dockerfile
+
+services:
+  postgres:
+    image: postgres:18.6-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+    environment:
+      POSTGRES_USER: robis
+      POSTGRES_PASSWORD: robis
+      POSTGRES_DB: robis
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U robis -d robis']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Object storage. Adobe S3Mock (Apache-2.0), pinned; MinIO's image is no
+  # longer published on Docker Hub. It has no health command of its own.
+  s3:
+    image: adobe/s3mock:5.2.3@sha256:ab01a6946750f451ca215a47e91030695b260e4003b8a5a6201d25029b8fca92
+    environment:
+      COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: robis
+
+  # Catches every email; the smoke test reads verification links from it.
+  mail:
+    <<: *hardened
+    build: { <<: *backend-build, target: mail-sink }
+    image: robis-mail-sink:stack
+    ports: ['127.0.0.1:8025:8025']
+
+  # Migrations run once, from the API image, before anything takes traffic.
+  migrate:
+    <<: *hardened
+    build: { <<: *backend-build, target: api }
+    image: robis-api:stack
+    command: ['bun', 'backend/database/src/migrate-cli.ts']
+    environment: *app-env
+    healthcheck: { disable: true }
+    restart: 'no'
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  api:
+    <<: *hardened
+    image: robis-api:stack
+    environment:
+      <<: *app-env
+      ML_SERVICE_URL: http://ml:8000
+      ML_SERVICE_TOKEN: robis-stack-ml-token
+    ports: ['127.0.0.1:4000:4000']
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      s3: { condition: service_started }
+      ml: { condition: service_healthy }
+
+  realtime:
+    <<: *hardened
+    build: { <<: *backend-build, target: realtime }
+    image: robis-realtime:stack
+    environment: *app-env
+    ports: ['127.0.0.1:4001:4001']
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  worker:
+    <<: *hardened
+    build: { <<: *backend-build, target: worker }
+    image: robis-worker:stack
+    environment:
+      <<: *app-env
+      SMTP_HOST: mail
+      SMTP_PORT: '1025'
+      # The sink speaks plain SMTP on the stack's private network. Refused
+      # in production.
+      SMTP_REQUIRE_TLS: '0'
+      MAIL_FROM: Robis <no-reply@robis.test>
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      mail: { condition: service_healthy }
+
+  ml:
+    <<: *hardened
+    build:
+      context: ..
+      dockerfile: deploy/docker/ml.Dockerfile
+    image: robis-ml:stack
+    environment:
+      DATABASE_URL: postgres://robis:robis@postgres:5432/robis
+      ROBIS_ML_TOKEN: robis-stack-ml-token
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  web:
+    <<: *hardened
+    build:
+      context: ..
+      dockerfile: deploy/docker/web.Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:4000
+        NEXT_PUBLIC_REALTIME_URL: ws://localhost:4001/ws
+    image: robis-web:stack
+    ports: ['127.0.0.1:${STACK_WEB_PORT:-3000}:3000']
+    depends_on:
+      api: { condition: service_healthy }

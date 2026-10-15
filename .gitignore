@@ -31,3 +31,6 @@ __pycache__/
 
 # Uploaded media in development (MEDIA_DIR)
 .media/
+
+# Image scan cache and tarballs (CI containers job)
+.trivy/

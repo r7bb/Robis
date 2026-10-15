@@ -36,6 +36,24 @@ licence of everything added is written down. `smtp-server` brings
 `@types/nodemailer` 8.0.2 and `@types/smtp-server` 3.5.13 are MIT and are used
 only at build time.
 
+## Python dependencies of the ML service
+
+Locked with hashes in `robis-ml/requirements.lock` and installed into the ML
+image. Most are MIT, BSD or Apache 2.0. `psycopg` and `psycopg-binary`
+3.3.6 are licensed under the GNU LGPL 3.0, and `psycopg-binary` bundles
+`libpq` (the PostgreSQL License) and the libraries it links. Flagged for
+review, as with libvips above: the code is unmodified and loaded as a
+library, and whether that suffices for a given distribution is for whoever
+ships it to decide.
+
+## Container base images
+
+The images in `deploy/docker` start from `oven/bun` 1.4.2 (Bun, MIT, on
+Debian) and `python` 3.11.16 (the Python Software Foundation License, on
+Debian). Debian's packages carry their own licences, listed in each image
+under `/usr/share/doc`. The stack also runs the official `postgres` 18.6
+image (the PostgreSQL License).
+
 ## Used only in CI
 
 **Adobe S3Mock** (`adobe/s3mock:5.2.3`), Apache License 2.0. A test double
@@ -43,4 +61,8 @@ for S3 that runs as a service container so the storage driver's contract
 tests run against a real S3-compatible server. It is never shipped with
 Robis. It stands in for MinIO, whose image is no longer published on Docker
 Hub.
+
+**Trivy** (`aquasec/trivy:0.74.0`, pinned by digest), Apache License 2.0.
+Scans every built image for known vulnerabilities in the `containers` job.
+It is never shipped with Robis.
 

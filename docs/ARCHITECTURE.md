@@ -269,7 +269,10 @@ bun run grant:owner you@example.com "Your Name" your-password
 ```
 
 If you *do* have Docker, `docker compose up -d` starts the same Postgres on the
-same port; skip `db:start` in that case.
+same port; skip `db:start` in that case. The whole stack, every service from
+its container image, is `docker compose -f deploy/compose.yaml up --build
+--wait`; CI's `containers` job runs it and drives it with
+`scripts/smoke/stack.ts`.
 
 ---
 

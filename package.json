@@ -30,7 +30,8 @@
     "docs:links": "bun run scripts/docs/links.ts",
     "loadtest": "bun run scripts/bench/loadtest.ts",
     "screenshots": "bun run scripts/capture/screenshots.ts",
-    "mail:start": "bun run scripts/mail/sink.ts"
+    "mail:start": "bun run scripts/mail/sink.ts",
+    "smoke:stack": "bun run scripts/smoke/stack.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.12",

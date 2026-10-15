@@ -10,7 +10,7 @@ does lands in a tamper-evident audit trail, and the product measures itself
 in the open.**
 
 Constraints that shape it: no LLM API key, so the demo agent is scripted;
-no Docker or OAuth accounts, and no mail provider, so integrations are file- and
+no OAuth accounts and no mail provider, so integrations are file- and
 endpoint-based and verified against local stand-ins; nothing here claims
 compliance with any standard.
 
@@ -205,6 +205,43 @@ API and worker alike, with no mail driver configured.
 Left open: tried against a local server, never a real provider; plain text
 only; no bounce or complaint handling; a dead-lettered email is visible in
 the jobs table but nobody is told.
+
+## Container images (A3 in the build plan)
+
+**Shipped 2026-10-15.** One image per service in `deploy/docker`: a
+backend Dockerfile with a stage each for the API, gateway, worker and mail
+sink, plus the web app (Next standalone) and the ML service (hash-locked to
+the versions its tests ran on). All of them are multi-stage, run as a
+non-root user, start from base images pinned by digest with Debian's security
+updates applied, and have a health check. The worker has no port, so it
+touches a heartbeat file after each poll. `deploy/compose.yaml` runs the whole
+stack with Postgres, S3Mock and the sink. The CI `containers` job builds it,
+waits on every health check, migrates once, runs `scripts/smoke/stack.ts`,
+boots the API and worker in production mode to see them refuse without
+mail, and scans every image with Trivy.
+
+Deviations, stated: S3Mock stands in for MinIO, whose image is no longer
+published on Docker Hub. The stack runs in development mode because it is
+plain http.
+
+The CI job's token is read-only, its actions are pinned to commits, and
+the scanner reads image tarballs rather than the Docker socket. It also
+fails on a secret found in any layer, and on a source map or env file in
+the web image. Compose drops every Linux capability from Robis's services.
+
+Left open:
+- Images are not published to a registry, and there is no SBOM yet (F3).
+- The smoke test does not cover the ML service's suggestions, or the web
+  app beyond its first page.
+- The scan gates on critical findings only.
+- The mail sink's own dependencies are pinned at the top level but not
+  locked.
+- The stack's credentials are fixed throwaway values.
+- The ML service accepts a short token, and its anonymous switch has no
+  production guard.
+- Applying Debian updates at build time means two builds on different days
+  can differ.
+- The worker's health check needs a writable `/tmp`.
 
 ## Track F. Store readiness and 2027 rules (from the owner, 2026-10-13)
 

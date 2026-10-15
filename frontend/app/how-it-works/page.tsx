@@ -317,11 +317,12 @@ export default function HowItWorks() {
 
           <Reveal delay={100} className="mx-auto mt-[clamp(2rem,5vh,3rem)] max-w-2xl text-left">
             <ul className="space-y-3 text-base leading-relaxed text-muted">
-              <li>File uploads, which need object storage.</li>
-              <li>A container build verified end to end, which needs Docker.</li>
               <li>
-                A production mail driver. The API refuses to start in production without one rather
-                than printing password-reset links into a log.
+                A real host. Every service has a container image that CI builds, starts and drives
+                end to end, but nothing runs anywhere public yet.
+              </li>
+              <li>
+                A real mail provider. Mail goes out over SMTP, tested only against a local server.
               </li>
               <li>
                 Precision and recall for the duplicate detector. No labelled set of true duplicate

@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-10-13): **627 TypeScript tests, 96 Python tests, lint and
+Status (2026-10-15): **632 TypeScript tests, 96 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -153,9 +153,13 @@ Not skipped, blocked. Each is stated rather than disguised.
 
 | Blocked | Needs |
 | --- | --- |
-| File uploads | Object storage |
-| Verified container build | Docker |
-| Deployment | The above |
+| Deployment | A host and accounts, chosen by the owner (A4) |
+
+The container build is no longer blocked. It is verified in CI, by the
+`containers` job on every push: every image built, the stack started with
+every health check passing, a smoke test through sign-up, email, a
+workspace, a live issue and an upload, and an image scan. It has also been
+run on the development machine.
 
 ---
 

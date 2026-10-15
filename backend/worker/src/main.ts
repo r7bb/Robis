@@ -8,6 +8,7 @@ import {
 import { mailerFromEnv } from '@robis/mailer';
 import { auditStreamConfig, httpSink, streamAuditEvents } from './audit-stream.ts';
 import { handlers } from './handlers.ts';
+import { DEFAULT_HEARTBEAT_FILE, heartbeat } from './heartbeat.ts';
 import { mailHandlers, mailOriginFromEnv } from './mail.ts';
 import { Runner } from './runner.ts';
 import { storagePurgeHandler, workerStorage } from './storage-purge.ts';
@@ -17,7 +18,11 @@ if (!DATABASE_URL) throw new Error('DATABASE_URL is required');
 
 const { db, close } = createDatabase(DATABASE_URL, { max: 5 });
 
-const runner = new Runner({ db, handlers });
+const runner = new Runner({
+  db,
+  handlers,
+  onPoll: heartbeat(process.env.WORKER_HEARTBEAT_FILE ?? DEFAULT_HEARTBEAT_FILE),
+});
 
 /**
  * Recurring maintenance.

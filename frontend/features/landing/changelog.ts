@@ -39,6 +39,15 @@ export type Entry = {
 
 export const CHANGELOG: readonly Entry[] = [
   {
+    date: '2026-10-15',
+    area: 'Site',
+    title: 'Every service as a container, checked on every push',
+    summary:
+      'The web app, API, realtime gateway, worker and ML service each have a container image, and one compose file runs them together with Postgres, object storage and a mail catcher. CI builds every image, starts the stack, and drives it the way a new person would.',
+    checked:
+      'On every push, CI waits for every health check, then signs up, confirms the address from the email the worker sent, creates a workspace and an issue, watches it arrive over the WebSocket, and attaches an image to object storage. It boots the API and worker in production mode to show they refuse to start without mail, and fails on any critical vulnerability in an image that has a fix. All of it was also run on the development machine.',
+  },
+  {
     date: '2026-10-13',
     area: 'Product',
     title: 'Reset and confirmation emails over real mail',

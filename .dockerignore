@@ -1,0 +1,30 @@
+# Everything a build never needs, and everything it must never see.
+# Secrets first: no .env file is ever part of an image, at any depth.
+**/.env
+**/.env.*
+**/*.env
+**/.envrc
+**/.npmrc
+**/.netrc
+**/*.pem
+**/*.key
+**/*.p12
+
+.git
+**/node_modules
+**/.next
+**/.next-*
+**/.media
+**/.pgdata
+**/coverage
+imgs
+**/*.log
+**/*.tsbuildinfo
+.DS_Store
+
+# Python
+robis-ml/.venv
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+.trivy

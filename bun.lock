@@ -39,6 +39,7 @@
         "@robis/auth": "workspace:*",
         "@robis/database": "workspace:*",
         "@robis/mailer": "workspace:*",
+        "@robis/metrics": "workspace:*",
         "@robis/shared": "workspace:*",
         "drizzle-orm": "^0.38.0",
         "fastify": "^5.2.0",
@@ -52,6 +53,7 @@
       "dependencies": {
         "@node-rs/argon2": "^2.0.2",
         "@robis/database": "workspace:*",
+        "@robis/shared": "workspace:*",
         "drizzle-orm": "^0.38.0",
       },
     },
@@ -88,8 +90,10 @@
       "dependencies": {
         "@robis/auth": "workspace:*",
         "@robis/database": "workspace:*",
+        "@robis/metrics": "workspace:*",
         "@robis/shared": "workspace:*",
         "drizzle-orm": "^0.38.0",
+        "postgres": "^3.4.5",
         "yjs": "^13.6.32",
       },
     },

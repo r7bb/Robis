@@ -11,6 +11,8 @@ import { type SunkMessage, startMailSink } from './sink-server.ts';
 
 const SMTP_PORT = Number(process.env.MAIL_SINK_SMTP_PORT ?? 1025);
 const HTTP_PORT = Number(process.env.MAIL_SINK_HTTP_PORT ?? 8025);
+/** 0.0.0.0 inside a container; the published port is what limits who reaches it. */
+const LISTEN_HOST = process.env.MAIL_SINK_HOST ?? '127.0.0.1';
 
 const escapeHtml = (text: string) =>
   text.replace(
@@ -67,10 +69,10 @@ function renderInbox(messages: SunkMessage[]) {
 </html>`;
 }
 
-const sink = await startMailSink({ port: SMTP_PORT });
+const sink = await startMailSink({ port: SMTP_PORT, host: LISTEN_HOST });
 
 Bun.serve({
-  hostname: '127.0.0.1',
+  hostname: LISTEN_HOST,
   port: HTTP_PORT,
   fetch(request) {
     // Only this machine, by name too: a page served elsewhere that rebinds

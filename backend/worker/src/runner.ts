@@ -20,6 +20,13 @@ export type RunnerOptions = {
   kinds?: readonly string[];
   /** Gap between polls when the queue is empty. */
   idleDelayMs?: number;
+  /**
+   * Called after every poll that reached the queue, whether or not it found
+   * work, and after every job. The container health check hangs off this: a
+   * worker whose loop has stalled, or whose database is gone, stops calling
+   * it, while one working through a slow batch keeps calling it.
+   */
+  onPoll?: () => void;
 };
 
 export type TickResult = { claimed: number; completed: number; failed: number; dead: number };
@@ -31,6 +38,7 @@ export class Runner {
   private readonly batchSize: number;
   private readonly idleDelayMs: number;
   private readonly kinds: readonly string[] | undefined;
+  private readonly onPoll: (() => void) | undefined;
 
   private running = false;
 
@@ -41,6 +49,7 @@ export class Runner {
     this.batchSize = options.batchSize ?? 5;
     this.idleDelayMs = options.idleDelayMs ?? 1000;
     this.kinds = options.kinds;
+    this.onPoll = options.onPoll;
   }
 
   get id(): string {
@@ -59,6 +68,7 @@ export class Runner {
     // throughput gain that adding a second worker would not give more simply.
     for (const job of batch) {
       const outcome = await this.run(job);
+      this.onPoll?.();
       if (outcome === 'completed') result.completed++;
       else if (outcome === 'dead') result.dead++;
       else result.failed++;
@@ -96,6 +106,7 @@ export class Runner {
 
       try {
         worked = (await this.tick()).claimed;
+        this.onPoll?.();
       } catch (error) {
         // A failure here is the queue itself being unreachable, not a job
         // failing. Back off rather than spinning against a dead database.

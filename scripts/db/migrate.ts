@@ -10,16 +10,5 @@
  * present in the migration was missing from a pushed dev database, so the
  * mention handler failed on `ON CONFLICT` in dev while passing every test.
  */
-import { createDatabase } from '@robis/database';
-import { MIGRATIONS_DIR, runMigrations } from '@robis/database/migrate';
-
-const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://robis:robis@localhost:5433/robis';
-
-const { db, close } = createDatabase(DATABASE_URL, { max: 1 });
-
-try {
-  await runMigrations(db);
-  console.log(`Migrations applied from ${MIGRATIONS_DIR}`);
-} finally {
-  await close();
-}
+// The command itself lives in the database package; see migrate-cli.ts.
+import '@robis/database/migrate-cli';

@@ -6,6 +6,7 @@
   "exports": {
     "./audit-stream": "./src/audit-stream.ts",
     "./handlers": "./src/handlers.ts",
+    "./heartbeat": "./src/heartbeat.ts",
     "./mail": "./src/mail.ts",
     "./nudges": "./src/nudges.ts",
     "./runner": "./src/runner.ts",

@@ -10,8 +10,10 @@
   "dependencies": {
     "@robis/auth": "workspace:*",
     "@robis/database": "workspace:*",
+    "@robis/metrics": "workspace:*",
     "@robis/shared": "workspace:*",
     "drizzle-orm": "^0.38.0",
+    "postgres": "^3.4.5",
     "yjs": "^13.6.32"
   }
 }

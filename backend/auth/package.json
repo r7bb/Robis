@@ -9,6 +9,7 @@
   "dependencies": {
     "@node-rs/argon2": "^2.0.2",
     "@robis/database": "workspace:*",
+    "@robis/shared": "workspace:*",
     "drizzle-orm": "^0.38.0"
   }
 }

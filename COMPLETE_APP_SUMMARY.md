@@ -204,11 +204,9 @@ is.
 | --- | --- |
 | Storage quotas | Uploads are rate-limited per account, but nothing caps how much a workspace stores |
 | Attachments beyond images | Only images are accepted; PDFs and other files are not, because their metadata cannot be stripped the same way |
-| Verified container build | No Docker available |
 | Mail deliverability | Sent over SMTP and tested against a local SMTP server only. No provider has been tried, and there is no HTML version, bounce handling or unsubscribe |
-| Deployment | Follows from the above |
+| Deployment | Not done. The images are built and checked in CI, but nothing runs anywhere public yet |
 | Duplicate detection, reworded intent | Finds 0 of 7 lexical-gap duplicates on the labelled set's test half |
 
-The container build and deployment gaps are environment constraints and
-are stated rather than disguised. Attachments and duplicate recall are real
+The deployment gap waits on choosing a host and accounts. Attachments and duplicate recall are real
 work that has not been done.

@@ -25,6 +25,11 @@ Newest first. The same list is the site's What's new page, linked from the
 header, where each entry opens to show how it was checked and, for features,
 where to find it and what each layer does.
 
+- **Every service as a container, checked on every push** (2026-10-15).
+  Images for the web app, API, gateway, worker and ML service, and one
+  compose file that runs them with Postgres, object storage and a mail
+  catcher. CI builds them, waits for every health check, drives the stack
+  end to end, and fails on fixable critical vulnerabilities.
 - **Reset and confirmation emails over real mail** (2026-10-13). Password
   resets and address confirmations go out over SMTP, sent by the worker so a
   slow mail server never slows a request. Failed sends retry, then stay
@@ -242,6 +247,18 @@ figures. See **[robis-ml/README.md](robis-ml/README.md)**.
 | `bun run screenshots` | recapture every image in this README |
 | `bun run db:reset`    | drop and recreate the dev database   |
 | `bun run mail:start`  | local mail inbox, SMTP on port 1025  |
+| `bun run smoke:stack` | drive a running container stack      |
+
+The whole stack also runs from its container images:
+
+```bash
+docker compose -f deploy/compose.yaml up --build --wait
+bun run smoke:stack
+```
+
+The images are in [deploy/docker](deploy/docker). The stack serves plain
+http on 127.0.0.1, so its services run in development mode. Set
+`STACK_WEB_PORT` if port 3000 is taken.
 
 To send real mail, give the worker `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`,
 `SMTP_PASS` and `MAIL_FROM` (`SMTP_SECURE=true` for port 465). Locally,
@@ -257,8 +274,9 @@ the real stack. None of them is a mockup.
 ## Status
 
 A portfolio project, built to be read. It runs locally and is tested. It has
-not been deployed, and a verified container build is missing because this
-machine has no Docker. Uploads work on local disk or any S3-compatible store;
+not been deployed. Every service has a container image, built, started,
+driven end to end and scanned by CI on every push (the `containers` job),
+and the same stack has been run on the development machine. Uploads work on local disk or any S3-compatible store;
 the S3 driver is tested in CI against S3Mock, not against a cloud provider.
 Mail goes out over SMTP, tested against a local SMTP server, not a real
 provider, and nothing here says whether a given provider will deliver it.

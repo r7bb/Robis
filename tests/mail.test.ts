@@ -225,6 +225,31 @@ describe('configuration', () => {
     expect(requireTLS('localhost')).toBe(false);
   });
 
+  test('plain SMTP to another host is a development-only opt-out', () => {
+    const plain = mailerFromEnv({
+      NODE_ENV: 'development',
+      SMTP_HOST: 'mail',
+      SMTP_REQUIRE_TLS: '0',
+    }) as unknown as {
+      transport: { options: { requireTLS?: boolean } };
+    };
+    expect(plain.transport.options.requireTLS).toBe(false);
+    for (const NODE_ENV of ['production', 'staging', 'Production', undefined]) {
+      expect(() => mailerFromEnv({ NODE_ENV, SMTP_HOST: 'mail', SMTP_REQUIRE_TLS: '0' })).toThrow(
+        /refused outside development/,
+      );
+    }
+    expect(() =>
+      mailerFromEnv({
+        NODE_ENV: 'development',
+        SMTP_HOST: 'mail',
+        SMTP_REQUIRE_TLS: '0',
+        SMTP_USER: 'robis',
+        SMTP_PASS: 'secret',
+      }),
+    ).toThrow(/SMTP_USER/);
+  });
+
   test('a send error keeps the code and drops the reply text', () => {
     const error = new SmtpSendError(
       Object.assign(new Error('550 5.1.1 <victim@robis.test>: user unknown'), {
