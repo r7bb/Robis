@@ -38,7 +38,7 @@ async function trail(workspaceId: string) {
 
 async function send(
   actor: Actor,
-  method: 'POST' | 'PATCH' | 'DELETE',
+  method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
   url: string,
   payload?: unknown,
 ) {
@@ -806,23 +806,27 @@ describe('signing keys', () => {
 
 describe('export and verification over HTTP', () => {
   test('pages forwards from a cursor with no gaps and no repeats', async () => {
-    const { owner, workspace } = await workspaceWithEvents(5);
+    const { owner, workspace } = await workspaceWithEvents(25);
     const base = `/workspaces/${workspace.id}/audit/events`;
 
-    const seen: number[] = [];
+    const seen: { seq: number; type: string }[] = [];
     let after = 0;
 
     for (let page = 0; page < 10; page++) {
-      const response = await request(`${base}?after=${after}&limit=3`, { actor: owner });
+      const response = await request(`${base}?after=${after}&limit=10`, { actor: owner });
       expect(response.statusCode).toBe(200);
 
       const body = response.json();
-      seen.push(...body.events.map((event: { seq: number }) => event.seq));
+      seen.push(...body.events.map((event: { seq: number; type: string }) => event));
       if (body.nextCursor === null) break;
       after = body.nextCursor;
     }
 
-    expect(seen).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    // Every page exported is itself recorded, so the walk meets the events it
+    // caused; it still ends, with no gap and no repeat.
+    expect(seen.map((event) => event.seq)).toEqual(seen.map((_, index) => index + 1));
+    expect(seen.length).toBeGreaterThan(27);
+    expect(seen.slice(27).every((event) => event.type === 'audit.exported')).toBe(true);
   });
 
   test('reads newest first by default, and filters by entity and actor', async () => {
@@ -865,7 +869,10 @@ describe('export and verification over HTTP', () => {
   test('verify reports the head of an intact chain', async () => {
     const { owner, workspace } = await workspaceWithEvents(2);
 
-    const response = await request(`/workspaces/${workspace.id}/audit/verify`, { actor: owner });
+    const response = await request(`/workspaces/${workspace.id}/audit/verify`, {
+      method: 'POST',
+      actor: owner,
+    });
 
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({ ok: true, checked: 4, head: { seq: 4 } });
@@ -876,7 +883,9 @@ describe('export and verification over HTTP', () => {
     const url = `/workspaces/${workspace.id}/audit/verify`;
 
     const codes: number[] = [];
-    for (let n = 0; n < 11; n++) codes.push((await request(url, { actor: owner })).statusCode);
+    for (let n = 0; n < 11; n++) {
+      codes.push((await request(url, { method: 'POST', actor: owner })).statusCode);
+    }
 
     expect(codes.slice(0, 10).every((code) => code === 200)).toBe(true);
     expect(codes[10]).toBe(429);
@@ -888,10 +897,14 @@ describe('export and verification over HTTP', () => {
     const stranger = await createActor('Stranger');
     await addMember(owner, workspace.id, member, 'MEMBER');
 
-    for (const path of ['audit/events', 'audit/verify']) {
+    for (const [path, method] of [
+      ['audit/events', 'GET'],
+      ['audit/actors', 'GET'],
+      ['audit/verify', 'POST'],
+    ] as const) {
       const url = `/workspaces/${workspace.id}/${path}`;
-      expect((await request(url, { actor: member })).statusCode).toBe(403);
-      expect((await request(url, { actor: stranger })).statusCode).toBe(404);
+      expect((await request(url, { method, actor: member })).statusCode).toBe(403);
+      expect((await request(url, { method, actor: stranger })).statusCode).toBe(404);
     }
   });
 
@@ -909,5 +922,225 @@ describe('export and verification over HTTP', () => {
     ]) {
       expect((await request(`${base}?${query}`, { actor: owner })).statusCode).toBe(400);
     }
+  });
+});
+
+describe('looking at the trail is recorded', () => {
+  test('reading, exporting and checking each leave an event naming who did it', async () => {
+    const { owner, workspace } = await workspaceWithEvents(1);
+    const base = `/workspaces/${workspace.id}/audit`;
+
+    await send(owner, 'GET', `${base}/events`);
+    await send(owner, 'GET', `${base}/events?after=0`);
+    await send(owner, 'POST', `${base}/verify`);
+
+    const events = (await trail(workspace.id)).slice(-3);
+    expect(events.map((event) => event.eventType)).toEqual([
+      'audit.read',
+      'audit.exported',
+      'audit.verified',
+    ]);
+    for (const event of events) expect(event.actorId).toBe(owner.id);
+    expect(JSON.parse(events[2]!.payload)).toMatchObject({ ok: true, full: false });
+  });
+
+  test('those events stay out of the members’ activity feed', async () => {
+    const { owner, workspace } = await workspaceWithEvents(1);
+    await send(owner, 'POST', `/workspaces/${workspace.id}/audit/verify`);
+
+    const feed = await request(`/workspaces/${workspace.id}/activity`, { actor: owner });
+    const types = feed.json().events.map((event: { eventType: string }) => event.eventType);
+    expect(types.some((type: string) => type.startsWith('audit.'))).toBe(false);
+  });
+});
+
+describe('checkpoints', () => {
+  const verify = async (actor: Actor, workspaceId: string, full = false) => {
+    const response = await request(
+      `/workspaces/${workspaceId}/audit/verify${full ? '?full=1' : ''}`,
+      { method: 'POST', actor },
+    );
+    return response.json();
+  };
+
+  test('a second check walks only what came after the first', async () => {
+    const { owner, workspace, project } = await workspaceWithEvents(2);
+
+    const first = await verify(owner, workspace.id);
+    expect(first).toMatchObject({ ok: true, fromSeq: 0, checkpoint: 'none' });
+
+    await send(owner, 'POST', `/workspaces/${workspace.id}/projects/${project.id}/issues`, {
+      title: 'After the first check',
+    });
+
+    const second = await verify(owner, workspace.id);
+    // From the first check's head; it walks that check's own event and the
+    // new issue's, not everything again.
+    expect(second).toMatchObject({ ok: true, fromSeq: first.head.seq, checkpoint: 'used' });
+    expect(second.checked).toBe(2);
+  });
+
+  test('a checkpoint changed in the database is rejected, and the whole chain is walked', async () => {
+    const { ownerDb } = await getHarness();
+    const { owner, workspace } = await workspaceWithEvents(2);
+    await verify(owner, workspace.id);
+
+    // Without the key, any change to it breaks its signature.
+    await ownerDb.execute(
+      sql`update audit_checkpoints set signed = false where workspace_id = ${workspace.id}`,
+    );
+
+    const report = await verify(owner, workspace.id);
+    expect(report).toMatchObject({ ok: true, fromSeq: 0, checkpoint: 'rejected' });
+  });
+
+  test('a trail cut back past its checkpoint is reported as truncated', async () => {
+    const { owner, workspace } = await workspaceWithEvents(3);
+    const first = await verify(owner, workspace.id);
+
+    await tamper(
+      sql`delete from audit_events where workspace_id = ${workspace.id} and seq >= ${first.head.seq - 1}`,
+    );
+
+    const report = await verify(owner, workspace.id);
+    expect(report.ok).toBe(false);
+    expect(report.broken).toMatchObject({ reason: 'truncated' });
+  });
+
+  test('an edit behind the checkpoint is what the full check is for', async () => {
+    const { owner, workspace } = await workspaceWithEvents(3);
+    await verify(owner, workspace.id);
+
+    await tamper(
+      sql`update audit_events set payload = '{"edited":true}'
+          where workspace_id = ${workspace.id} and seq = 2`,
+    );
+
+    // The quick check starts after the checkpoint, so it does not see it...
+    expect((await verify(owner, workspace.id)).ok).toBe(true);
+    // ...and the full one does.
+    expect((await verify(owner, workspace.id, true)).broken).toMatchObject({
+      seq: 2,
+      reason: 'altered',
+    });
+  });
+
+  test('full checks have their own, smaller budget', async () => {
+    const { owner, workspace } = await workspaceWithEvents(1);
+    const full = () =>
+      request(`/workspaces/${workspace.id}/audit/verify?full=1`, { method: 'POST', actor: owner });
+
+    expect((await full()).statusCode).toBe(200);
+    expect((await full()).statusCode).toBe(200);
+    expect((await full()).statusCode).toBe(429);
+    // The quick check is unaffected.
+    expect(
+      (await request(`/workspaces/${workspace.id}/audit/verify`, { method: 'POST', actor: owner }))
+        .statusCode,
+    ).toBe(200);
+  });
+});
+
+describe('who appears in the trail', () => {
+  test('former members can still be picked, by username', async () => {
+    const { owner, workspace } = await workspaceWithEvents(1);
+    const helper = await createActor('Helper');
+    await addMember(owner, workspace.id, helper, 'MEMBER');
+    await createProject(helper, workspace.id, 'Helper Project');
+    await send(owner, 'DELETE', `/workspaces/${workspace.id}/members/${helper.id}`);
+
+    const response = await request(`/workspaces/${workspace.id}/audit/actors`, { actor: owner });
+    expect(response.statusCode).toBe(200);
+    expect(response.json().actors).toEqual([
+      { id: owner.id, username: owner.username, name: owner.name, former: false },
+      { id: helper.id, username: helper.username, name: helper.name, former: true },
+    ]);
+  });
+
+  test('members without the audit permission cannot list them', async () => {
+    const { owner, workspace } = await workspaceWithEvents(1);
+    const member = await createActor('Member');
+    await addMember(owner, workspace.id, member, 'MEMBER');
+
+    const response = await request(`/workspaces/${workspace.id}/audit/actors`, { actor: member });
+    expect(response.statusCode).toBe(403);
+  });
+});
+
+describe('reading is recorded without being forged or flooded', () => {
+  test('a cross-site page navigation cannot read, and so cannot record a read', async () => {
+    const { owner, workspace } = await workspaceWithEvents(1);
+    const before = (await trail(workspace.id)).length;
+
+    for (const headers of [
+      { 'sec-fetch-site': 'cross-site', 'sec-fetch-mode': 'cors' },
+      { 'sec-fetch-site': 'same-site', 'sec-fetch-mode': 'navigate' },
+    ]) {
+      const response = await request(`/workspaces/${workspace.id}/audit/events`, {
+        actor: owner,
+        headers,
+      });
+      expect(response.statusCode).toBe(403);
+    }
+    expect(await trail(workspace.id)).toHaveLength(before);
+  });
+
+  test('checking is a POST: a link cannot run it', async () => {
+    const { owner, workspace } = await workspaceWithEvents(1);
+    const response = await request(`/workspaces/${workspace.id}/audit/verify`, { actor: owner });
+    expect(response.statusCode).toBe(404);
+  });
+
+  test('reads by one person within a minute are recorded once', async () => {
+    const { owner, workspace } = await workspaceWithEvents(1);
+    for (let n = 0; n < 3; n++)
+      await send(owner, 'GET', `/workspaces/${workspace.id}/audit/events`);
+    await send(owner, 'GET', `/workspaces/${workspace.id}/audit/actors`);
+
+    const reads = (await trail(workspace.id)).filter((event) => event.eventType === 'audit.read');
+    expect(reads).toHaveLength(1);
+  });
+
+  test('an export page must be big enough for the walk to finish', async () => {
+    const { owner, workspace } = await workspaceWithEvents(1);
+    const response = await request(`/workspaces/${workspace.id}/audit/events?after=0&limit=1`, {
+      actor: owner,
+    });
+    expect(response.statusCode).toBe(400);
+    expect(response.json().error).toBe('page_too_small');
+  });
+});
+
+describe('the checkpoint itself', () => {
+  test('may not move backwards, or be removed, even by the owner', async () => {
+    const { ownerDb } = await getHarness();
+    const { owner, workspace } = await workspaceWithEvents(2);
+    await send(owner, 'POST', `/workspaces/${workspace.id}/audit/verify`);
+    const run = async (statement: ReturnType<typeof sql>) => ownerDb.execute(statement);
+
+    await expect(
+      run(sql`update audit_checkpoints set seq = 1 where workspace_id = ${workspace.id}`),
+    ).rejects.toThrow(/only move forward/);
+    await expect(
+      run(sql`delete from audit_checkpoints where workspace_id = ${workspace.id}`),
+    ).rejects.toThrow(/go only with their workspace/);
+  });
+
+  test('an event changed under the checkpoint makes it stale, and the check walks it all', async () => {
+    const { owner, workspace } = await workspaceWithEvents(2);
+    const first = (
+      await request(`/workspaces/${workspace.id}/audit/verify`, { method: 'POST', actor: owner })
+    ).json();
+
+    await tamper(
+      sql`update audit_events set payload = '{"edited":true}'
+          where workspace_id = ${workspace.id} and seq = ${first.head.seq}`,
+    );
+
+    const report = (
+      await request(`/workspaces/${workspace.id}/audit/verify`, { method: 'POST', actor: owner })
+    ).json();
+    expect(report).toMatchObject({ ok: false, checkpoint: 'stale', fromSeq: 0 });
+    expect(report.broken).toMatchObject({ seq: first.head.seq, reason: 'altered' });
   });
 });

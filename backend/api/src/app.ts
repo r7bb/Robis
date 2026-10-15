@@ -48,6 +48,11 @@ export type RateLimits = {
    * workspace's whole trail, so it is the costliest read an admin can ask for.
    */
   auditVerifyPerMinute: number;
+  /**
+   * Full verifications, which ignore the checkpoint and walk the whole trail
+   * from the first event: the expensive form, so far fewer of them.
+   */
+  auditFullVerifyPerMinute: number;
 };
 
 export const DEFAULT_RATE_LIMITS: RateLimits = {
@@ -55,6 +60,7 @@ export const DEFAULT_RATE_LIMITS: RateLimits = {
   searchPerMinute: 60,
   passwordForgotPerHourPerAddress: 3,
   auditVerifyPerMinute: 10,
+  auditFullVerifyPerMinute: 2,
 };
 
 export type AppDeps = {

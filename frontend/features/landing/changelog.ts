@@ -41,6 +41,25 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-15',
     area: 'Security',
+    title: 'An audit trail that records who reads it',
+    summary:
+      'Reading, exporting and checking the trail are now events in it, kept out of the members’ activity feed. Checks start from the last verified point, stored with a signature, so they stay quick as the trail grows; a full check is one click away. The who filter now lists former members too, by username.',
+    checked:
+      'Tests prove each read, export page and check leaves an event naming who did it, a cross-site navigation can neither read nor add a read, repeated reads within a minute count once, a second check walks only what is new, a checkpoint changed in the database is rejected and cannot be moved back or removed, a trail cut back past its checkpoint is reported as truncated, an edit behind the checkpoint is caught by the full check, and full checks have their own smaller budget. The Security view was checked in a real browser against the container stack.',
+    feature: {
+      name: 'See who looked',
+      where: 'Workspace, Activity, Security (admins and owners).',
+      layers: [
+        'Security view: a who filter with former members marked, and a full check beside the quick one.',
+        'API: every read, export page and check is appended to the trail it looked at.',
+        'Checkpoints: the last clean point, signed with the audit key, so a check walks only what is new.',
+        'Database: a moved or invented checkpoint fails its signature and the whole trail is walked.',
+      ],
+    },
+  },
+  {
+    date: '2026-10-15',
+    area: 'Security',
     title: 'An audit trail the database cannot quietly rewrite',
     summary:
       'The app now connects to the database as a role that can add audit events but never change, remove or empty them, and cannot switch off the trigger that guards them. New events are signed with a key kept outside the database, recorded by id so keys can rotate.',

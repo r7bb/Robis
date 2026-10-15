@@ -15,7 +15,7 @@ import { createWorkspaceSchema, slugify, updateWorkspaceSchema } from '@robis/sh
 /** The room every new workspace is born with. */
 const DEFAULT_CHANNEL_NAME = 'general';
 
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq, notLike } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../errors.ts';
 import {
@@ -222,7 +222,11 @@ export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database
         })
         .from(auditEvents)
         .leftJoin(users, eq(users.id, auditEvents.actorId))
-        .where(eq(auditEvents.workspaceId, workspaceId))
+        // The trail's own housekeeping (who read it, checked it, when it was
+        // first signed) is for the Security view, not every member's feed.
+        .where(
+          and(eq(auditEvents.workspaceId, workspaceId), notLike(auditEvents.eventType, 'audit.%')),
+        )
         .orderBy(desc(auditEvents.seq))
         .limit(100);
 

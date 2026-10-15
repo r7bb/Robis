@@ -80,7 +80,7 @@ const CAPABILITIES = [
   },
   {
     title: 'An audit trail',
-    body: 'Every change, chained so an edit shows. Admins check it, export it, or stream it to a SIEM.',
+    body: 'Every change, chained and signed so an edit shows, even one made in the database. Admins check it, export it, or stream it to a SIEM.',
   },
 ] as const;
 

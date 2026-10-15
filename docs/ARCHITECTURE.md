@@ -926,6 +926,23 @@ unsigned event after a signed one, or with no signed event at all, was
 rewritten without the key, and verification says so. A key id is either
 null or a real id, by constraint, so no value sits between the two.
 
+Looking at the trail is recorded in it: reads (once a minute per
+person), each page exported and each check append an `audit.read`,
+`audit.exported` or `audit.verified` event naming who did it. The activity
+feed members see leaves these out. Because a read now writes, the reads
+refuse a cross-site page navigation (`Sec-Fetch-*`), and a check is a POST,
+so a link elsewhere cannot add events in an admin's name. An export page
+must hold at least ten events, since each page adds one.
+
+Checks start from a checkpoint: where the last clean check ended, stored
+with an HMAC over its position, so one changed or invented in the database
+fails and the whole chain is walked instead. A trigger lets it only move
+forward, so an older genuine one cannot be put back after the trail is cut
+short; a trail now shorter than its checkpoint is reported as truncated.
+The event at the checkpoint is re-checked each time. Events before it are
+not: an edit there is what the full check (`?full=1`, under a smaller rate
+limit) is for.
+
 Deleting a workspace still takes its trail with it, but no longer silently:
 a trigger running with the owner's rights first writes a tombstone with the
 trail's length and last hash, into a table the runtime role can only read.

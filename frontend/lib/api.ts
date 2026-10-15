@@ -193,9 +193,23 @@ export type AuditEvent = {
 export type AuditPage = { events: AuditEvent[]; nextCursor: number | null };
 
 /** What `/audit/verify` found. `broken` names the first bad link, if any. */
+/** Someone who appears in a workspace's audit trail, member or not. */
+export type AuditActorSummary = {
+  id: string;
+  username: string | null;
+  name: string | null;
+  /** No longer a member: still listed, because their events still are. */
+  former: boolean;
+};
+
 export type ChainReport = {
   ok: boolean;
+  /** Events walked: all of them, or those after `fromSeq`. */
   checked: number;
+  /** 0 for a full walk, or the checkpoint this check started from. */
+  fromSeq: number;
+  /** Whether a stored checkpoint was used, or rejected as not genuine. */
+  checkpoint: 'none' | 'used' | 'rejected' | 'stale';
   head: { seq: number; hash: string } | null;
   broken: {
     seq: number;

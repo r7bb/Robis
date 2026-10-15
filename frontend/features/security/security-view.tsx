@@ -4,7 +4,7 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ago } from '../../components/activity-feed.tsx';
 import { Button, InlineError } from '../../components/ui/primitives.tsx';
-import { type AuditEvent, type AuditPage, api, type Member } from '../../lib/api.ts';
+import { type AuditActorSummary, type AuditEvent, type AuditPage, api } from '../../lib/api.ts';
 import { describeEvent } from '../../lib/audit-events.ts';
 import { ChainStatus } from './chain-status.tsx';
 
@@ -105,9 +105,13 @@ export function SecurityView({ workspaceId }: { workspaceId: string }) {
   const [filters, setFilters] = useState<Filters>({ actorId: '', entityType: '' });
   const [exporting, setExporting] = useState<string | null>(null);
 
-  const members = useQuery({
-    queryKey: ['members', workspaceId],
-    queryFn: () => api<{ members: Member[] }>(`/workspaces/${workspaceId}/members`),
+  // Everyone in the trail, former members included: their events are often
+  // the ones being looked for.
+  const actors = useQuery({
+    queryKey: ['audit-actors', workspaceId],
+    queryFn: () => api<{ actors: AuditActorSummary[] }>(`/workspaces/${workspaceId}/audit/actors`),
+    staleTime: Number.POSITIVE_INFINITY,
+    refetchOnWindowFocus: false,
   });
 
   const trail = useInfiniteQuery({
@@ -122,6 +126,10 @@ export function SecurityView({ workspaceId }: { workspaceId: string }) {
         )}`,
       ),
     getNextPageParam: (last) => last.nextCursor,
+    // Every page read is recorded in the trail, so a page is fetched when
+    // someone asks for it, not again on every return to the tab.
+    staleTime: Number.POSITIVE_INFINITY,
+    refetchOnWindowFocus: false,
   });
 
   async function onExport() {
@@ -151,9 +159,10 @@ export function SecurityView({ workspaceId }: { workspaceId: string }) {
             onChange={(event) => setFilters({ ...filters, actorId: event.target.value })}
           >
             <option value="">Anyone</option>
-            {(members.data?.members ?? []).map((member) => (
-              <option key={member.userId} value={member.userId}>
-                {member.name}
+            {(actors.data?.actors ?? []).map((actor) => (
+              <option key={actor.id} value={actor.id}>
+                {actor.username ? `@${actor.username}` : `Deleted account ${actor.id.slice(0, 8)}`}
+                {actor.former ? ' (former member)' : ''}
               </option>
             ))}
           </select>

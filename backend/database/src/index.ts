@@ -3,6 +3,7 @@ import postgres from 'postgres';
 import * as schema from './schema.ts';
 
 export * from './audit.ts';
+export * from './audit-checkpoints.ts';
 export * from './audit-keys.ts';
 export * from './audit-seal.ts';
 export * from './documents.ts';

@@ -20,7 +20,9 @@ export default function PrivacyPage() {
       <p>
         What you create there, and an audit trail of changes. The trail names people by username and
         id, not by email, and is kept for as long as the workspace exists, including after an
-        account is deleted. How long it should be kept is an open question for review.
+        account is deleted. It also records when a workspace admin reads, exports or checks it.
+        Admins can still see the usernames of people who have left a workspace, next to their past
+        events. How long it should be kept is an open question for review.
       </p>
       <h2>Who sees what</h2>
       <p>

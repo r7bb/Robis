@@ -62,6 +62,12 @@ const PHRASES: Record<string, (payload: Payload) => string> = {
   'workspace.created': () => 'created this workspace',
   'workspace.updated': () => 'updated the workspace',
   'audit.keyed': () => 'started signing this audit trail',
+  'audit.read': () => 'read the audit trail',
+  'audit.exported': () => 'exported part of the audit trail',
+  'audit.verified': (p) =>
+    p.ok === true
+      ? 'checked the audit trail and found no break'
+      : 'checked the audit trail and found a break',
   'member.added': (p) => `added ${who(p)} as ${label(text(p, 'role'))}`,
   'member.removed': (p) => `removed ${who(p)}`,
   'member.left': () => 'left the workspace',

@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-10-15): **653 TypeScript tests, 96 Python tests, lint and
+Status (2026-10-15): **669 TypeScript tests, 96 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -22,8 +22,11 @@ app, CI running lint, typecheck, tests and a production build.
 permission matrix, 404-not-403 for non-members.
 
 **Audit trail.** Every workspace change recorded in the transaction that
-makes it, numbered per workspace and chained with SHA-256; an append-only
-trigger; a verify endpoint that names the first broken link; a keyset-paged
+makes it, numbered per workspace and chained, each event signed with an
+HMAC key held outside the database; an app database role that can only
+append to it; an append-only trigger; a verify endpoint that names the
+first broken link and starts from a signed checkpoint; reads, exports and
+checks recorded as events; a keyset-paged
 export; an at-least-once HTTPS stream to a SIEM with an idempotency key per
 event; a Security view for admins. Gaps and limits are listed in
 `docs/PLATFORM_PLAN.md`, Phase 2.

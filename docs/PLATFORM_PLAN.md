@@ -87,13 +87,23 @@ Left open from review, for a later pass:
   rather than as a SCRAM verifier; new tables get full grants unless listed
   as append-only or read-only; a process with no NODE_ENV counts as
   development, as it does everywhere else in the API.
-- Reading or exporting the trail is not itself recorded.
+- ~~Reading or exporting the trail is not itself recorded.~~ **Closed
+  2026-10-15 (B3):** each read, export page and check is an `audit.*`
+  event, kept out of the members' activity feed.
 - Member events copy the member's email and name, and the trail outlives
   accounts. Erasure requests need a redaction strategy: flagged for legal
   review.
-- The security view's "who" filter lists current members only.
-- Verification walks the whole chain each time, which is why it is
-  rate-limited; a stored checkpoint would make it incremental.
+- ~~The security view's "who" filter lists current members only.~~
+  **Closed 2026-10-15 (B3):** `/audit/actors` lists everyone in the trail
+  by username, former members marked.
+- ~~Verification walks the whole chain each time.~~ **Closed 2026-10-15
+  (B3):** checks start from a signed checkpoint that may only move
+  forward; `?full=1` walks everything under a smaller rate limit. A quick
+  check does not see an edit behind the checkpoint, which is what the full
+  check is for. Still open from its review: a workspace with no usable
+  checkpoint walks everything on a quick check, billed to the quick
+  check's larger budget; reads are recorded once a minute per person, so
+  two reads a few seconds apart are one event.
 
 ## Phase 2b. Profiles, photos and stories (M to L)
 

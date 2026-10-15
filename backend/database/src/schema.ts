@@ -412,6 +412,28 @@ export const auditEvents = pgTable(
 );
 
 /**
+ * The last point at which a workspace's chain was verified, so the next
+ * check walks only what came after.
+ *
+ * Signed, like the events: `mac` is an HMAC over the workspace, seq, hash
+ * and signed flag with the key named by `key_id`, so a checkpoint moved or
+ * invented by someone with database access is rejected and the check falls
+ * back to walking the whole chain.
+ */
+export const auditCheckpoints = pgTable('audit_checkpoints', {
+  workspaceId: uuid('workspace_id')
+    .primaryKey()
+    .references(() => workspaces.id, { onDelete: 'cascade' }),
+  seq: bigint('seq', { mode: 'number' }).notNull(),
+  hash: text('hash').notNull(),
+  /** Whether any event up to `seq` was signed, which the walk on needs. */
+  signed: boolean('signed').notNull(),
+  keyId: text('key_id').notNull(),
+  mac: text('mac').notNull(),
+  verifiedAt: timestamp('verified_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
  * What is left of a workspace's trail after the workspace is deleted.
  *
  * Deleting a workspace cascades to its audit events, so on its own a

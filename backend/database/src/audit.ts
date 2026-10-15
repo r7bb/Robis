@@ -222,7 +222,10 @@ export type ChainBreak = {
 
 export type ChainReport = {
   ok: boolean;
+  /** Events walked in this check: all of them, or those after `fromSeq`. */
   checked: number;
+  /** Where the walk began: 0 for the whole chain, or a checkpoint's seq. */
+  fromSeq: number;
   /** The newest event seen, for comparison with a copy held elsewhere. */
   head: { seq: number; hash: string } | null;
   broken: ChainBreak | null;
@@ -238,6 +241,11 @@ const VERIFY_BATCH = 500;
  * is a changed row too, and must be reported as one rather than surfacing as
  * a 500 that reads as "could not check".
  */
+/** Whether one stored event still hashes to the hash stored with it. */
+export function eventHashHolds(row: AuditRow): boolean {
+  return hashMatches(row) === 'ok';
+}
+
 function hashMatches(row: AuditRow): 'ok' | 'altered' | 'unknown-key' {
   // A key id the configuration could never have issued is an edit, not a
   // missing key: reporting it as "unverifiable" would hand a forger a softer
@@ -337,13 +345,28 @@ function truncated(head: ChainReport['head'], delivered: number): ChainBreak {
   };
 }
 
-/** Walk a workspace's chain from the first event and report the first break. */
-export async function verifyAuditChain(db: Executor, workspaceId: string): Promise<ChainReport> {
-  let expectedSeq = 1;
-  let prevHash: string | null = null;
-  let head: ChainReport['head'] = null;
+/** A point already verified, to walk on from instead of from the start. */
+export type ChainStart = { seq: number; hash: string; signed: boolean };
+
+/**
+ * Walk a workspace's chain and report the first break.
+ *
+ * From the first event, or from `start`: a point an earlier check already
+ * verified. The caller is responsible for that point being trustworthy (see
+ * `audit-checkpoints.ts`, which signs it); the walk only checks that the
+ * events after it follow on.
+ */
+export async function verifyAuditChain(
+  db: Executor,
+  workspaceId: string,
+  start?: ChainStart,
+): Promise<ChainReport> {
+  const fromSeq = start?.seq ?? 0;
+  let expectedSeq = fromSeq + 1;
+  let prevHash: string | null = start?.hash ?? null;
+  let head: ChainReport['head'] = start ? { seq: start.seq, hash: start.hash } : null;
   let checked = 0;
-  let signed = false;
+  let signed = start?.signed ?? false;
 
   for (;;) {
     const rows = await db
@@ -355,7 +378,7 @@ export async function verifyAuditChain(db: Executor, workspaceId: string): Promi
 
     for (const row of rows) {
       const broken = checkLink(row, expectedSeq, prevHash, signed);
-      if (broken) return { ok: false, checked, head, broken };
+      if (broken) return { ok: false, checked, fromSeq, head, broken };
 
       checked++;
       signed ||= row.keyId !== null;
@@ -367,29 +390,31 @@ export async function verifyAuditChain(db: Executor, workspaceId: string): Promi
     if (rows.length < VERIFY_BATCH) break;
   }
 
-  // Every chain holds a signed event once the API has started. One with
+  const broken = await endOfChainBreak(db, workspaceId, head, signed);
+  return { ok: broken === null, checked, fromSeq, head, broken };
+}
+
+/** What can only be judged once the walk reaches the end of the chain. */
+async function endOfChainBreak(
+  db: Executor,
+  workspaceId: string,
+  head: ChainReport['head'],
+  signed: boolean,
+): Promise<ChainBreak | null> {
+  // Every chain holds a signed event once it has been sealed. One with
   // events and no signature was rewritten end to end without the key.
   if (head && !signed) {
     return {
-      ok: false,
-      checked,
-      head,
-      broken: {
-        seq: head.seq,
-        eventId: null,
-        reason: 'unsigned',
-        detail:
-          'No event in this trail is signed, though every trail carries a signed event: it was rewritten without the key.',
-      },
+      seq: head.seq,
+      eventId: null,
+      reason: 'unsigned',
+      detail:
+        'No event in this trail is signed, though every trail carries a signed event: it was rewritten without the key.',
     };
   }
 
   const delivered = await deliveredSeq(db, workspaceId);
-  if (delivered > (head?.seq ?? 0)) {
-    return { ok: false, checked, head, broken: truncated(head, delivered) };
-  }
-
-  return { ok: true, checked, head, broken: null };
+  return delivered > (head?.seq ?? 0) ? truncated(head, delivered) : null;
 }
 
 export type AuditQuery = {

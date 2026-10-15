@@ -25,6 +25,11 @@ Newest first. The same list is the site's What's new page, linked from the
 header, where each entry opens to show how it was checked and, for features,
 where to find it and what each layer does.
 
+- **An audit trail that records who reads it** (2026-10-15). Reading,
+  exporting and checking the trail are events in it, and a link on another
+  site cannot add one in an admin's name. Checks start from a signed
+  checkpoint, so they stay quick, with a full check one click away, and the
+  who filter lists former members by username.
 - **An audit trail the database cannot quietly rewrite** (2026-10-15). The
   app connects as a role that can add audit events but not change, remove
   or empty them, and new events are signed with a key kept outside the
@@ -134,7 +139,10 @@ holds. The app connects as a database role that can add audit events but
 never change or remove them. Admins open **Security** from
 the Activity tab to see who did what, filter it, check the chain, and export
 it as JSON lines. Edit a row behind the app's back and the check names the
-event and says how it was changed.
+event and says how it was changed. Reading, exporting and checking the
+trail are recorded in it too, and checks start where the last one ended,
+from a checkpoint stored with a signature, so they stay quick as the trail
+grows; a full check walks every event again.
 
 What it does not catch on its own: someone with database access who rewrites
 every event from the edit onwards, or drops the newest ones. That is what an

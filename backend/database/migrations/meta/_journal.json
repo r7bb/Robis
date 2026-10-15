@@ -127,6 +127,20 @@
       "when": 1792088159127,
       "tag": "0017_audit_tombstones",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792088930669,
+      "tag": "0018_audit_checkpoints",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792090519037,
+      "tag": "0019_audit_checkpoint_guard",
+      "breakpoints": true
     }
   ]
 }
