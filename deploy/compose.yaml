@@ -19,7 +19,9 @@ name: robis
 
 x-app-env: &app-env
   NODE_ENV: development
-  DATABASE_URL: postgres://robis:robis@postgres:5432/robis
+  # Services connect as the runtime role, which cannot alter or delete audit
+  # events; only the one-shot migrator below connects as the owner.
+  DATABASE_URL: postgres://robis_app:robis-stack-app-role@postgres:5432/robis
   WEB_ORIGIN: http://localhost:${STACK_WEB_PORT:-3000}
   # Uploads in an S3-compatible store: S3Mock stands in for one here.
   STORAGE_DRIVER: s3
@@ -65,13 +67,20 @@ services:
     image: robis-mail-sink:stack
     ports: ['127.0.0.1:8025:8025']
 
-  # Migrations run once, from the API image, before anything takes traffic.
+  # Migrations run once, as the owner, from the API image, before anything
+  # takes traffic; then the runtime role is created and granted.
   migrate:
     <<: *hardened
     build: { <<: *backend-build, target: api }
     image: robis-api:stack
-    command: ['bun', 'backend/database/src/migrate-cli.ts']
-    environment: *app-env
+    command:
+      - sh
+      - -c
+      - bun backend/database/src/migrate-cli.ts && bun backend/database/src/roles-cli.ts
+    environment:
+      <<: *app-env
+      MIGRATION_DATABASE_URL: postgres://robis:robis@postgres:5432/robis
+      APP_DB_PASSWORD: robis-stack-app-role
     healthcheck: { disable: true }
     restart: 'no'
     depends_on:
@@ -82,6 +91,9 @@ services:
     image: robis-api:stack
     environment:
       <<: *app-env
+      # Signs the audit trail; only the API writes it. A throwaway key, for a
+      # stack that lives one run, whose id production refuses.
+      AUDIT_HMAC_KEYS: stack:cm9iaXMtc3RhY2stYXVkaXQta2V5LW5vdC1hLXNlY3JldA==
       ML_SERVICE_URL: http://ml:8000
       ML_SERVICE_TOKEN: robis-stack-ml-token
     ports: ['127.0.0.1:4000:4000']
@@ -122,7 +134,7 @@ services:
       dockerfile: deploy/docker/ml.Dockerfile
     image: robis-ml:stack
     environment:
-      DATABASE_URL: postgres://robis:robis@postgres:5432/robis
+      DATABASE_URL: postgres://robis_app:robis-stack-app-role@postgres:5432/robis
       ROBIS_ML_TOKEN: robis-stack-ml-token
     depends_on:
       migrate: { condition: service_completed_successfully }

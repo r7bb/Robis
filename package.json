@@ -19,6 +19,8 @@
     "db:stop": "bun run scripts/db/dev-db.ts stop",
     "db:reset": "bun run scripts/db/dev-db.ts reset",
     "db:migrate": "bun run scripts/db/migrate.ts",
+    "db:roles": "bun backend/database/src/roles-cli.ts",
+    "audit:seal": "bun backend/database/src/audit-seal-cli.ts",
     "db:seed": "bun run scripts/db/seed.ts",
     "db:push": "bun --filter '@robis/database' push",
     "grant:owner": "bun run scripts/db/grant-owner.ts",

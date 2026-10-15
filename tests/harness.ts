@@ -15,7 +15,14 @@ import { buildApp } from '@robis/api/app';
 import { loadEnv } from '@robis/api/env';
 import { localDiskStorage } from '@robis/api/media/storage';
 import type { SimilarIssue, TriageSuggestion } from '@robis/api/suggestions';
-import { createDatabase, type Database, MAIL_JOBS } from '@robis/database';
+import {
+  createDatabase,
+  type Database,
+  DEFAULT_RUNTIME_ROLE,
+  DEVELOPMENT_RUNTIME_PASSWORD,
+  ensureRuntimeRole,
+  MAIL_JOBS,
+} from '@robis/database';
 import { runMigrations } from '@robis/database/migrate';
 import { MemoryMailer } from '@robis/mailer';
 import { mailHandlers } from '@robis/worker/mail';
@@ -34,6 +41,7 @@ export const MEDIA_ROOT = mkdtempSync(join(tmpdir(), 'robis-media-'));
 const TABLES = [
   'auth_tokens',
   'audit_events',
+  'audit_tombstones',
   'jobs',
   'notifications',
   'document_updates',
@@ -50,9 +58,27 @@ const TABLES = [
 
 type App = ReturnType<typeof buildApp>;
 
+/**
+ * The same database as the runtime role, the account the API connects as in
+ * a deployment. Every test runs through it, so a grant the application needs
+ * and the role lacks fails a test rather than a deploy.
+ */
+function asRuntimeRole(url: string): string {
+  const parsed = new URL(url);
+  parsed.username = DEFAULT_RUNTIME_ROLE;
+  parsed.password = DEVELOPMENT_RUNTIME_PASSWORD;
+  return parsed.toString();
+}
+
 let handle: {
   app: App;
+  /** The runtime role: what the app uses, and what tests should use. */
   db: Database;
+  /**
+   * The owner, for what only an owner may do: resetting tables between
+   * tests, and the tests that tamper with the audit trail on purpose.
+   */
+  ownerDb: Database;
   /** Mail the worker sent, so flows that email a token can be asserted. */
   mailer: MemoryMailer;
   /** The worker's mail jobs only, so a test's other queued work stays put. */
@@ -146,8 +172,19 @@ export async function getHarness() {
 
   await ensureTestDatabase();
 
-  const { db, close } = createDatabase(TEST_URL, { max: 5 });
-  await runMigrations(db);
+  const owner = createDatabase(TEST_URL, { max: 2 });
+  await runMigrations(owner.db);
+  await ensureRuntimeRole(owner.db, {
+    role: DEFAULT_RUNTIME_ROLE,
+    password: DEVELOPMENT_RUNTIME_PASSWORD,
+  });
+
+  const runtime = createDatabase(asRuntimeRole(TEST_URL), { max: 5 });
+  const db = runtime.db;
+  const close = async () => {
+    await runtime.close();
+    await owner.close();
+  };
 
   const env = loadEnv({
     DATABASE_URL: TEST_URL,
@@ -187,7 +224,7 @@ export async function getHarness() {
   });
   await app.ready();
 
-  handle = { app, db, mailer, mailRunner, close };
+  handle = { app, db, ownerDb: owner.db, mailer, mailRunner, close };
   return handle;
 }
 
@@ -207,7 +244,7 @@ export async function getMailer(): Promise<MemoryMailer> {
 }
 
 export async function resetDatabase() {
-  const { db, mailer } = await getHarness();
+  const { ownerDb: db, mailer } = await getHarness();
   mailer.clear();
   // RESTART IDENTITY keeps sequences predictable across tests. The audit
   // trail refuses TRUNCATE by trigger -- that is the point of it -- so the
@@ -216,9 +253,15 @@ export async function resetDatabase() {
   await db.transaction(async (tx) => {
     await tx.execute('ALTER TABLE "audit_events" DISABLE TRIGGER "audit_events_no_truncate"');
     await tx.execute(
+      'ALTER TABLE "audit_tombstones" DISABLE TRIGGER "audit_tombstones_no_truncate"',
+    );
+    await tx.execute(
       `TRUNCATE TABLE ${TABLES.map((t) => `"${t}"`).join(', ')} RESTART IDENTITY CASCADE`,
     );
     await tx.execute('ALTER TABLE "audit_events" ENABLE TRIGGER "audit_events_no_truncate"');
+    await tx.execute(
+      'ALTER TABLE "audit_tombstones" ENABLE TRIGGER "audit_tombstones_no_truncate"',
+    );
   });
 }
 

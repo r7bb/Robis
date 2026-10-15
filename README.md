@@ -25,6 +25,10 @@ Newest first. The same list is the site's What's new page, linked from the
 header, where each entry opens to show how it was checked and, for features,
 where to find it and what each layer does.
 
+- **An audit trail the database cannot quietly rewrite** (2026-10-15). The
+  app connects as a role that can add audit events but not change, remove
+  or empty them, and new events are signed with a key kept outside the
+  database. A rewrite without the key is caught, even of a whole chain.
 - **Every service as a container, checked on every push** (2026-10-15).
   Images for the web app, API, gateway, worker and ML service, and one
   compose file that runs them with Postgres, object storage and a mail
@@ -125,7 +129,9 @@ full-text search.
 **An audit trail you can check.** Every change is written in the same
 transaction as the change itself, so a rolled-back edit leaves no event. Each
 workspace's events are numbered 1, 2, 3 and chained: every event stores a
-SHA-256 hash of itself and of the one before. Admins open **Security** from
+hash of itself and of the one before, signed with a key the database never
+holds. The app connects as a database role that can add audit events but
+never change or remove them. Admins open **Security** from
 the Activity tab to see who did what, filter it, check the chain, and export
 it as JSON lines. Edit a row behind the app's back and the check names the
 event and says how it was changed.
@@ -246,8 +252,22 @@ figures. See **[robis-ml/README.md](robis-ml/README.md)**.
 | `bun run loadtest`    | the benchmark above                  |
 | `bun run screenshots` | recapture every image in this README |
 | `bun run db:reset`    | drop and recreate the dev database   |
+| `bun run db:roles`    | create the app's runtime database role |
+| `bun run audit:seal`  | sign audit trails from before signing, once |
 | `bun run mail:start`  | local mail inbox, SMTP on port 1025  |
 | `bun run smoke:stack` | drive a running container stack      |
+
+A deployment runs migrations and `db:roles` as the database owner
+(`MIGRATION_DATABASE_URL`), and the services as the runtime role
+(`DATABASE_URL`, user `robis_app`, password `APP_DB_PASSWORD`), which can add
+audit events but not change them. Locally the owner works for everything;
+to run as the role, set
+`DATABASE_URL=postgres://robis_app:robis_app_development@localhost:5433/robis`
+after `bun run db:roles`. The tests always run as the role. Outside
+development the audit trail needs a signing key in `AUDIT_HMAC_KEYS`
+(`<id>:<base64 of 32+ random bytes>`). Upgrading a database whose trail
+predates signing: deploy, then run `bun run audit:seal` once, with the same
+key, to sign every old chain.
 
 The whole stack also runs from its container images:
 

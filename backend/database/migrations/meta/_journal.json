@@ -113,6 +113,20 @@
       "when": 1791940314454,
       "tag": "0015_mail_jobs_once",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792087385343,
+      "tag": "0016_audit_key_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792088159127,
+      "tag": "0017_audit_tombstones",
+      "breakpoints": true
     }
   ]
 }

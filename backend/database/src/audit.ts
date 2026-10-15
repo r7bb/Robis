@@ -1,5 +1,6 @@
-import { createHash } from 'node:crypto';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { and, asc, desc, eq, gt, lt, type SQL, sql } from 'drizzle-orm';
+import { AUDIT_KEY_ID, type AuditKeyring, auditKeyring } from './audit-keys.ts';
 import type { Executor, Tx } from './index.ts';
 import { type ACTOR_KINDS, auditEvents, auditStreamCursors, workspaces } from './schema.ts';
 
@@ -13,11 +14,19 @@ import { type ACTOR_KINDS, auditEvents, auditStreamCursors, workspaces } from '.
  * and its hash and the next row's link breaks. `verifyAuditChain` names the
  * first place any of those happens.
  *
- * What it cannot catch on its own: someone who rewrites every row from the
- * edit to the end, or drops the newest rows. Both leave a chain that is
- * internally consistent. The defence is a copy held elsewhere -- the SIEM
- * stream, or a head hash someone wrote down -- which is why verification
- * reports the head.
+ * New events are signed: the hash is an HMAC with a key held outside the
+ * database (`audit-keys.ts`), so rewriting rows consistently needs the key as
+ * well as write access. Events from before signing was added stay as they
+ * were, an unkeyed SHA-256, and verify as such, but only before the first
+ * signed event in their chain. Every chain from before signing is given one,
+ * once, by `bun run audit:seal` when upgrading (`audit-seal.ts`); after that,
+ * a chain with no signed event, or with an unsigned event after a signed
+ * one, was rewritten without the key.
+ *
+ * What it still cannot catch on its own: dropping the newest rows, which
+ * leaves a consistent chain. The defence is a copy held elsewhere -- the
+ * SIEM stream, or a head hash someone wrote down -- which is why
+ * verification reports the head.
  */
 
 export type ActorKind = (typeof ACTOR_KINDS)[number];
@@ -50,10 +59,21 @@ export type ChainedFields = {
   payload: string;
   createdAt: Date;
   prevHash: string | null;
+  /** The key that signed it; null for an event from before signing. */
+  keyId: string | null;
 };
 
 /** Bumped if the hashed fields ever change, so old and new rows stay checkable. */
 const HASH_VERSION = 'v1';
+/** Signed: an HMAC over the same fields plus the id of the key. */
+const KEYED_VERSION = 'v2';
+
+/** The event names a key this server does not hold. */
+export class UnknownAuditKeyError extends Error {
+  constructor(readonly keyId: string) {
+    super(`audit key "${keyId}" is not configured`);
+  }
+}
 
 /** ASCII unit separator: cannot occur in a uuid, a code-defined name, or JSON text. */
 const SEPARATOR = '\x1f';
@@ -74,12 +94,18 @@ const AUDIT_LOCK_NAMESPACE = 4242;
 const AUDIT_LOCK_TIMEOUT = '5s';
 
 /**
- * The chain hash. Mirrored in SQL by `robis_audit_hash` (migration 0010);
- * `tests/audit.test.ts` holds the two to the same answer.
+ * The chain hash: an HMAC for a signed event, SHA-256 for an older one.
+ *
+ * The unkeyed form is mirrored in SQL by `robis_audit_hash` (migration
+ * 0010), which backfilled the first chains; `tests/audit.test.ts` holds the
+ * two to the same answer.
  */
-export function auditHash(fields: ChainedFields): string {
+export function auditHash(fields: ChainedFields, keyring?: AuditKeyring): string {
+  // Null, and only null, means unsigned. An empty string is a key id that
+  // names nothing, and must never pass as the unsigned form.
+  const signed = fields.keyId !== null;
   const parts = [
-    HASH_VERSION,
+    ...(signed ? [KEYED_VERSION, fields.keyId as string] : [HASH_VERSION]),
     fields.prevHash ?? '',
     fields.workspaceId,
     String(fields.seq),
@@ -99,7 +125,14 @@ export function auditHash(fields: ChainedFields): string {
     throw new Error('audit field contains the field separator');
   }
 
-  return createHash('sha256').update(parts.join(SEPARATOR), 'utf8').digest('hex');
+  const text = parts.join(SEPARATOR);
+  if (fields.keyId === null) return createHash('sha256').update(text, 'utf8').digest('hex');
+
+  // Read only for a signed event, so a process with no keys can still check
+  // the unsigned events from before signing.
+  const secret = (keyring ?? auditKeyring()).keys.get(fields.keyId);
+  if (!secret) throw new UnknownAuditKeyError(fields.keyId);
+  return createHmac('sha256', secret).update(text, 'utf8').digest('hex');
 }
 
 /**
@@ -116,20 +149,27 @@ export function auditHash(fields: ChainedFields): string {
  * for as little of it as possible. Relies on READ COMMITTED (the default):
  * the select after the lock must see the previous holder's committed row.
  */
+/**
+ * Take a workspace chain's append lock until the transaction ends.
+ *
+ * `hashtext` folds the workspace id to 32 bits. Two workspaces that collide
+ * share a lock and queue behind each other; correctness is unaffected,
+ * because every read under it is filtered by workspace.
+ */
+export async function lockAuditChain(tx: Tx, workspaceId: string) {
+  // `set local` ends with the transaction, and the audit write is the last
+  // statement in it, so nothing else inherits the shorter timeout.
+  await tx.execute(sql.raw(`set local lock_timeout = '${AUDIT_LOCK_TIMEOUT}'`));
+  await tx.execute(
+    sql`select pg_advisory_xact_lock(${AUDIT_LOCK_NAMESPACE}, hashtext(${workspaceId}))`,
+  );
+}
+
 export async function recordAudit(tx: Tx, actor: AuditActor, input: AuditInput) {
   // Uuids are hashed in the form Postgres returns them, so a client that sent
   // one in upper case cannot produce a row that later fails verification.
   const workspaceId = input.workspaceId.toLowerCase();
-
-  // `set local` ends with the transaction, and the audit write is the last
-  // statement in it, so nothing else inherits the shorter timeout.
-  await tx.execute(sql.raw(`set local lock_timeout = '${AUDIT_LOCK_TIMEOUT}'`));
-  // `hashtext` folds the workspace id to 32 bits. Two workspaces that collide
-  // share a lock and queue behind each other; correctness is unaffected,
-  // because the read below is filtered by workspace.
-  await tx.execute(
-    sql`select pg_advisory_xact_lock(${AUDIT_LOCK_NAMESPACE}, hashtext(${workspaceId}))`,
-  );
+  await lockAuditChain(tx, workspaceId);
 
   const [last] = await tx
     .select({ seq: auditEvents.seq, hash: auditEvents.hash })
@@ -152,6 +192,7 @@ export async function recordAudit(tx: Tx, actor: AuditActor, input: AuditInput) 
     // precision, so the value hashed is exactly the value stored.
     createdAt: new Date(),
     prevHash: last?.hash ?? null,
+    keyId: auditKeyring().currentId,
   };
 
   const [row] = await tx
@@ -168,7 +209,14 @@ export type ChainBreak = {
   seq: number;
   /** Null when the row is missing altogether. */
   eventId: string | null;
-  reason: 'missing' | 'altered' | 'relinked' | 'truncated';
+  reason:
+    | 'missing'
+    | 'altered'
+    | 'relinked'
+    | 'truncated'
+    | 'downgraded'
+    | 'unverifiable'
+    | 'unsigned';
   detail: string;
 };
 
@@ -190,16 +238,29 @@ const VERIFY_BATCH = 500;
  * is a changed row too, and must be reported as one rather than surfacing as
  * a 500 that reads as "could not check".
  */
-function hashMatches(row: AuditRow): boolean {
+function hashMatches(row: AuditRow): 'ok' | 'altered' | 'unknown-key' {
+  // A key id the configuration could never have issued is an edit, not a
+  // missing key: reporting it as "unverifiable" would hand a forger a softer
+  // verdict for the price of a made-up id.
+  if (row.keyId !== null && !AUDIT_KEY_ID.test(row.keyId)) return 'altered';
   try {
-    return auditHash(row) === row.hash;
-  } catch {
-    return false;
+    const expected = Buffer.from(auditHash(row), 'utf8');
+    const stored = Buffer.from(row.hash, 'utf8');
+    return expected.length === stored.length && timingSafeEqual(expected, stored)
+      ? 'ok'
+      : 'altered';
+  } catch (error) {
+    return error instanceof UnknownAuditKeyError ? 'unknown-key' : 'altered';
   }
 }
 
 /** Check one row against the one before it. Null means it holds. */
-function checkLink(row: AuditRow, expectedSeq: number, prevHash: string | null): ChainBreak | null {
+function checkLink(
+  row: AuditRow,
+  expectedSeq: number,
+  prevHash: string | null,
+  signedBefore: boolean,
+): ChainBreak | null {
   if (row.seq !== expectedSeq) {
     return {
       seq: expectedSeq,
@@ -209,7 +270,27 @@ function checkLink(row: AuditRow, expectedSeq: number, prevHash: string | null):
     };
   }
 
-  if (!hashMatches(row)) {
+  // Unsigned events only ever precede signed ones. One after a signed event
+  // was written by someone who could not sign it.
+  if (row.keyId === null && signedBefore) {
+    return {
+      seq: row.seq,
+      eventId: row.id,
+      reason: 'downgraded',
+      detail: `Event ${row.seq} is unsigned but follows signed events: it was rewritten without the key.`,
+    };
+  }
+
+  const hash = hashMatches(row);
+  if (hash === 'unknown-key') {
+    return {
+      seq: row.seq,
+      eventId: row.id,
+      reason: 'unverifiable',
+      detail: `Event ${row.seq} names key "${row.keyId}", which this server does not hold, so it cannot be checked. Either that key was retired while events still needed it, or the event was changed.`,
+    };
+  }
+  if (hash === 'altered') {
     return {
       seq: row.seq,
       eventId: row.id,
@@ -262,6 +343,7 @@ export async function verifyAuditChain(db: Executor, workspaceId: string): Promi
   let prevHash: string | null = null;
   let head: ChainReport['head'] = null;
   let checked = 0;
+  let signed = false;
 
   for (;;) {
     const rows = await db
@@ -272,16 +354,34 @@ export async function verifyAuditChain(db: Executor, workspaceId: string): Promi
       .limit(VERIFY_BATCH);
 
     for (const row of rows) {
-      const broken = checkLink(row, expectedSeq, prevHash);
+      const broken = checkLink(row, expectedSeq, prevHash, signed);
       if (broken) return { ok: false, checked, head, broken };
 
       checked++;
+      signed ||= row.keyId !== null;
       expectedSeq = row.seq + 1;
       prevHash = row.hash;
       head = { seq: row.seq, hash: row.hash };
     }
 
     if (rows.length < VERIFY_BATCH) break;
+  }
+
+  // Every chain holds a signed event once the API has started. One with
+  // events and no signature was rewritten end to end without the key.
+  if (head && !signed) {
+    return {
+      ok: false,
+      checked,
+      head,
+      broken: {
+        seq: head.seq,
+        eventId: null,
+        reason: 'unsigned',
+        detail:
+          'No event in this trail is signed, though every trail carries a signed event: it was rewritten without the key.',
+      },
+    };
   }
 
   const delivered = await deliveredSeq(db, workspaceId);
@@ -345,11 +445,14 @@ function parsePayload(raw: string): unknown {
 }
 
 /**
- * The wire shape for export and streaming. Stable: receivers depend on it.
+ * The wire shape for export and streaming. Stable: receivers depend on it;
+ * `keyId` was added without changing any other field.
  *
- * `payload` is parsed for convenience. A receiver that wants to recompute a
- * hash itself re-serialises it with `JSON.stringify`, which reproduces the
- * stored text for everything Robis writes.
+ * `payload` is parsed for convenience; `JSON.stringify` reproduces the stored
+ * text for everything Robis writes. An unsigned event (`keyId` null) can be
+ * re-hashed by anyone. A signed one is an HMAC, so only a holder of that key
+ * can recompute it: a receiver checks the links (`prevHash`) on its own, and
+ * the signatures only if it is given the key.
  */
 export function toExported(row: AuditRow) {
   return {
@@ -365,6 +468,8 @@ export function toExported(row: AuditRow) {
     payload: parsePayload(row.payload),
     prevHash: row.prevHash,
     hash: row.hash,
+    /** Which key signed it: null for an unsigned event from before signing. */
+    keyId: row.keyId,
   };
 }
 

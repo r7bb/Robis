@@ -9,7 +9,12 @@
 import { createDatabase } from './index.ts';
 import { MIGRATIONS_DIR, runMigrations } from './migrate.ts';
 
-const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://robis:robis@localhost:5433/robis';
+// The owner: migrations create and alter tables, which the application's
+// runtime role cannot (see roles.ts).
+const DATABASE_URL =
+  process.env.MIGRATION_DATABASE_URL ??
+  process.env.DATABASE_URL ??
+  'postgres://robis:robis@localhost:5433/robis';
 
 const { db, close } = createDatabase(DATABASE_URL, { max: 1 });
 

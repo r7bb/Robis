@@ -40,6 +40,15 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-15',
+    area: 'Security',
+    title: 'An audit trail the database cannot quietly rewrite',
+    summary:
+      'The app now connects to the database as a role that can add audit events but never change, remove or empty them, and cannot switch off the trigger that guards them. New events are signed with a key kept outside the database, recorded by id so keys can rotate.',
+    checked:
+      'Tests run the whole suite as that role, and prove it is refused an edit, a removal and emptying the table even with the trigger switched off. A row re-hashed without the key, the tail of a chain rewritten unsigned, a whole chain rewritten unsigned and an empty key id are each caught, and older events still verify after a key rotation. Deleting a workspace leaves a tombstone the role cannot touch, and the stream cursor only moves forward. The container stack runs as the role too.',
+  },
+  {
+    date: '2026-10-15',
     area: 'Site',
     title: 'Every service as a container, checked on every push',
     summary:

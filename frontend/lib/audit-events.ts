@@ -61,6 +61,7 @@ const PHRASES: Record<string, (payload: Payload) => string> = {
   'project.deleted': (p) => named('deleted the project', text(p, 'name')),
   'workspace.created': () => 'created this workspace',
   'workspace.updated': () => 'updated the workspace',
+  'audit.keyed': () => 'started signing this audit trail',
   'member.added': (p) => `added ${who(p)} as ${label(text(p, 'role'))}`,
   'member.removed': (p) => `removed ${who(p)}`,
   'member.left': () => 'left the workspace',

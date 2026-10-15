@@ -59,7 +59,9 @@ Deliberate gaps, stated rather than hidden:
   message and the CRDT log are their own record; deletes and renames are
   recorded.
 - Deleting a workspace deletes its trail with it, so that one change is not
-  in the trail. The SIEM copy is where it survives.
+  in the trail. The SIEM copy is where it survives. Since 2026-10-15 the
+  deletion leaves a tombstone (the trail's length and last hash), written by
+  an owner-run trigger into a table the app can only read.
 - Sign-in, password and session events are account-level, not
   workspace-level, so they are not in this trail yet.
 - Rows written before the chain existed were numbered by timestamp; rows
@@ -71,11 +73,20 @@ Deliberate gaps, stated rather than hidden:
 
 Left open from review, for a later pass:
 
-- The app connects as the table's owner, so the append-only trigger is the
-  only database-side guard. A separate runtime role without `UPDATE`,
-  `DELETE` or `TRUNCATE` on `audit_events` is the stronger setup.
-- The hash is unkeyed. An HMAC with a key held outside the database would
-  stop someone with database access from rewriting the chain consistently.
+- ~~The app connects as the table's owner.~~ **Closed 2026-10-15 (B3):**
+  the app connects as `robis_app`, which can read and insert audit events
+  and nothing more; migrations and `db:roles` run as the owner.
+- ~~The hash is unkeyed.~~ **Closed 2026-10-15 (B3):** new events are an
+  HMAC with a key from `AUDIT_HMAC_KEYS`, outside the database, with the key
+  id stored per event. Unsigned rows from before verify only ahead of the
+  first signed row; `bun run audit:seal`, run once when upgrading, gives
+  every intact old chain a signed event. Still open from its review: a row
+  naming a retired key reads as "cannot check", which is also what a forger
+  could produce with a real-looking id, so keys must not be retired while
+  events need them; the role's password is sent as text in `ALTER ROLE`
+  rather than as a SCRAM verifier; new tables get full grants unless listed
+  as append-only or read-only; a process with no NODE_ENV counts as
+  development, as it does everywhere else in the API.
 - Reading or exporting the trail is not itself recorded.
 - Member events copy the member's email and name, and the trail outlives
   accounts. Erasure requests need a redaction strategy: flagged for legal

@@ -1,5 +1,16 @@
 import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
-import { advanceStreamCursor, auditEvents, recordAudit, verifyAuditChain } from '@robis/database';
+import {
+  type AuditRow,
+  advanceStreamCursor,
+  auditEvents,
+  auditHash,
+  auditKeyringFromEnv,
+  configureAuditKeys,
+  DEVELOPMENT_KEY_ID,
+  recordAudit,
+  sealLegacyChains,
+  verifyAuditChain,
+} from '@robis/database';
 import { eq, sql } from 'drizzle-orm';
 import {
   type Actor,
@@ -44,8 +55,8 @@ async function send(
  * for the one transaction, which is exactly what it cannot prevent.
  */
 async function tamper(statement: ReturnType<typeof sql>) {
-  const { db } = await getHarness();
-  await db.transaction(async (tx) => {
+  const { ownerDb } = await getHarness();
+  await ownerDb.transaction(async (tx) => {
     await tx.execute(sql`alter table audit_events disable trigger audit_events_append_only`);
     await tx.execute(statement);
     await tx.execute(sql`alter table audit_events enable trigger audit_events_append_only`);
@@ -355,17 +366,16 @@ describe('tampering', () => {
     expect(report.broken).toMatchObject({ seq: 3, reason: 'missing', eventId: null });
   });
 
-  test('an event rewritten with a fresh hash is caught at the next link', async () => {
+  test('an event re-signed with the key is still caught at the next link', async () => {
     const { db } = await getHarness();
     const { workspace } = await workspaceWithEvents(4);
 
-    // A careful forger recomputes the hash of the row they changed. The row
-    // checks out on its own; the one after it no longer points at it.
+    // Even someone holding the key, who re-signs the row they changed, leaves
+    // the next row pointing at the old hash.
+    const [row] = (await trail(workspace.id)).filter((event) => event.seq === 3);
+    const forged = auditHash({ ...row!, payload: '{"forged":true}' });
     await tamper(sql`
-      update audit_events
-      set payload = '{"forged":true}',
-          hash = robis_audit_hash(prev_hash, workspace_id, seq, actor_id, actor_kind::text,
-            request_id, entity_type, entity_id, event_type, '{"forged":true}', created_at)
+      update audit_events set payload = '{"forged":true}', hash = ${forged}
       where workspace_id = ${workspace.id} and seq = 3
     `);
 
@@ -373,12 +383,12 @@ describe('tampering', () => {
     expect(report.broken).toMatchObject({ seq: 4, reason: 'relinked' });
   });
 
-  test('the database refuses ordinary edits and deletes outright', async () => {
-    const { db } = await getHarness();
+  test('the trigger refuses edits and deletes, even from the owner', async () => {
+    const { ownerDb } = await getHarness();
     const { workspace } = await workspaceWithEvents(1);
 
     // Drizzle builders are lazy thenables; `rejects` needs a real promise.
-    const run = async (statement: ReturnType<typeof sql>) => db.execute(statement);
+    const run = async (statement: ReturnType<typeof sql>) => ownerDb.execute(statement);
 
     await expect(
       run(sql`update audit_events set payload = '{}' where workspace_id = ${workspace.id}`),
@@ -386,6 +396,38 @@ describe('tampering', () => {
     await expect(
       run(sql`delete from audit_events where workspace_id = ${workspace.id}`),
     ).rejects.toThrow(/append-only/);
+  });
+
+  /**
+   * The trigger is the owner's to switch off. The role the application
+   * connects as has no right to edit, delete or empty the table in the first
+   * place, so even with the trigger off it is refused, and it cannot switch
+   * the trigger off itself.
+   */
+  test('the runtime role cannot remove or change a row, even with the trigger off', async () => {
+    const { db, ownerDb } = await getHarness();
+    const { workspace } = await workspaceWithEvents(1);
+    const before = (await trail(workspace.id)).length;
+    const run = async (statement: ReturnType<typeof sql>) => db.execute(statement);
+
+    await expect(
+      run(sql`alter table audit_events disable trigger audit_events_append_only`),
+    ).rejects.toThrow(/must be owner/);
+
+    await ownerDb.execute(sql`alter table audit_events disable trigger audit_events_append_only`);
+    try {
+      await expect(
+        run(sql`update audit_events set payload = '{}' where workspace_id = ${workspace.id}`),
+      ).rejects.toThrow(/permission denied/);
+      await expect(
+        run(sql`delete from audit_events where workspace_id = ${workspace.id}`),
+      ).rejects.toThrow(/permission denied/);
+      await expect(run(sql`truncate audit_events`)).rejects.toThrow(/permission denied/);
+    } finally {
+      await ownerDb.execute(sql`alter table audit_events enable trigger audit_events_append_only`);
+    }
+
+    expect(await trail(workspace.id)).toHaveLength(before);
   });
 
   test('deleting the workspace still takes its trail with it', async () => {
@@ -438,29 +480,327 @@ describe('tampering', () => {
   });
 
   test('the trail cannot be truncated, directly or by cascade', async () => {
-    const { db } = await getHarness();
+    const { db, ownerDb } = await getHarness();
     await workspaceWithEvents(1);
 
-    const run = async (statement: ReturnType<typeof sql>) => db.execute(statement);
+    // The owner is stopped by the trigger...
+    const asOwner = async (statement: ReturnType<typeof sql>) => ownerDb.execute(statement);
+    await expect(asOwner(sql`truncate audit_events`)).rejects.toThrow(/cannot be truncated/);
+    await expect(asOwner(sql`truncate workspaces cascade`)).rejects.toThrow(/cannot be truncated/);
 
-    await expect(run(sql`truncate audit_events`)).rejects.toThrow(/cannot be truncated/);
-    await expect(run(sql`truncate workspaces cascade`)).rejects.toThrow(/cannot be truncated/);
+    // ...and the runtime role holds no TRUNCATE right on any table at all.
+    const asApp = async (statement: ReturnType<typeof sql>) => db.execute(statement);
+    await expect(asApp(sql`truncate workspaces cascade`)).rejects.toThrow(/permission denied/);
   });
 
-  test('the SQL copy of the hash agrees with the application, unicode and all', async () => {
+  test('the SQL copy of the unsigned hash agrees with the application, unicode and all', async () => {
     const { db } = await getHarness();
     const owner = await createActor('Owner');
     const ws = await createWorkspace(owner, 'Café ☕ 𝄞');
 
-    const rows = await db.execute<{ stored: string; recomputed: string }>(sql`
-      select hash as stored,
-        robis_audit_hash(prev_hash, workspace_id, seq, actor_id, actor_kind::text, request_id,
-          entity_type, entity_id, event_type, payload, created_at) as recomputed
+    // The SQL function is the unsigned form, which built the first chains.
+    const [row] = await trail(ws.id);
+    const rows = await db.execute<{ recomputed: string }>(sql`
+      select robis_audit_hash(prev_hash, workspace_id, seq, actor_id, actor_kind::text,
+        request_id, entity_type, entity_id, event_type, payload, created_at) as recomputed
       from audit_events where workspace_id = ${ws.id}
     `);
 
     expect(rows.length).toBe(1);
-    expect(rows[0]?.recomputed).toBe(rows[0]!.stored);
+    expect(rows[0]?.recomputed).toBe(auditHash({ ...row!, keyId: null }));
+  });
+});
+
+/**
+ * Rewrite a chain from `fromSeq` to its end, consistently, the way someone
+ * with database access but no key would: every hash recomputed unsigned,
+ * every link updated. Each row checks out against the one before it.
+ */
+async function rewriteWithoutKey(workspaceId: string, fromSeq: number) {
+  const rows = await trail(workspaceId);
+  let prevHash = rows.find((row) => row.seq === fromSeq - 1)?.hash ?? null;
+
+  for (const row of rows.filter((event) => event.seq >= fromSeq)) {
+    const forged: AuditRow = { ...row, payload: '{"forged":true}', prevHash, keyId: null };
+    const hash = auditHash(forged);
+    await tamper(sql`
+      update audit_events
+      set payload = ${forged.payload}, prev_hash = ${prevHash}, key_id = null, hash = ${hash}
+      where id = ${row.id}
+    `);
+    prevHash = hash;
+  }
+}
+
+describe('signing', () => {
+  test('new events are signed with the current key', async () => {
+    const { workspace } = await workspaceWithEvents(1);
+    for (const row of await trail(workspace.id)) expect(row.keyId).toBe(DEVELOPMENT_KEY_ID);
+  });
+
+  test('a row re-hashed without the key is caught where it was changed', async () => {
+    const { db } = await getHarness();
+    const { workspace } = await workspaceWithEvents(4);
+
+    // Keeps the key id, but cannot produce that key's signature.
+    const [row] = (await trail(workspace.id)).filter((event) => event.seq === 3);
+    const unsigned = auditHash({ ...row!, payload: '{"forged":true}', keyId: null });
+    await tamper(sql`
+      update audit_events set payload = '{"forged":true}', hash = ${unsigned}
+      where workspace_id = ${workspace.id} and seq = 3
+    `);
+
+    expect((await verifyAuditChain(db, workspace.id)).broken).toMatchObject({
+      seq: 3,
+      reason: 'altered',
+    });
+  });
+
+  test('rewriting the tail of a chain unsigned is caught as a downgrade', async () => {
+    const { db } = await getHarness();
+    const { workspace } = await workspaceWithEvents(4);
+
+    await rewriteWithoutKey(workspace.id, 3);
+
+    expect((await verifyAuditChain(db, workspace.id)).broken).toMatchObject({
+      seq: 3,
+      reason: 'downgraded',
+    });
+  });
+
+  test('rewriting a whole chain unsigned is caught: every chain carries a signature', async () => {
+    const { db } = await getHarness();
+    const { workspace } = await workspaceWithEvents(4);
+
+    await rewriteWithoutKey(workspace.id, 1);
+
+    expect((await verifyAuditChain(db, workspace.id)).broken).toMatchObject({
+      reason: 'unsigned',
+    });
+  });
+
+  test('a chain from before signing verifies once it is sealed', async () => {
+    const { db } = await getHarness();
+    const { workspace } = await workspaceWithEvents(3);
+    // Stand-in for a trail written before signing existed.
+    await rewriteWithoutKey(workspace.id, 1);
+    expect((await verifyAuditChain(db, workspace.id)).ok).toBe(false);
+
+    expect(await sealLegacyChains(db)).toEqual([{ workspaceId: workspace.id, outcome: 'sealed' }]);
+    const events = await trail(workspace.id);
+    expect(events.at(-1)).toMatchObject({ eventType: 'audit.keyed', keyId: DEVELOPMENT_KEY_ID });
+
+    expect(await verifyAuditChain(db, workspace.id)).toMatchObject({ ok: true, checked: 6 });
+    // Sealing again finds nothing to do.
+    expect(await sealLegacyChains(db)).toEqual([]);
+  });
+
+  test('sealing refuses a chain that was signed and then rewritten', async () => {
+    const { db } = await getHarness();
+    const { workspace } = await workspaceWithEvents(4);
+    await rewriteWithoutKey(workspace.id, 3);
+
+    const [outcome] = await sealLegacyChains(db);
+    expect(outcome).toMatchObject({ workspaceId: workspace.id, outcome: 'skipped' });
+    expect((await trail(workspace.id)).at(-1)?.eventType).not.toBe('audit.keyed');
+    expect((await verifyAuditChain(db, workspace.id)).broken?.reason).toBe('downgraded');
+  });
+
+  test('an empty key id is neither signed nor unsigned: the database refuses it', async () => {
+    const { workspace } = await workspaceWithEvents(1);
+    const run = async () =>
+      tamper(sql`update audit_events set key_id = '' where workspace_id = ${workspace.id}`);
+    await expect(run()).rejects.toThrow(/audit_events_key_id_format/);
+  });
+
+  test('a key id that could never be issued reads as an edit, not a missing key', async () => {
+    const { db, ownerDb } = await getHarness();
+    const { workspace } = await workspaceWithEvents(2);
+    // With the constraint dropped as well, the way an owner could.
+    await ownerDb
+      .transaction(async (tx) => {
+        await tx.execute(sql`alter table audit_events drop constraint audit_events_key_id_format`);
+        await tx.execute(sql`alter table audit_events disable trigger audit_events_append_only`);
+        await tx.execute(
+          sql`update audit_events set key_id = '' where workspace_id = ${workspace.id} and seq = 2`,
+        );
+        const report = await verifyAuditChain(tx, workspace.id);
+        expect(report.broken).toMatchObject({ seq: 2, reason: 'altered' });
+        // Undone with the transaction, constraint and all.
+        await tx.execute(sql`select 1/0`);
+      })
+      .catch((error: Error) => {
+        if (!/division by zero/.test(error.message)) throw error;
+      });
+    expect((await verifyAuditChain(db, workspace.id)).ok).toBe(true);
+  });
+});
+
+describe('what the runtime role holds', () => {
+  const privilege = async (object: string, kind: 'table' | 'sequence', right: string) => {
+    const { db } = await getHarness();
+    const check =
+      kind === 'table'
+        ? sql`select has_table_privilege(current_user, ${object}, ${right}) as allowed`
+        : sql`select has_sequence_privilege(current_user, ${object}, ${right}) as allowed`;
+    const [row] = (await db.execute(check)) as unknown as { allowed: boolean }[];
+    return row!.allowed;
+  };
+
+  test('audit events: read and append only', async () => {
+    expect(await privilege('audit_events', 'table', 'SELECT')).toBe(true);
+    expect(await privilege('audit_events', 'table', 'INSERT')).toBe(true);
+    expect(await privilege('audit_events', 'table', 'UPDATE')).toBe(false);
+    expect(await privilege('audit_events', 'table', 'DELETE')).toBe(false);
+    expect(await privilege('audit_events', 'table', 'TRUNCATE')).toBe(false);
+  });
+
+  test('tombstones: read only', async () => {
+    expect(await privilege('audit_tombstones', 'table', 'SELECT')).toBe(true);
+    expect(await privilege('audit_tombstones', 'table', 'INSERT')).toBe(false);
+  });
+
+  test('no table can be emptied, and no sequence reset', async () => {
+    expect(await privilege('workspaces', 'table', 'TRUNCATE')).toBe(false);
+    const { db } = await getHarness();
+    const sequences = (await db.execute(
+      sql`select sequencename as name from pg_sequences where schemaname = 'public'`,
+    )) as unknown as { name: string }[];
+    for (const { name } of sequences) {
+      expect(await privilege(name, 'sequence', 'UPDATE')).toBe(false);
+    }
+  });
+});
+
+describe('deleting a workspace leaves a trace', () => {
+  test('the trail goes with it, but a tombstone records its length and last hash', async () => {
+    const { db } = await getHarness();
+    const { owner, workspace } = await workspaceWithEvents(2);
+    const last = (await trail(workspace.id)).at(-1)!;
+
+    await send(owner, 'DELETE', `/workspaces/${workspace.id}`);
+
+    const tombstones = (await db.execute(
+      sql`select head_seq, head_hash, deleted_by from audit_tombstones where workspace_id = ${workspace.id}`,
+    )) as unknown as { head_seq: string; head_hash: string; deleted_by: string }[];
+    expect(tombstones).toEqual([
+      { head_seq: String(last.seq), head_hash: last.hash, deleted_by: 'robis_app' },
+    ]);
+  });
+
+  test('the runtime role cannot write, change or remove a tombstone', async () => {
+    const { db } = await getHarness();
+    const { owner, workspace } = await workspaceWithEvents(1);
+    await send(owner, 'DELETE', `/workspaces/${workspace.id}`);
+    const run = async (statement: ReturnType<typeof sql>) => db.execute(statement);
+
+    await expect(
+      run(sql`insert into audit_tombstones (workspace_id, head_seq, deleted_by)
+              values (${workspace.id}, 0, 'forged')`),
+    ).rejects.toThrow(/permission denied/);
+    await expect(
+      run(sql`update audit_tombstones set head_seq = 0 where workspace_id = ${workspace.id}`),
+    ).rejects.toThrow(/permission denied/);
+  });
+});
+
+describe('the stream cursor', () => {
+  test('moves forward only, and never past the newest event', async () => {
+    const { db } = await getHarness();
+    const { workspace } = await workspaceWithEvents(2);
+    await advanceStreamCursor(db, workspace.id, 3);
+    const run = async (statement: ReturnType<typeof sql>) => db.execute(statement);
+
+    await expect(
+      run(
+        sql`update audit_stream_cursors set delivered_seq = 1 where workspace_id = ${workspace.id}`,
+      ),
+    ).rejects.toThrow(/only move forward/);
+    await expect(
+      run(
+        sql`update audit_stream_cursors set delivered_seq = 999 where workspace_id = ${workspace.id}`,
+      ),
+    ).rejects.toThrow(/cannot pass the newest event/);
+    await expect(
+      run(sql`delete from audit_stream_cursors where workspace_id = ${workspace.id}`),
+    ).rejects.toThrow(/go only with their workspace/);
+  });
+});
+
+describe('signing keys', () => {
+  const devKeyring = auditKeyringFromEnv({ NODE_ENV: 'test' });
+  const secret = (fill: string) => Buffer.alloc(32, fill).toString('base64');
+  const random = () => crypto.getRandomValues(new Uint8Array(32));
+  const realSecret = () => Buffer.from(random()).toString('base64');
+  const [KEY_A, KEY_B, KEY_C, KEY_D, KEY_E] = Array.from({ length: 5 }, realSecret);
+
+  test('a secret must be real base64 of random bytes', () => {
+    const parse = (keys: string) => () =>
+      auditKeyringFromEnv({ NODE_ENV: 'test', AUDIT_HMAC_KEYS: keys });
+    // Characters Node would silently skip.
+    expect(parse(`k1:${realSecret()}!!`)).toThrow(/not valid base64/);
+    // Thirty-two copies of one byte.
+    expect(parse(`k1:${secret('a')}`)).toThrow(/one byte repeated/);
+    expect(parse(`k1:${realSecret()}`)().currentId).toBe('k1');
+  });
+
+  test('the committed stack key is refused in production, like the development one', () => {
+    expect(() =>
+      auditKeyringFromEnv({ NODE_ENV: 'production', AUDIT_HMAC_KEYS: `stack:${realSecret()}` }),
+    ).toThrow(/development only/);
+  });
+
+  test('a rotated key keeps old events verifiable', async () => {
+    const { db } = await getHarness();
+    try {
+      configureAuditKeys(auditKeyringFromEnv({ NODE_ENV: 'test', AUDIT_HMAC_KEYS: `k1:${KEY_A}` }));
+      const { workspace, owner, project } = await workspaceWithEvents(2);
+
+      configureAuditKeys(
+        auditKeyringFromEnv({
+          NODE_ENV: 'test',
+          AUDIT_HMAC_KEYS: `k2:${KEY_B},k1:${KEY_A}`,
+        }),
+      );
+      await send(owner, 'POST', `/workspaces/${workspace.id}/projects/${project.id}/issues`, {
+        title: 'After the rotation',
+      });
+
+      const keys = (await trail(workspace.id)).map((row) => row.keyId);
+      expect(keys).toEqual(['k1', 'k1', 'k1', 'k1', 'k2']);
+      expect((await verifyAuditChain(db, workspace.id)).ok).toBe(true);
+    } finally {
+      configureAuditKeys(devKeyring);
+    }
+  });
+
+  test('an event signed with a key this server lacks is reported, not crashed on', async () => {
+    const { db } = await getHarness();
+    const { workspace } = await workspaceWithEvents(1);
+    try {
+      configureAuditKeys(
+        auditKeyringFromEnv({ NODE_ENV: 'test', AUDIT_HMAC_KEYS: `other:${KEY_C}` }),
+      );
+      expect((await verifyAuditChain(db, workspace.id)).broken).toMatchObject({
+        seq: 1,
+        reason: 'unverifiable',
+      });
+    } finally {
+      configureAuditKeys(devKeyring);
+    }
+  });
+
+  test('production refuses to run without a key, or with the development one', () => {
+    expect(() => auditKeyringFromEnv({ NODE_ENV: 'production' })).toThrow(/AUDIT_HMAC_KEYS/);
+    expect(() =>
+      auditKeyringFromEnv({ NODE_ENV: 'production', AUDIT_HMAC_KEYS: `dev:${KEY_D}` }),
+    ).toThrow(/development only/);
+    expect(() =>
+      auditKeyringFromEnv({ NODE_ENV: 'production', AUDIT_HMAC_KEYS: 'k1:c2hvcnQ=' }),
+    ).toThrow(/under 32 bytes/);
+    expect(
+      auditKeyringFromEnv({ NODE_ENV: 'production', AUDIT_HMAC_KEYS: `k1:${KEY_E}` }).currentId,
+    ).toBe('k1');
   });
 });
 

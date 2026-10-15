@@ -905,16 +905,41 @@ sequence-numbered outboxes. The cost is that writes in one workspace queue
 behind each other for the audit insert, which is why it comes last in each
 transaction.
 
-A separate ledger service or an external timestamping authority would make
-the trail resistant to someone who controls the database. This does not, and
-says so: a table owner can rewrite every event from an edit onwards, or drop
-the newest ones, and leave a consistent chain. The defence is a copy held
-elsewhere — the head hash the Security view offers to copy, or the SIEM
-stream. A trigger refuses ordinary updates and deletes, which stops a
-mistaken query rather than a determined owner.
+Two things keep someone with database access from rewriting the trail
+quietly. The application does not connect as the tables' owner but as a
+runtime role (`roles.ts`, set up by `bun run db:roles`), which can only read
+and insert audit events: no update, no removal, no emptying of any table,
+and, not being the owner, no way to switch off the trigger that refuses
+edits. And every new event is signed: its hash is an HMAC with a key held
+outside the database (`AUDIT_HMAC_KEYS`), and the event records which key
+signed it, so keys can rotate. Rewriting events consistently now needs the
+key as well as the owner's password.
 
-The hash is computed in TypeScript for every new row. A SQL copy,
-`robis_audit_hash`, exists only to backfill rows written before the chain,
-and a test holds the two to the same answer, Unicode included. Timestamps are
+Events from before signing stay as they were, an unkeyed SHA-256, and
+verify as such, but only before the first signed event in their chain.
+Upgrading runs `bun run audit:seal` once, which appends one signed
+`audit.keyed` event to each chain that is intact and wholly unsigned. It is
+deliberately never automatic: a chain rewritten without the key looks
+exactly like an old one, and sealing it on every start would turn that
+rewrite into a chain that verifies. After the seal, a chain with an
+unsigned event after a signed one, or with no signed event at all, was
+rewritten without the key, and verification says so. A key id is either
+null or a real id, by constraint, so no value sits between the two.
+
+Deleting a workspace still takes its trail with it, but no longer silently:
+a trigger running with the owner's rights first writes a tombstone with the
+trail's length and last hash, into a table the runtime role can only read.
+The SIEM stream's cursor, the outside copy verification compares against,
+may only move forward and never past the newest event.
+
+What it still does not stop: someone holding both the owner's password and
+the key, or anyone dropping the newest events, which leaves a consistent
+chain. The defence there is a copy held elsewhere — the head hash the
+Security view offers to copy, or the SIEM stream.
+
+The hash is computed in TypeScript for every new row. A SQL copy of the
+unsigned form, `robis_audit_hash`, exists only to backfill rows written
+before the chain, and a test holds the two to the same answer, Unicode
+included. Timestamps are
 stored at millisecond precision so the value hashed is exactly the value a
 JavaScript `Date` reads back.

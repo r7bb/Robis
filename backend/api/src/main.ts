@@ -1,4 +1,4 @@
-import { createDatabase } from '@robis/database';
+import { auditKeyringFromEnv, configureAuditKeys, createDatabase } from '@robis/database';
 import { mailerFromEnv } from '@robis/mailer';
 import { buildApp } from './app.ts';
 import { loadEnv } from './env.ts';
@@ -13,6 +13,11 @@ const { db, close } = createDatabase(env.DATABASE_URL, { max: env.DB_POOL_MAX })
  * into a log, is worse than not starting: the missing piece stays visible.
  */
 mailerFromEnv({ ...process.env, NODE_ENV: env.NODE_ENV });
+
+// The audit trail is signed with a key held outside the database; refuse to
+// start in production without one. Chains from before signing are sealed
+// once, by hand, with `bun run audit:seal` (see audit-seal.ts for why).
+configureAuditKeys(auditKeyringFromEnv({ ...process.env, NODE_ENV: env.NODE_ENV }));
 
 const app = buildApp({
   db,

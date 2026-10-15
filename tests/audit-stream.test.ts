@@ -220,15 +220,17 @@ describe('delivery', () => {
     const { db } = await getHarness();
     const owner = await createActor('Owner');
     const workspace = await createWorkspace(owner);
+    // Two events, so there are two positions to deliver up to.
+    await createProject(owner, workspace.id);
 
-    await advanceStreamCursor(db, workspace.id, 9);
-    await advanceStreamCursor(db, workspace.id, 4);
+    await advanceStreamCursor(db, workspace.id, 2);
+    await advanceStreamCursor(db, workspace.id, 1);
 
     const [cursor] = await db
       .select()
       .from(auditStreamCursors)
       .where(eq(auditStreamCursors.workspaceId, workspace.id));
-    expect(cursor?.deliveredSeq).toBe(9);
+    expect(cursor?.deliveredSeq).toBe(2);
   });
 
   test('a deleted workspace takes its cursor with it', async () => {

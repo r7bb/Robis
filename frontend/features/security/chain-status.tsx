@@ -13,6 +13,9 @@ type Report = { isPending: boolean; isError: boolean; error: unknown; data?: Cha
 function headline({ isPending, isError, data }: Report): string {
   if (isPending) return 'Checking the chain…';
   if (isError || !data) return 'The chain could not be checked';
+  // A key this server lacks is a reason to look, not proof of an edit.
+  if (data.broken?.reason === 'unverifiable') return `Cannot check event ${data.broken.seq}`;
+  if (data.broken?.reason === 'unsigned') return 'This trail carries no signature';
   if (!data.ok) return `Broken at event ${data.broken?.seq}`;
   return `No break found in ${data.checked} ${data.checked === 1 ? 'event' : 'events'}`;
 }
@@ -20,7 +23,7 @@ function headline({ isPending, isError, data }: Report): string {
 function explanation({ isError, error, data }: Report): string {
   if (isError) return (error as Error).message;
   if (data && !data.ok && data.broken) return data.broken.detail;
-  return 'Each event carries a hash of itself and of the one before it, so changing or removing one breaks the chain where it happened. Someone with direct database access could rewrite everything after an edit consistently; the copy below, or the SIEM stream, is what catches that.';
+  return 'Each event carries a hash of itself and of the one before it, signed with a key the database does not hold, so changing or removing one breaks the chain where it happened, and rewriting the rest needs that key. Dropping the newest events leaves no break; the copy below, or the SIEM stream, is what catches that.';
 }
 
 function toneOf(data: ChainReport | undefined): string {
@@ -32,8 +35,9 @@ function toneOf(data: ChainReport | undefined): string {
  * Whether the trail is intact, said plainly.
  *
  * The head hash is offered for copying because the chain alone cannot catch
- * a rewrite of everything after an edit, or the newest rows being dropped.
- * A head someone wrote down earlier -- or the SIEM receiver's copy -- can.
+ * the newest rows being dropped, or a rewrite by someone who also holds the
+ * signing key. A head someone wrote down earlier -- or the SIEM receiver's
+ * copy -- can.
  */
 export function ChainStatus({ workspaceId }: { workspaceId: string }) {
   const [copied, setCopied] = useState(false);

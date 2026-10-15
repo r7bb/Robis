@@ -3,6 +3,8 @@ import postgres from 'postgres';
 import * as schema from './schema.ts';
 
 export * from './audit.ts';
+export * from './audit-keys.ts';
+export * from './audit-seal.ts';
 export * from './documents.ts';
 export * from './events.ts';
 export * from './files.ts';
@@ -11,6 +13,7 @@ export * from './pagination.ts';
 export * from './presence-bus.ts';
 export * from './queries.ts';
 export * from './queue.ts';
+export * from './roles.ts';
 export * from './schema.ts';
 export * from './search.ts';
 export { schema };

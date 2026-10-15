@@ -4,6 +4,7 @@ import {
   bigint,
   bigserial,
   boolean,
+  check,
   customType,
   index,
   integer,
@@ -392,6 +393,8 @@ export const auditEvents = pgTable(
     /** The previous event's hash; null only for the first event. */
     prevHash: text('prev_hash'),
     hash: text('hash').notNull(),
+    /** The key that signed the hash; null for an event from before signing. */
+    keyId: text('key_id'),
   },
   (t) => [
     uniqueIndex('audit_events_workspace_seq_key').on(t.workspaceId, t.seq),
@@ -399,8 +402,34 @@ export const auditEvents = pgTable(
     // seen actor walks the workspace's whole chain before filling a page.
     index('audit_events_workspace_actor_seq_idx').on(t.workspaceId, t.actorId, t.seq),
     index('audit_events_workspace_entity_seq_idx').on(t.workspaceId, t.entityType, t.seq),
+    // Null is unsigned; anything else must look like a key id, so no value
+    // (an empty string, say) can sit between the two.
+    check(
+      'audit_events_key_id_format',
+      sql`${t.keyId} is null or ${t.keyId} ~ '^[a-z0-9-]{1,32}$'`,
+    ),
   ],
 );
+
+/**
+ * What is left of a workspace's trail after the workspace is deleted.
+ *
+ * Deleting a workspace cascades to its audit events, so on its own a
+ * deletion would leave no trace in the database. A trigger on `workspaces`
+ * (migration 0017), running with the owner's rights, writes the trail's
+ * length and final hash here first. The runtime role may only read this
+ * table, and like the trail it refuses edits and removal.
+ */
+export const auditTombstones = pgTable('audit_tombstones', {
+  id: id(),
+  workspaceId: uuid('workspace_id').notNull(),
+  /** The last event's seq and hash, or 0 and null for an empty trail. */
+  headSeq: bigint('head_seq', { mode: 'number' }).notNull(),
+  headHash: text('head_hash'),
+  /** The database role that ran the delete. */
+  deletedBy: text('deleted_by').notNull(),
+  deletedAt: timestamp('deleted_at', { withTimezone: true }).notNull().defaultNow(),
+});
 
 /**
  * How far the SIEM stream has delivered, per workspace.

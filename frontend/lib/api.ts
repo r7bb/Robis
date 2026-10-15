@@ -186,6 +186,8 @@ export type AuditEvent = {
   payload: Record<string, unknown>;
   prevHash: string | null;
   hash: string;
+  /** The key that signed it; null for an event from before signing. */
+  keyId: string | null;
 };
 
 export type AuditPage = { events: AuditEvent[]; nextCursor: number | null };
@@ -198,7 +200,14 @@ export type ChainReport = {
   broken: {
     seq: number;
     eventId: string | null;
-    reason: 'missing' | 'altered' | 'relinked';
+    reason:
+      | 'missing'
+      | 'altered'
+      | 'relinked'
+      | 'truncated'
+      | 'downgraded'
+      | 'unverifiable'
+      | 'unsigned';
     detail: string;
   } | null;
 };

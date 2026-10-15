@@ -156,7 +156,7 @@ jobs:
 
       # The stack runs in development mode over plain http; this is the
       # production rule it cannot show. Both images must refuse to start.
-      - name: Production refuses to start without a mail driver
+      - name: Production refuses to start without a mail driver or an audit key
         run: |
           for image in api worker; do
             # Bounded: a regression that let it start would otherwise run
@@ -169,6 +169,14 @@ jobs:
             grep -q "no production mail driver is configured" "refusal-${image}.log" \
               || { cat "refusal-${image}.log"; exit 1; }
           done
+          # With mail configured, the API still refuses without an audit key.
+          if timeout 60 docker run --rm -e NODE_ENV=production -e DATABASE_URL=postgres://none@none/none \
+               -e WEB_ORIGIN=https://robis.example -e MEDIA_DIR=/tmp/media -e SMTP_HOST=smtp.example.com \
+               robis-api:stack > refusal-audit-key.log 2>&1; then
+            echo "robis-api started in production with no audit key" && exit 1
+          fi
+          grep -q "AUDIT_HMAC_KEYS is not set" refusal-audit-key.log \
+            || { cat refusal-audit-key.log; exit 1; }
 
       # The browser bundle must not ship source maps, and no image may hold
       # an env file, whatever .dockerignore says.
