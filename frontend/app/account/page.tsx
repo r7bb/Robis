@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useId, useState } from 'react';
+import { ACCOUNT_EVENTS_KEY, AccountActivity } from '../../features/account/account-activity.tsx';
 import { UsernameField } from '../../features/account/username-field.tsx';
 import { ApiError, api, type Me, type SessionSummary } from '../../lib/api.ts';
 import { lastTheme, useApplyTheme } from '../../lib/theme.ts';
@@ -50,6 +51,9 @@ export default function AccountPage() {
       <ProfileSection user={me.data.user} onSaved={() => queryClient.invalidateQueries()} />
       <PasswordSection />
       <SessionsSection />
+      <Section title="Sign-in history">
+        <AccountActivity />
+      </Section>
     </main>
   );
 }
@@ -192,6 +196,7 @@ function VerificationStatus({ verified }: { verified: boolean }) {
 }
 
 function PasswordSection() {
+  const queryClient = useQueryClient();
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -204,6 +209,7 @@ function PasswordSection() {
         body: { currentPassword: current, newPassword: next },
       }),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ACCOUNT_EVENTS_KEY });
       setCurrent('');
       setNext('');
       setConfirm('');
@@ -287,7 +293,10 @@ function SessionsSection() {
 
   const revoke = useMutation({
     mutationFn: () => api<{ revoked: number }>('/auth/sessions', { method: 'DELETE' }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sessions'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      queryClient.invalidateQueries({ queryKey: ACCOUNT_EVENTS_KEY });
+    },
   });
 
   const rows = sessions.data?.sessions ?? [];

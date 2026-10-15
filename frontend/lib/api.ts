@@ -188,6 +188,9 @@ export type AuditEvent = {
   hash: string;
   /** The key that signed it; null for an event from before signing. */
   keyId: string | null;
+  /** Personal fields kept outside the hash; null once erased. */
+  personal: Record<string, unknown> | null;
+  personalCommitment: string | null;
 };
 
 export type AuditPage = { events: AuditEvent[]; nextCursor: number | null };

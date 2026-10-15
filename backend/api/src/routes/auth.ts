@@ -10,7 +10,14 @@ import {
   SESSION_COOKIE,
   verifyPassword,
 } from '@robis/auth';
-import { type Database, users } from '@robis/database';
+import {
+  type AccountEventOptions,
+  type AccountEventType,
+  type Database,
+  deferAccountEvent,
+  recordAccountEventNow,
+  users,
+} from '@robis/database';
 import {
   changePasswordSchema,
   loginSchema,
@@ -30,6 +37,9 @@ import { rateLimit } from '../plugins/rate-limit.ts';
 import { parse } from '../validate.ts';
 import { createVerificationSender } from '../verification.ts';
 
+/** Failed sign-ins for one account within this window are one history entry. */
+const FAILED_SIGN_IN_WINDOW_MS = 5 * 60_000;
+
 export async function authRoutes(
   app: FastifyInstance,
   opts: { db: Database; env: Env; limits: RateLimits },
@@ -45,6 +55,43 @@ export async function authRoutes(
    * it cannot drift out of sync with the real cost parameters.
    */
   const dummyDigest = await hashPassword(randomBytes(32).toString('hex'));
+
+  /**
+   * Record an account event without letting a failure to record it fail
+   * the request. The change it describes (a session made or revoked, a
+   * password changed) has already happened; answering 500 would tell the
+   * person it had not. A miss is logged instead.
+   */
+  async function recordAccountEventSafely(
+    userId: string,
+    eventType: AccountEventType,
+    options: AccountEventOptions,
+  ) {
+    try {
+      await recordAccountEventNow(db, userId, eventType, options);
+    } catch (error) {
+      app.log.error({ err: error, eventType }, 'account trail: event not recorded');
+    }
+  }
+
+  /**
+   * Record a failed sign-in after the reply has gone.
+   *
+   * Only an existing account has a trail to write to, so writing before the
+   * reply would make a wrong password for a real address slower to refuse
+   * than any password for an unknown one: an existence oracle. Written
+   * afterwards, the reply takes the same time either way.
+   */
+  function recordFailedSignInLater(userId: string, requestId: string) {
+    deferAccountEvent(
+      db,
+      userId,
+      'auth.sign_in_failed',
+      // A burst of guesses is one entry, not hundreds.
+      { requestId, coalesceWithinMs: FAILED_SIGN_IN_WINDOW_MS },
+      (error) => app.log.error({ err: error }, 'account trail: failed sign-in not recorded'),
+    );
+  }
 
   /** What an API response may say about an account. */
   const PUBLIC_USER = {
@@ -133,10 +180,14 @@ export async function authRoutes(
 
     // One message for both failure modes: a distinct "no such account" reply
     // would let anyone test whether an address is registered.
-    if (!ok || !user) throw ApiError.unauthorized('Invalid email or password');
+    if (!ok || !user) {
+      if (user) recordFailedSignInLater(user.id, request.id);
+      throw ApiError.unauthorized('Invalid email or password');
+    }
 
     const { token, expiresAt } = await createSession(db, user.id, request.headers['user-agent']);
     reply.setCookie(SESSION_COOKIE, token, { ...cookieOptions, expires: expiresAt });
+    await recordAccountEventSafely(user.id, 'auth.signed_in', { requestId: request.id });
 
     return {
       user: { id: user.id, email: user.email, name: user.name, username: user.username },
@@ -146,6 +197,11 @@ export async function authRoutes(
   app.post('/auth/logout', async (request, reply) => {
     const token = request.cookies[SESSION_COOKIE];
     if (token) await revokeSession(db, token);
+    if (request.user) {
+      await recordAccountEventSafely(request.user.id, 'auth.signed_out', {
+        requestId: request.id,
+      });
+    }
 
     reply.clearCookie(SESSION_COOKIE, cookieOptions);
     return { ok: true };
@@ -319,6 +375,9 @@ export async function authRoutes(
 
       const { token, expiresAt } = await createSession(db, user.id, request.headers['user-agent']);
       reply.setCookie(SESSION_COOKIE, token, { ...cookieOptions, expires: expiresAt });
+      await recordAccountEventSafely(user.id, 'auth.password_changed', {
+        requestId: request.id,
+      });
 
       return { ok: true };
     },
@@ -332,10 +391,18 @@ export async function authRoutes(
     return { sessions: await listSessions(db, user.id, token) };
   });
 
-  app.delete('/auth/sessions', { preHandler: requireAuth }, async (request) => {
+  app.delete('/auth/sessions', { preHandler: [requireAuth, profileLimit] }, async (request) => {
     const user = currentUser(request);
     const token = request.cookies[SESSION_COOKIE]!;
 
-    return { revoked: await revokeOtherSessions(db, user.id, token) };
+    const revoked = await revokeOtherSessions(db, user.id, token);
+    // Nothing signed out, nothing to record.
+    if (revoked > 0) {
+      await recordAccountEventSafely(user.id, 'auth.sessions_revoked', {
+        requestId: request.id,
+        payload: { count: revoked },
+      });
+    }
+    return { revoked };
   });
 }

@@ -943,6 +943,34 @@ The event at the checkpoint is re-checked each time. Events before it are
 not: an edit there is what the full check (`?full=1`, under a smaller rate
 limit) is for.
 
+Each account has a trail of its own too (`account-trail.ts`): sign-ins,
+failed sign-ins, sign-outs, password changes and resets, sessions signed
+out. It is a chain per account, signed with the same keys under its own
+tag, append-only for the runtime role, and readable only by its holder in
+Account settings. A failed sign-in exists only for a real account, so it
+is written after the reply: written before, the extra insert would make a
+wrong password for a real address measurably slower to refuse than one for
+an unknown address. Nothing about where a sign-in came from is kept.
+
+Erasure, as designed (a draft for legal review, claiming nothing about any
+law): personal fields about someone, today a member's username, are not
+put in an event's hashed payload. They are stored beside it with a random
+salt and the person's id, and the hash covers only a commitment, SHA-256 of
+the salt and the fields. `bun run audit:erase -- <user id>` nulls the
+fields, the salt and the id; the commitment stays, so the chain verifies,
+and without the salt it cannot be used to test a guess. A trigger allows
+that update and no other, and the runtime role may update only those
+three columns. The person's id is part of the commitment, so fields
+re-pointed at someone else fail verification. Events written before this
+hold usernames inside the hash.
+
+What erasure does not reach, stated: the SIEM stream and the JSON export
+carry the commitment but not the fields, so they hold no copy to erase;
+but database backups, the write-ahead log and replicas taken before an
+erasure still hold the fields and their salt. The ids that stay (the
+member's id as the event's entity, the actor's id) make the event
+pseudonymous, not anonymous.
+
 Deleting a workspace still takes its trail with it, but no longer silently:
 a trigger running with the owner's rights first writes a tombstone with the
 trail's length and last hash, into a table the runtime role can only read.

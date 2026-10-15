@@ -22,7 +22,15 @@ export default function PrivacyPage() {
         id, not by email, and is kept for as long as the workspace exists, including after an
         account is deleted. It also records when a workspace admin reads, exports or checks it.
         Admins can still see the usernames of people who have left a workspace, next to their past
-        events. How long it should be kept is an open question for review.
+        events. For events recorded from October 2026 on, a username can be erased from the trail on
+        request; how and when that is done is for review. How long the trail should be kept is an
+        open question for review.
+      </p>
+      <h2>Your account history</h2>
+      <p>
+        Robis records when your account is signed in to, a sign-in fails, you sign out, your
+        password is changed or reset, and other sessions are signed out. Only you can see this
+        history, in Account settings. It does not record where a sign-in came from.
       </p>
       <h2>Who sees what</h2>
       <p>

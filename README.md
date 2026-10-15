@@ -25,6 +25,11 @@ Newest first. The same list is the site's What's new page, linked from the
 header, where each entry opens to show how it was checked and, for features,
 where to find it and what each layer does.
 
+- **Your own sign-in history, and a way to erase someone** (2026-10-15).
+  Account settings show your sign-ins, failed attempts, password changes and
+  sessions signed out, signed and seen only by you. Member events keep
+  usernames beside the trail, so a person can be erased without breaking
+  the chain (a design, for legal review).
 - **An audit trail that records who reads it** (2026-10-15). Reading,
   exporting and checking the trail are events in it, and a link on another
   site cannot add one in an admin's name. Checks start from a signed
@@ -262,6 +267,7 @@ figures. See **[robis-ml/README.md](robis-ml/README.md)**.
 | `bun run db:reset`    | drop and recreate the dev database   |
 | `bun run db:roles`    | create the app's runtime database role |
 | `bun run audit:seal`  | sign audit trails from before signing, once |
+| `bun run audit:erase` | erase a person's fields from the trail (draft) |
 | `bun run mail:start`  | local mail inbox, SMTP on port 1025  |
 | `bun run smoke:stack` | drive a running container stack      |
 
@@ -315,8 +321,12 @@ Nothing here is a security or compliance claim. It describes what the code does
 and what was measured.
 
 The audit trail is built to outlive the accounts it names. New member events
-record a username rather than an email or real name; events written before
-usernames existed still hold the email they recorded. How long to keep the
+record a username rather than an email or real name, kept beside the hashed
+trail so `bun run audit:erase -- <user id>` can remove it while the chain
+still verifies. That erasure is a technical design marked for legal review,
+not a claim about any law. Events written before it hold their username,
+or before usernames their email, inside the hashed payload, where erasing
+it would break the chain. How long to keep the
 trail, and how that sits with a request to erase someone's data, needs a
 legal review before any real users. The terms and privacy pages are drafts
 for the same review, and the minimum age (16) is a placeholder.

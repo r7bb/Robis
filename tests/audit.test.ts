@@ -7,6 +7,7 @@ import {
   auditKeyringFromEnv,
   configureAuditKeys,
   DEVELOPMENT_KEY_ID,
+  eraseAuditPersonalData,
   recordAudit,
   sealLegacyChains,
   verifyAuditChain,
@@ -1142,5 +1143,88 @@ describe('the checkpoint itself', () => {
     ).json();
     expect(report).toMatchObject({ ok: false, checkpoint: 'stale', fromSeq: 0 });
     expect(report.broken).toMatchObject({ seq: first.head.seq, reason: 'altered' });
+  });
+});
+
+describe('erasing a person (a design, for legal review)', () => {
+  async function memberChurn() {
+    const { owner, workspace } = await workspaceWithEvents(1);
+    const member = await createActor('Member');
+    await addMember(owner, workspace.id, member, 'MEMBER');
+    await send(owner, 'DELETE', `/workspaces/${workspace.id}/members/${member.id}`);
+    return { owner, workspace, member };
+  }
+
+  test('a member event keeps the username outside the hashed payload', async () => {
+    const { db } = await getHarness();
+    const { workspace, member } = await memberChurn();
+    const added = (await trail(workspace.id)).find((event) => event.eventType === 'member.added')!;
+
+    expect(JSON.parse(added.payload)).toEqual({ role: 'MEMBER' });
+    expect(JSON.parse(added.personal!)).toEqual({ username: member.username });
+    expect(added.personalSubjectId).toBe(member.id);
+    expect((await verifyAuditChain(db, workspace.id)).ok).toBe(true);
+  });
+
+  test('erasing removes the username everywhere, and the chain still verifies', async () => {
+    const { db } = await getHarness();
+    const { owner, workspace, member } = await memberChurn();
+
+    expect(await eraseAuditPersonalData(db, member.id)).toBe(2);
+
+    for (const event of await trail(workspace.id)) {
+      expect(event.personal).toBeNull();
+      expect(event.personalSalt).toBeNull();
+      expect(JSON.stringify(event)).not.toContain(member.username);
+    }
+    expect((await verifyAuditChain(db, workspace.id)).ok).toBe(true);
+
+    // What a member sees now names nobody.
+    const feed = await request(`/workspaces/${workspace.id}/activity`, { actor: owner });
+    expect(feed.body).not.toContain(member.username);
+  });
+
+  test('personal fields changed behind the app are caught', async () => {
+    const { db } = await getHarness();
+    const { workspace } = await memberChurn();
+
+    await tamper(
+      sql`update audit_events set personal = '{"username":"someone_else"}'
+          where workspace_id = ${workspace.id} and event_type = 'member.added'`,
+    );
+
+    expect((await verifyAuditChain(db, workspace.id)).broken?.reason).toBe('altered');
+  });
+
+  test('the runtime role can erase, and do nothing else with that right', async () => {
+    const { db } = await getHarness();
+    const { workspace } = await memberChurn();
+    const run = async (statement: ReturnType<typeof sql>) => db.execute(statement);
+
+    // Rewriting the fields rather than erasing them is refused by the trigger...
+    await expect(
+      run(sql`update audit_events set personal = '{"username":"x"}'
+              where workspace_id = ${workspace.id} and personal is not null`),
+    ).rejects.toThrow(/append-only/);
+    // ...and every other column is out of the role's reach entirely.
+    await expect(
+      run(sql`update audit_events set payload = '{}' where workspace_id = ${workspace.id}`),
+    ).rejects.toThrow(/permission denied/);
+  });
+});
+
+describe('erasure cannot be steered', () => {
+  test('personal fields re-pointed at someone else are caught', async () => {
+    const { db } = await getHarness();
+    const { owner, workspace } = await workspaceWithEvents(1);
+    const member = await createActor('Member');
+    await addMember(owner, workspace.id, member, 'MEMBER');
+
+    await tamper(
+      sql`update audit_events set personal_subject_id = ${owner.id}
+          where workspace_id = ${workspace.id} and event_type = 'member.added'`,
+    );
+
+    expect((await verifyAuditChain(db, workspace.id)).broken?.reason).toBe('altered');
   });
 });

@@ -22,6 +22,7 @@ import {
   DEVELOPMENT_RUNTIME_PASSWORD,
   ensureRuntimeRole,
   MAIL_JOBS,
+  settleDeferredAccountEvents,
 } from '@robis/database';
 import { runMigrations } from '@robis/database/migrate';
 import { MemoryMailer } from '@robis/mailer';
@@ -39,6 +40,7 @@ export const MEDIA_ROOT = mkdtempSync(join(tmpdir(), 'robis-media-'));
 
 /** Every table that holds test state, in an order safe for `TRUNCATE CASCADE`. */
 const TABLES = [
+  'account_events',
   'auth_tokens',
   'audit_events',
   'audit_tombstones',
@@ -245,6 +247,9 @@ export async function getMailer(): Promise<MemoryMailer> {
 
 export async function resetDatabase() {
   const { ownerDb: db, mailer } = await getHarness();
+  // A failed sign-in is recorded after its reply; let the last test's land
+  // before the tables are emptied under it.
+  await settleDeferredAccountEvents();
   mailer.clear();
   // RESTART IDENTITY keeps sequences predictable across tests. The audit
   // trail refuses TRUNCATE by trigger -- that is the point of it -- so the
@@ -255,10 +260,12 @@ export async function resetDatabase() {
     await tx.execute(
       'ALTER TABLE "audit_tombstones" DISABLE TRIGGER "audit_tombstones_no_truncate"',
     );
+    await tx.execute('ALTER TABLE "account_events" DISABLE TRIGGER "account_events_no_truncate"');
     await tx.execute(
       `TRUNCATE TABLE ${TABLES.map((t) => `"${t}"`).join(', ')} RESTART IDENTITY CASCADE`,
     );
     await tx.execute('ALTER TABLE "audit_events" ENABLE TRIGGER "audit_events_no_truncate"');
+    await tx.execute('ALTER TABLE "account_events" ENABLE TRIGGER "account_events_no_truncate"');
     await tx.execute(
       'ALTER TABLE "audit_tombstones" ENABLE TRIGGER "audit_tombstones_no_truncate"',
     );

@@ -179,7 +179,9 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
           entityType: 'member',
           entityId: invitee.id,
           eventType: 'member.added',
-          payload: { username: invitee.username, role: input.role },
+          payload: { role: input.role },
+          // Who it was, kept where an erasure request can reach it.
+          personal: { subjectId: invitee.id, fields: { username: invitee.username } },
         });
 
         return row;
@@ -248,7 +250,8 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
           entityType: 'member',
           entityId: userId,
           eventType: 'member.role_changed',
-          payload: { username: target.username, from: target.role, to: input.role },
+          payload: { from: target.role, to: input.role },
+          personal: { subjectId: userId, fields: { username: target.username } },
         });
 
         return row;
@@ -298,7 +301,8 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
           entityType: 'member',
           entityId: userId,
           eventType: 'member.removed',
-          payload: { username: target.username, role: target.role },
+          payload: { role: target.role },
+          personal: { subjectId: userId, fields: { username: target.username } },
         });
       });
 

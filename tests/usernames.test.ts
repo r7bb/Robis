@@ -221,16 +221,24 @@ describe('usernames inside a workspace', () => {
     });
 
     const events = await db
-      .select({ type: auditEvents.eventType, payload: auditEvents.payload })
+      .select({
+        type: auditEvents.eventType,
+        payload: auditEvents.payload,
+        personal: auditEvents.personal,
+      })
       .from(auditEvents)
       .where(eq(auditEvents.workspaceId, workspace.id));
 
     const memberEvents = events.filter((event) => event.type.startsWith('member.'));
     expect(memberEvents.length).toBe(2);
     for (const event of memberEvents) {
-      expect(JSON.parse(event.payload).username).toBe(member.username);
-      expect(event.payload).not.toContain(member.email);
-      expect(event.payload).not.toContain('Member Person');
+      // The username sits beside the hashed payload, where an erasure can
+      // reach it; neither holds the email or the real name.
+      expect(JSON.parse(event.personal!).username).toBe(member.username);
+      for (const text of [event.payload, event.personal!]) {
+        expect(text).not.toContain(member.email);
+        expect(text).not.toContain('Member Person');
+      }
     }
   });
 });

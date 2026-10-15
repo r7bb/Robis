@@ -41,6 +41,25 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-15',
     area: 'Security',
+    title: 'Your own sign-in history, and a way to erase someone',
+    summary:
+      'Account settings now show what has happened to your account: sign-ins, failed attempts, sign-outs, password changes and resets, sessions signed out, signed and chained like the workspace trail, and seen only by you. Separately, member events now keep usernames beside the trail rather than inside it, so a person can be erased from it without breaking the chain. The erasure design is a draft for legal review.',
+    checked:
+      'Tests prove each kind of event is recorded, a failed sign-in only for a real account and only after the reply, nothing is kept about where a sign-in came from, nobody else can read the history, an edited event is named, and the runtime role cannot change one. For erasure: the username leaves every event and the chain still verifies, a changed username is caught, and the role can erase but change nothing else. The account page was checked in a real browser.',
+    feature: {
+      name: 'See what happened to your account',
+      where: 'Account, Sign-in history.',
+      layers: [
+        'Account page: the history newest first, failed attempts marked, and a check of the chain.',
+        'API: yours alone; a failed sign-in is written after the reply so timing says nothing.',
+        'Database: a chain per account, signed with the audit key, append-only for the app.',
+        'Erasure: bun run audit:erase removes a person’s fields; the chain verifies after.',
+      ],
+    },
+  },
+  {
+    date: '2026-10-15',
+    area: 'Security',
     title: 'An audit trail that records who reads it',
     summary:
       'Reading, exporting and checking the trail are now events in it, kept out of the members’ activity feed. Checks start from the last verified point, stored with a signature, so they stay quick as the trail grows; a full check is one click away. The who filter now lists former members too, by username.',

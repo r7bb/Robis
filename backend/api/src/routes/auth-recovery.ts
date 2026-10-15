@@ -1,5 +1,5 @@
 import { consumeAuthToken, hashPassword, revokeAllSessions } from '@robis/auth';
-import { type Database, queuePasswordResetMail, users } from '@robis/database';
+import { type Database, queuePasswordResetMail, recordAccountEvent, users } from '@robis/database';
 import { forgotPasswordSchema, resetPasswordSchema, verifyEmailSchema } from '@robis/shared';
 import { and, eq, isNull } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
@@ -153,6 +153,7 @@ export async function authRecoveryRoutes(app: FastifyInstance, opts: RecoveryDep
       // Whoever did this may be recovering from a compromise, so every session
       // goes, including one an attacker is holding.
       await revokeAllSessions(tx, userId);
+      await recordAccountEvent(tx, userId, 'auth.password_reset', { requestId: request.id });
       return true;
     });
 

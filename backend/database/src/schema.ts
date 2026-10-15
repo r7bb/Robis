@@ -395,6 +395,17 @@ export const auditEvents = pgTable(
     hash: text('hash').notNull(),
     /** The key that signed the hash; null for an event from before signing. */
     keyId: text('key_id'),
+    /**
+     * Personal fields about someone, kept outside the hashed payload so they
+     * can be erased (see `audit-redaction.ts`). The hash covers only
+     * `personal_commitment`, a SHA-256 of the salt and the fields, which
+     * stays when the fields, the salt and the subject are erased.
+     */
+    personal: text('personal'),
+    personalSalt: text('personal_salt'),
+    /** Whose fields they are, so a request about one person finds them all. */
+    personalSubjectId: uuid('personal_subject_id'),
+    personalCommitment: text('personal_commitment'),
   },
   (t) => [
     uniqueIndex('audit_events_workspace_seq_key').on(t.workspaceId, t.seq),
@@ -408,6 +419,13 @@ export const auditEvents = pgTable(
       'audit_events_key_id_format',
       sql`${t.keyId} is null or ${t.keyId} ~ '^[a-z0-9-]{1,32}$'`,
     ),
+    // Personal fields only ever come with a commitment to them, and the
+    // subject index finds every event an erasure has to reach.
+    check(
+      'audit_events_personal_committed',
+      sql`(${t.personal} is null and ${t.personalSalt} is null) or ${t.personalCommitment} is not null`,
+    ),
+    index('audit_events_personal_subject_idx').on(t.personalSubjectId),
   ],
 );
 
@@ -442,6 +460,37 @@ export const auditCheckpoints = pgTable('audit_checkpoints', {
  * length and final hash here first. The runtime role may only read this
  * table, and like the trail it refuses edits and removal.
  */
+/**
+ * One account's own trail: signing in, failing to, signing out, changing
+ * or resetting the password, revoking sessions.
+ *
+ * These belong to a person rather than to any workspace, so they are a
+ * chain per account, numbered and signed exactly as workspace events are
+ * (see `account-trail.ts`), append-only by trigger and by the runtime
+ * role's grants, and shown only to the account holder.
+ */
+export const accountEvents = pgTable(
+  'account_events',
+  {
+    id: id(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    seq: bigint('seq', { mode: 'number' }).notNull(),
+    eventType: text('event_type').notNull(),
+    payload: text('payload').notNull().default(sql`'{}'`),
+    requestId: text('request_id'),
+    createdAt: createdAt(),
+    prevHash: text('prev_hash'),
+    hash: text('hash').notNull(),
+    keyId: text('key_id').notNull(),
+  },
+  (t) => [
+    uniqueIndex('account_events_user_seq_key').on(t.userId, t.seq),
+    check('account_events_key_id_format', sql`${t.keyId} ~ '^[a-z0-9-]{1,32}$'`),
+  ],
+);
+
 export const auditTombstones = pgTable('audit_tombstones', {
   id: id(),
   workspaceId: uuid('workspace_id').notNull(),

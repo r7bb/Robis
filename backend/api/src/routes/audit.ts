@@ -155,6 +155,8 @@ export async function auditRoutes(
       events: rows.map((row) => ({
         ...toExported(row),
         actorName: row.actorId ? (nameById.get(row.actorId) ?? null) : null,
+        // For display only, until erased; the export leaves it out.
+        personal: row.personal === null ? null : JSON.parse(row.personal),
       })),
       nextCursor,
     };

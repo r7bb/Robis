@@ -90,9 +90,24 @@ Left open from review, for a later pass:
 - ~~Reading or exporting the trail is not itself recorded.~~ **Closed
   2026-10-15 (B3):** each read, export page and check is an `audit.*`
   event, kept out of the members' activity feed.
-- Member events copy the member's email and name, and the trail outlives
-  accounts. Erasure requests need a redaction strategy: flagged for legal
-  review.
+- ~~Member events copy the member's email and name.~~ **Addressed
+  2026-10-15 (B3), as a design flagged for legal review:** new member events
+  keep the username beside the hashed payload with a salt and a
+  commitment, and `bun run audit:erase` removes it while the chain still
+  verifies. Older events keep what they recorded inside the hash.
+- **Account trail, added 2026-10-15 (B3):** sign-ins, failed sign-ins,
+  sign-outs, password changes and resets and session revocations, chained
+  and signed per account, shown to the holder in Account settings.
+  Failed sign-ins within five minutes are one entry; a failure is written
+  after its reply, so its timing does not say whether the account exists.
+  Open, from its review: the deferred write still competes for database
+  connections, a residual timing signal that has not been measured; the
+  account chain has no checkpoint, so dropping its newest events is not
+  detected; erasure by the runtime role leaves no record of itself and
+  cannot be told from an event that never had personal fields; there is no
+  account deletion yet, and when there is, the account's history goes with
+  it; signing out one session by itself has no route, and a person cannot
+  export their own history.
 - ~~The security view's "who" filter lists current members only.~~
   **Closed 2026-10-15 (B3):** `/audit/actors` lists everyone in the trail
   by username, former members marked.

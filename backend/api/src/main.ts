@@ -1,4 +1,9 @@
-import { auditKeyringFromEnv, configureAuditKeys, createDatabase } from '@robis/database';
+import {
+  auditKeyringFromEnv,
+  configureAuditKeys,
+  createDatabase,
+  settleDeferredAccountEvents,
+} from '@robis/database';
 import { mailerFromEnv } from '@robis/mailer';
 import { buildApp } from './app.ts';
 import { loadEnv } from './env.ts';
@@ -33,6 +38,8 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     // Stop accepting connections and let in-flight requests finish before the
     // pool goes away, so a deploy doesn't turn into a burst of 500s.
     await app.close();
+    // A failed sign-in is recorded just after its reply; let those land.
+    await settleDeferredAccountEvents();
     await close();
     process.exit(0);
   });

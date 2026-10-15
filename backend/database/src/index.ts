@@ -2,9 +2,11 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema.ts';
 
+export * from './account-trail.ts';
 export * from './audit.ts';
 export * from './audit-checkpoints.ts';
 export * from './audit-keys.ts';
+export * from './audit-redaction.ts';
 export * from './audit-seal.ts';
 export * from './documents.ts';
 export * from './events.ts';

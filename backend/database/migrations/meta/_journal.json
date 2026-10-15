@@ -141,6 +141,20 @@
       "when": 1792090519037,
       "tag": "0019_audit_checkpoint_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1792091526854,
+      "tag": "0020_account_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1792091901307,
+      "tag": "0021_audit_personal",
+      "breakpoints": true
     }
   ]
 }

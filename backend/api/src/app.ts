@@ -8,6 +8,7 @@ import { requestIdFrom, trustProxySetting } from './hardening.ts';
 import { type MediaStorage, storageFromEnv } from './media/storage.ts';
 import { createMetrics, registerMetrics } from './metrics.ts';
 import { attachUser } from './plugins/authz.ts';
+import { accountEventRoutes } from './routes/account-events.ts';
 import { attachmentRoutes } from './routes/attachments.ts';
 import { auditRoutes } from './routes/audit.ts';
 import { authRoutes } from './routes/auth.ts';
@@ -176,6 +177,7 @@ export function buildApp({
   app.register(meetingRoutes, { db });
   app.register(notificationRoutes, { db });
   app.register(auditRoutes, { db, limits });
+  app.register(accountEventRoutes, { db, limits });
   app.register(avatarRoutes, { db, storage });
   app.register(attachmentRoutes, { db, storage });
   app.register(searchRoutes, { db, limits });

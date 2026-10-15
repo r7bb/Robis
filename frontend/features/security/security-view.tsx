@@ -51,7 +51,11 @@ async function exportTrail(workspaceId: string, filters: Filters) {
     const page = await api<AuditPage>(
       `/workspaces/${workspaceId}/audit/events?${query(filters, { after }, EXPORT_PAGE_SIZE)}`,
     );
-    for (const { actorName: _name, ...event } of page.events) lines.push(JSON.stringify(event));
+    // Display-only fields stay behind: the export carries what the trail
+    // signs, and personal fields are left where an erasure can reach them.
+    for (const { actorName: _name, personal: _personal, ...event } of page.events) {
+      lines.push(JSON.stringify(event));
+    }
     if (page.nextCursor === null) break;
     after = page.nextCursor;
   }
@@ -81,7 +85,9 @@ function EventRow({ event }: { event: AuditEvent }) {
             {event.actor.kind}
           </span>
         ) : null}{' '}
-        <span className="text-muted">{describeEvent(event.type, event.payload)}</span>
+        <span className="text-muted">
+          {describeEvent(event.type, { ...event.payload, ...(event.personal ?? {}) })}
+        </span>
         <span className="mt-0.5 block font-mono text-[11px] text-faint">
           {event.type}
           {event.requestId ? (

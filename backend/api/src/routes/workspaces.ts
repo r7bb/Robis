@@ -218,6 +218,7 @@ export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database
           entityId: auditEvents.entityId,
           eventType: auditEvents.eventType,
           payload: auditEvents.payload,
+          personal: auditEvents.personal,
           createdAt: auditEvents.createdAt,
         })
         .from(auditEvents)
@@ -230,7 +231,14 @@ export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database
         .orderBy(desc(auditEvents.seq))
         .limit(100);
 
-      return { events: events.map((e) => ({ ...e, payload: JSON.parse(e.payload) })) };
+      // Personal fields (a member's username) are shown with the event until
+      // they are erased; after that the entry reads "a member".
+      return {
+        events: events.map(({ personal, ...e }) => ({
+          ...e,
+          payload: { ...JSON.parse(e.payload), ...(personal ? JSON.parse(personal) : {}) },
+        })),
+      };
     },
   );
 }

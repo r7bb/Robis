@@ -22,7 +22,7 @@ export const DEFAULT_RUNTIME_ROLE = 'robis_app';
  * Tables the runtime role may read and append to, and nothing else.
  * Extended by later migrations that add append-only tables.
  */
-export const APPEND_ONLY_TABLES = ['audit_events'] as const;
+export const APPEND_ONLY_TABLES = ['audit_events', 'account_events'] as const;
 
 /**
  * Tables the runtime role may only read: written by owner-run triggers.
@@ -113,6 +113,11 @@ export async function ensureRuntimeRole(owner: Executor, options: RuntimeRoleOpt
   for (const table of APPEND_ONLY_TABLES) {
     await owner.execute(sql`revoke update, delete on ${sql.identifier(table)} from ${name}`);
   }
+  // The one change the audit trail allows: erasing an event's personal
+  // fields (`audit-redaction.ts`). The trigger refuses anything else.
+  await owner.execute(
+    sql`grant update (personal, personal_salt, personal_subject_id) on audit_events to ${name}`,
+  );
   for (const table of READ_ONLY_TABLES) {
     await owner.execute(
       sql`revoke insert, update, delete on ${sql.identifier(table)} from ${name}`,

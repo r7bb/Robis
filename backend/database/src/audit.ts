@@ -1,6 +1,7 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { and, asc, desc, eq, gt, lt, type SQL, sql } from 'drizzle-orm';
 import { AUDIT_KEY_ID, type AuditKeyring, auditKeyring } from './audit-keys.ts';
+import { commitPersonal, type PersonalFields, personalHolds } from './audit-redaction.ts';
 import type { Executor, Tx } from './index.ts';
 import { type ACTOR_KINDS, auditEvents, auditStreamCursors, workspaces } from './schema.ts';
 
@@ -44,6 +45,11 @@ export type AuditInput = {
   entityId: string;
   eventType: string;
   payload?: Record<string, unknown>;
+  /**
+   * Personal fields about someone, kept outside the hashed payload so they
+   * can be erased later without breaking the chain (`audit-redaction.ts`).
+   */
+  personal?: PersonalFields;
 };
 
 /** Everything the hash covers, in the shape it is stored. */
@@ -61,12 +67,16 @@ export type ChainedFields = {
   prevHash: string | null;
   /** The key that signed it; null for an event from before signing. */
   keyId: string | null;
+  /** A commitment to personal fields kept outside the hash, if any. */
+  personalCommitment?: string | null;
 };
 
 /** Bumped if the hashed fields ever change, so old and new rows stay checkable. */
 const HASH_VERSION = 'v1';
 /** Signed: an HMAC over the same fields plus the id of the key. */
 const KEYED_VERSION = 'v2';
+/** Signed, and also covering a commitment to personal fields kept beside it. */
+const COMMITTED_VERSION = 'v3';
 
 /** The event names a key this server does not hold. */
 export class UnknownAuditKeyError extends Error {
@@ -104,8 +114,10 @@ export function auditHash(fields: ChainedFields, keyring?: AuditKeyring): string
   // Null, and only null, means unsigned. An empty string is a key id that
   // names nothing, and must never pass as the unsigned form.
   const signed = fields.keyId !== null;
+  const commitment = fields.personalCommitment ?? null;
+  const version = commitment === null ? KEYED_VERSION : COMMITTED_VERSION;
   const parts = [
-    ...(signed ? [KEYED_VERSION, fields.keyId as string] : [HASH_VERSION]),
+    ...(signed ? [version, fields.keyId as string] : [HASH_VERSION]),
     fields.prevHash ?? '',
     fields.workspaceId,
     String(fields.seq),
@@ -117,6 +129,7 @@ export function auditHash(fields: ChainedFields, keyring?: AuditKeyring): string
     fields.eventType,
     fields.payload,
     fields.createdAt.toISOString(),
+    ...(commitment === null ? [] : [commitment]),
   ];
 
   // Unreachable through `recordAudit`, but a field containing the separator
@@ -195,9 +208,16 @@ export async function recordAudit(tx: Tx, actor: AuditActor, input: AuditInput) 
     keyId: auditKeyring().currentId,
   };
 
+  // Personal fields are stored beside the event and only committed to.
+  const personal = input.personal ? commitPersonal(input.personal) : null;
+  const hashed: ChainedFields = {
+    ...fields,
+    personalCommitment: personal?.personalCommitment ?? null,
+  };
+
   const [row] = await tx
     .insert(auditEvents)
-    .values({ ...fields, hash: auditHash(fields) })
+    .values({ ...hashed, ...(personal ?? {}), hash: auditHash(hashed) })
     .returning();
 
   return row!;
@@ -251,6 +271,8 @@ function hashMatches(row: AuditRow): 'ok' | 'altered' | 'unknown-key' {
   // missing key: reporting it as "unverifiable" would hand a forger a softer
   // verdict for the price of a made-up id.
   if (row.keyId !== null && !AUDIT_KEY_ID.test(row.keyId)) return 'altered';
+  // Personal fields still present must be the ones committed to.
+  if (!personalHolds(row)) return 'altered';
   try {
     const expected = Buffer.from(auditHash(row), 'utf8');
     const stored = Buffer.from(row.hash, 'utf8');
@@ -495,6 +517,12 @@ export function toExported(row: AuditRow) {
     hash: row.hash,
     /** Which key signed it: null for an unsigned event from before signing. */
     keyId: row.keyId,
+    /**
+     * The commitment to personal fields kept beside the event, so a receiver
+     * can check the hash. The fields themselves are not sent: a copy in a
+     * SIEM is one an erasure could not reach.
+     */
+    personalCommitment: row.personalCommitment,
   };
 }
 
