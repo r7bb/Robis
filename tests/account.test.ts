@@ -2,6 +2,7 @@ import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
 import { SESSION_COOKIE } from '@robis/auth';
 import {
   type Actor,
+  addMember,
   closeHarness,
   createActor,
   createProject,
@@ -283,11 +284,7 @@ describe('the audit trail', () => {
     const workspace = await createWorkspace(owner);
     const target = await createActor('Target');
 
-    await request(`/workspaces/${workspace.id}/members`, {
-      method: 'POST',
-      payload: { email: target.email, role: 'MEMBER' },
-      actor: owner,
-    });
+    await addMember(owner, workspace.id, target, 'MEMBER');
 
     await request(`/workspaces/${workspace.id}/members/${target.id}`, {
       method: 'PATCH',

@@ -6,14 +6,7 @@ import {
   users,
   workspaceMembers,
 } from '@robis/database';
-import {
-  can,
-  inviteMemberSchema,
-  outranks,
-  type Role,
-  rankOf,
-  setMemberRoleSchema,
-} from '@robis/shared';
+import { can, outranks, type Role, rankOf, setMemberRoleSchema } from '@robis/shared';
 import { and, count, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../errors.ts';
@@ -25,11 +18,7 @@ import {
   requireAuth,
   requireMembership,
 } from '../plugins/authz.ts';
-import { rateLimit } from '../plugins/rate-limit.ts';
 import { parse } from '../validate.ts';
-
-/** Generous for a person setting up a team, tight for anyone sweeping names. */
-const INVITES_PER_MINUTE = 30;
 
 async function ownerCount(db: Executor, workspaceId: string): Promise<number> {
   const [row] = await db
@@ -64,7 +53,7 @@ async function findMember(db: Executor, workspaceId: string, userId: string) {
  * You may not hand out authority you do not have. An admin promoting someone to
  * owner would be an escalation path around `workspace:delete`.
  */
-function assertCanGrant(actor: Role, target: Role) {
+export function assertCanGrant(actor: Role, target: Role) {
   if (rankOf(target) > rankOf(actor)) {
     throw ApiError.forbidden(`You cannot grant a role above your own (${actor})`);
   }
@@ -121,86 +110,6 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
           avatar: avatarOf({ id: member.userId, avatarKind, avatarRef, avatarUpdatedAt }),
         })),
       };
-    },
-  );
-
-  /**
-   * Adds an existing account to the workspace. Email invitations for people who
-   * have not signed up yet need a token flow and an outbound mailer, which
-   * belong with the background-worker milestone rather than here.
-   */
-  app.post(
-    '/workspaces/:workspaceId/members',
-    {
-      preHandler: [
-        requireAuth,
-        requireMembership(db, 'member:invite'),
-        // Adding someone needs only their username, and any account can own a
-        // workspace, so this is throttled like a lookup rather than trusted.
-        rateLimit({ name: 'member-invite', limit: INVITES_PER_MINUTE, windowMs: 60_000 }),
-      ],
-    },
-    async (request, reply) => {
-      const actor = currentUser(request);
-      const { workspaceId, role: actorRole } = currentMembership(request);
-      const input = parse(inviteMemberSchema, request.body);
-
-      assertCanGrant(actorRole, input.role);
-
-      const [invitee] = await db
-        .select({ id: users.id, email: users.email, name: users.name, username: users.username })
-        .from(users)
-        .where(
-          input.username
-            ? eq(users.username, input.username)
-            : eq(users.email, input.email as string),
-        )
-        .limit(1);
-
-      if (!invitee) {
-        throw ApiError.notFound(
-          input.username ? 'No account has that username' : 'No account exists with that email',
-        );
-      }
-
-      const added = await db.transaction(async (tx) => {
-        const [row] = await tx
-          .insert(workspaceMembers)
-          .values({ workspaceId, userId: invitee.id, role: input.role })
-          .onConflictDoNothing({
-            target: [workspaceMembers.workspaceId, workspaceMembers.userId],
-          })
-          .returning({ role: workspaceMembers.role });
-
-        if (!row) throw ApiError.conflict('That user is already a member', 'already_member');
-
-        await recordAudit(tx, auditActor(request), {
-          workspaceId,
-          entityType: 'member',
-          entityId: invitee.id,
-          eventType: 'member.added',
-          payload: { role: input.role },
-          // Who it was, kept where an erasure request can reach it.
-          personal: { subjectId: invitee.id, fields: { username: invitee.username } },
-        });
-
-        return row;
-      });
-
-      await publishEvent(db, { type: 'member.changed', workspaceId, actorId: actor.id });
-
-      return reply.status(201).send({
-        member: {
-          userId: invitee.id,
-          // Only the address the inviter already typed. Adding by username
-          // must not turn into a way to look up anyone's email: any account
-          // can create a workspace and so hold `member:invite` somewhere.
-          email: input.email ? invitee.email : null,
-          name: invitee.name,
-          username: invitee.username,
-          role: added.role,
-        },
-      });
     },
   );
 

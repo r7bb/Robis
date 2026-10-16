@@ -134,6 +134,13 @@ export const updateWorkspaceSchema = z
  * A username is the friendlier ask -- it is what people know each other by
  * in here -- and saves passing email addresses around a team.
  */
+/**
+ * How many unanswered invitations one person may have at once. Any account
+ * can make a workspace and invite anyone, so without a cap an inbox could
+ * be filled with invitations nobody asked for.
+ */
+export const MAX_PENDING_INVITATIONS = 10;
+
 export const inviteMemberSchema = z
   .object({
     email: z.email().max(254).toLowerCase().trim().optional(),

@@ -2,6 +2,7 @@ import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
 import { documents, searchWorkspace } from '@robis/database';
 import {
   type Actor,
+  addMember,
   closeHarness,
   createActor,
   createProject,
@@ -318,11 +319,7 @@ describe('search respects the tenant boundary', () => {
     const { owner, workspace } = await workspaceWithIssues(['Readable by all']);
     const guest = await createActor('Guest');
 
-    await request(`/workspaces/${workspace.id}/members`, {
-      method: 'POST',
-      payload: { email: guest.email, role: 'GUEST' },
-      actor: owner,
-    });
+    await addMember(owner, workspace.id, guest, 'GUEST');
 
     expect((await search(guest, workspace.id, 'readable')).results).toHaveLength(1);
   });

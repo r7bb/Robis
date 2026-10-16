@@ -69,6 +69,11 @@ const PHRASES: Record<string, (payload: Payload) => string> = {
       ? 'checked the audit trail and found no break'
       : 'checked the audit trail and found a break',
   'member.added': (p) => `added ${who(p)} as ${label(text(p, 'role'))}`,
+  'member.invited': (p) => `invited ${who(p)} as ${label(text(p, 'role'))}`,
+  'member.joined': (p) => `joined as ${label(text(p, 'role'))}`,
+  'member.invite_declined': () => 'declined an invitation',
+  'member.invite_lapsed': () => 'answered an invitation that no longer stood',
+  'member.invite_revoked': (p) => `withdrew the invitation to ${who(p)}`,
   'member.removed': (p) => `removed ${who(p)}`,
   'member.left': () => 'left the workspace',
   'member.role_changed': (p) => `changed ${who(p)} ${moved(p)}`,

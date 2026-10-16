@@ -56,7 +56,7 @@ export type Me = {
     username: string;
     /** Null until a picture is chosen; the welcome step asks for one. */
     avatar: AvatarRef;
-    /** Whether the address has been confirmed. Nothing is gated on it yet. */
+    /** Whether the address has been confirmed. Joining a workspace needs it. */
     emailVerified: boolean;
     emailVerifiedAt: string | null;
   };
@@ -87,6 +87,26 @@ export type Member = {
   username: string;
   role: Role;
   avatar: AvatarRef;
+};
+
+/** An invitation waiting for you to answer. */
+export type MyInvitation = {
+  id: string;
+  role: Role;
+  createdAt: string;
+  workspace: { id: string; name: string };
+  /** The inviter's username, or null if their account is gone. */
+  invitedBy: string | null;
+};
+
+/** An invitation a workspace has sent, as its admins see it. */
+export type SentInvitation = {
+  id: string;
+  userId: string;
+  name: string;
+  username: string;
+  role: Role;
+  createdAt: string;
 };
 
 export type DocumentSummary = {
@@ -133,6 +153,9 @@ export type NotificationItem = {
     issueKey?: string | null;
     issueTitle?: string | null;
     excerpt?: string;
+    /** Invitations. */
+    workspaceName?: string | null;
+    role?: string;
     /** Nudges. */
     title?: string;
     body?: string;

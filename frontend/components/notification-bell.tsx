@@ -19,6 +19,9 @@ function hrefFor(item: NotificationItem): string {
     return `/guide/${item.payload.nudge}${workspace}`;
   }
 
+  // Not a member yet: the answer is on the workspaces page.
+  if (item.kind === 'invitation') return '/workspaces';
+
   if (item.payload.issueId && item.workspaceId) {
     return `/workspaces/${item.workspaceId}/issues/${item.payload.issueId}`;
   }
@@ -28,6 +31,15 @@ function hrefFor(item: NotificationItem): string {
 
 function headlineFor(item: NotificationItem) {
   if (item.kind === 'nudge') return item.payload.title ?? 'Suggestion';
+
+  if (item.kind === 'invitation') {
+    return (
+      <>
+        <span className="font-medium">{item.actorName ?? 'Someone'}</span> invited you to{' '}
+        <span className="font-medium">{item.payload.workspaceName ?? 'a workspace'}</span>
+      </>
+    );
+  }
 
   return (
     <>
@@ -40,6 +52,7 @@ function headlineFor(item: NotificationItem) {
 }
 
 function bodyFor(item: NotificationItem): string | undefined {
+  if (item.kind === 'invitation') return 'Accept or decline it on your workspaces page.';
   return item.kind === 'nudge' ? item.payload.body : item.payload.excerpt;
 }
 

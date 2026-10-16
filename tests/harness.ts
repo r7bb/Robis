@@ -23,11 +23,13 @@ import {
   ensureRuntimeRole,
   MAIL_JOBS,
   settleDeferredAccountEvents,
+  users,
 } from '@robis/database';
 import { runMigrations } from '@robis/database/migrate';
 import { MemoryMailer } from '@robis/mailer';
 import { mailHandlers } from '@robis/worker/mail';
 import { Runner } from '@robis/worker/runner';
+import { and, eq, isNull } from 'drizzle-orm';
 import postgres from 'postgres';
 
 const ADMIN_URL = process.env.TEST_ADMIN_URL ?? 'postgres://robis:robis@localhost:5433/postgres';
@@ -53,6 +55,7 @@ const TABLES = [
   'comments',
   'issues',
   'projects',
+  'workspace_invitations',
   'workspace_members',
   'workspaces',
   'sessions',
@@ -377,7 +380,12 @@ export async function createWorkspace(actor: Actor, name = 'Engineering') {
   return response.json().workspace as { id: string; slug: string; name: string };
 }
 
-/** Add `user` to `workspaceId` with the given role, acting as `actor`. */
+/**
+ * Add `user` to `workspaceId` with the given role, acting as `actor`: the
+ * whole real path, so every suite exercises it. `actor` invites, the
+ * invited person's address is confirmed (accepting needs it), and they
+ * accept.
+ */
 export async function addMember(
   actor: Actor,
   workspaceId: string,
@@ -391,7 +399,22 @@ export async function addMember(
   });
 
   if (response.statusCode !== 201) {
-    throw new Error(`Failed to add member: ${response.statusCode} ${response.body}`);
+    throw new Error(`Failed to invite member: ${response.statusCode} ${response.body}`);
+  }
+
+  const { ownerDb } = await getHarness();
+  await ownerDb
+    .update(users)
+    .set({ emailVerifiedAt: new Date() })
+    .where(and(eq(users.id, user.id), isNull(users.emailVerifiedAt)));
+
+  const invitationId = response.json().invitation.id as string;
+  const accepted = await request(`/invitations/${invitationId}/accept`, {
+    method: 'POST',
+    actor: user,
+  });
+  if (accepted.statusCode !== 200) {
+    throw new Error(`Failed to accept invitation: ${accepted.statusCode} ${accepted.body}`);
   }
 }
 

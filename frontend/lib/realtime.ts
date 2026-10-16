@@ -92,6 +92,7 @@ export function useRealtime(
 
         case 'member.changed':
           invalidate(['members', event.workspaceId]);
+          invalidate(['invitations', event.workspaceId]);
           invalidate(['workspace', event.workspaceId]);
           return;
 

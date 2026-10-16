@@ -40,6 +40,25 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-16',
+    area: 'Product',
+    title: 'Invitations you answer',
+    summary:
+      'Adding someone to a workspace now sends them an invitation rather than putting them in it. It arrives in their inbox and waits on their workspaces page, and nothing joins their list until they accept; they can decline instead. Accepting needs a confirmed email address, which settles what a confirmed address is for. Admins see who has not answered yet and can withdraw an invitation.',
+    checked:
+      'Tests prove an invited person is not a member until they accept (the workspace is a 404 to them until then), that the invitation reaches their inbox, that accepting is refused until the address is confirmed and then makes them a member, that accepting twice with one key joins once and answers the same, that declining and withdrawing both close it, that nobody but the invited person can answer it, that the pending list is 404 outside the workspace and 403 without the right to invite, that an invitation is not sent twice or to a member, that only an owner can invite an owner, that an invitation lapses if its sender can no longer invite, that an admin cannot withdraw an invitation above their rank, and that one person cannot be sent more than ten at once. Every other suite now adds members through the same invite and accept path. Walked through in headless Chrome against the containers rebuilt from this code: invite, the inbox, Join waiting on a real confirmation email from the mail sink, joining, and at phone width. Reviewed for correctness, security and React; their findings are in.',
+    feature: {
+      name: 'Ask people in, and let them say yes',
+      where: 'Members on a workspace page; Invitations on your workspaces page.',
+      layers: [
+        'Screens: Join and Decline beside each invitation, and a prompt to confirm your email first.',
+        'API: invite, list, accept, decline and withdraw, each audited and safe to retry.',
+        'Database: one pending row per person and workspace, gone once answered.',
+        'Trail: invited, joined, declined and withdrawn, each by the person who did it.',
+      ],
+    },
+  },
+  {
+    date: '2026-10-16',
     area: 'Security',
     title: 'A username nobody else can wear',
     summary:

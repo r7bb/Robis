@@ -25,6 +25,11 @@ Newest first. The same list is the site's What's new page, linked from the
 header, where each entry opens to show how it was checked and, for features,
 where to find it and what each layer does.
 
+- **Invitations you answer** (2026-10-16). Adding someone to a workspace
+  now sends them an invitation. It shows in their inbox and on their
+  workspaces page, and nothing joins their list until they accept. Joining
+  needs a confirmed email address; admins see who has not answered and can
+  withdraw an invitation.
 - **A username nobody else can wear** (2026-10-16). Lookalike names
   (`ada.l` and `ada_l`, `b0b` and `bob`) count as the same name. A name
   you let go is held for 90 days, and only you can take it back. A mention

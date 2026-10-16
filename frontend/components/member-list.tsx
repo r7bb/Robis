@@ -5,11 +5,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { api, type Me, type Member } from '../lib/api.ts';
 import { DeleteButton } from './delete-button.tsx';
+import { SentInvitations } from './sent-invitations.tsx';
 import { Avatar } from './ui/avatar.tsx';
 import { RoleBadge } from './ui/primitives.tsx';
 
 /**
- * Workspace members: invite, change role, remove.
+ * Workspace members: invite, change role, remove. An invitation waits
+ * for the invited person's answer, so it is listed apart until then.
  *
  * The controls mirror the server's rules rather than reimplementing them --
  * every action here is refused by the API too. Hiding a button the caller
@@ -25,6 +27,7 @@ export function MemberList({
   const queryClient = useQueryClient();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<Role>('MEMBER');
+  const [invited, setInvited] = useState<string | null>(null);
 
   const key = ['members', workspaceId] as const;
   const invalidate = () => queryClient.invalidateQueries({ queryKey: key });
@@ -38,10 +41,14 @@ export function MemberList({
 
   const invite = useMutation({
     mutationFn: (body: { email?: string; username?: string; role: Role }) =>
-      api<{ member: Member }>(`/workspaces/${workspaceId}/members`, { method: 'POST', body }),
-    onSuccess: () => {
+      api<{ invitation: { username: string } }>(`/workspaces/${workspaceId}/members`, {
+        method: 'POST',
+        body,
+      }),
+    onSuccess: ({ invitation }) => {
       setEmail('');
-      invalidate();
+      setInvited(invitation.username);
+      queryClient.invalidateQueries({ queryKey: ['invitations', workspaceId] });
     },
   });
 
@@ -92,13 +99,22 @@ export function MemberList({
 
   return (
     <section className="mt-12">
-      <h2 className="text-sm font-medium uppercase tracking-wide text-faint">Members</h2>
+      <h2
+        id={`members-heading-${workspaceId}`}
+        tabIndex={-1}
+        className="text-sm font-medium uppercase tracking-wide text-faint focus:outline-none"
+      >
+        Members
+      </h2>
 
       {canManage && (
         <form onSubmit={onInvite} className="mt-3 flex flex-wrap gap-2">
           <input
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              setInvited(null);
+            }}
             type="text"
             autoCapitalize="none"
             spellCheck={false}
@@ -135,6 +151,11 @@ export function MemberList({
           {(error as Error).message}
         </p>
       )}
+
+      {/* Mounted from the start, so a screen reader hears the change. */}
+      <p role="status" className="mt-2 text-sm text-muted empty:hidden">
+        {invited && !error ? `Invited @${invited}. They join once they accept.` : ''}
+      </p>
 
       <ul className="mt-3 divide-y divide-line rounded-lg border border-line bg-raised">
         {members.data?.members.map((member) => {
@@ -193,6 +214,10 @@ export function MemberList({
           );
         })}
       </ul>
+
+      {canManage && (
+        <SentInvitations workspaceId={workspaceId} focusAfter={`members-heading-${workspaceId}`} />
+      )}
     </section>
   );
 }

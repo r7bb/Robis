@@ -51,6 +51,7 @@ second "consumed" state to get wrong.
 | Feature | Where |
 | --- | --- |
 | Create workspaces, invite members, set roles | `backend/api/src/routes/workspaces.ts`, `members.ts` |
+| Invitations the invited person accepts or declines; joining needs a confirmed email | `backend/api/src/routes/invitations.ts`, `frontend/components/my-invitations.tsx` |
 | Four roles (OWNER, ADMIN, MEMBER, GUEST) | `shared/contracts/src/rbac.ts` |
 | One declarative permission matrix, 30+ permissions | same |
 | 404-not-403 for non-members | `backend/api/src/plugins/authz.ts` |

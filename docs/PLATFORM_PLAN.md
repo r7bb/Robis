@@ -143,8 +143,9 @@ Order of work, decided 2026-10-09:
    at whoever it meant; lookalikes collide on a key that ignores dots and
    underscores and reads 0 as o and 1 as l. Old usernames are personal data
    kept for the 90 days of their hold; `audit:erase` forgets them and keeps
-   the hold (for legal review, like the rest of erasure). Still open from that list:
-   adding someone to a workspace needs no acceptance from them; the age
+   the hold (for legal review, like the rest of erasure). Adding someone is now an
+   invitation they accept or decline, and accepting needs a confirmed email
+   (B4, 2026-10-16). Still open from that list: the age
    confirmation is not stored with a timestamp or terms version; and
    accounts that predate usernames are not prompted to choose a new one.
 2. **A picture before you start.** A new member adds at least one image

@@ -63,7 +63,8 @@ function Verify() {
       <AuthShell title="Verify your email" subtitle="Confirm your address.">
         <div className="mt-3 space-y-4">
           <AuthNotice>
-            Confirming tells us this address reaches you. Nothing else about your account changes.
+            Confirming tells us this address reaches you, and lets you join the workspaces you are
+            invited to.
           </AuthNotice>
 
           <AuthButton type="button" onClick={confirm}>

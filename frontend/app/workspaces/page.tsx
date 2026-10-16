@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useState } from 'react';
 import { DeleteButton } from '../../components/delete-button.tsx';
+import { MyInvitations } from '../../components/my-invitations.tsx';
 import { NotificationBell } from '../../components/notification-bell.tsx';
 import { RoleBadge } from '../../components/ui/primitives.tsx';
 import { api, type Me, type WorkspaceSummary } from '../../lib/api.ts';
@@ -81,21 +82,27 @@ export default function WorkspacesPage() {
     <main className="mx-auto max-w-3xl px-6 py-12">
       <header className="flex items-baseline justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-content">Workspaces</h1>
+          <h1
+            id="workspaces-heading"
+            tabIndex={-1}
+            className="text-xl font-semibold tracking-tight text-content focus:outline-none"
+          >
+            Workspaces
+          </h1>
           {me.data && <p className="mt-1 text-sm text-muted">Signed in as {me.data.user.name}</p>}
         </div>
 
         <div className="flex items-center gap-4">
           <NotificationBell />
 
-          <Link href="/account" className="text-sm text-muted hover:text-content">
+          <Link href="/account" className="whitespace-nowrap text-sm text-muted hover:text-content">
             Account
           </Link>
 
           <button
             type="button"
             onClick={() => signOut.mutate()}
-            className="text-sm text-muted hover:text-content"
+            className="whitespace-nowrap text-sm text-muted hover:text-content"
           >
             Sign out
           </button>
@@ -123,6 +130,8 @@ export default function WorkspacesPage() {
           {(createWorkspace.error as Error).message}
         </p>
       )}
+
+      <MyInvitations me={me.data} focusAfter="workspaces-heading" />
 
       <ul className="mt-8 space-y-2">
         {workspaces.data?.workspaces.map((workspace) => (

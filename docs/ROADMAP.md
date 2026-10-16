@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-10-16): **719 TypeScript tests, 96 Python tests, lint and
+Status (2026-10-16): **734 TypeScript tests, 96 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -121,8 +121,10 @@ before sending anything people did not ask for.
 
 ### 4. Decide what a verified address gates
 
-`users.email_verified_at` is recorded and nothing depends on it. Either gate
-something (invitations, perhaps) or say in the UI that it is informational.
+Settled (B4, 2026-10-16): joining a workspace. Adding someone is now an
+invitation they accept or decline, and accepting needs a confirmed address;
+the workspaces page says so and offers the link again. Everything else a
+new account does still works before the address is confirmed.
 
 ### 5. Deferred review findings
 

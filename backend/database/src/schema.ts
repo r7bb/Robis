@@ -90,7 +90,8 @@ export const users = pgTable(
      *
      * A timestamp rather than a boolean: "verified" and "verified on the third
      * of March" cost the same to store, and the second can answer questions
-     * about an account later. Nothing is gated on it yet -- see the README.
+     * about an account later. Joining a workspace needs it: an invitation
+     * cannot be accepted from an unconfirmed address.
      */
     emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
     createdAt: createdAt(),
@@ -252,6 +253,35 @@ export const workspaceMembers = pgTable(
   (t) => [
     primaryKey({ columns: [t.workspaceId, t.userId] }),
     index('workspace_members_user_id_idx').on(t.userId),
+  ],
+);
+
+/**
+ * Someone asked into a workspace who has not answered yet.
+ *
+ * Membership needs the person's own yes: an admin's invitation lands
+ * here, the invited person sees it and accepts (which needs a confirmed
+ * email address) or declines, and only then does a `workspace_members`
+ * row exist. Answering or withdrawing it deletes the row; the audit trail
+ * keeps what happened.
+ */
+export const workspaceInvitations = pgTable(
+  'workspace_invitations',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    role: roleEnum('role').notNull().default('MEMBER'),
+    invitedBy: uuid('invited_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex('workspace_invitations_workspace_user_key').on(t.workspaceId, t.userId),
+    index('workspace_invitations_user_idx').on(t.userId),
   ],
 );
 

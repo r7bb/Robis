@@ -141,7 +141,7 @@ describe('changing a username', () => {
 });
 
 describe('usernames inside a workspace', () => {
-  test('an admin can add someone by username', async () => {
+  test('an admin can invite someone by username', async () => {
     const owner = await createActor('Owner');
     const invitee = await createActor('Invitee');
     const workspace = await createWorkspace(owner);
@@ -153,10 +153,10 @@ describe('usernames inside a workspace', () => {
     });
 
     expect(response.statusCode).toBe(201);
-    expect(response.json().member.userId).toBe(invitee.id);
+    expect(response.json().invitation.userId).toBe(invitee.id);
   });
 
-  test('adding by username never reveals the email of the person added', async () => {
+  test('inviting by username never reveals the email of the person invited', async () => {
     const owner = await createActor('Owner');
     const invitee = await createActor('Invitee');
     const workspace = await createWorkspace(owner);
@@ -168,7 +168,7 @@ describe('usernames inside a workspace', () => {
     });
 
     expect(response.statusCode).toBe(201);
-    expect(response.json().member.email).toBeNull();
+    expect(response.json().invitation.email).toBeNull();
     expect(response.body).not.toContain(invitee.email);
   });
 
@@ -230,7 +230,8 @@ describe('usernames inside a workspace', () => {
       .where(eq(auditEvents.workspaceId, workspace.id));
 
     const memberEvents = events.filter((event) => event.type.startsWith('member.'));
-    expect(memberEvents.length).toBe(2);
+    // Invited, joined, and the role change.
+    expect(memberEvents.length).toBe(3);
     for (const event of memberEvents) {
       // The username sits beside the hashed payload, where an erasure can
       // reach it; neither holds the email or the real name.

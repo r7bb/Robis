@@ -153,10 +153,12 @@ describe('every change leaves an event', () => {
       'meeting.updated',
       'meeting.responded',
       'meeting.canceled',
-      'member.added',
+      'member.invited',
+      'member.joined',
       'member.role_changed',
       'member.removed',
-      'member.added',
+      'member.invited',
+      'member.joined',
       'member.left',
       'project.updated',
       'issue.deleted',
@@ -839,8 +841,9 @@ describe('export and verification over HTTP', () => {
     const base = `/workspaces/${workspace.id}/audit/events`;
 
     const newest = (await request(base, { actor: owner })).json();
-    // workspace, project, two issues, the member added, then the helper's project.
-    expect(newest.events[0].seq).toBe(6);
+    // workspace, project, two issues, the member invited and joining, then
+    // the helper's project.
+    expect(newest.events[0].seq).toBe(7);
     expect(newest.events[0].actorName).toBe('Helper');
 
     const issues = (await request(`${base}?entityType=issue`, { actor: owner })).json();
@@ -850,7 +853,11 @@ describe('export and verification over HTTP', () => {
     ]);
 
     const byHelper = (await request(`${base}?actorId=${helper.id}`, { actor: owner })).json();
-    expect(byHelper.events.map((e: { type: string }) => e.type)).toEqual(['project.created']);
+    // Joining is the helper's own act, so it is theirs in the trail.
+    expect(byHelper.events.map((e: { type: string }) => e.type)).toEqual([
+      'project.created',
+      'member.joined',
+    ]);
   });
 
   test('exported events carry their key and hashes', async () => {
@@ -1158,7 +1165,7 @@ describe('erasing a person (a design, for legal review)', () => {
   test('a member event keeps the username outside the hashed payload', async () => {
     const { db } = await getHarness();
     const { workspace, member } = await memberChurn();
-    const added = (await trail(workspace.id)).find((event) => event.eventType === 'member.added')!;
+    const added = (await trail(workspace.id)).find((event) => event.eventType === 'member.joined')!;
 
     expect(JSON.parse(added.payload)).toEqual({ role: 'MEMBER' });
     expect(JSON.parse(added.personal!)).toEqual({ username: member.username });
@@ -1170,7 +1177,8 @@ describe('erasing a person (a design, for legal review)', () => {
     const { db } = await getHarness();
     const { owner, workspace, member } = await memberChurn();
 
-    expect(await eraseAuditPersonalData(db, member.id)).toBe(2);
+    // Invited, joined, removed.
+    expect(await eraseAuditPersonalData(db, member.id)).toBe(3);
 
     for (const event of await trail(workspace.id)) {
       expect(event.personal).toBeNull();
@@ -1190,7 +1198,7 @@ describe('erasing a person (a design, for legal review)', () => {
 
     await tamper(
       sql`update audit_events set personal = '{"username":"someone_else"}'
-          where workspace_id = ${workspace.id} and event_type = 'member.added'`,
+          where workspace_id = ${workspace.id} and event_type = 'member.joined'`,
     );
 
     expect((await verifyAuditChain(db, workspace.id)).broken?.reason).toBe('altered');
@@ -1222,7 +1230,7 @@ describe('erasure cannot be steered', () => {
 
     await tamper(
       sql`update audit_events set personal_subject_id = ${owner.id}
-          where workspace_id = ${workspace.id} and event_type = 'member.added'`,
+          where workspace_id = ${workspace.id} and event_type = 'member.joined'`,
     );
 
     expect((await verifyAuditChain(db, workspace.id)).broken?.reason).toBe('altered');
