@@ -173,7 +173,7 @@ export default function HowItWorks() {
               Overview
             </Link>
             <Link
-              href="/login"
+              href="/start"
               className="rounded-full bg-accent px-4 py-1.5 font-semibold text-accent-contrast transition-colors duration-[var(--micro)] ease-[var(--ease)] hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
             >
               Get started
@@ -337,7 +337,7 @@ export default function HowItWorks() {
             <Headline>Read the code.</Headline>
 
             <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
-              <Link href="/login" className={FILLED}>
+              <Link href="/start" className={FILLED}>
                 Get started
               </Link>
               <a href={REPO} className={OUTLINED} target="_blank" rel="noopener noreferrer">

@@ -39,6 +39,25 @@ export type Entry = {
 
 export const CHANGELOG: readonly Entry[] = [
   {
+    date: '2026-10-16',
+    area: 'Site',
+    title: 'A short tour before you sign up',
+    summary:
+      'Get started now opens a five-slide tour instead of the sign-in form: what Robis does, the offline editors to try for yourself, a hash chain you can break by editing one word, what signing up asks for, and then the form. The landing page’s field moves behind every slide.',
+    checked:
+      'Tests hold the slides to their rules (short titles, a name for each, no dashes) and the keys and swipes to their edges, and prove the in-browser chain breaks exactly at an edited event and mends when it is put back. Walked through in a real browser at desktop and phone widths, ending on Create account, which opens the form in sign-up mode.',
+    feature: {
+      name: 'See it before you sign up',
+      where: 'Get started on the landing, How it works and What’s new pages.',
+      layers: [
+        'Slides: keys, swipe, or the picker; nothing moves on its own, and Skip goes straight to sign up.',
+        'Live parts: the real offline editors, and a SHA-256 chain computed in your browser.',
+        'Motion: one cross-slide on the page’s curve, the field changing formation per slide.',
+        'Reduced motion: every slide is simply there, with nothing sliding or rising.',
+      ],
+    },
+  },
+  {
     date: '2026-10-15',
     area: 'Security',
     title: 'Your own sign-in history, and a way to erase someone',

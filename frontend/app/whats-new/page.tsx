@@ -42,7 +42,7 @@ export default function WhatsNewPage() {
               How it works
             </Link>
             <Link
-              href="/login"
+              href="/start"
               className="rounded-full bg-accent px-4 py-1.5 font-semibold text-accent-contrast transition-colors duration-[var(--micro)] ease-[var(--ease)] hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
             >
               Get started

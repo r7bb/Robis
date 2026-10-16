@@ -504,3 +504,74 @@ body {
     transform: translateY(0.5rem);
   }
 }
+
+/*
+ * The "Get started" intro (features/start). Slides are stacked: the current
+ * one sits in place, the ones before and after wait just off to either
+ * side, faded out, so moving between them is a short slide and a cross-fade
+ * on the page's one curve. Parts of a slide rise in after it arrives, in
+ * the order `--rise` gives them.
+ */
+[data-intro-slide] {
+  opacity: 0;
+  transform: translate3d(6%, 0, 0) scale(0.985);
+  pointer-events: none;
+}
+[data-intro-slide][data-place="before"] {
+  transform: translate3d(-6%, 0, 0) scale(0.985);
+}
+[data-intro-slide][data-place="here"] {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+[data-intro-rise] {
+  opacity: 0;
+  transform: translate3d(0, 14px, 0);
+}
+[data-intro-slide][data-place="here"] [data-intro-rise] {
+  opacity: 1;
+  transform: none;
+}
+[data-intro-dot] {
+  width: 0.375rem;
+}
+[data-intro-dot][data-current="true"] {
+  width: 1.75rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-intro-slide] {
+    transition:
+      opacity 620ms var(--ease),
+      transform 720ms var(--ease);
+  }
+  [data-intro-rise] {
+    transition:
+      opacity var(--entrance) var(--ease),
+      transform 620ms var(--ease);
+  }
+  [data-intro-slide][data-place="here"] [data-intro-rise] {
+    transition-delay: calc(180ms + var(--rise, 0) * 70ms);
+  }
+  [data-intro-progress] {
+    transition: transform 620ms var(--ease);
+  }
+  [data-intro-dot] {
+    transition:
+      width var(--quick) var(--ease),
+      background-color var(--micro) var(--ease);
+  }
+}
+
+/* Reduced motion: the same states, arrived at instantly. */
+@media (prefers-reduced-motion: reduce) {
+  [data-intro-slide],
+  [data-intro-slide][data-place="before"] {
+    transform: none;
+  }
+  [data-intro-rise] {
+    opacity: 1;
+    transform: none;
+  }
+}

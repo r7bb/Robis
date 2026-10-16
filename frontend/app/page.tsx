@@ -44,7 +44,8 @@ export default function Home() {
   const [sentinel, scrolled] = useScrolled();
 
   const signedIn = Boolean(data?.user);
-  const href = signedIn ? '/workspaces' : '/login';
+  // A visitor gets the short intro first; it ends on the sign-up form.
+  const href = signedIn ? '/workspaces' : '/start';
   const label = signedIn ? 'Open your workspaces' : 'Get started';
 
   return (

@@ -223,6 +223,14 @@ describe('no hardcoded colours outside the palette', () => {
     'frontend/features/landing/live-paragraph.tsx',
     'frontend/features/landing/faq.tsx',
     'frontend/features/landing/say-it.tsx',
+    /*
+     * The "Get started" intro: reached from the landing page and built from
+     * its parts (the field, the sync demo, the chapter near-black), so it
+     * shares the same fixed dark surface and the same white hairlines.
+     */
+    'frontend/features/start/intro.tsx',
+    'frontend/features/start/slides.tsx',
+    'frontend/features/start/chain-demo.tsx',
     'frontend/features/landing/whats-new.tsx',
     'frontend/app/whats-new/page.tsx',
   ]);

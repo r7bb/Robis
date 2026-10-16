@@ -25,6 +25,9 @@ Newest first. The same list is the site's What's new page, linked from the
 header, where each entry opens to show how it was checked and, for features,
 where to find it and what each layer does.
 
+- **A short tour before you sign up** (2026-10-16). Get started opens five
+  slides first: what Robis does, the offline editors to try, a hash chain you
+  can break by editing a word, what signing up asks for, then the form.
 - **Your own sign-in history, and a way to erase someone** (2026-10-15).
   Account settings show your sign-ins, failed attempts, password changes and
   sessions signed out, signed and seen only by you. Member events keep
