@@ -116,7 +116,11 @@ export type Comment = {
   createdAt: string;
   authorId: string;
   authorName: string;
+  /** Who each `@handle` meant when it was written, with today's username. */
+  mentions: CommentMention[];
 };
+
+export type CommentMention = { handle: string; userId: string; username: string };
 
 export type NotificationItem = {
   id: string;

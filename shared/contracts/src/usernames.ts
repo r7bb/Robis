@@ -55,6 +55,39 @@ export const RESERVED_USERNAMES: ReadonlySet<string> = new Set([
   'www',
 ]);
 
+/**
+ * Characters that read as another in most typefaces, and what they count
+ * as. Small on purpose: these are the pairs people actually use to pass as
+ * someone else, and a long list would refuse ordinary names.
+ */
+const CONFUSABLES: Readonly<Record<string, string>> = { '0': 'o', '1': 'l' };
+
+/**
+ * What a username is, for uniqueness: lowercase, without its dots and
+ * underscores, with each lookalike folded into the letter it imitates. So
+ * `ada.l`, `ada_l` and `adal` are one name, and so are `b0b` and `bob`.
+ *
+ * Postgres derives the same key in a generated column (migration 0022), and
+ * a test holds the two to each other.
+ */
+export function usernameKey(username: string): string {
+  return username
+    .toLowerCase()
+    .replace(/[._]/g, '')
+    .replace(/[01]/g, (character) => CONFUSABLES[character] ?? character);
+}
+
+const RESERVED_KEYS: ReadonlySet<string> = new Set([...RESERVED_USERNAMES].map(usernameKey));
+
+/** How long a released username waits before anyone else may claim it. */
+export const USERNAME_HOLD_DAYS = 90;
+
+/**
+ * How many released names one account may hold at once. Each rename holds
+ * the old name, so without a cap one account could sit on a list of them.
+ */
+export const MAX_USERNAME_HOLDS = 3;
+
 export type UsernameProblem = 'length' | 'characters' | 'reserved';
 
 /** Why a candidate is not a valid username, or null if it is. */
@@ -63,7 +96,8 @@ export function usernameProblem(candidate: string): UsernameProblem | null {
     return 'length';
   }
   if (!USERNAME.test(candidate) || candidate.includes('..')) return 'characters';
-  if (RESERVED_USERNAMES.has(candidate)) return 'reserved';
+  // By key, so `r0bis` and `ad.min` are reserved too.
+  if (RESERVED_KEYS.has(usernameKey(candidate))) return 'reserved';
   return null;
 }
 

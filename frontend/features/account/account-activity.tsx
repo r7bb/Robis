@@ -29,6 +29,7 @@ const LABELS: Record<string, Label> = {
   'auth.signed_out': { text: () => 'Signed out' },
   'auth.password_changed': { text: () => 'Password changed' },
   'auth.password_reset': { text: () => 'Password reset from an emailed link' },
+  'auth.username_changed': { text: () => 'Username changed' },
   'auth.sessions_revoked': {
     text: (payload) => {
       const count = typeof payload.count === 'number' ? payload.count : 0;

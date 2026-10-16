@@ -4,7 +4,7 @@ import { splitMentions } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type ClipboardEvent, type FormEvent, useEffect, useState } from 'react';
 import { type Attachment, uploadable } from '../features/issues/attachments.tsx';
-import { api, BASE_URL, type Comment, type Me } from '../lib/api.ts';
+import { api, BASE_URL, type Comment, type CommentMention, type Me } from '../lib/api.ts';
 import { useMemberAvatars } from '../lib/use-member-avatars.ts';
 import { DeleteButton } from './delete-button.tsx';
 import { Avatar } from './ui/avatar.tsx';
@@ -169,7 +169,7 @@ export function CommentThread({
             </div>
 
             <p className="mt-2 whitespace-pre-wrap text-sm text-muted">
-              <Mentions text={comment.body} />
+              <Mentions text={comment.body} mentions={comment.mentions ?? []} />
             </p>
 
             <CommentImages
@@ -230,24 +230,31 @@ export function CommentThread({
 }
 
 /**
- * Highlight `@handle` so a mention is visible in the rendered comment.
+ * Highlight each `@handle` that meant someone, as written, and say who it
+ * is now when they have changed their name since.
  *
- * The split comes from `@robis/shared` rather than a regex here, so what gets
- * highlighted is exactly what gets notified.
+ * The split comes from `@robis/shared` rather than a regex here, and only
+ * handles the server resolved when the comment was written are marked, so
+ * what is highlighted is exactly who was notified.
  */
-function Mentions({ text }: { text: string }) {
+function Mentions({ text, mentions }: { text: string; mentions: readonly CommentMention[] }) {
+  const byHandle = new Map(mentions.map((mention) => [mention.handle, mention]));
   return (
     <>
-      {splitMentions(text).map((segment, index) =>
-        segment.handle ? (
+      {splitMentions(text).map((segment, index) => {
+        const mention = segment.handle ? byHandle.get(segment.handle) : undefined;
+        if (!mention) return segment.text;
+        const renamed = mention.username !== mention.handle;
+        return (
           // biome-ignore lint/suspicious/noArrayIndexKey: split output is positional and re-rendered wholesale, so the index is the only identity available.
           <span key={index} className="rounded bg-accent/15 px-1 text-accent-soft">
             {segment.text}
+            {renamed ? (
+              <span className="ml-1 text-xs text-muted">(now @{mention.username})</span>
+            ) : null}
           </span>
-        ) : (
-          segment.text
-        ),
-      )}
+        );
+      })}
     </>
   );
 }

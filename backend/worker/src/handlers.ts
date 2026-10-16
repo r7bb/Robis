@@ -1,14 +1,14 @@
 import { deleteExpiredAuthTokens, deleteExpiredSessions } from '@robis/auth';
 import {
+  commentMentions,
   comments,
   type Database,
+  deleteExpiredUsernameHolds,
   issues,
   notifications,
   projects,
-  users,
   workspaceMembers,
 } from '@robis/database';
-import { resolveMentions } from '@robis/shared';
 import { and, eq, ne } from 'drizzle-orm';
 import { scanNudges } from './nudges.ts';
 import type { Handlers } from './runner.ts';
@@ -50,21 +50,26 @@ export const notifyMentions = async (payload: unknown, { db }: { db: Database })
   // retrying will never help.
   if (!comment) return;
 
-  // Only workspace members can be mentioned: resolving against all users would
-  // let a comment notify someone who cannot even see the issue.
-  const members = await db
-    .select({ id: users.id, username: users.username })
-    .from(workspaceMembers)
-    .innerJoin(users, eq(users.id, workspaceMembers.userId))
+  // Who the comment meant was decided when it was written (see
+  // `comment_mentions`), so a rename in between changes nobody. Only people
+  // still in the workspace are told: someone removed since cannot see it.
+  const mentioned = await db
+    .select({ id: commentMentions.userId })
+    .from(commentMentions)
+    .innerJoin(
+      workspaceMembers,
+      and(
+        eq(workspaceMembers.userId, commentMentions.userId),
+        eq(workspaceMembers.workspaceId, comment.workspaceId),
+      ),
+    )
     .where(
       and(
-        eq(workspaceMembers.workspaceId, comment.workspaceId),
+        eq(commentMentions.commentId, comment.id),
         // Mentioning yourself is not a notification.
-        ne(workspaceMembers.userId, comment.authorId),
+        ne(commentMentions.userId, comment.authorId),
       ),
     );
-
-  const mentioned = resolveMentions(comment.body, members);
   if (mentioned.length === 0) return;
 
   const [issue] = await db
@@ -112,6 +117,8 @@ export const cleanupSessions = async (_payload: unknown, { db }: { db: Database 
   // Reset and verification tokens expire the same way sessions do, and there
   // is no reason to run a second timer for the same kind of housekeeping.
   await deleteExpiredAuthTokens(db);
+  // So do username holds, once their 90 days are up.
+  await deleteExpiredUsernameHolds(db);
 };
 
 /** Periodic scan that decides who could use a prompt. See `nudges.ts`. */

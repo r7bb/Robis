@@ -25,6 +25,11 @@ Newest first. The same list is the site's What's new page, linked from the
 header, where each entry opens to show how it was checked and, for features,
 where to find it and what each layer does.
 
+- **A username nobody else can wear** (2026-10-16). Lookalike names
+  (`ada.l` and `ada_l`, `b0b` and `bob`) count as the same name. A name
+  you let go is held for 90 days, and only you can take it back. A mention
+  points at the person it meant when it was written, so an old `@name`
+  never reaches whoever takes that name later.
 - **A short tour before you sign up** (2026-10-16). Get started opens six
   slides of their own first: sourced quotes from Grace Hopper, Eisenhower and
   Fred Brooks, a messy desk to sort into a board, a tunnel where notes wait

@@ -15,7 +15,8 @@ const REASONS: Record<string, string> = {
   length: 'Use 3 to 30 characters.',
   characters: USERNAME_HINT,
   reserved: 'That name is reserved.',
-  taken: 'Someone already has that one.',
+  taken: 'Someone already has that one, or one that reads the same.',
+  held: 'Someone let that one go recently. It is held for them for 90 days.',
 };
 
 /** What to say under the field, from what is known so far. */

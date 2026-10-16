@@ -19,6 +19,7 @@ export * from './queue.ts';
 export * from './roles.ts';
 export * from './schema.ts';
 export * from './search.ts';
+export * from './usernames.ts';
 export { schema };
 
 export type Database = ReturnType<typeof createDatabase>['db'];

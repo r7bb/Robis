@@ -40,6 +40,15 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-16',
+    area: 'Security',
+    title: 'A username nobody else can wear',
+    summary:
+      'Lookalike usernames now count as the same name: dots and underscores are ignored, 0 reads as o and 1 as l, so ada.l, ada_l and adal cannot all exist, and neither can b0b beside bob. A username you let go is held for 90 days, and only you can take it back; an account can hold three old names at once, so nobody can sit on a list of them. Every mention is tied to the person it meant when the comment was written, so if Bob renames and someone else later takes his old name, old comments still point at Bob, show his new name beside the old one, and notify only him.',
+    checked:
+      'Tests prove the code and the database derive the same key, that sign-up, renames and the availability check all refuse lookalikes and held names, that the owner can take a held name back, that a fourth hold is refused, that a sign-up racing a rename never gets the released name (both names are locked during a rename), that a hold ends after 90 days and is swept, that erasing a person forgets their old names but keeps the hold, that a rename is in your own account history without the names, and that a mention written before a rename still points at the right person. The migration was applied to a scratch database holding colliding names; the earliest account kept its name, the others got the lowest free suffix, and an old comment’s mention of a renamed account still found it. Reviewed for correctness, security and the database; the rename race and the hold cap came from those reviews.',
+  },
+  {
+    date: '2026-10-16',
     area: 'Site',
     title: 'A short tour before you sign up',
     summary:

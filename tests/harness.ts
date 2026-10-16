@@ -49,12 +49,14 @@ const TABLES = [
   'document_updates',
   'documents',
   'mutations',
+  'comment_mentions',
   'comments',
   'issues',
   'projects',
   'workspace_members',
   'workspaces',
   'sessions',
+  'username_history',
   'users',
 ];
 

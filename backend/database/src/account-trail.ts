@@ -27,6 +27,7 @@ export const ACCOUNT_EVENT_TYPES = [
   'auth.password_changed',
   'auth.password_reset',
   'auth.sessions_revoked',
+  'auth.username_changed',
 ] as const;
 
 export type AccountEventType = (typeof ACCOUNT_EVENT_TYPES)[number];

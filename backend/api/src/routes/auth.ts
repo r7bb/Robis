@@ -13,19 +13,26 @@ import {
 import {
   type AccountEventOptions,
   type AccountEventType,
+  canHoldAnother,
   type Database,
   deferAccountEvent,
+  lockUsername,
+  recordAccountEvent,
   recordAccountEventNow,
+  releaseUsername,
+  type Tx,
+  usernameClaim,
   users,
 } from '@robis/database';
 import {
   changePasswordSchema,
   loginSchema,
+  MAX_USERNAME_HOLDS,
   registerSchema,
   updateProfileSchema,
   usernameProblem,
 } from '@robis/shared';
-import { and, eq, ne } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import type { RateLimits } from '../app.ts';
 import { assertPasswordAllowed, isRefusedDemoPassword } from '../demo-password.ts';
@@ -120,6 +127,29 @@ export async function authRoutes(
       : ApiError.conflict('That username is taken', 'username_taken');
   }
 
+  const usernameHeld = () =>
+    ApiError.conflict(
+      'That username was let go recently, and is held for its last owner for now',
+      'username_held',
+    );
+
+  /**
+   * Lock both names' keys, then refuse the new one if someone else has or
+   * holds it, or if this account already holds as many old names as it may.
+   */
+  async function assertCanRename(tx: Tx, userId: string, previous: string, next: string) {
+    await lockUsername(tx, previous, next);
+    const claim = await usernameClaim(tx, next, userId);
+    if (claim === 'taken') throw ApiError.conflict('That username is taken', 'username_taken');
+    if (claim === 'held') throw usernameHeld();
+    if (!(await canHoldAnother(tx, userId, next))) {
+      throw ApiError.conflict(
+        `You can hold ${MAX_USERNAME_HOLDS} old usernames at a time; one frees up when its 90 days end`,
+        'too_many_renames',
+      );
+    }
+  }
+
   const cookieOptions = {
     httpOnly: true,
     sameSite: 'lax' as const,
@@ -143,15 +173,28 @@ export async function authRoutes(
     assertPasswordAllowed(env, input.password);
     const passwordHash = await hashPassword(input.password);
 
-    const [user] = await db
-      .insert(users)
-      .values({ email: input.email, name: input.name, username: input.username, passwordHash })
-      // Losing the race on either unique index returns no row, which we
-      // translate into the same 409 as the checked case. Doing this instead
-      // of a SELECT-then-INSERT removes the race entirely.
-      .onConflictDoNothing()
-      .returning(PUBLIC_USER);
+    const user = await db.transaction(async (tx) => {
+      // A held name is refused here; a taken one (or a lookalike of one) is
+      // left to the unique indexes below, which cannot lose a race.
+      await lockUsername(tx, input.username);
+      if ((await usernameClaim(tx, input.username, null)) === 'held') return 'held' as const;
 
+      const [row] = await tx
+        .insert(users)
+        .values({ email: input.email, name: input.name, username: input.username, passwordHash })
+        // Losing the race on any unique index returns no row, which we
+        // translate into the same 409 as the checked case. Doing this instead
+        // of a SELECT-then-INSERT removes the race entirely.
+        .onConflictDoNothing()
+        .returning(PUBLIC_USER);
+      return row ?? null;
+    });
+
+    if (user === 'held') {
+      // The address is still said first when it is taken too.
+      const conflict = await registrationConflict(input.email);
+      throw conflict.code === 'email_taken' ? conflict : usernameHeld();
+    }
     if (!user) throw await registrationConflict(input.email);
 
     const { token, expiresAt } = await createSession(db, user.id, request.headers['user-agent']);
@@ -243,9 +286,9 @@ export async function authRoutes(
   });
 
   /*
-   * Renames are throttled: a username frees the moment it is changed, and an
-   * account cycling through names is either a bug or someone trying to wear
-   * another person's old handle.
+   * Renames are throttled: an account cycling through names is either a bug
+   * or someone trying to wear another person's old handle, and each rename
+   * holds a name for 90 days.
    */
   const profileLimit = rateLimit({
     name: 'profile-update',
@@ -257,21 +300,37 @@ export async function authRoutes(
     const user = currentUser(request);
     const input = parse(updateProfileSchema, request.body);
 
-    if (input.username && input.username !== user.username) {
-      const [holder] = await db
-        .select({ id: users.id })
-        .from(users)
-        .where(and(eq(users.username, input.username), ne(users.id, user.id)))
-        .limit(1);
-      if (holder) throw ApiError.conflict('That username is taken', 'username_taken');
-    }
-
     try {
-      const [updated] = await db
-        .update(users)
-        .set({ ...input, updatedAt: new Date() })
-        .where(eq(users.id, user.id))
-        .returning(PUBLIC_USER);
+      const updated = await db.transaction(async (tx) => {
+        // The current name, read under a row lock: two renames at once must
+        // not both release the same old name.
+        const [current] = await tx
+          .select({ username: users.username })
+          .from(users)
+          .where(eq(users.id, user.id))
+          .for('update');
+        const previous = current?.username ?? user.username;
+        const next = input.username;
+        const renaming = next !== undefined && next !== previous;
+
+        if (renaming) await assertCanRename(tx, user.id, previous, next!);
+
+        const [row] = await tx
+          .update(users)
+          .set({ ...input, updatedAt: new Date() })
+          .where(eq(users.id, user.id))
+          .returning(PUBLIC_USER);
+
+        if (renaming) {
+          await releaseUsername(tx, user.id, previous, next!);
+          // That it happened, not the names: the history table holds those,
+          // for as long as the hold lasts.
+          await recordAccountEvent(tx, user.id, 'auth.username_changed', {
+            requestId: request.id,
+          });
+        }
+        return row;
+      });
 
       return { user: updated };
     } catch (error) {
@@ -308,18 +367,13 @@ export async function authRoutes(
     const problem = usernameProblem(candidate);
     if (problem) return { username: candidate, available: false, reason: problem };
 
-    const [holder] = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.username, candidate))
-      .limit(1);
-
-    // Your own current name counts as available to you.
-    const mine = holder && request.user?.id === holder.id;
+    // Your own current name, in any spelling, counts as available to you,
+    // and so does a name of yours that is being held.
+    const claim = await usernameClaim(db, candidate, request.user?.id ?? null);
     return {
       username: candidate,
-      available: !holder || Boolean(mine),
-      reason: holder && !mine ? 'taken' : null,
+      available: claim === 'free',
+      reason: claim === 'free' ? null : claim,
     };
   });
 

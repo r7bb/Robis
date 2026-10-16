@@ -67,6 +67,15 @@ export const users = pgTable(
      */
     username: text('username').notNull(),
     /**
+     * The username as uniqueness sees it: no dots or underscores, 0 read as
+     * o and 1 as l (`usernameKey` in the contracts says the same in code).
+     * Derived by Postgres, so no insert can forget it, and unique, so
+     * `ada.l` and `ada_l` cannot both exist.
+     */
+    usernameKey: text('username_key').generatedAlwaysAs(
+      sql`translate(replace(replace(lower(username), '.', ''), '_', ''), '01', 'ol')`,
+    ),
+    /**
      * The profile picture: an uploaded photo (`avatar_ref` is its storage
      * key) or a generated one (`avatar_ref` is the seed it is drawn from).
      * Null until the person picks one; the app asks before anything else.
@@ -90,6 +99,33 @@ export const users = pgTable(
   (t) => [
     uniqueIndex('users_email_key').on(t.email),
     uniqueIndex('users_username_key').on(t.username),
+    uniqueIndex('users_username_key_key').on(t.usernameKey),
+  ],
+);
+
+/**
+ * Usernames people have let go of, each held for a while before anyone
+ * else may claim it.
+ *
+ * Without this, renaming frees a name at once, and whoever takes it next
+ * inherits how every old `@mention` of it reads. Only the previous owner
+ * may take a name back while it is held. Erasing a person (see
+ * `audit-redaction.ts`) clears `username` and `user_id` but keeps the key
+ * and the hold, so the erasure does not hand the name to someone else.
+ */
+export const usernameHistory = pgTable(
+  'username_history',
+  {
+    id: id(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    username: text('username'),
+    usernameKey: text('username_key').notNull(),
+    releasedAt: timestamp('released_at', { withTimezone: true }).notNull().defaultNow(),
+    heldUntil: timestamp('held_until', { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    index('username_history_key_idx').on(t.usernameKey, t.heldUntil),
+    index('username_history_user_idx').on(t.userId),
   ],
 );
 
@@ -318,6 +354,31 @@ export const comments = pgTable(
   (t) => [
     index('comments_issue_id_idx').on(t.issueId, t.createdAt),
     index('comments_search_idx').using('gin', t.searchVector),
+  ],
+);
+
+/**
+ * Who each `@handle` in a comment meant, decided when it was written.
+ *
+ * The comment keeps its words; this keeps the people. A later rename, or a
+ * new person taking an old name, changes neither: the mention still points
+ * at whoever held the handle in that workspace at the time.
+ */
+export const commentMentions = pgTable(
+  'comment_mentions',
+  {
+    commentId: uuid('comment_id')
+      .notNull()
+      .references(() => comments.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** The handle as written, lowercased, so the text can be matched to it. */
+    handle: text('handle').notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.commentId, t.handle] }),
+    index('comment_mentions_user_idx').on(t.userId),
   ],
 );
 
