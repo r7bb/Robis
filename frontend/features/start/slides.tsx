@@ -3,14 +3,15 @@
 import Link from 'next/link';
 import type { CSSProperties, ReactNode } from 'react';
 import { FILLED, OUTLINED } from '../landing/band.tsx';
-import { type NetworkEvent, SyncDemo } from '../landing/sync-demo.tsx';
-import { ChainDemo } from './chain-demo.tsx';
-import { NEEDS, SIGN_UP_HREF, type Slide } from './deck.ts';
+import { NEEDS, QUOTES, type Quote, SIGN_UP_HREF, type Slide } from './deck.ts';
+import { SortDesk } from './sort-desk.tsx';
+import { Tunnel } from './tunnel.tsx';
 
 /**
- * What each slide shows. One idea, and on the middle three, one thing to
- * touch: the real offline editors from the landing page, a real hash
- * chain, and the list of what signing up actually asks for.
+ * What each slide shows. Not the landing page again: three quotes from
+ * people who thought hard about plans and teams, each answered in a line,
+ * and between them two small things to play with, a desk to sort and a
+ * tunnel to work through.
  *
  * Parts rise in sequence when their slide arrives (`data-intro-rise`, timed
  * by `--rise`); with reduced motion they are simply there.
@@ -19,10 +20,8 @@ import { NEEDS, SIGN_UP_HREF, type Slide } from './deck.ts';
 type Props = {
   slide: Slide;
   active: boolean;
-  /** Whether the slide has been visited, so its heavier parts may mount. */
-  mounted: boolean;
-  onNetwork: (event: NetworkEvent) => void;
-  onActivity: () => void;
+  /** The tunnel's signal, passed up so the background can dim with it. */
+  onSignal: (online: boolean) => void;
 };
 
 function Rise({
@@ -72,50 +71,112 @@ function Split({ slide, children }: { slide: Slide; children: ReactNode }) {
   );
 }
 
+/** Who said it and where, so the quote can be checked. */
+function Attribution({ quote }: { quote: Quote }) {
+  return (
+    <figcaption className="text-sm text-muted">
+      <span className="text-content">{quote.who}</span>
+      <span aria-hidden="true" className="mx-2 text-faint">
+        ·
+      </span>
+      <cite className="not-italic text-faint">{quote.source}</cite>
+    </figcaption>
+  );
+}
+
+/**
+ * A quote as the picture, and the slide's own line beneath it, set off to
+ * the right as the reply.
+ */
+function QuoteSlide({ slide, quote }: { slide: Slide; quote: Quote }) {
+  return (
+    <div className="w-full">
+      <Rise order={0}>
+        <figure>
+          {/* The width in ch of the quote's own size, not the figure's. */}
+          <blockquote className="relative max-w-[20ch] text-balance text-[clamp(2rem,4.4vw,4.25rem)] font-medium leading-[1.08] tracking-[-0.035em] text-content">
+            {/* Hung in the margin where there is one; above the words on a
+                phone, where the margin is only the page's gutter. */}
+            <span
+              aria-hidden="true"
+              className="block h-[0.5em] select-none text-accent-soft/60 lg:absolute lg:-left-[0.55em] lg:-top-[0.08em] lg:h-auto"
+            >
+              “
+            </span>
+            {quote.text}
+          </blockquote>
+          <div className="mt-6">
+            <Attribution quote={quote} />
+          </div>
+        </figure>
+      </Rise>
+      <Rise order={1} className="mt-[clamp(2.5rem,7vh,5rem)] lg:ml-auto lg:max-w-md">
+        <div className="border-t border-white/15 pt-5">
+          <h2 className="text-balance text-xl font-semibold tracking-[-0.02em] text-content">
+            {slide.title}
+          </h2>
+          <p className="mt-2 leading-relaxed text-muted">{slide.body}</p>
+        </div>
+      </Rise>
+    </div>
+  );
+}
+
 const TEXT_LINK =
   'underline decoration-white/30 underline-offset-4 transition-colors duration-[var(--micro)] ease-[var(--ease)] hover:text-content';
 
-export function SlideBody({ slide, active, mounted, onNetwork, onActivity }: Props) {
+const KEY = 'rounded border border-white/15 px-1.5 py-0.5 font-mono text-xs';
+
+export function SlideBody({ slide, active, onSignal }: Props) {
   switch (slide.id) {
     case 'hello':
       return (
         <div className="w-full max-w-4xl">
           <Heading slide={slide} />
           <Rise order={2}>
+            <figure className="mt-12 max-w-[52ch] border-l border-accent-soft/40 pl-5">
+              <blockquote className="text-pretty leading-relaxed text-content/90">
+                {QUOTES.hopper.text}
+              </blockquote>
+              <div className="mt-2">
+                <Attribution quote={QUOTES.hopper} />
+              </div>
+            </figure>
+          </Rise>
+          <Rise order={3}>
             <p className="mt-10 text-sm text-faint">
-              Use Next,{' '}
-              <kbd className="rounded border border-white/15 px-1.5 py-0.5 font-mono text-xs">
-                →
-              </kbd>{' '}
-              or a swipe to look around. It takes about a minute.
+              Swipe with two fingers, press <kbd className={KEY}>→</kbd>, or use Next. It takes
+              about a minute.
             </p>
           </Rise>
         </div>
       );
 
-    case 'offline':
+    case 'plans':
+      return <QuoteSlide slide={slide} quote={QUOTES.plans} />;
+
+    case 'desk':
       return (
         <Split slide={slide}>
-          {mounted ? (
-            <SyncDemo onNetwork={onNetwork} onActivity={onActivity} />
-          ) : (
-            <div className="h-[22rem] rounded-2xl border border-white/10 bg-white/[0.02]" />
-          )}
+          <SortDesk />
         </Split>
       );
 
-    case 'record':
+    case 'team':
+      return <QuoteSlide slide={slide} quote={QUOTES.brooks} />;
+
+    case 'tunnel':
       return (
         <Split slide={slide}>
-          <ChainDemo active={active} />
+          <Tunnel active={active} onSignal={onSignal} />
         </Split>
       );
 
-    case 'needs':
+    case 'start':
       return (
-        <div className="w-full">
+        <div className="w-full max-w-4xl">
           <Heading slide={slide} />
-          <ul className="mt-10 grid gap-3 sm:grid-cols-2">
+          <ul className="mt-9 grid gap-3 sm:grid-cols-3">
             {NEEDS.map((need, i) => (
               <li key={need.what}>
                 <Rise
@@ -128,14 +189,7 @@ export function SlideBody({ slide, active, mounted, onNetwork, onActivity }: Pro
               </li>
             ))}
           </ul>
-        </div>
-      );
-
-    case 'start':
-      return (
-        <div className="w-full max-w-3xl">
-          <Heading slide={slide} />
-          <Rise order={2}>
+          <Rise order={5}>
             <div className="mt-9 flex flex-wrap items-center gap-3">
               <Link href={SIGN_UP_HREF} className={FILLED} data-intro-primary="">
                 Create account
@@ -145,7 +199,7 @@ export function SlideBody({ slide, active, mounted, onNetwork, onActivity }: Pro
               </Link>
             </div>
           </Rise>
-          <Rise order={3}>
+          <Rise order={6}>
             <p className="mt-6 text-sm text-faint">
               Signing up asks you to confirm your age, and is covered by the{' '}
               <Link href="/terms" className={TEXT_LINK}>

@@ -1,6 +1,12 @@
 import { describe, expect, test } from 'bun:test';
-import { clampSlide, SLIDES, stepForKey, swipeStep } from '../frontend/features/start/deck.ts';
-import { buildChain, editEvent, findBreak } from '../frontend/features/start/mini-chain.ts';
+import {
+  clampSlide,
+  QUOTES,
+  SLIDES,
+  stepForKey,
+  swipeStep,
+  WheelGesture,
+} from '../frontend/features/start/deck.ts';
 
 /**
  * The "Get started" intro: the pure parts, so the deck's behaviour and the
@@ -51,39 +57,85 @@ describe('the deck', () => {
   });
 });
 
-describe('the live chain', () => {
-  const EVENTS = [
-    'created the project',
-    'filed ROB-1',
-    'moved ROB-1 to In progress',
-    'closed ROB-1',
-  ];
-
-  test('an untouched chain holds', async () => {
-    const chain = await buildChain(EVENTS);
-    expect(chain).toHaveLength(4);
-    expect(chain[0]!.prev).toBeNull();
-    expect(chain[1]!.prev).toBe(chain[0]!.hash);
-    expect(await findBreak(chain)).toBeNull();
+describe('a trackpad swipe', () => {
+  test('one sideways swipe turns one slide, however long its inertia runs', () => {
+    const gesture = new WheelGesture();
+    let turns = 0;
+    let now = 0;
+    // A real two-finger swipe: a burst of deltas, then a long inertial tail.
+    for (const dx of [8, 14, 22, 30, 26, 18, 12, 8, 5, 3, 2, 1, 1]) {
+      now += 16;
+      const step = gesture.feed(dx, 0, now, { canScrollDown: false, canScrollUp: false });
+      if (step !== 0) turns++;
+    }
+    expect(turns).toBe(1);
   });
 
-  test('changing one event breaks the chain exactly there', async () => {
-    const chain = await buildChain(EVENTS);
-    const edited = editEvent(chain, 2, 'moved ROB-1 to Done');
-
-    expect(await findBreak(edited)).toBe(2);
-    // The original is untouched: editing returns a new chain.
-    expect(await findBreak(chain)).toBeNull();
+  test('right turns forward, left turns back', () => {
+    const forward = new WheelGesture();
+    const back = new WheelGesture();
+    let f = 0;
+    let b = 0;
+    for (let n = 1; n <= 6; n++) {
+      f ||= forward.feed(25, 0, n * 16, { canScrollDown: false, canScrollUp: false });
+      b ||= back.feed(-25, 0, n * 16, { canScrollDown: false, canScrollUp: false });
+    }
+    expect(f).toBe(1);
+    expect(b).toBe(-1);
   });
 
-  test('putting the event back mends it', async () => {
-    const chain = await buildChain(EVENTS);
-    const restored = editEvent(editEvent(chain, 1, 'filed ROB-2'), 1, 'filed ROB-1');
-    expect(await findBreak(restored)).toBeNull();
+  test('a second swipe after a pause turns again', () => {
+    const gesture = new WheelGesture();
+    const edges = { canScrollDown: false, canScrollUp: false };
+    let turns = 0;
+    for (let n = 1; n <= 6; n++) if (gesture.feed(25, 0, n * 16, edges)) turns++;
+    for (let n = 1; n <= 6; n++) if (gesture.feed(25, 0, 2000 + n * 16, edges)) turns++;
+    expect(turns).toBe(2);
   });
 
-  test('hashes are real SHA-256, not a stand-in', async () => {
-    const [first] = await buildChain(['x']);
-    expect(first!.hash).toMatch(/^[0-9a-f]{64}$/);
+  test('scrolling down a slide that still has room scrolls it, not the deck', () => {
+    const gesture = new WheelGesture();
+    let turned = 0;
+    for (let n = 1; n <= 10; n++) {
+      turned ||= gesture.feed(0, 30, n * 16, { canScrollDown: true, canScrollUp: false });
+    }
+    expect(turned).toBe(0);
+  });
+
+  test('scrolling down at the end of a slide moves on', () => {
+    const gesture = new WheelGesture();
+    let turned = 0;
+    for (let n = 1; n <= 10; n++) {
+      turned ||= gesture.feed(0, 30, n * 16, { canScrollDown: false, canScrollUp: false });
+    }
+    expect(turned).toBe(1);
+  });
+
+  test('a scroll that runs into the end of a slide stops there, and does not turn it', () => {
+    const gesture = new WheelGesture();
+    let turned = 0;
+    // The first half of the flick still has room; the momentum hits the end.
+    for (let n = 1; n <= 20; n++) {
+      const room = { canScrollDown: n <= 8, canScrollUp: true };
+      turned ||= gesture.feed(0, 30, n * 16, room);
+    }
+    expect(turned).toBe(0);
+    // A fresh scroll after a pause, at the end, moves on.
+    for (let n = 1; n <= 10; n++) {
+      turned ||= gesture.feed(0, 30, 3000 + n * 16, { canScrollDown: false, canScrollUp: true });
+    }
+    expect(turned).toBe(1);
+  });
+});
+
+describe('the quotes', () => {
+  test('each is attributed, with where and when it was said', () => {
+    expect(Object.keys(QUOTES).length).toBeGreaterThanOrEqual(2);
+    for (const quote of Object.values(QUOTES)) {
+      expect(quote.text.length).toBeGreaterThan(10);
+      expect(quote.who.length).toBeGreaterThan(3);
+      expect(quote.source).toMatch(/\d{4}/);
+      expect(`${quote.text} ${quote.source}`).not.toMatch(/[\u2013\u2014]/);
+    }
   });
 });

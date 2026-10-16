@@ -57,7 +57,7 @@ second "consumed" state to get wrong.
 | Tamper-evident audit trail: per-workspace sequence, chain signed with an HMAC key held outside the database, append-only by trigger and by the app's database role | `backend/database/src/audit.ts`, `audit-keys.ts`, `roles.ts` |
 | Signed verification checkpoints, so a check walks only what is new; reads, exports and checks recorded | `backend/database/src/audit-checkpoints.ts`, `backend/api/src/routes/audit.ts` |
 | Tombstone of a deleted workspace's trail (length and last hash) | migration 0017 |
-| A five-slide tour at `/start` before sign-up, with live demos | `frontend/features/start/` |
+| A six-slide tour at `/start` before sign-up: sourced quotes, a desk to sort, a tunnel that holds notes, trackpad swipes | `frontend/features/start/` |
 | Security view for admins: filter, chain check, export as JSON lines | `frontend/features/security/` |
 | SIEM stream over HTTPS, at-least-once with an idempotency key per event | `backend/worker/src/audit-stream.ts` |
 | Emails shown only to admins; teammates see usernames | `backend/api/src/routes/members.ts` |

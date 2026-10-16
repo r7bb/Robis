@@ -43,17 +43,17 @@ export const CHANGELOG: readonly Entry[] = [
     area: 'Site',
     title: 'A short tour before you sign up',
     summary:
-      'Get started now opens a five-slide tour instead of the sign-in form: what Robis does, the offline editors to try for yourself, a hash chain you can break by editing one word, what signing up asks for, and then the form. The landing page’s field moves behind every slide.',
+      'Get started now opens six slides of their own instead of the sign-in form, rather than the landing page again: three sourced quotes on habit, plans and teams (Grace Hopper, Eisenhower, Fred Brooks), a messy desk of notes to sort into a board, a train tunnel where notes wait for signal and then go in order, what signing up asks for, and then the form. A loom of slow threads moves behind it, tinted for each slide and dimmed in the tunnel. A two-finger trackpad swipe turns the slide.',
     checked:
-      'Tests hold the slides to their rules (short titles, a name for each, no dashes) and the keys and swipes to their edges, and prove the in-browser chain breaks exactly at an edited event and mends when it is put back. Walked through in a real browser at desktop and phone widths, ending on Create account, which opens the form in sign-up mode.',
+      'Tests hold the slides to their rules (short titles, a name for each, no dashes), each quote to a named source with a year, and the keys, touch swipes and trackpad to their edges: one swipe with its inertial tail turns exactly one slide, either way, and a vertical scroll turns only once a tall slide has no more to scroll. Walked through in headless Chrome with trackpad-shaped wheel bursts, sorting the desk and riding the tunnel, at desktop and phone widths, ending on Create account, which opens the form in sign-up mode.',
     feature: {
       name: 'See it before you sign up',
       where: 'Get started on the landing, How it works and What’s new pages.',
       layers: [
-        'Slides: keys, swipe, or the picker; nothing moves on its own, and Skip goes straight to sign up.',
-        'Live parts: the real offline editors, and a SHA-256 chain computed in your browser.',
-        'Motion: one cross-slide on the page’s curve, the field changing formation per slide.',
-        'Reduced motion: every slide is simply there, with nothing sliding or rising.',
+        'Slides: trackpad, wheel, keys, touch swipe or the picker; nothing moves on its own, and Skip goes straight to sign up.',
+        'Things to touch: a desk to sort, and a tunnel that holds your notes until the signal is back.',
+        'Background: a 2D canvas of threads that part around the pointer and pause when hidden.',
+        'Reduced motion: every slide is simply there, and the threads hold still.',
       ],
     },
   },

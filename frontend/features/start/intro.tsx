@@ -2,49 +2,68 @@
 
 import Link from 'next/link';
 import { type PointerEvent, useCallback, useEffect, useRef, useState } from 'react';
-import { Field } from '../landing/field.tsx';
-import type { FieldMode } from '../landing/field-modes.ts';
 import {
   clampSlide,
+  type ScrollRoom,
   SIGN_UP_HREF,
   SLIDES,
   type SlideId,
   type Step,
   stepForKey,
   swipeStep,
+  WheelGesture,
 } from './deck.ts';
 import { SlideBody } from './slides.tsx';
+import { Threads, type ThreadsTint } from './threads.tsx';
 
 /**
- * The "Get started" intro: five slides between the landing page and the
+ * The "Get started" intro: six slides between the landing page and the
  * sign-up form.
  *
- * Built on the landing page's own parts, so it reads as the same place: the
- * WebGL field behind everything, changing formation for each slide, and the
- * page's one easing curve. Every slide is rendered and stacked, so moving
+ * Its own place rather than the landing page again: a loom of slow threads
+ * behind everything, tinted for each slide and dimmed while the tunnel has
+ * no signal, under the page's one easing curve. Every slide is rendered and
+ * stacked, so moving
  * between them is a real cross-motion rather than a remount; the inactive
  * ones are inert, so they take no focus and say nothing to a screen reader.
  *
  * Follows the WAI-ARIA carousel pattern with a slide picker: the picker is
  * a tablist, each slide a tabpanel, nothing advances on its own, and a live
- * region says where you are. Keys, swipes and the buttons all move it; the
- * keys are ignored while you are typing in one of the demos.
+ * region says where you are. Keys, touch swipes, two-finger trackpad swipes,
+ * the mouse wheel and the buttons all move it; the keys are ignored while
+ * you are typing.
  */
 
-/** The field's formation for each slide, the way the hero's letters set it. */
-function fieldModeFor(id: SlideId, offline: boolean): FieldMode {
-  switch (id) {
-    case 'offline':
-      return offline ? 'offline' : 'merge';
-    case 'record':
-      return 'once';
-    case 'needs':
-      return 'board';
-    case 'start':
-      return 'realtime';
-    default:
-      return 'idle';
-  }
+/** The threads' colour on each slide: the accent's family, amber underground. */
+const TINTS: Record<SlideId, ThreadsTint> = {
+  hello: [129, 140, 248],
+  plans: [165, 180, 252],
+  desk: [125, 160, 250],
+  team: [180, 170, 250],
+  tunnel: [251, 191, 36],
+  start: [129, 140, 248],
+};
+
+/** Lines and pages, as some mice and browsers report them, in pixels. */
+const LINE_PX = 16;
+
+function wheelPixels(event: WheelEvent, page: number): { dx: number; dy: number } {
+  const unit =
+    event.deltaMode === WheelEvent.DOM_DELTA_LINE
+      ? LINE_PX
+      : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+        ? page
+        : 1;
+  return { dx: event.deltaX * unit, dy: event.deltaY * unit };
+}
+
+/** Whether the slide on screen can still scroll, so a wheel scrolls it first. */
+function roomIn(panel: HTMLElement | null): ScrollRoom {
+  if (!panel) return { canScrollDown: false, canScrollUp: false };
+  return {
+    canScrollDown: panel.scrollTop + panel.clientHeight < panel.scrollHeight - 1,
+    canScrollUp: panel.scrollTop > 0,
+  };
 }
 
 /** Typing in a demo must never turn the slide. */
@@ -61,23 +80,16 @@ function isControl(target: EventTarget | null): boolean {
 
 export function Intro() {
   const [index, setIndex] = useState(0);
-  // A slide's heavy content (the live editors) mounts on first visit and
-  // then stays, so coming back finds it as it was left.
-  const [visited, setVisited] = useState<ReadonlySet<number>>(() => new Set([0]));
-  const [offline, setOffline] = useState(false);
-  const [pulse, setPulse] = useState(0);
-  const lastKeystroke = useRef(Number.NEGATIVE_INFINITY);
+  const [online, setOnline] = useState(true);
   const drag = useRef<{ x: number; y: number } | null>(null);
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
+  const carousel = useRef<HTMLElement>(null);
+  const nextButton = useRef<HTMLButtonElement>(null);
 
   const go = useCallback(
     (next: number) => {
       const target = clampSlide(next);
-      if (target === index) return;
-      setIndex(target);
-      // One ring out across the field for every turn of the deck.
-      setPulse((count) => count + 1);
-      setVisited((seen) => (seen.has(target) ? seen : new Set([...seen, target])));
+      if (target !== index) setIndex(target);
     },
     [index],
   );
@@ -92,8 +104,12 @@ export function Intro() {
   );
 
   // Turning the deck makes the old slide inert, which blurs anything focused
-  // inside it. Hand focus to the new slide rather than leave it on the page.
+  // inside it. Hand focus to the new slide rather than leave it on the page;
+  // only on a turn, so arriving leaves focus at the top like any page.
+  const shown = useRef(index);
   useEffect(() => {
+    if (shown.current === index) return;
+    shown.current = index;
     const active = document.activeElement;
     if (active && active !== document.body && !active.closest('[inert]')) return;
     document.getElementById(`intro-slide-${SLIDES[index]!.id}`)?.focus({ preventScroll: true });
@@ -116,6 +132,31 @@ export function Intro() {
     return () => window.removeEventListener('keydown', onKey);
   }, [step]);
 
+  // Trackpad swipes and the wheel. Attached by hand, not through React,
+  // because it must not be passive: a sideways swipe has to be kept from
+  // also sending the browser back a page.
+  const stepRef = useRef(step);
+  useEffect(() => {
+    stepRef.current = step;
+  }, [step]);
+
+  useEffect(() => {
+    const element = carousel.current;
+    if (!element) return;
+    const gesture = new WheelGesture();
+    function onWheel(event: WheelEvent) {
+      // A pinch on a trackpad arrives as a wheel with ctrl held: that is zoom.
+      if (event.ctrlKey || !element) return;
+      const { dx, dy } = wheelPixels(event, element.clientHeight);
+      if (Math.abs(dx) > Math.abs(dy)) event.preventDefault();
+      const panel = element.querySelector<HTMLElement>('[data-intro-slide][data-place="here"]');
+      const by = gesture.feed(dx, dy, event.timeStamp, roomIn(panel));
+      if (by !== 0) stepRef.current(by);
+    }
+    element.addEventListener('wheel', onWheel, { passive: false });
+    return () => element.removeEventListener('wheel', onWheel);
+  }, []);
+
   function onPointerDown(event: PointerEvent) {
     // Touch and pen only: a mouse drag across a slide is someone selecting
     // its text, not turning it.
@@ -136,7 +177,6 @@ export function Intro() {
     if (by !== 0) step(by);
   }
 
-  /** Arrow keys inside the picker move between its tabs, as the pattern asks. */
   /** Inside the picker every deck key works, and focus follows the tab. */
   function onPickerKey(event: React.KeyboardEvent) {
     const by = event.key === ' ' ? null : stepForKey(event.key);
@@ -162,19 +202,24 @@ export function Intro() {
     }
   }
 
+  /** Back on the second slide hides itself; focus goes on to Next. */
+  function onBack() {
+    const target = clampSlide(index - 1);
+    go(target);
+    if (target === 0) requestAnimationFrame(() => nextButton.current?.focus());
+  }
+
   const slide = SLIDES[index]!;
   const last = index === SLIDES.length - 1;
 
   return (
-    // A <section>, because the field follows the pointer across its nearest
-    // section ancestor, and draws nothing without one.
     <section className="relative isolate flex min-h-[100dvh] flex-col overflow-hidden bg-[#08090c] text-content">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0">
-        <Field mode={fieldModeFor(slide.id, offline)} pulse={pulse} activityAt={lastKeystroke} />
-        {/* The hero's own fade at the top and bottom, and a little shade
-            behind the text column, so the field stays the picture. */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgb(8_9_12/0.6),transparent_30%,transparent_80%,#08090c)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgb(8_9_12/0.55),transparent_55%)]" />
+        <Threads tint={TINTS[slide.id]} calm={!online} />
+        {/* A fade at the top and bottom, and a little shade behind the text
+            column, so the words stay readable over the brightest threads. */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgb(8_9_12/0.55),transparent_28%,transparent_78%,#08090c)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgb(8_9_12/0.5),transparent_60%)]" />
       </div>
 
       <header className="relative z-10 mx-auto flex w-full max-w-[1400px] items-center justify-between px-[clamp(1rem,3vw,2.5rem)] pt-5">
@@ -208,6 +253,7 @@ export function Intro() {
       </div>
 
       <section
+        ref={carousel}
         aria-roledescription="carousel"
         aria-label="How Robis works"
         className="relative z-10 flex flex-1 [touch-action:pan-y_pinch-zoom]"
@@ -229,27 +275,16 @@ export function Intro() {
             data-intro-slide=""
             data-place={i === index ? 'here' : i < index ? 'before' : 'after'}
             inert={i !== index}
-            className="absolute inset-0 overflow-y-auto overscroll-contain focus-visible:outline-none"
+            className="absolute inset-0 overflow-y-auto overscroll-contain focus-visible:outline-none focus-visible:[box-shadow:inset_0_0_0_2px_rgb(var(--accent-soft)/0.35)]"
           >
             <div className="mx-auto flex min-h-full w-full max-w-[1400px] items-center px-[clamp(1rem,3vw,2.5rem)] py-[clamp(2rem,6vh,4rem)]">
-              <SlideBody
-                slide={item}
-                active={i === index}
-                mounted={visited.has(i)}
-                onNetwork={({ online, merged }) => {
-                  setOffline(!online);
-                  if (online && merged > 0) setPulse((count) => count + 1);
-                }}
-                onActivity={() => {
-                  lastKeystroke.current = performance.now();
-                }}
-              />
+              <SlideBody slide={item} active={i === index} onSignal={setOnline} />
             </div>
           </div>
         ))}
       </section>
 
-      <footer className="relative z-10 mx-auto flex w-full max-w-[1400px] flex-wrap items-center justify-between gap-4 px-[clamp(1rem,3vw,2.5rem)] pb-6 pt-2">
+      <footer className="relative z-10 mx-auto flex w-full max-w-[1400px] flex-wrap items-center justify-between gap-4 px-[clamp(1rem,3vw,2.5rem)] pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2">
         <div
           role="tablist"
           aria-label="Choose a slide"
@@ -289,17 +324,17 @@ export function Intro() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => step(-1)}
-            // aria-disabled rather than disabled: a disabled button drops
-            // focus on the floor when it is the one that has it.
+            onClick={onBack}
+            // Hidden, not removed, on the first slide, so Next keeps its place.
             aria-disabled={index === 0}
             data-hidden={index === 0}
-            className="rounded-full border border-white/15 px-4 py-2 text-sm text-muted transition-colors duration-[var(--micro)] ease-[var(--ease)] hover:border-white/30 hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft active:scale-[0.98] data-[hidden=true]:pointer-events-none data-[hidden=true]:opacity-0"
+            className="rounded-full border border-white/15 px-4 py-2 text-sm text-muted transition-colors duration-[var(--micro)] ease-[var(--ease)] hover:border-white/30 hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft active:scale-[0.98] data-[hidden=true]:invisible"
           >
             Back
           </button>
           {last ? null : (
             <button
+              ref={nextButton}
               type="button"
               onClick={onNext}
               className="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-accent-contrast transition-colors duration-[var(--micro)] ease-[var(--ease)] hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft active:scale-[0.98]"

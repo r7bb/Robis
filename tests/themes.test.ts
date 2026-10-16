@@ -230,7 +230,8 @@ describe('no hardcoded colours outside the palette', () => {
      */
     'frontend/features/start/intro.tsx',
     'frontend/features/start/slides.tsx',
-    'frontend/features/start/chain-demo.tsx',
+    'frontend/features/start/sort-desk.tsx',
+    'frontend/features/start/tunnel.tsx',
     'frontend/features/landing/whats-new.tsx',
     'frontend/app/whats-new/page.tsx',
   ]);
