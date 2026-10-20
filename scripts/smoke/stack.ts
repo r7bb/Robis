@@ -10,6 +10,8 @@
  * Defaults match deploy/compose.yaml; each can be overridden.
  */
 
+import { TERMS_VERSION } from '@robis/shared';
+
 const API = process.env.SMOKE_API_URL ?? 'http://127.0.0.1:4000';
 const REALTIME = process.env.SMOKE_REALTIME_URL ?? 'ws://127.0.0.1:4001/ws';
 // The sink checks Host, and accepts 127.0.0.1 as readily as localhost.
@@ -130,6 +132,9 @@ async function main() {
       username: `smoke_${run}`,
       password: `smoke-password-${run}`,
       ageConfirmed: true,
+      // As the sign-up form does: the terms it showed, so the account
+      // counts as having agreed and can open a workspace.
+      termsVersion: TERMS_VERSION,
     });
     await expectStatus('sign up', response, 201);
     if (!cookie) fail('sign up', 'no session cookie');
