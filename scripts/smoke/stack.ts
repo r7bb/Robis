@@ -7,10 +7,9 @@
  * arrive over the WebSocket, and attach an image that lands in object
  * storage. Exits non-zero, saying which step failed, on the first problem.
  *
- * Defaults match deploy/compose.yaml; each can be overridden.
+ * Defaults match deploy/compose.yaml; each can be overridden. Imports
+ * nothing from the repository, so CI can run it without installing it.
  */
-
-import { TERMS_VERSION } from '@robis/shared';
 
 const API = process.env.SMOKE_API_URL ?? 'http://127.0.0.1:4000';
 const REALTIME = process.env.SMOKE_REALTIME_URL ?? 'ws://127.0.0.1:4001/ws';
@@ -132,12 +131,23 @@ async function main() {
       username: `smoke_${run}`,
       password: `smoke-password-${run}`,
       ageConfirmed: true,
-      // As the sign-up form does: the terms it showed, so the account
-      // counts as having agreed and can open a workspace.
-      termsVersion: TERMS_VERSION,
     });
     await expectStatus('sign up', response, 201);
     if (!cookie) fail('sign up', 'no session cookie');
+  });
+
+  // Signed up without saying which terms were shown, so the account is
+  // asked, as an older client would be: read the current version, agree.
+  await step('agree to the current terms', async () => {
+    const me = (await (await api('GET', '/auth/me')).json()) as {
+      user: { consent: { needed: boolean; current: string } };
+    };
+    if (!me.user.consent.needed) fail('terms', 'an unstated sign-up was counted as agreeing');
+    const response = await api('POST', '/auth/me/consent', {
+      termsVersion: me.user.consent.current,
+      ageConfirmed: true,
+    });
+    await expectStatus('terms', response, 200);
   });
 
   await step('confirm the address from the email', async () => {
