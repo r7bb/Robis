@@ -29,10 +29,11 @@ import {
   loginSchema,
   MAX_USERNAME_HOLDS,
   registerSchema,
+  TERMS_VERSION,
   updateProfileSchema,
   usernameProblem,
 } from '@robis/shared';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import type { RateLimits } from '../app.ts';
 import { assertPasswordAllowed, isRefusedDemoPassword } from '../demo-password.ts';
@@ -127,6 +128,12 @@ export async function authRoutes(
       : ApiError.conflict('That username is taken', 'username_taken');
   }
 
+  const termsChanged = () =>
+    ApiError.conflict(
+      'The terms changed while this page was open; reload to see them',
+      'terms_changed',
+    );
+
   const usernameHeld = () =>
     ApiError.conflict(
       'That username was let go recently, and is held for its last owner for now',
@@ -170,6 +177,12 @@ export async function authRoutes(
 
   app.post('/auth/register', { preHandler: credentialLimit }, async (request, reply) => {
     const input = parse(registerSchema, request.body);
+    // The form showed terms that have since changed: agreeing to those is
+    // not agreeing to these, so the page is asked to reload first.
+    if (input.termsVersion !== undefined && input.termsVersion !== TERMS_VERSION) {
+      throw termsChanged();
+    }
+    const agreed = input.termsVersion === TERMS_VERSION;
     assertPasswordAllowed(env, input.password);
     const passwordHash = await hashPassword(input.password);
 
@@ -181,12 +194,34 @@ export async function authRoutes(
 
       const [row] = await tx
         .insert(users)
-        .values({ email: input.email, name: input.name, username: input.username, passwordHash })
+        .values({
+          email: input.email,
+          name: input.name,
+          username: input.username,
+          passwordHash,
+          // The name was chosen on this form.
+          usernameConfirmedAt: sql`now()`,
+          // Agreed just now, but only if the form said which terms it showed;
+          // a client that did not is asked on its first visit instead.
+          ...(agreed
+            ? {
+                ageConfirmedAt: sql`now()`,
+                termsVersion: TERMS_VERSION,
+                termsAcceptedAt: sql`now()`,
+              }
+            : {}),
+        })
         // Losing the race on any unique index returns no row, which we
         // translate into the same 409 as the checked case. Doing this instead
         // of a SELECT-then-INSERT removes the race entirely.
         .onConflictDoNothing()
         .returning(PUBLIC_USER);
+      if (row && agreed) {
+        await recordAccountEvent(tx, row.id, 'auth.terms_accepted', {
+          payload: { termsVersion: TERMS_VERSION },
+          requestId: request.id,
+        });
+      }
       return row ?? null;
     });
 
@@ -268,14 +303,24 @@ export async function authRoutes(
         avatarKind: users.avatarKind,
         avatarRef: users.avatarRef,
         avatarUpdatedAt: users.avatarUpdatedAt,
+        termsVersion: users.termsVersion,
+        usernameConfirmedAt: users.usernameConfirmedAt,
       })
       .from(users)
       .where(eq(users.id, user.id))
       .limit(1);
 
+    const { hasAvatar: _picture, hasAgreed: _agreed, ...profile } = user;
     return {
       user: {
-        ...user,
+        ...profile,
+        // What the app asks before anything else, and what it already has.
+        consent: {
+          needed: row?.termsVersion !== TERMS_VERSION,
+          termsVersion: row?.termsVersion ?? null,
+          current: TERMS_VERSION,
+        },
+        usernameConfirmed: Boolean(row?.usernameConfirmedAt),
         emailVerified: Boolean(row?.emailVerifiedAt),
         emailVerifiedAt: row?.emailVerifiedAt ?? null,
         // Null until a picture is chosen, which is what the app's welcome
@@ -317,7 +362,12 @@ export async function authRoutes(
 
         const [row] = await tx
           .update(users)
-          .set({ ...input, updatedAt: new Date() })
+          // Choosing a new name is confirming one.
+          .set({
+            ...input,
+            ...(renaming ? { usernameConfirmedAt: new Date() } : {}),
+            updatedAt: new Date(),
+          })
           .where(eq(users.id, user.id))
           .returning(PUBLIC_USER);
 

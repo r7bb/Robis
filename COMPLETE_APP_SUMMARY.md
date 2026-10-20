@@ -36,6 +36,7 @@ Written to be checkable. Every row names a file you can open.
 | App-specific `@usernames`, checked as you type, changeable | `shared/contracts/src/usernames.ts`, `backend/api/src/routes/auth.ts` |
 | Lookalike usernames refused, released names held 90 days, mentions kept pointing at the person meant | `backend/database/src/usernames.ts`, `backend/api/src/routes/comments.ts` |
 | Age confirmation at sign-up, enforced by the API (threshold is a placeholder for legal review) | `shared/contracts/src/schemas.ts` |
+| What each account agreed to and when, asked again when the terms change; given usernames confirmed once | `shared/contracts/src/consent.ts`, `backend/api/src/routes/consent.ts`, `frontend/features/account/consent-flow.tsx` |
 | Draft terms and privacy pages, marked for legal review | `frontend/app/terms/`, `frontend/app/privacy/` |
 | A picture before anything else: upload, camera, or a generated pattern | `frontend/app/welcome/`, `backend/api/src/routes/avatars.ts` |
 | Photos re-encoded to 512 px WebP with all metadata removed, location included | `backend/api/src/media/images.ts` |

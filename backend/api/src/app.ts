@@ -16,6 +16,7 @@ import { authRecoveryRoutes } from './routes/auth-recovery.ts';
 import { avatarRoutes } from './routes/avatars.ts';
 import { channelRoutes } from './routes/channels.ts';
 import { commentRoutes } from './routes/comments.ts';
+import { consentRoutes } from './routes/consent.ts';
 import { documentRoutes } from './routes/documents.ts';
 import { invitationRoutes } from './routes/invitations.ts';
 import { issueRoutes } from './routes/issues.ts';
@@ -171,6 +172,7 @@ export function buildApp({
   app.register(workspaceRoutes, { db });
   app.register(memberRoutes, { db });
   app.register(invitationRoutes, { db });
+  app.register(consentRoutes, { db });
   app.register(projectRoutes, { db });
   app.register(issueRoutes, { db, suggestions: suggest });
   app.register(commentRoutes, { db });

@@ -39,11 +39,34 @@ export function assertHasAvatar(user: AuthenticatedUser) {
 }
 
 /**
- * The same gate as a preHandler, for routes outside a workspace path that
+ * The current terms come before workspaces too.
+ *
+ * When `TERMS_VERSION` changes, or for an account from before agreement was
+ * stored, workspace routes answer 403 `terms_required` until the person
+ * agrees again. Account routes stay open, so the question can be answered,
+ * and so do the invitations list and other people's avatars, which show
+ * no workspace content. The realtime gateway checks on subscribe; a new
+ * terms version ships with a deploy, which restarts the gateway, so every
+ * open socket subscribes again and is checked.
+ */
+export function assertHasAgreed(user: AuthenticatedUser) {
+  if (!user.hasAgreed) {
+    throw new ApiError(403, 'terms_required', 'Agree to the current terms before you continue');
+  }
+}
+
+/** Everything a person settles before using a workspace, in the order asked. */
+export function assertReady(user: AuthenticatedUser) {
+  assertHasAgreed(user);
+  assertHasAvatar(user);
+}
+
+/**
+ * The same gates as a preHandler, for routes outside a workspace path that
  * still show workspace content: the workspace list and notifications.
  */
 export const requirePicture: preHandlerHookHandler = async (request: FastifyRequest) => {
-  assertHasAvatar(currentUser(request));
+  assertReady(currentUser(request));
 };
 
 /**
@@ -88,10 +111,11 @@ export function requireMembership(
   db: Database,
   permission: Permission,
   /**
-   * For the one way out: leaving a workspace must not need a picture, or
-   * someone who would rather not add one could not leave.
+   * For the one way out: leaving a workspace must not need a picture or an
+   * answer about the terms, or someone who would rather not give one could
+   * not leave.
    */
-  { allowWithoutAvatar = false }: { allowWithoutAvatar?: boolean } = {},
+  { allowUnsettled = false }: { allowUnsettled?: boolean } = {},
 ): preHandlerHookHandler {
   return async (request: FastifyRequest, _reply: FastifyReply) => {
     const user = currentUser(request);
@@ -107,7 +131,7 @@ export function requireMembership(
     if (!member) throw ApiError.notFound('Workspace not found');
     // After the membership check, so a stranger still learns nothing: only a
     // member is told why they cannot go in yet.
-    if (!allowWithoutAvatar) assertHasAvatar(user);
+    if (!allowUnsettled) assertReady(user);
     if (!can(member.role, permission)) throw ApiError.forbidden();
 
     request.membership = { workspaceId, role: member.role };

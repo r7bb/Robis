@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { signupTermsVersion } from './consent.ts';
 import { ISSUE_PRIORITIES, ISSUE_STATUSES } from './domain.ts';
 import {
   CHANNEL_NAME_MAX_LENGTH,
@@ -100,6 +101,8 @@ export const registerSchema = z.object({
    * The age itself (16) is a placeholder pending legal review.
    */
   ageConfirmed: z.literal(true, { message: 'Please confirm your age to continue' }),
+  /** Which terms the form showed; see `TERMS_VERSION`. */
+  termsVersion: signupTermsVersion,
 });
 export type RegisterInput = z.infer<typeof registerSchema>;
 

@@ -1,4 +1,5 @@
 import { type Executor, sessions, users } from '@robis/database';
+import { TERMS_VERSION } from '@robis/shared';
 import { and, desc, eq, gt, lt, ne } from 'drizzle-orm';
 import { generateSessionToken, hashSessionToken, sessionExpiry } from './tokens.ts';
 
@@ -13,6 +14,11 @@ export type AuthenticatedUser = {
    * without one; see `requireMembership`.
    */
   hasAvatar: boolean;
+  /**
+   * Whether the stored agreement is to the current `TERMS_VERSION`.
+   * Workspaces are closed until it is; see `assertHasAgreed`.
+   */
+  hasAgreed: boolean;
 };
 
 /** Only refresh `last_used_at` once an hour, to keep reads from becoming writes. */
@@ -52,6 +58,7 @@ export async function resolveSession(
       username: users.username,
       avatarKind: users.avatarKind,
       avatarRef: users.avatarRef,
+      termsVersion: users.termsVersion,
     })
     .from(sessions)
     .innerJoin(users, eq(users.id, sessions.userId))
@@ -73,6 +80,7 @@ export async function resolveSession(
     username: row.username,
     // Both halves, so a row left half-written can never count as a picture.
     hasAvatar: row.avatarKind !== null && row.avatarRef !== null,
+    hasAgreed: row.termsVersion === TERMS_VERSION,
   };
 }
 

@@ -32,6 +32,9 @@ async function trailOf(userId: string) {
 
 const types = async (userId: string) => (await trailOf(userId)).map((event) => event.eventType);
 
+/** Every account's trail starts with agreeing to the terms at sign-up. */
+const SIGNED_UP = ['auth.terms_accepted'];
+
 const login = (email: string, password: string) =>
   request('/auth/login', { method: 'POST', payload: { email, password } });
 
@@ -50,7 +53,7 @@ describe('what is recorded', () => {
     expect((await login(actor.email, PASSWORD)).statusCode).toBe(200);
     await request('/auth/logout', { method: 'POST', actor });
 
-    expect(await types(actor.id)).toEqual(['auth.signed_in', 'auth.signed_out']);
+    expect(await types(actor.id)).toEqual([...SIGNED_UP, 'auth.signed_in', 'auth.signed_out']);
   });
 
   test('a failed sign-in, for a real account only', async () => {
@@ -73,13 +76,13 @@ describe('what is recorded', () => {
     await eventually(async () => (await types(actor.id)).includes('auth.sign_in_failed'));
     await Bun.sleep(100);
 
-    expect(await types(actor.id)).toEqual(['auth.sign_in_failed']);
+    expect(await types(actor.id)).toEqual([...SIGNED_UP, 'auth.sign_in_failed']);
   });
 
   test('signing out other sessions when there are none records nothing', async () => {
     const actor = await createActor('Holder');
     await request('/auth/sessions', { method: 'DELETE', actor });
-    expect(await types(actor.id)).toEqual([]);
+    expect(await types(actor.id)).toEqual(SIGNED_UP);
   });
 
   test('changing the password, and revoking other sessions', async () => {
@@ -96,11 +99,12 @@ describe('what is recorded', () => {
 
     const trail = await trailOf(actor.id);
     expect(trail.map((event) => event.eventType)).toEqual([
+      ...SIGNED_UP,
       'auth.signed_in',
       'auth.sessions_revoked',
       'auth.password_changed',
     ]);
-    expect(JSON.parse(trail[1]!.payload)).toEqual({ count: 1 });
+    expect(JSON.parse(trail[2]!.payload)).toEqual({ count: 1 });
   });
 
   test('resetting the password from an emailed link', async () => {
@@ -113,13 +117,13 @@ describe('what is recorded', () => {
       method: 'POST',
       payload: { token, newPassword: 'a-completely-different-password' },
     });
-    expect(await types(actor.id)).toEqual(['auth.password_reset']);
+    expect(await types(actor.id)).toEqual([...SIGNED_UP, 'auth.password_reset']);
   });
 
   test('nothing about where: no address, location or device is kept', async () => {
     const actor = await createActor('Holder');
     await login(actor.email, PASSWORD);
-    const [event] = await trailOf(actor.id);
+    const event = (await trailOf(actor.id)).find((row) => row.eventType === 'auth.signed_in');
     expect(JSON.parse(event!.payload)).toEqual({});
   });
 });
@@ -135,6 +139,7 @@ describe('who can see it', () => {
     expect(response.json().events.map((event: { type: string }) => event.type)).toEqual([
       'auth.sessions_revoked',
       'auth.signed_in',
+      ...SIGNED_UP,
     ]);
   });
 
@@ -143,7 +148,9 @@ describe('who can see it', () => {
     const other: Actor = await createActor('Other');
     await login(holder.email, PASSWORD);
 
-    expect((await request('/auth/me/events', { actor: other })).json().events).toEqual([]);
+    // Only their own sign-up: nothing of the holder's.
+    const theirs = (await request('/auth/me/events', { actor: other })).json().events;
+    expect(theirs.map((event: { type: string }) => event.type)).toEqual(SIGNED_UP);
     expect((await request('/auth/me/events')).statusCode).toBe(401);
   });
 });
@@ -156,7 +163,7 @@ describe('the chain', () => {
 
     const response = await request('/auth/me/events/verify', { method: 'POST', actor });
     const body: unknown = response.json();
-    expect(body).toEqual({ ok: true, checked: 2, broken: null });
+    expect(body).toEqual({ ok: true, checked: 3, broken: null });
   });
 
   test('an edited event is named', async () => {

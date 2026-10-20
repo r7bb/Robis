@@ -32,8 +32,16 @@ import {
   type IssueStatus,
   type Role,
   slugify,
+  TERMS_VERSION,
 } from '@robis/shared';
 import { eq, inArray } from 'drizzle-orm';
+
+const FIXTURE_CONSENT = {
+  ageConfirmedAt: new Date(),
+  termsVersion: TERMS_VERSION,
+  termsAcceptedAt: new Date(),
+  usernameConfirmedAt: new Date(),
+};
 
 const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://robis:robis@localhost:5433/robis';
 // The seed is demo data with a public password; it has no business near a
@@ -228,6 +236,9 @@ try {
         // Seeded people get the plain local part; real sign-ups choose theirs.
         username: person.email.split('@')[0]!,
         passwordHash,
+        // Fixture people, not real ones: marked as having agreed and chosen
+        // their names, so a fresh seed does not ask them on every sign-in.
+        ...FIXTURE_CONSENT,
       })),
     )
     .returning({ id: users.id, email: users.email });

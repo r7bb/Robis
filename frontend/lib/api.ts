@@ -56,6 +56,13 @@ export type Me = {
     username: string;
     /** Null until a picture is chosen; the welcome step asks for one. */
     avatar: AvatarRef;
+    /**
+     * Whether the current terms are agreed to. When `needed`, the app asks
+     * before anything else and the server refuses workspace use.
+     */
+    consent: { needed: boolean; termsVersion: string | null; current: string };
+    /** False for an account whose username was given to it; asked once. */
+    usernameConfirmed: boolean;
     /** Whether the address has been confirmed. Joining a workspace needs it. */
     emailVerified: boolean;
     emailVerifiedAt: string | null;

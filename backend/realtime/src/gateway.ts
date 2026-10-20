@@ -15,6 +15,7 @@ import {
   type PresenceMessage,
   type ServerEvent,
   type ServerMessage,
+  TERMS_VERSION,
 } from '@robis/shared';
 import { eq } from 'drizzle-orm';
 import type postgres from 'postgres';
@@ -54,14 +55,20 @@ const CLIENT_MESSAGE_TYPES: ReadonlySet<string> = new Set<ClientMessage['type']>
 const REANNOUNCE_INTERVAL_MS = 15_000;
 const SWEEP_INTERVAL_MS = 10_000;
 
-/** Whether an account has chosen a picture, read fresh. */
-async function hasPicture(db: Database, userId: string): Promise<boolean> {
+/**
+ * Why an account cannot join a workspace feed yet, or null if it can: the
+ * same order the API asks in (the current terms, then a picture), read
+ * fresh each time.
+ */
+async function notReadyBecause(db: Database, userId: string): Promise<string | null> {
   const [row] = await db
-    .select({ kind: users.avatarKind, ref: users.avatarRef })
+    .select({ kind: users.avatarKind, ref: users.avatarRef, terms: users.termsVersion })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
-  return Boolean(row?.kind && row.ref);
+  if (row?.terms !== TERMS_VERSION) return 'Agree to the current terms before you continue';
+  if (!(row.kind && row.ref)) return 'Add a picture before you start';
+  return null;
 }
 
 type SocketData = {
@@ -364,13 +371,13 @@ export async function createGateway(options: GatewayOptions) {
       return send(socket, { type: 'error', message: 'Not a member of that workspace' });
     }
 
-    // The same rule as the API's: a member without a picture cannot join a
-    // workspace feed yet, and documents open only through a joined feed.
-    // Read now rather than at connect, so a picture chosen in another tab
-    // counts without reconnecting.
-    if (!(await hasPicture(db, socket.data.userId))) {
-      return send(socket, { type: 'error', message: 'Add a picture before you start' });
-    }
+    // The same rules as the API's: a member who has not agreed to the
+    // current terms, or has no picture, cannot join a workspace feed yet,
+    // and documents open only through a joined feed. Read now rather than
+    // at connect, so an answer given in another tab counts without
+    // reconnecting.
+    const reason = await notReadyBecause(db, socket.data.userId);
+    if (reason) return send(socket, { type: 'error', message: reason });
 
     const previous = socket.data.workspaceId;
     socket.data.workspaceId = workspaceId;

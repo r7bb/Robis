@@ -169,6 +169,13 @@
       "when": 1792162341772,
       "tag": "0023_workspace_invitations",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792536702014,
+      "tag": "0024_consent",
+      "breakpoints": true
     }
   ]
 }

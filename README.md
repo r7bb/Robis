@@ -25,6 +25,11 @@ Newest first. The same list is the site's What's new page, linked from the
 header, where each entry opens to show how it was checked and, for features,
 where to find it and what each layer does.
 
+- **Asked again when the terms change** (2026-10-20). Sign-up now keeps
+  when you confirmed your age and which version of the terms you agreed
+  to. When the terms change, you are asked again before you go back into a
+  workspace. Accounts whose username was given to them are asked once to
+  keep it or pick their own.
 - **Invitations you answer** (2026-10-16). Adding someone to a workspace
   now sends them an invitation. It shows in their inbox and on their
   workspaces page, and nothing joins their list until they accept. Joining
@@ -344,6 +349,9 @@ or before usernames their email, inside the hashed payload, where erasing
 it would break the chain. How long to keep the
 trail, and how that sits with a request to erase someone's data, needs a
 legal review before any real users. The terms and privacy pages are drafts
-for the same review, and the minimum age (16) is a placeholder.
+for the same review, and the minimum age (16) is a placeholder. What each
+account agreed to is stored (the age confirmation, the terms version and
+when), and so is its answer when the terms change; how long those records
+are kept is part of the same review.
 
 What is next is in **[docs/ROADMAP.md](docs/ROADMAP.md)**.

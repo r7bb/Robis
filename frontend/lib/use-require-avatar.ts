@@ -5,20 +5,25 @@ import { useEffect } from 'react';
 import type { Me } from './api.ts';
 
 /**
- * Send someone without a picture to the welcome step first.
+ * Send someone to whatever they have to settle before using Robis, in the
+ * order it is asked: the current terms and their username first (the
+ * consent step), then a picture (the welcome step).
  *
- * Robis is a place people recognise each other in, so a picture comes
- * before anything else: an upload, a camera shot, or a generated pattern.
- * The API and the realtime gateway enforce the same rule; this is the part
- * that takes a person to the welcome step instead of an error.
+ * The API and the realtime gateway enforce the terms and the picture too;
+ * this is the part that takes a person to the question instead of an
+ * error. The username is only a question, asked once.
  */
 export function useRequireAvatar(me: Me | undefined) {
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    if (me && me.user.avatar === null) {
-      router.replace(`/welcome?next=${encodeURIComponent(pathname)}`);
+    if (!me) return;
+    const next = encodeURIComponent(pathname);
+    if (me.user.consent.needed || !me.user.usernameConfirmed) {
+      router.replace(`/consent?next=${next}`);
+    } else if (me.user.avatar === null) {
+      router.replace(`/welcome?next=${next}`);
     }
   }, [me, pathname, router]);
 }

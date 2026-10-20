@@ -145,9 +145,13 @@ Order of work, decided 2026-10-09:
    kept for the 90 days of their hold; `audit:erase` forgets them and keeps
    the hold (for legal review, like the rest of erasure). Adding someone is now an
    invitation they accept or decline, and accepting needs a confirmed email
-   (B4, 2026-10-16). Still open from that list: the age
-   confirmation is not stored with a timestamp or terms version; and
-   accounts that predate usernames are not prompted to choose a new one.
+   (B4, 2026-10-16). The last two closed on 2026-10-20: the age
+   confirmation is stored with its time and the terms version agreed to,
+   and asked again whenever `TERMS_VERSION` changes (the server refuses
+   workspace use until it is answered, as it does for the picture); and
+   accounts whose username was given to them are asked once to keep it or
+   choose another. Consent records are personal data, flagged for the
+   same legal review as the rest of sign-up.
 2. **A picture before you start.** A new member adds at least one image
    before using the workspace: upload a photo, take one with the camera, or
    pick a generated avatar. The avatar is per account and is served only to

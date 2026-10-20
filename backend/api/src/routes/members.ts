@@ -227,10 +227,7 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
   app.delete(
     '/workspaces/:workspaceId/members/me',
     {
-      preHandler: [
-        requireAuth,
-        requireMembership(db, 'workspace:read', { allowWithoutAvatar: true }),
-      ],
+      preHandler: [requireAuth, requireMembership(db, 'workspace:read', { allowUnsettled: true })],
     },
     async (request, reply) => {
       const actor = currentUser(request);

@@ -14,6 +14,7 @@ import { and, asc, count, eq } from 'drizzle-orm';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { ApiError } from '../errors.ts';
 import {
+  assertHasAgreed,
   auditActor,
   currentMembership,
   currentUser,
@@ -368,6 +369,8 @@ export async function invitationRoutes(app: FastifyInstance, opts: { db: Databas
           throw ApiError.notFound('Invitation not found');
         }
         await assertVerified(request);
+        // Joining is using a workspace, so it waits for the current terms.
+        assertHasAgreed(user);
 
         const joined = await db.transaction(async (tx) => {
           const invitation = await closeInvitation(tx, invitationId, { userId: user.id });

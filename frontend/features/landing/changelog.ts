@@ -39,6 +39,15 @@ export type Entry = {
 
 export const CHANGELOG: readonly Entry[] = [
   {
+    date: '2026-10-20',
+    area: 'Security',
+    title: 'Asked again when the terms change',
+    summary:
+      'Sign-up now keeps when you confirmed your age and which version of the terms you agreed to. When the terms change, you are asked again before you go back into a workspace, and the server holds the line the same way it does for a profile picture: workspace pages, the live feed and the inbox wait for an answer, while your account and the way out of a workspace stay open. Accounts whose username was given to them rather than chosen are asked once to keep it or pick their own. The terms, the privacy notice and the minimum age are drafts for legal review.',
+    checked:
+      'Tests prove sign-up stores the age confirmation time and the terms version, that a page showing old terms cannot sign anyone up, that an account on old terms is refused workspace routes (403) and the live feed until it agrees, that agreeing is in your own account history with the version, that agreeing to anything but the current version is refused, that leaving a workspace never needs an answer while accepting an invitation does, that a sign-up which does not say what it showed is asked on first visit, that answering again changes nothing, and that keeping or changing a given username both count as confirming it. Walked through in headless Chrome against the containers rebuilt from this code: an account on old terms sent to the question, then its username, then back where it was going, and at phone width. A security review found sign-up writing no history entry and repeat answers overwriting the first; both are fixed.',
+  },
+  {
     date: '2026-10-16',
     area: 'Product',
     title: 'Invitations you answer',

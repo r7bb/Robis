@@ -45,8 +45,22 @@ import {
   workspaceMembers,
   workspaces,
 } from '@robis/database';
-import { formatMs, type ServerMessage, type Summary, slugify, summarize } from '@robis/shared';
+import {
+  formatMs,
+  type ServerMessage,
+  type Summary,
+  slugify,
+  summarize,
+  TERMS_VERSION,
+} from '@robis/shared';
 import { eq, inArray, sql } from 'drizzle-orm';
+
+const FIXTURE_CONSENT = {
+  ageConfirmedAt: new Date(),
+  termsVersion: TERMS_VERSION,
+  termsAcceptedAt: new Date(),
+  usernameConfirmedAt: new Date(),
+};
 
 const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://robis:robis@localhost:5433/robis';
 
@@ -165,6 +179,9 @@ async function setupFixture(db: Database, count: number): Promise<Fixture> {
         name: `Load ${i}`,
         username: `loadtest_${runId}_${i}`,
         passwordHash,
+        // Fixture people, not real ones: marked as having agreed and chosen
+        // their names, so a fresh seed does not ask them on every sign-in.
+        ...FIXTURE_CONSENT,
       })),
     )
     .returning({ id: users.id });

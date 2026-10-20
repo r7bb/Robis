@@ -27,6 +27,7 @@ import {
 } from '@robis/database';
 import { runMigrations } from '@robis/database/migrate';
 import { MemoryMailer } from '@robis/mailer';
+import { TERMS_VERSION } from '@robis/shared';
 import { mailHandlers } from '@robis/worker/mail';
 import { Runner } from '@robis/worker/runner';
 import { and, eq, isNull } from 'drizzle-orm';
@@ -319,6 +320,7 @@ export async function createActor(
       username,
       password: 'correct-horse-battery-staple',
       ageConfirmed: true,
+      termsVersion: TERMS_VERSION,
     },
   });
 

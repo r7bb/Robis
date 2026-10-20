@@ -67,6 +67,8 @@ try {
   // (and therefore its issues and comments) and just gets a new password.
   const [user] = await db
     .insert(users)
+    // No consent is recorded here: an operator cannot agree on someone's
+    // behalf, so the account is asked at its first sign-in.
     .values({ email, name, username, passwordHash })
     .onConflictDoUpdate({ target: users.email, set: { name, passwordHash, updatedAt: new Date() } })
     .returning({ id: users.id, email: users.email, name: users.name });

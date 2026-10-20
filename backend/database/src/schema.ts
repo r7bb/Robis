@@ -94,6 +94,22 @@ export const users = pgTable(
      * cannot be accepted from an unconfirmed address.
      */
     emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
+    /**
+     * What the person agreed to and when: the minimum-age confirmation and
+     * the terms version (`TERMS_VERSION`), stored at sign-up and again each
+     * time they are asked. Null for accounts from before this was kept, who
+     * are asked once. Personal data; the retention question is part of the
+     * legal review flagged in the README.
+     */
+    ageConfirmedAt: timestamp('age_confirmed_at', { withTimezone: true }),
+    termsVersion: text('terms_version'),
+    termsAcceptedAt: timestamp('terms_accepted_at', { withTimezone: true }),
+    /**
+     * When the person last chose or kept their username. Null for accounts
+     * whose name was given to them (by migration 0012 or 0022), who are
+     * asked once to keep it or pick another.
+     */
+    usernameConfirmedAt: timestamp('username_confirmed_at', { withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

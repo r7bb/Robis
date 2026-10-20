@@ -1,5 +1,6 @@
 'use client';
 
+import { MINIMUM_AGE, TERMS_VERSION } from '@robis/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -7,9 +8,6 @@ import { type FormEvent, useState } from 'react';
 import { UsernameField } from '../../features/account/username-field.tsx';
 import { ApiError, api, type Me } from '../../lib/api.ts';
 import { getSyncEngine } from '../../lib/sync.ts';
-
-/** A placeholder pending legal review, as is the wording beside it. */
-const MINIMUM_AGE = 16;
 
 export type Mode = 'login' | 'register';
 
@@ -39,7 +37,16 @@ export function LoginForm({ initialMode }: { initialMode: Mode }) {
     try {
       const body =
         mode === 'register'
-          ? { name, email, username: username.trim().toLowerCase(), password, ageConfirmed }
+          ? {
+              name,
+              email,
+              username: username.trim().toLowerCase(),
+              password,
+              ageConfirmed,
+              // The terms this form showed, so a stale page cannot agree to
+              // something that has since changed.
+              termsVersion: TERMS_VERSION,
+            }
           : { email, password };
       const signedIn = await api<Me>(`/auth/${mode}`, { method: 'POST', body });
 

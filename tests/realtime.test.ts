@@ -1,6 +1,8 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test';
+import { users } from '@robis/database';
 import { createGateway } from '@robis/realtime/gateway';
 import type { ServerMessage } from '@robis/shared';
+import { eq } from 'drizzle-orm';
 import postgres from 'postgres';
 import * as Y from 'yjs';
 import {
@@ -187,6 +189,22 @@ describe('connection', () => {
 
     const error = await client.waitFor(isError);
     expect(error.message).toContain('picture');
+    expect(client.messages.some((m) => m.type === 'ready')).toBe(false);
+
+    client.close();
+  });
+
+  test('refuses a member who has not agreed to the current terms', async () => {
+    const owner = await createActor('Owner');
+    const workspace = await createWorkspace(owner);
+    const { db } = await getHarness();
+    await db.update(users).set({ termsVersion: '2000-01-01' }).where(eq(users.id, owner.id));
+
+    const client = await TestClient.connect(owner);
+    client.send({ type: 'subscribe', workspaceId: workspace.id });
+
+    const error = await client.waitFor(isError);
+    expect(error.message).toContain('terms');
     expect(client.messages.some((m) => m.type === 'ready')).toBe(false);
 
     client.close();

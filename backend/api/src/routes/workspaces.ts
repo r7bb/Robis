@@ -19,7 +19,7 @@ import { and, desc, eq, notLike } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../errors.ts';
 import {
-  assertHasAvatar,
+  assertReady,
   auditActor,
   currentMembership,
   currentUser,
@@ -76,7 +76,7 @@ export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database
 
   app.post('/workspaces', { preHandler: requireAuth }, async (request, reply) => {
     const user = currentUser(request);
-    assertHasAvatar(user);
+    assertReady(user);
     const input = parse(createWorkspaceSchema, request.body);
 
     const workspace = await db.transaction(async (tx) => {

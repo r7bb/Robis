@@ -30,6 +30,13 @@ const LABELS: Record<string, Label> = {
   'auth.password_changed': { text: () => 'Password changed' },
   'auth.password_reset': { text: () => 'Password reset from an emailed link' },
   'auth.username_changed': { text: () => 'Username changed' },
+  'auth.username_confirmed': { text: () => 'Username kept' },
+  'auth.terms_accepted': {
+    text: (payload) =>
+      typeof payload.termsVersion === 'string'
+        ? `Agreed to the terms of ${payload.termsVersion}`
+        : 'Agreed to the terms',
+  },
   'auth.sessions_revoked': {
     text: (payload) => {
       const count = typeof payload.count === 'number' ? payload.count : 0;
