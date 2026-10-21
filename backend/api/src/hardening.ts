@@ -68,3 +68,27 @@ export function requestIdFrom(header: string | string[] | undefined): string {
   const value = Array.isArray(header) ? header[0] : header;
   return value && WELL_FORMED_ID.test(value) ? value : randomUUID();
 }
+
+const WRITES = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
+/**
+ * Whether a write comes from somewhere other than the web app: the same
+ * rule the realtime gateway applies to a socket, applied to every API
+ * write. A browser always sends `Origin` on a cross-origin write, and
+ * modern ones send `Sec-Fetch-Site`; either naming another site is refused.
+ * A request with neither (a script, a server, the tests) carries no
+ * browser's cookies by accident, so it is not this check's business.
+ *
+ * `same-site` is allowed on purpose: the web app and the API are different
+ * origins on the same site (another port, or an `api.` subdomain).
+ */
+export function isForeignWrite(
+  method: string,
+  headers: Record<string, string | string[] | undefined>,
+  webOrigin: string,
+): boolean {
+  if (!WRITES.has(method)) return false;
+  const origin = headers.origin;
+  if (typeof origin === 'string' && origin !== webOrigin) return true;
+  return headers['sec-fetch-site'] === 'cross-site';
+}

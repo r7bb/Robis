@@ -90,6 +90,13 @@ export type GatewayOptions = {
   /** Origin allowed to open a socket. */
   webOrigin?: string;
   instanceId?: string;
+  /** The session cookie's name: `__Host-robis_session` in production. */
+  sessionCookie?: string;
+  /**
+   * Where `/metrics` is served, apart from the public port, like the API's.
+   * Left out, metrics are not served at all.
+   */
+  metrics?: { port: number; hostname: string };
 };
 
 function readCookie(header: string | null, name: string): string | null {
@@ -105,7 +112,13 @@ function readCookie(header: string | null, name: string): string | null {
 }
 
 export async function createGateway(options: GatewayOptions) {
-  const { db, listenClient, port = 4001, webOrigin = 'http://localhost:3000' } = options;
+  const {
+    db,
+    listenClient,
+    port = 4001,
+    webOrigin = 'http://localhost:3000',
+    sessionCookie = SESSION_COOKIE,
+  } = options;
   const instanceId = options.instanceId ?? crypto.randomUUID();
 
   const presence = new PresenceRegistry();
@@ -199,12 +212,6 @@ export async function createGateway(options: GatewayOptions) {
       });
     }
 
-    if (pathname === '/metrics') {
-      return new Response(registry.render(), {
-        headers: { 'content-type': Registry.CONTENT_TYPE },
-      });
-    }
-
     return null;
   }
 
@@ -225,7 +232,7 @@ export async function createGateway(options: GatewayOptions) {
       return new Response('Forbidden origin', { status: 403 });
     }
 
-    const token = readCookie(request.headers.get('cookie'), SESSION_COOKIE);
+    const token = readCookie(request.headers.get('cookie'), sessionCookie);
     if (!token) {
       upgrades.inc({ outcome: 'no_session' });
       return new Response('Unauthorized', { status: 401 });
@@ -563,9 +570,23 @@ export async function createGateway(options: GatewayOptions) {
     for (const workspaceId of presence.sweep()) broadcastPresence(workspaceId);
   }, SWEEP_INTERVAL_MS);
 
+  // Not on the public port, where sockets and /health are.
+  const metricsServer = options.metrics
+    ? Bun.serve({
+        ...options.metrics,
+        fetch: (request) =>
+          new URL(request.url).pathname === '/metrics'
+            ? new Response(registry.render(), {
+                headers: { 'content-type': Registry.CONTENT_TYPE },
+              })
+            : new Response('Not found', { status: 404 }),
+      })
+    : null;
+
   return {
     server,
     port: server.port,
+    metricsPort: metricsServer?.port ?? null,
     instanceId,
     presence,
 
@@ -585,6 +606,7 @@ export async function createGateway(options: GatewayOptions) {
       await rooms.closeAll();
 
       await server.stop(true);
+      metricsServer?.stop(true);
     },
   };
 }

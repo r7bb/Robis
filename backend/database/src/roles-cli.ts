@@ -7,8 +7,12 @@
  * role and its password come from APP_DB_ROLE and APP_DB_PASSWORD; outside
  * development a real password is required. See `roles.ts`.
  */
+import { requireNodeEnv } from '@robis/shared';
 import { createDatabase } from './index.ts';
 import { ensureRuntimeRole, runtimeRoleFromEnv } from './roles.ts';
+
+// Before anything else: see `requireNodeEnv`.
+requireNodeEnv(process.env.NODE_ENV);
 
 const OWNER_URL =
   process.env.MIGRATION_DATABASE_URL ??

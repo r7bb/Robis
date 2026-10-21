@@ -1,5 +1,6 @@
 import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
 import {
+  ACTOR_PASSWORD,
   addMember,
   closeHarness,
   createActor,
@@ -217,7 +218,13 @@ describe('cascading deletes', () => {
     });
 
     expect(
-      (await request(`/workspaces/${workspace.id}`, { method: 'DELETE', actor: owner })).statusCode,
+      (
+        await request(`/workspaces/${workspace.id}`, {
+          method: 'DELETE',
+          actor: owner,
+          payload: { password: ACTOR_PASSWORD },
+        })
+      ).statusCode,
     ).toBe(204);
 
     // The workspace is gone, so even its former owner is now a stranger to it.

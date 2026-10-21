@@ -6,8 +6,12 @@
  * image runs this file directly. `bun run db:migrate` reaches it through
  * `scripts/db/migrate.ts`.
  */
+import { requireNodeEnv } from '@robis/shared';
 import { createDatabase } from './index.ts';
 import { MIGRATIONS_DIR, runMigrations } from './migrate.ts';
+
+// Before anything else: see `requireNodeEnv`.
+requireNodeEnv(process.env.NODE_ENV);
 
 // The owner: migrations create and alter tables, which the application's
 // runtime role cannot (see roles.ts).

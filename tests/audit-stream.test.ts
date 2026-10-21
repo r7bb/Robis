@@ -16,6 +16,7 @@ import {
 import { Runner } from '@robis/worker/runner';
 import { eq, sql } from 'drizzle-orm';
 import {
+  ACTOR_PASSWORD,
   closeHarness,
   createActor,
   createProject,
@@ -238,7 +239,11 @@ describe('delivery', () => {
     const { owner, workspaces } = await twoBusyWorkspaces();
     await streamAuditEvents(db, httpSink(receiver.config));
 
-    await request(`/workspaces/${workspaces[0]!.id}`, { method: 'DELETE', actor: owner });
+    await request(`/workspaces/${workspaces[0]!.id}`, {
+      method: 'DELETE',
+      actor: owner,
+      payload: { password: ACTOR_PASSWORD },
+    });
 
     const rows = await db.execute<{ n: number }>(
       sql`select count(*)::int as n from audit_stream_cursors`,

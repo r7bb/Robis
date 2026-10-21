@@ -74,17 +74,38 @@ export function registerMetrics(app: FastifyInstance, metrics: ApiMetrics) {
     metrics.duration.observe({ method, route }, reply.elapsedTime / 1000);
   });
 
-  /**
-   * Unauthenticated, deliberately.
-   *
-   * It exposes route names, counts and latencies -- operational shape, no
-   * tenant data -- and a scraper holding a session cookie is its own problem.
-   * In a real deployment this belongs on an internal port that is not routed
-   * from the internet; here there is one port, so the mitigation is that
-   * there is nothing sensitive in the response.
-   */
-  app.get('/metrics', async (_request, reply) => {
-    reply.header('content-type', Registry.CONTENT_TYPE);
-    return metrics.registry.render();
+  // Kept on the instance for `serveMetrics`, never routed on this port.
+  app.decorate('apiMetrics', metrics);
+}
+
+declare module 'fastify' {
+  interface FastifyInstance {
+    apiMetrics: ApiMetrics;
+  }
+}
+
+/**
+ * `/metrics` on a port of its own, which is not routed from the internet.
+ *
+ * Route names, counts and latencies are operational shape rather than
+ * tenant data, but they still map the service for anyone who can read them,
+ * so they are not on the public port at all; `/health` stays there. Bind it
+ * to an internal address and let only the scraper reach it.
+ */
+export function serveMetrics(
+  app: FastifyInstance,
+  { port, hostname }: { port: number; hostname: string },
+) {
+  return Bun.serve({
+    port,
+    hostname,
+    fetch(request) {
+      if (new URL(request.url).pathname !== '/metrics') {
+        return new Response('Not found', { status: 404 });
+      }
+      return new Response(app.apiMetrics.registry.render(), {
+        headers: { 'content-type': Registry.CONTENT_TYPE },
+      });
+    },
   });
 }

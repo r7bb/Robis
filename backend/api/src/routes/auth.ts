@@ -7,7 +7,6 @@ import {
   revokeAuthTokens,
   revokeOtherSessions,
   revokeSession,
-  SESSION_COOKIE,
   verifyPassword,
 } from '@robis/auth';
 import {
@@ -40,7 +39,7 @@ import { assertPasswordAllowed, isRefusedDemoPassword } from '../demo-password.t
 import type { Env } from '../env.ts';
 import { ApiError } from '../errors.ts';
 import { avatarOf } from '../media/avatars.ts';
-import { currentUser, requireAuth } from '../plugins/authz.ts';
+import { currentUser, requireAuth, sessionToken } from '../plugins/authz.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
 import { parse } from '../validate.ts';
 import { createVerificationSender } from '../verification.ts';
@@ -160,7 +159,9 @@ export async function authRoutes(
   const cookieOptions = {
     httpOnly: true,
     sameSite: 'lax' as const,
-    secure: env.COOKIE_SECURE,
+    // Always in production, whatever COOKIE_SECURE says; it only relaxes
+    // local development over plain http.
+    secure: env.NODE_ENV === 'production' || env.COOKIE_SECURE,
     path: '/',
   };
 
@@ -233,7 +234,7 @@ export async function authRoutes(
     if (!user) throw await registrationConflict(input.email);
 
     const { token, expiresAt } = await createSession(db, user.id, request.headers['user-agent']);
-    reply.setCookie(SESSION_COOKIE, token, { ...cookieOptions, expires: expiresAt });
+    reply.setCookie(app.sessionCookieName, token, { ...cookieOptions, expires: expiresAt });
 
     // Queued: one insert, so sign-up never waits on a mail server, and the
     // worker retries a failed send instead of losing the link.
@@ -264,7 +265,7 @@ export async function authRoutes(
     }
 
     const { token, expiresAt } = await createSession(db, user.id, request.headers['user-agent']);
-    reply.setCookie(SESSION_COOKIE, token, { ...cookieOptions, expires: expiresAt });
+    reply.setCookie(app.sessionCookieName, token, { ...cookieOptions, expires: expiresAt });
     await recordAccountEventSafely(user.id, 'auth.signed_in', { requestId: request.id });
 
     return {
@@ -273,7 +274,7 @@ export async function authRoutes(
   });
 
   app.post('/auth/logout', async (request, reply) => {
-    const token = request.cookies[SESSION_COOKIE];
+    const token = sessionToken(request);
     if (token) await revokeSession(db, token);
     if (request.user) {
       await recordAccountEventSafely(request.user.id, 'auth.signed_out', {
@@ -281,7 +282,7 @@ export async function authRoutes(
       });
     }
 
-    reply.clearCookie(SESSION_COOKIE, cookieOptions);
+    reply.clearCookie(app.sessionCookieName, cookieOptions);
     return { ok: true };
   });
 
@@ -478,7 +479,7 @@ export async function authRoutes(
       await revokeAuthTokens(db, user.id, 'password_reset');
 
       const { token, expiresAt } = await createSession(db, user.id, request.headers['user-agent']);
-      reply.setCookie(SESSION_COOKIE, token, { ...cookieOptions, expires: expiresAt });
+      reply.setCookie(app.sessionCookieName, token, { ...cookieOptions, expires: expiresAt });
       await recordAccountEventSafely(user.id, 'auth.password_changed', {
         requestId: request.id,
       });
@@ -490,14 +491,14 @@ export async function authRoutes(
   app.get('/auth/sessions', { preHandler: requireAuth }, async (request) => {
     const user = currentUser(request);
     // `requireAuth` passed, so a cookie is present.
-    const token = request.cookies[SESSION_COOKIE]!;
+    const token = sessionToken(request)!;
 
     return { sessions: await listSessions(db, user.id, token) };
   });
 
   app.delete('/auth/sessions', { preHandler: [requireAuth, profileLimit] }, async (request) => {
     const user = currentUser(request);
-    const token = request.cookies[SESSION_COOKIE]!;
+    const token = sessionToken(request)!;
 
     const revoked = await revokeOtherSessions(db, user.id, token);
     // Nothing signed out, nothing to record.

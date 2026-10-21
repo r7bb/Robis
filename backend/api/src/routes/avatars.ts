@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { resolveSession, SESSION_COOKIE } from '@robis/auth';
+import { resolveSession } from '@robis/auth';
 import { type Database, users, workspaceMembers } from '@robis/database';
 import { generatedAvatarSchema, isUuid } from '@robis/shared';
 import { and, eq, sql } from 'drizzle-orm';
@@ -13,7 +13,7 @@ import {
   UnreadableImageError,
 } from '../media/images.ts';
 import type { MediaStorage } from '../media/storage.ts';
-import { currentUser, requireAuth } from '../plugins/authz.ts';
+import { currentUser, requireAuth, sessionToken } from '../plugins/authz.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
 import { parse } from '../validate.ts';
 
@@ -60,7 +60,7 @@ export async function avatarRoutes(
       throw new ApiError(413, 'payload_too_large', 'That picture is larger than 8 MB');
     }
 
-    const token = request.cookies[SESSION_COOKIE];
+    const token = sessionToken(request);
     const user = token ? await resolveSession(db, token) : null;
     if (!user) throw ApiError.unauthorized();
     request.user = user;

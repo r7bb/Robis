@@ -10,8 +10,11 @@
  */
 import { hashPassword } from '@robis/auth';
 import { createDatabase, users, workspaceMembers, workspaces } from '@robis/database';
-import { DEMO_PASSWORD, usernameProblem } from '@robis/shared';
+import { DEMO_PASSWORD, requireNodeEnv, usernameProblem } from '@robis/shared';
 import { eq } from 'drizzle-orm';
+
+// Before anything else: see `requireNodeEnv`.
+requireNodeEnv(process.env.NODE_ENV);
 
 const [emailArg, nameArg, passwordArg] = process.argv.slice(2);
 

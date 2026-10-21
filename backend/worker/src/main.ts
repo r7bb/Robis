@@ -6,12 +6,16 @@ import {
   STORAGE_PURGE_JOB,
 } from '@robis/database';
 import { mailerFromEnv } from '@robis/mailer';
+import { requireNodeEnv } from '@robis/shared';
 import { auditStreamConfig, httpSink, streamAuditEvents } from './audit-stream.ts';
 import { handlers } from './handlers.ts';
 import { DEFAULT_HEARTBEAT_FILE, heartbeat } from './heartbeat.ts';
 import { mailHandlers, mailOriginFromEnv } from './mail.ts';
 import { Runner } from './runner.ts';
 import { storagePurgeHandler, workerStorage } from './storage-purge.ts';
+
+// Before anything else: see `requireNodeEnv`.
+requireNodeEnv(process.env.NODE_ENV);
 
 const DATABASE_URL = process.env.DATABASE_URL;
 if (!DATABASE_URL) throw new Error('DATABASE_URL is required');

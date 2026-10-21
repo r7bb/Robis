@@ -206,12 +206,14 @@ responses depend on who is asking.
 
 ### Metrics
 
-Both services expose Prometheus text at `/metrics` — no scraper required to
-look:
+Both services serve Prometheus text at `/metrics` on a port of their own,
+apart from the public one, bound to `127.0.0.1` by default (`METRICS_PORT`
+and `REALTIME_METRICS_PORT`, `METRICS_HOST`); `/health` stays on the public
+port. No scraper required to look, from the same machine:
 
 ```bash
-curl -s localhost:4000/metrics | grep robis_http_requests_total
-curl -s localhost:4001/metrics | grep robis_ws
+curl -s localhost:9464/metrics | grep robis_http_requests_total
+curl -s localhost:9465/metrics | grep robis_ws
 ```
 
 The API reports request counts, a latency histogram and an in-flight gauge; the
@@ -631,7 +633,7 @@ addresses is enough to flood one mailbox.
 
 ### Metrics label the route pattern, never the URL
 
-`/metrics` on the API and the gateway serves Prometheus text, written by hand
+`/metrics` on the API's and the gateway's internal ports serves Prometheus text, written by hand
 rather than pulled from `prom-client` — the exposition format is a few hundred
 lines, and writing it keeps the parts that are easy to get subtly wrong (label
 ordering, escaping, cumulative buckets) visible and tested.

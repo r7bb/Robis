@@ -40,8 +40,8 @@ export default function WorkspacesPage() {
   });
 
   const deleteWorkspace = useMutation({
-    mutationFn: (workspaceId: string) =>
-      api<void>(`/workspaces/${workspaceId}`, { method: 'DELETE' }),
+    mutationFn: ({ workspaceId, password }: { workspaceId: string; password: string }) =>
+      api<void>(`/workspaces/${workspaceId}`, { method: 'DELETE', body: { password } }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspaces'] }),
   });
 
@@ -155,7 +155,10 @@ export default function WorkspacesPage() {
               kind="workspace"
               name={workspace.name}
               cascade="Every project, issue, document, comment and membership in this workspace is deleted. Other members lose access immediately."
-              onConfirm={() => deleteWorkspace.mutateAsync(workspace.id)}
+              requiresPassword
+              onConfirm={(password) =>
+                deleteWorkspace.mutateAsync({ workspaceId: workspace.id, password })
+              }
               className="mr-2"
             />
           </li>

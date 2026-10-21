@@ -10,13 +10,19 @@ import {
   workspaceMembers,
   workspaces,
 } from '@robis/database';
-import { createWorkspaceSchema, slugify, updateWorkspaceSchema } from '@robis/shared';
+import {
+  confirmPasswordSchema,
+  createWorkspaceSchema,
+  slugify,
+  updateWorkspaceSchema,
+} from '@robis/shared';
 
 /** The room every new workspace is born with. */
 const DEFAULT_CHANNEL_NAME = 'general';
 
 import { and, desc, eq, notLike } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
+import { confirmPassword } from '../confirm-password.ts';
 import { ApiError } from '../errors.ts';
 import {
   assertReady,
@@ -27,6 +33,7 @@ import {
   requireMembership,
   requirePicture,
 } from '../plugins/authz.ts';
+import { rateLimit } from '../plugins/rate-limit.ts';
 import { parse } from '../validate.ts';
 
 /**
@@ -182,9 +189,20 @@ export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database
 
   app.delete(
     '/workspaces/:workspaceId',
-    { preHandler: [requireAuth, requireMembership(db, 'workspace:delete')] },
+    {
+      preHandler: [
+        requireAuth,
+        requireMembership(db, 'workspace:delete'),
+        // A password check is an Argon2 verify; throttled like sign-in.
+        rateLimit({ name: 'workspace-delete', limit: 10, windowMs: 60_000 }),
+      ],
+    },
     async (request, reply) => {
       const { workspaceId } = currentMembership(request);
+      // Everything in it goes, for everyone, at once: a session is not
+      // enough for that, the password is asked again.
+      const { password } = parse(confirmPasswordSchema, request.body ?? {});
+      await confirmPassword(db, currentUser(request).id, password);
 
       // Projects, issues, comments and memberships go with it via ON DELETE
       // CASCADE, so there is no application-level fan-out to keep in sync.

@@ -7,6 +7,7 @@ import {
 import { mailerFromEnv } from '@robis/mailer';
 import { buildApp } from './app.ts';
 import { loadEnv } from './env.ts';
+import { serveMetrics } from './metrics.ts';
 
 const env = loadEnv();
 const { db, close } = createDatabase(env.DATABASE_URL, { max: env.DB_POOL_MAX });
@@ -32,12 +33,14 @@ const app = buildApp({
 });
 
 await app.listen({ port: env.API_PORT, host: env.API_HOST });
+const metricsServer = serveMetrics(app, { port: env.METRICS_PORT, hostname: env.METRICS_HOST });
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.once(signal, async () => {
     // Stop accepting connections and let in-flight requests finish before the
     // pool goes away, so a deploy doesn't turn into a burst of 500s.
     await app.close();
+    metricsServer.stop();
     // A failed sign-in is recorded just after its reply; let those land.
     await settleDeferredAccountEvents();
     await close();

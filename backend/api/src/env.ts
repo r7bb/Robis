@@ -1,10 +1,14 @@
 import { isAbsolute } from 'node:path';
+import { NODE_ENVS, requireNodeEnv, webOriginOf } from '@robis/shared';
 import { z } from 'zod';
 
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   API_PORT: z.coerce.number().int().min(1).max(65535).default(4000),
   API_HOST: z.string().default('127.0.0.1'),
+  /** Where `/metrics` is served, apart from the public port; see `serveMetrics`. */
+  METRICS_PORT: z.coerce.number().int().min(1).max(65535).default(9464),
+  METRICS_HOST: z.string().default('127.0.0.1'),
   /**
    * Which proxies may set the client address through X-Forwarded-For.
    * Empty trusts none; a number trusts that many hops; otherwise addresses or
@@ -12,12 +16,17 @@ const envSchema = z.object({
    */
   TRUST_PROXY: z.string().default(''),
   WEB_ORIGIN: z.string().default('http://localhost:3000'),
-  /** Session cookies are HTTPS-only unless explicitly relaxed for local dev. */
+  /**
+   * Whether session cookies are HTTPS-only outside production. In production
+   * they always are, whatever this says (see `auth.ts`); this only lets local
+   * development over plain http keep a session.
+   */
   COOKIE_SECURE: z
     .string()
     .default('0')
     .transform((v) => v === '1' || v.toLowerCase() === 'true'),
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  // No default: see `requireNodeEnv`, which `loadEnv` calls first.
+  NODE_ENV: z.enum(NODE_ENVS),
   /**
    * Postgres pool size. Every request resolves a session and checks
    * membership before its own query, so this bounds concurrency well below
@@ -65,6 +74,9 @@ const envSchema = z.object({
 export type Env = z.infer<typeof envSchema>;
 
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
+  // First, and on its own: everything below has defaults that are only
+  // safe once the environment is known.
+  requireNodeEnv(source.NODE_ENV);
   const parsed = envSchema.safeParse(source);
 
   if (!parsed.success) {
@@ -73,6 +85,9 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
       .join('\n');
     throw new Error(`Invalid environment configuration:\n${issues}`);
   }
+
+  // As a browser spells it, so the exact comparisons against Origin hold.
+  parsed.data.WEB_ORIGIN = webOriginOf(parsed.data.WEB_ORIGIN);
 
   /*
    * `WEB_ORIGIN` is not only the CORS allowance: it is the origin every

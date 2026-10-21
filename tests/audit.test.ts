@@ -14,6 +14,7 @@ import {
 } from '@robis/database';
 import { eq, sql } from 'drizzle-orm';
 import {
+  ACTOR_PASSWORD,
   type Actor,
   addMember,
   closeHarness,
@@ -439,6 +440,7 @@ describe('tampering', () => {
     const deleted = await request(`/workspaces/${workspace.id}`, {
       method: 'DELETE',
       actor: owner,
+      payload: { password: ACTOR_PASSWORD },
     });
 
     expect(deleted.statusCode).toBe(204);
@@ -681,7 +683,7 @@ describe('deleting a workspace leaves a trace', () => {
     const { owner, workspace } = await workspaceWithEvents(2);
     const last = (await trail(workspace.id)).at(-1)!;
 
-    await send(owner, 'DELETE', `/workspaces/${workspace.id}`);
+    await send(owner, 'DELETE', `/workspaces/${workspace.id}`, { password: ACTOR_PASSWORD });
 
     const tombstones = (await db.execute(
       sql`select head_seq, head_hash, deleted_by from audit_tombstones where workspace_id = ${workspace.id}`,
@@ -694,7 +696,7 @@ describe('deleting a workspace leaves a trace', () => {
   test('the runtime role cannot write, change or remove a tombstone', async () => {
     const { db } = await getHarness();
     const { owner, workspace } = await workspaceWithEvents(1);
-    await send(owner, 'DELETE', `/workspaces/${workspace.id}`);
+    await send(owner, 'DELETE', `/workspaces/${workspace.id}`, { password: ACTOR_PASSWORD });
     const run = async (statement: ReturnType<typeof sql>) => db.execute(statement);
 
     await expect(

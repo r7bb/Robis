@@ -23,6 +23,10 @@ x-app-env: &app-env
   # events; only the one-shot migrator below connects as the owner.
   DATABASE_URL: postgres://robis_app:robis-stack-app-role@postgres:5432/robis
   WEB_ORIGIN: http://localhost:${STACK_WEB_PORT:-3000}
+  # Metrics listen on every interface inside the container so a scraper on
+  # this network can reach them (API 9464, gateway 9465). Neither port is
+  # published to the host; only /health is on the public ports.
+  METRICS_HOST: 0.0.0.0
   # Uploads in an S3-compatible store: S3Mock stands in for one here.
   STORAGE_DRIVER: s3
   S3_ENDPOINT: http://s3:9090

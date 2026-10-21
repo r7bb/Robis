@@ -31,10 +31,14 @@ import {
   type IssuePriority,
   type IssueStatus,
   type Role,
+  requireNodeEnv,
   slugify,
   TERMS_VERSION,
 } from '@robis/shared';
 import { eq, inArray } from 'drizzle-orm';
+
+// Before anything else: see `requireNodeEnv`.
+requireNodeEnv(process.env.NODE_ENV);
 
 const FIXTURE_CONSENT = {
   ageConfirmedAt: new Date(),

@@ -85,8 +85,9 @@ Left open from review, for a later pass:
   could produce with a real-looking id, so keys must not be retired while
   events need them; the role's password is sent as text in `ALTER ROLE`
   rather than as a SCRAM verifier; new tables get full grants unless listed
-  as append-only or read-only; a process with no NODE_ENV counts as
-  development, as it does everywhere else in the API.
+  as append-only or read-only. ~~A process with no NODE_ENV counts as
+  development.~~ **Closed 2026-10-20:** every service and CLI refuses to
+  start without NODE_ENV, and nothing treats unset as local.
 - ~~Reading or exporting the trail is not itself recorded.~~ **Closed
   2026-10-15 (B3):** each read, export page and check is an `audit.*`
   event, kept out of the members' activity feed.

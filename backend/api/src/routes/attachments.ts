@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { resolveSession, SESSION_COOKIE } from '@robis/auth';
+import { resolveSession } from '@robis/auth';
 import {
   attachments,
   comments,
@@ -26,6 +26,7 @@ import {
   currentUser,
   requireAuth,
   requireMembership,
+  sessionToken,
 } from '../plugins/authz.ts';
 import { withIdempotency } from '../plugins/idempotency.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
@@ -83,7 +84,7 @@ export async function attachmentRoutes(
     if (Number(request.headers['content-length'] ?? 0) > MAX_UPLOAD_BYTES) {
       throw new ApiError(413, 'payload_too_large', 'That image is larger than 8 MB');
     }
-    const token = request.cookies[SESSION_COOKIE];
+    const token = sessionToken(request);
     const user = token ? await resolveSession(db, token) : null;
     if (!user) throw ApiError.unauthorized();
     request.user = user;

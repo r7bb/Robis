@@ -6,9 +6,13 @@
  * Without `--confirm` it only counts what it would change. The chain still
  * verifies afterwards; the events stay, naming nobody.
  */
+import { requireNodeEnv } from '@robis/shared';
 import { countAuditPersonalData, eraseAuditPersonalData } from './audit-redaction.ts';
 import { createDatabase } from './index.ts';
 import { eraseUsernameHistory } from './usernames.ts';
+
+// Before anything else: see `requireNodeEnv`.
+requireNodeEnv(process.env.NODE_ENV);
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

@@ -81,7 +81,8 @@ function parseKeys(raw: string): Map<string, Buffer> {
 }
 
 export function auditKeyringFromEnv(env: AuditKeyEnv): AuditKeyring {
-  const local = env.NODE_ENV === 'development' || env.NODE_ENV === 'test' || !env.NODE_ENV;
+  // Only a stated development or test environment is local; unset is not.
+  const local = env.NODE_ENV === 'development' || env.NODE_ENV === 'test';
   const raw = env.AUDIT_HMAC_KEYS?.trim();
 
   if (!raw) {

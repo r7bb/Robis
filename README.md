@@ -25,6 +25,11 @@ Newest first. The same list is the site's What's new page, linked from the
 header, where each entry opens to show how it was checked and, for features,
 where to find it and what each layer does.
 
+- **Safer by default before going live** (2026-10-20). Every service
+  refuses to start without being told which environment it is in. In
+  production the session cookie is always Secure and host-only. Writes from
+  another site are refused. Metrics moved off the public port. A session
+  unused for 7 days ends, and deleting a workspace asks for your password.
 - **Asked again when the terms change** (2026-10-20). Sign-up now keeps
   when you confirmed your age and which version of the terms you agreed
   to. When the terms change, you are asked again before you go back into a

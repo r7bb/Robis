@@ -159,7 +159,7 @@ JavaScript.
 
 | Feature | Where |
 | --- | --- |
-| Prometheus `/metrics` on API and gateway | `backend/metrics/` |
+| Prometheus `/metrics` on internal ports of the API and gateway, off the public ports | `backend/metrics/`, `backend/api/src/metrics.ts` |
 | Route-pattern labels (cardinality-safe) | `backend/api/src/metrics.ts` |
 | Health endpoints | `backend/api/src/app.ts` |
 | Load harness | `scripts/bench/loadtest.ts` |

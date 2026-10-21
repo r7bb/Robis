@@ -294,6 +294,9 @@ export type Actor = {
   cookie: string;
 };
 
+/** The password every actor signs up with. */
+export const ACTOR_PASSWORD = 'correct-horse-battery-staple';
+
 let userCounter = 0;
 
 /**

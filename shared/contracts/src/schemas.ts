@@ -90,6 +90,12 @@ export const verifyEmailSchema = z.object({
 });
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
 
+/** The password again, before something that cannot be undone. */
+export const confirmPasswordSchema = z.object({
+  password: z.string().min(1, 'Enter your password to confirm').max(1024),
+});
+export type ConfirmPasswordInput = z.infer<typeof confirmPasswordSchema>;
+
 export const registerSchema = z.object({
   email: z.email().max(254).toLowerCase().trim(),
   name: z.string().trim().min(1).max(80),

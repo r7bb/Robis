@@ -1,10 +1,14 @@
-import { type AuthenticatedUser, resolveSession, SESSION_COOKIE } from '@robis/auth';
+import { type AuthenticatedUser, resolveSession } from '@robis/auth';
 import { type AuditActor, type Database, findMembership } from '@robis/database';
 import { can, type Permission, type Role } from '@robis/shared';
 import type { FastifyReply, FastifyRequest, preHandlerHookHandler } from 'fastify';
 import { ApiError } from '../errors.ts';
 
 declare module 'fastify' {
+  interface FastifyInstance {
+    /** `robis_session`, or `__Host-robis_session` in production. */
+    sessionCookieName: string;
+  }
   interface FastifyRequest {
     user?: AuthenticatedUser;
     /** Set by `requireMembership`; the actor's role in the workspace on the path. */
@@ -83,9 +87,14 @@ export function auditActor(request: FastifyRequest): AuditActor {
  * Populates `request.user` when a valid session cookie is present. Does not
  * reject -- routes opt into enforcement with `requireAuth`.
  */
+/** The session token this request carries, under this app's cookie name. */
+export function sessionToken(request: FastifyRequest): string | undefined {
+  return request.cookies[request.server.sessionCookieName];
+}
+
 export function attachUser(db: Database): preHandlerHookHandler {
   return async (request: FastifyRequest) => {
-    const token = request.cookies[SESSION_COOKIE];
+    const token = sessionToken(request);
     if (!token) return;
 
     const user = await resolveSession(db, token);

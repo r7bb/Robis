@@ -8,6 +8,7 @@ import { storagePurgeHandler } from '@robis/worker/storage-purge';
 import { eq } from 'drizzle-orm';
 import sharp from 'sharp';
 import {
+  ACTOR_PASSWORD,
   type Actor,
   addMember,
   closeHarness,
@@ -337,7 +338,11 @@ describe('files follow their rows', () => {
     const { owner, workspace, issue } = await issueSetup();
     await attach(owner, workspace.id, issue.id, await photo());
 
-    await request(`/workspaces/${workspace.id}`, { method: 'DELETE', actor: owner });
+    await request(`/workspaces/${workspace.id}`, {
+      method: 'DELETE',
+      actor: owner,
+      payload: { password: ACTOR_PASSWORD },
+    });
     await runPurges();
 
     expect(filesFor(workspace.id)).toEqual([]);

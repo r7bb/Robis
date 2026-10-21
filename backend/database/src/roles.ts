@@ -135,7 +135,8 @@ export function runtimeRoleFromEnv(env: {
 }): RuntimeRoleOptions {
   const role = env.APP_DB_ROLE?.trim() || DEFAULT_RUNTIME_ROLE;
   const password = env.APP_DB_PASSWORD ?? '';
-  const local = env.NODE_ENV === 'development' || env.NODE_ENV === 'test' || !env.NODE_ENV;
+  // Only a stated development or test environment is local; unset is not.
+  const local = env.NODE_ENV === 'development' || env.NODE_ENV === 'test';
 
   if (!local && (!password || password === DEVELOPMENT_RUNTIME_PASSWORD)) {
     throw new Error(

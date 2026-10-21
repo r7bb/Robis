@@ -41,6 +41,15 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-20',
     area: 'Security',
+    title: 'Safer by default before going live',
+    summary:
+      'A review before deployment tightened the defaults. The API, the live feed, the worker and the command-line tools now refuse to start unless they are told whether they are in development, test or production, instead of assuming development. In production the session cookie is always Secure and carries the __Host- prefix, so no other subdomain or plain-http page can set it. Writes from another website are refused before they are read, the same check the live feed already made. Metrics moved to an internal port, while the health check stays public. A session unused for 7 days now ends, within the 30 it can live, and deleting a workspace asks for your password.',
+    checked:
+      'Tests prove each service and tool refuses to start without NODE_ENV and with an unknown one; that a production sign-up sets a Secure __Host- cookie even with COOKIE_SECURE=0, and that it is the cookie recognised; that a write with another site’s Origin or a cross-site Sec-Fetch-Site is refused while the web app’s own origin, same-site and tools without browser headers are not, and reads are not touched; that /metrics answers 404 on the public port and is served on its own; that a session unused for 8 days is refused and one used 6 days ago is not; and that deleting a workspace without the password, or with a wrong one, deletes nothing.',
+  },
+  {
+    date: '2026-10-20',
+    area: 'Security',
     title: 'Asked again when the terms change',
     summary:
       'Sign-up now keeps when you confirmed your age and which version of the terms you agreed to. When the terms change, you are asked again before you go back into a workspace, and the server holds the line the same way it does for a profile picture: workspace pages, the live feed and the inbox wait for an answer, while your account and the way out of a workspace stay open. Accounts whose username was given to them rather than chosen are asked once to keep it or pick their own. The terms, the privacy notice and the minimum age are drafts for legal review.',

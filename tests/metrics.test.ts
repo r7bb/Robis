@@ -1,6 +1,14 @@
 import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
+import { serveMetrics } from '@robis/api/metrics';
 import { Registry } from '@robis/metrics';
-import { closeHarness, createActor, createWorkspace, request, resetDatabase } from './harness.ts';
+import {
+  closeHarness,
+  createActor,
+  createWorkspace,
+  getHarness,
+  request,
+  resetDatabase,
+} from './harness.ts';
 
 /**
  * The Prometheus registry.
@@ -282,22 +290,34 @@ describe('exposition format', () => {
  */
 describe('the API endpoint', () => {
   beforeEach(resetDatabase);
-  afterAll(closeHarness);
 
-  const scrape = async () => (await request('/metrics')).body as string;
-
-  test('serves the Prometheus content type', async () => {
-    const response = await request('/metrics');
-
-    expect(response.statusCode).toBe(200);
-    expect(response.headers['content-type']).toContain('text/plain');
-    expect(response.headers['content-type']).toContain('version=0.0.4');
+  // On its own internal port (see `serveMetrics`), never the public one.
+  let metricsServer: ReturnType<typeof serveMetrics> | undefined;
+  const metricsUrl = async () => {
+    if (!metricsServer) {
+      const { app } = await getHarness();
+      metricsServer = serveMetrics(app, { port: 0, hostname: '127.0.0.1' });
+    }
+    return `http://127.0.0.1:${metricsServer.port}/metrics`;
+  };
+  afterAll(async () => {
+    metricsServer?.stop(true);
+    await closeHarness();
   });
 
-  test('needs no session', async () => {
-    // Operational shape, no tenant data -- so it is reachable by a scraper
-    // that holds no credentials.
-    expect((await request('/metrics')).statusCode).toBe(200);
+  const scrape = async () => (await fetch(await metricsUrl())).text();
+
+  test('serves the Prometheus content type', async () => {
+    const response = await fetch(await metricsUrl());
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('text/plain');
+    expect(response.headers.get('content-type')).toContain('version=0.0.4');
+  });
+
+  test('needs no session, because only the internal port serves it', async () => {
+    expect((await fetch(await metricsUrl())).status).toBe(200);
+    expect((await request('/metrics')).statusCode).toBe(404);
   });
 
   test('counts requests by route pattern and status', async () => {
@@ -360,10 +380,11 @@ describe('the API endpoint', () => {
    * would mean the scrape was not being counted; anything above 1 after a
    * settled run would mean requests are going up without coming back down.
    */
-  test('the in-flight gauge counts only the scrape once traffic has settled', async () => {
+  test('the in-flight gauge is back to nothing once traffic has settled', async () => {
     for (let i = 0; i < 5; i++) await request('/health');
 
-    expect(await scrape()).toContain('robis_http_requests_in_flight 1');
+    // The scrape is not an API request any more, so it does not count itself.
+    expect(await scrape()).toContain('robis_http_requests_in_flight 0');
   });
 
   test('failed requests are counted with their real status', async () => {

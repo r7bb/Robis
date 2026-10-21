@@ -41,7 +41,14 @@ export type DeleteButtonProps = {
   kind: string;
   /** What else disappears. Rendered as a warning when present. */
   cascade?: string;
-  onConfirm: () => void | Promise<void>;
+  /** Called with the password when `requiresPassword` is set. */
+  onConfirm: (password: string) => void | Promise<void>;
+  /**
+   * Ask for the password before deleting: for the things whose loss
+   * cannot be undone for anyone (a workspace, the account). The server
+   * asks for it too; this is where it is typed.
+   */
+  requiresPassword?: boolean;
   /** Hidden entirely when false, for callers whose role forbids the action. */
   allowed?: boolean;
   /** Tucked into a list row, so it can sit inside a link without triggering it. */
@@ -53,10 +60,13 @@ export function DeleteButton({
   kind,
   cascade,
   onConfirm,
+  requiresPassword = false,
   allowed = true,
   className = '',
 }: DeleteButtonProps) {
   const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState('');
+  const passwordId = useId();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -87,6 +97,7 @@ export function DeleteButton({
   function close() {
     setOpen(false);
     setError(null);
+    setPassword('');
     openerRef.current?.focus();
   }
 
@@ -95,8 +106,9 @@ export function DeleteButton({
     setError(null);
 
     try {
-      await onConfirm();
+      await onConfirm(password);
       setOpen(false);
+      setPassword('');
     } catch (cause) {
       // Staying open with the reason visible beats closing and leaving the row
       // on screen with no explanation.
@@ -159,6 +171,28 @@ export function DeleteButton({
               </p>
             )}
 
+            {requiresPassword && (
+              <div className="mt-3">
+                <label htmlFor={passwordId} className="block text-xs text-muted">
+                  Your password, to confirm
+                </label>
+                <input
+                  id={passwordId}
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && password) {
+                      event.preventDefault();
+                      void confirm();
+                    }
+                  }}
+                  className="mt-1 w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-content outline-none transition focus-visible:border-danger focus-visible:ring-2 focus-visible:ring-danger/40"
+                />
+              </div>
+            )}
+
             {error && (
               <p role="alert" className="mt-3 text-sm text-danger-soft">
                 {error}
@@ -179,7 +213,7 @@ export function DeleteButton({
               <button
                 type="button"
                 onClick={confirm}
-                disabled={busy}
+                disabled={busy || (requiresPassword && !password)}
                 className="rounded-md bg-danger px-3 py-1.5 text-sm font-medium text-danger-contrast hover:bg-danger-hover disabled:opacity-50"
               >
                 {busy ? 'Deleting…' : 'Delete'}

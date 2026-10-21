@@ -6,9 +6,13 @@
  * may insert audit events (the runtime role is enough). Exits non-zero if any
  * workspace could not be sealed.
  */
+import { requireNodeEnv } from '@robis/shared';
 import { auditKeyringFromEnv, configureAuditKeys } from './audit-keys.ts';
 import { sealLegacyChains } from './audit-seal.ts';
 import { createDatabase } from './index.ts';
+
+// Before anything else: see `requireNodeEnv`.
+requireNodeEnv(process.env.NODE_ENV);
 
 const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://robis:robis@localhost:5433/robis';
 

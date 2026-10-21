@@ -1,5 +1,6 @@
 import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
 import {
+  ACTOR_PASSWORD,
   addMember,
   closeHarness,
   createActor,
@@ -163,12 +164,14 @@ describe('role boundaries', () => {
     const byAdmin = await request(`/workspaces/${workspace.id}`, {
       method: 'DELETE',
       actor: admin,
+      payload: { password: ACTOR_PASSWORD },
     });
     expect(byAdmin.statusCode).toBe(403);
 
     const byOwner = await request(`/workspaces/${workspace.id}`, {
       method: 'DELETE',
       actor: owner,
+      payload: { password: ACTOR_PASSWORD },
     });
     expect(byOwner.statusCode).toBe(204);
   });

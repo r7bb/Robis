@@ -1,7 +1,12 @@
 import { type Executor, sessions, users } from '@robis/database';
 import { TERMS_VERSION } from '@robis/shared';
 import { and, desc, eq, gt, lt, ne } from 'drizzle-orm';
-import { generateSessionToken, hashSessionToken, sessionExpiry } from './tokens.ts';
+import {
+  generateSessionToken,
+  hashSessionToken,
+  SESSION_IDLE_MS,
+  sessionExpiry,
+} from './tokens.ts';
 
 export type AuthenticatedUser = {
   id: string;
@@ -63,8 +68,15 @@ export async function resolveSession(
     .from(sessions)
     .innerJoin(users, eq(users.id, sessions.userId))
     // Expiry is enforced in the query rather than in JS so an expired session
-    // can never be treated as valid by a caller that forgets to check.
-    .where(and(eq(sessions.tokenHash, tokenHash), gt(sessions.expiresAt, new Date())))
+    // can never be treated as valid by a caller that forgets to check. Both
+    // limits: 30 days from sign-in, and 7 days since it was last used.
+    .where(
+      and(
+        eq(sessions.tokenHash, tokenHash),
+        gt(sessions.expiresAt, new Date()),
+        gt(sessions.lastUsedAt, new Date(Date.now() - SESSION_IDLE_MS)),
+      ),
+    )
     .limit(1);
 
   if (!row) return null;
