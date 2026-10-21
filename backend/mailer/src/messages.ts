@@ -69,8 +69,36 @@ export function verifyEmailMail(to: string, link: string, expiresInMinutes: numb
       '',
       `The link works once and expires in ${humanDuration(expiresInMinutes)}.`,
       '',
-      'Your account already works without this -- verifying only confirms the',
-      'address belongs to you.',
+      'Your account already works without this. Confirming the address lets',
+      'you join the workspaces you are invited to.',
+    ].join('\n'),
+  };
+}
+
+/**
+ * An invitation to a workspace, sent to an address.
+ *
+ * The same words whether or not the address has an account, and it never
+ * says which: the link goes to the sign-in page, which offers both. The
+ * workspace name is written by whoever made it, so it is quoted as a name
+ * and the only link is to this site.
+ */
+export function workspaceInvitationMail(
+  to: string,
+  details: { workspaceName: string; invitedBy: string | null; link: string },
+): Mail {
+  const who = details.invitedBy ? `@${details.invitedBy}` : 'Someone';
+  return {
+    to,
+    subject: 'You have been invited to a workspace on Robis',
+    text: [
+      `${who} invited this address to join the workspace "${details.workspaceName}" on Robis.`,
+      '',
+      'Sign in, or create an account with this address, to accept or decline:',
+      details.link,
+      '',
+      'Nothing happens unless you accept. If you were not expecting this, you',
+      'can ignore it.',
     ].join('\n'),
   };
 }

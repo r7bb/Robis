@@ -307,10 +307,10 @@ let userCounter = 0;
  */
 export async function createActor(
   name = `User ${++userCounter}`,
-  { withAvatar = true }: { withAvatar?: boolean } = {},
+  { withAvatar = true, email: chosenEmail }: { withAvatar?: boolean; email?: string } = {},
 ): Promise<Actor> {
   const { app } = await getHarness();
-  const email = `user${userCounter}-${Date.now()}@robis.test`;
+  const email = chosenEmail ?? `user${userCounter}-${Date.now()}@robis.test`;
   // Unique per run, like the email, and always a valid username.
   const username = `user${userCounter}_${Date.now()}`;
 
@@ -397,9 +397,18 @@ export async function addMember(
   user: Actor,
   role: 'OWNER' | 'ADMIN' | 'MEMBER' | 'GUEST',
 ) {
+  // By username: an email invitation answers the same whether or not the
+  // address has an account, so it carries no id to accept. The name as it
+  // is now, since a test may have renamed the person since signing up.
+  const { ownerDb } = await getHarness();
+  const [current] = await ownerDb
+    .select({ username: users.username })
+    .from(users)
+    .where(eq(users.id, user.id))
+    .limit(1);
   const response = await request(`/workspaces/${workspaceId}/members`, {
     method: 'POST',
-    payload: { email: user.email, role },
+    payload: { username: current?.username ?? user.username, role },
     actor,
   });
 
@@ -407,7 +416,6 @@ export async function addMember(
     throw new Error(`Failed to invite member: ${response.statusCode} ${response.body}`);
   }
 
-  const { ownerDb } = await getHarness();
   await ownerDb
     .update(users)
     .set({ emailVerifiedAt: new Date() })

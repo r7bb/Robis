@@ -1,11 +1,21 @@
 import { issueAuthToken, ttlMinutesFor } from '@robis/auth';
 import {
   type AccountMailPayload,
+  type InvitationMailPayload,
   MAIL_EMAIL_VERIFICATION_JOB,
   MAIL_PASSWORD_RESET_JOB,
+  MAIL_WORKSPACE_INVITATION_JOB,
   users,
+  workspaceInvitations,
+  workspaces,
 } from '@robis/database';
-import { linkFor, type Mailer, passwordResetMail, verifyEmailMail } from '@robis/mailer';
+import {
+  linkFor,
+  type Mailer,
+  passwordResetMail,
+  verifyEmailMail,
+  workspaceInvitationMail,
+} from '@robis/mailer';
 import { eq } from 'drizzle-orm';
 import type { Handlers } from './runner.ts';
 
@@ -79,6 +89,31 @@ export function mailHandlers(deps: { mailer: Mailer; webOrigin: string }): Handl
           linkFor(webOrigin, '/verify-email', token),
           ttlMinutesFor('email_verification'),
         ),
+      );
+    },
+
+    [MAIL_WORKSPACE_INVITATION_JOB]: async (payload, { db }) => {
+      const { invitationId } = payload as InvitationMailPayload;
+      const [invitation] = await db
+        .select({
+          email: workspaceInvitations.email,
+          workspaceName: workspaces.name,
+          invitedBy: users.username,
+        })
+        .from(workspaceInvitations)
+        .innerJoin(workspaces, eq(workspaces.id, workspaceInvitations.workspaceId))
+        .leftJoin(users, eq(users.id, workspaceInvitations.invitedBy))
+        .where(eq(workspaceInvitations.id, invitationId))
+        .limit(1);
+      // Answered or withdrawn before it went: nothing to say any more.
+      if (!invitation?.email) return;
+
+      await mailer.send(
+        workspaceInvitationMail(invitation.email, {
+          workspaceName: invitation.workspaceName,
+          invitedBy: invitation.invitedBy,
+          link: `${webOrigin}/login`,
+        }),
       );
     },
   };

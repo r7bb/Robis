@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { api, type SentInvitation } from '../lib/api.ts';
+import { api, invitedLabel, type SentInvitation } from '../lib/api.ts';
 import { RoleBadge } from './ui/primitives.tsx';
 
 /**
@@ -33,7 +33,7 @@ export function SentInvitations({
     mutationFn: (invitation: SentInvitation) =>
       api<void>(`/workspaces/${workspaceId}/invitations/${invitation.id}`, { method: 'DELETE' }),
     onSuccess: (_, invitation) => {
-      setSaid(`Withdrew the invitation to @${invitation.username}.`);
+      setSaid(`Withdrew the invitation to ${invitedLabel(invitation)}.`);
       document.getElementById(focusAfter)?.focus();
     },
     // Answered or withdrawn elsewhere in the meantime: drop it either way.
@@ -66,8 +66,10 @@ export function SentInvitations({
                 className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5"
               >
                 <span className="text-sm text-muted">
-                  {invitation.name}
-                  <span className="ml-2 text-xs text-faint">@{invitation.username}</span>
+                  {invitation.name ?? invitation.email}
+                  {invitation.username ? (
+                    <span className="ml-2 text-xs text-faint">@{invitation.username}</span>
+                  ) : null}
                 </span>
                 <span className="flex items-center gap-3">
                   <RoleBadge role={invitation.role} />
@@ -75,7 +77,7 @@ export function SentInvitations({
                     type="button"
                     onClick={() => withdraw.mutate(invitation)}
                     disabled={withdraw.isPending}
-                    aria-label={`Withdraw the invitation to @${invitation.username}`}
+                    aria-label={`Withdraw the invitation to ${invitedLabel(invitation)}`}
                     className="text-xs text-muted transition-colors hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 disabled:opacity-50"
                   >
                     Withdraw

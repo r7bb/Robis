@@ -16,8 +16,16 @@ import { jobs } from './schema.ts';
  */
 export const MAIL_PASSWORD_RESET_JOB = 'mail.password_reset';
 export const MAIL_EMAIL_VERIFICATION_JOB = 'mail.email_verification';
+export const MAIL_WORKSPACE_INVITATION_JOB = 'mail.workspace_invitation';
 
-export const MAIL_JOBS = [MAIL_PASSWORD_RESET_JOB, MAIL_EMAIL_VERIFICATION_JOB] as const;
+export const MAIL_JOBS = [
+  MAIL_PASSWORD_RESET_JOB,
+  MAIL_EMAIL_VERIFICATION_JOB,
+  MAIL_WORKSPACE_INVITATION_JOB,
+] as const;
+
+/** An invitation sent to an address: the job names the invitation only. */
+export type InvitationMailPayload = { invitationId: string };
 
 export type AccountMailPayload = { userId: string };
 
@@ -49,4 +57,22 @@ export function queuePasswordResetMail(db: Executor, userId: string) {
 
 export function queueVerificationMail(db: Executor, userId: string) {
   return queueAccountMail(db, MAIL_EMAIL_VERIFICATION_JOB, userId);
+}
+
+/**
+ * Tell an address it has been invited. Sent whether or not the address has
+ * an account, with the same words either way, so the inviter cannot learn
+ * which it was from whether mail went out.
+ */
+export async function queueInvitationMail(db: Executor, invitationId: string) {
+  const payload: InvitationMailPayload = { invitationId };
+  await db
+    .insert(jobs)
+    .values({
+      kind: MAIL_WORKSPACE_INVITATION_JOB,
+      payload: JSON.stringify(payload),
+      runAt: new Date(),
+      maxAttempts: MAIL_ATTEMPTS,
+    })
+    .onConflictDoNothing();
 }

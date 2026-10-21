@@ -41,13 +41,16 @@ export function MemberList({
 
   const invite = useMutation({
     mutationFn: (body: { email?: string; username?: string; role: Role }) =>
-      api<{ invitation: { username: string } }>(`/workspaces/${workspaceId}/members`, {
-        method: 'POST',
-        body,
-      }),
+      api<{ invitation: { username?: string | null; email?: string | null } }>(
+        `/workspaces/${workspaceId}/members`,
+        {
+          method: 'POST',
+          body,
+        },
+      ),
     onSuccess: ({ invitation }) => {
       setEmail('');
-      setInvited(invitation.username);
+      setInvited(invitation.username ? `@${invitation.username}` : (invitation.email ?? null));
       queryClient.invalidateQueries({ queryKey: ['invitations', workspaceId] });
     },
   });
@@ -154,7 +157,7 @@ export function MemberList({
 
       {/* Mounted from the start, so a screen reader hears the change. */}
       <p role="status" className="mt-2 text-sm text-muted empty:hidden">
-        {invited && !error ? `Invited @${invited}. They join once they accept.` : ''}
+        {invited && !error ? `Invited ${invited}. They join once they accept.` : ''}
       </p>
 
       <ul className="mt-3 divide-y divide-line rounded-lg border border-line bg-raised">

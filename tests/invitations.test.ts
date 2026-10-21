@@ -8,6 +8,7 @@ import {
   createActor,
   createWorkspace,
   getHarness,
+  getMailer,
   request,
   resetDatabase,
 } from './harness.ts';
@@ -66,6 +67,107 @@ async function trailTypes(workspaceId: string) {
     .orderBy(asc(auditEvents.seq));
   return rows;
 }
+
+function inviteByEmail(actor: Actor, workspaceId: string, email: string, role = 'MEMBER') {
+  return request(`/workspaces/${workspaceId}/members`, {
+    method: 'POST',
+    actor,
+    payload: { email, role },
+  });
+}
+
+describe('an invitation by email', () => {
+  test('answers the same whether or not the address has an account', async () => {
+    const owner = await createActor('Owner');
+    const workspace = await createWorkspace(owner, 'Design');
+    const existing = await createActor('Existing');
+    const nobody = `nobody-${Date.now()}@robis.test`;
+
+    const toAccount = await inviteByEmail(owner, workspace.id, existing.email);
+    const toNobody = await inviteByEmail(owner, workspace.id, nobody);
+
+    expect(toAccount.statusCode).toBe(202);
+    expect(toNobody.statusCode).toBe(toAccount.statusCode);
+    const shape = (body: { invitation: { email: string } }) => ({
+      ...body,
+      invitation: { ...body.invitation, email: 'ADDRESS' },
+    });
+    expect(shape(toNobody.json())).toEqual(shape(toAccount.json()));
+    expect(toAccount.json() as unknown).toEqual({
+      invitation: { email: existing.email, role: 'MEMBER', status: 'sent' },
+    });
+
+    // And the pending list shows the address typed in both cases, never who
+    // it turned out to be.
+    const pendingList = (
+      await request(`/workspaces/${workspace.id}/invitations`, { actor: owner })
+    ).json().invitations as { email: string | null; username: string | null }[];
+    expect(pendingList.map((row) => row.email).sort()).toEqual([existing.email, nobody].sort());
+    expect(pendingList.every((row) => row.username === null)).toBe(true);
+  });
+
+  test('sends the same email either way', async () => {
+    const owner = await createActor('Owner');
+    const workspace = await createWorkspace(owner, 'Design');
+    const existing = await createActor('Existing');
+    const nobody = `nobody-${Date.now()}@robis.test`;
+    await inviteByEmail(owner, workspace.id, existing.email);
+    await inviteByEmail(owner, workspace.id, nobody);
+
+    const mailer = await getMailer();
+    const a = mailer.lastTo(existing.email);
+    const b = mailer.lastTo(nobody);
+    expect(a?.subject).toBe(b?.subject);
+    expect(a?.text.replace(existing.email, 'X')).toBe(b?.text.replace(nobody, 'X'));
+    expect(a?.text).toContain('Design');
+  });
+
+  test('waits for the address to be confirmed, then can be accepted', async () => {
+    const owner = await createActor('Owner');
+    const workspace = await createWorkspace(owner, 'Design');
+    const existing = await createActor('Existing');
+    await inviteByEmail(owner, workspace.id, existing.email);
+
+    // An unconfirmed address is only a claim, so nothing shows yet.
+    expect(await pending(existing)).toEqual([]);
+
+    await verify(existing);
+    const [mine] = await pending(existing);
+    expect(mine?.workspace.name).toBe('Design');
+    const accepted = await request(`/invitations/${mine!.id}/accept`, {
+      method: 'POST',
+      actor: existing,
+    });
+    expect(accepted.statusCode).toBe(200);
+    expect(await workspaceIds(existing)).toEqual([workspace.id]);
+  });
+
+  test('reaches someone who signs up later with that address', async () => {
+    const owner = await createActor('Owner');
+    const workspace = await createWorkspace(owner, 'Design');
+    const later = `later-${Date.now()}@robis.test`;
+    await inviteByEmail(owner, workspace.id, later);
+
+    const newcomer = await createActor('Newcomer', { email: later });
+    await verify(newcomer);
+    const [mine] = await pending(newcomer);
+    expect(mine?.workspace.id).toBe(workspace.id);
+  });
+
+  test('to someone already in changes nothing, and says nothing different', async () => {
+    const owner = await createActor('Owner');
+    const workspace = await createWorkspace(owner, 'Design');
+    const response = await inviteByEmail(owner, workspace.id, owner.email);
+    expect(response.statusCode).toBe(202);
+    expect(response.json() as unknown).toEqual({
+      invitation: { email: owner.email, role: 'MEMBER', status: 'sent' },
+    });
+    const pendingList = (
+      await request(`/workspaces/${workspace.id}/invitations`, { actor: owner })
+    ).json().invitations;
+    expect(pendingList).toEqual([]);
+  });
+});
 
 describe('an invitation', () => {
   test('is pending until accepted: the workspace is not theirs yet', async () => {

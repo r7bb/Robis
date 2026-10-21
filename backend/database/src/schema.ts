@@ -280,6 +280,12 @@ export const workspaceMembers = pgTable(
  * email address) or declines, and only then does a `workspace_members`
  * row exist. Answering or withdrawing it deletes the row; the audit trail
  * keeps what happened.
+ *
+ * Either for a person (by username) or for an address (by email), never
+ * both. An address is kept as typed and never resolved to an account here:
+ * whether the address has one must not show, to the inviter or in this
+ * table. It is matched to an account only by that account's confirmed
+ * address, when the person looks.
  */
 export const workspaceInvitations = pgTable(
   'workspace_invitations',
@@ -288,16 +294,27 @@ export const workspaceInvitations = pgTable(
     workspaceId: uuid('workspace_id')
       .notNull()
       .references(() => workspaces.id, { onDelete: 'cascade' }),
-    userId: uuid('user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+    /** Lowercased, as account addresses are. */
+    email: text('email'),
     role: roleEnum('role').notNull().default('MEMBER'),
     invitedBy: uuid('invited_by').references(() => users.id, { onDelete: 'set null' }),
     createdAt: createdAt(),
   },
   (t) => [
-    uniqueIndex('workspace_invitations_workspace_user_key').on(t.workspaceId, t.userId),
+    uniqueIndex('workspace_invitations_workspace_user_key')
+      .on(t.workspaceId, t.userId)
+      .where(sql`${t.userId} is not null`),
+    uniqueIndex('workspace_invitations_workspace_email_key')
+      .on(t.workspaceId, t.email)
+      .where(sql`${t.email} is not null`),
     index('workspace_invitations_user_idx').on(t.userId),
+    index('workspace_invitations_email_idx').on(t.email),
+    index('workspace_invitations_invited_by_idx').on(t.invitedBy),
+    check(
+      'workspace_invitations_one_addressee',
+      sql`(${t.userId} is null) <> (${t.email} is null)`,
+    ),
   ],
 );
 

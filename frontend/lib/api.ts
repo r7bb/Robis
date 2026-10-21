@@ -107,14 +107,24 @@ export type MyInvitation = {
 };
 
 /** An invitation a workspace has sent, as its admins see it. */
+/**
+ * An invitation a workspace has sent: to a person (username set) or to an
+ * address (email set, as it was typed; never shown as who it turned out to be).
+ */
 export type SentInvitation = {
   id: string;
-  userId: string;
-  name: string;
-  username: string;
+  userId: string | null;
+  email: string | null;
+  name: string | null;
+  username: string | null;
   role: Role;
   createdAt: string;
 };
+
+/** Who an invitation is for, as the people who sent it may see it. */
+export function invitedLabel(invitation: SentInvitation): string {
+  return invitation.username ? `@${invitation.username}` : (invitation.email ?? 'someone');
+}
 
 export type DocumentSummary = {
   id: string;
