@@ -144,11 +144,12 @@ export const updateWorkspaceSchema = z
  * in here -- and saves passing email addresses around a team.
  */
 /**
- * How many unanswered invitations one person may have at once. Any account
- * can make a workspace and invite anyone, so without a cap an inbox could
- * be filled with invitations nobody asked for.
+ * How many unanswered invitations one sender may have out at once, across
+ * every workspace. Any account can make a workspace and invite anyone, so
+ * the cap is on the sender: counted per invitee, a few throwaway workspaces
+ * could fill it and block a real team's invitation.
  */
-export const MAX_PENDING_INVITATIONS = 10;
+export const MAX_PENDING_INVITATIONS = 50;
 
 export const inviteMemberSchema = z
   .object({

@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
-import { auditEvents, users, workspaceMembers } from '@robis/database';
+import { auditEvents, users, workspaceInvitations, workspaceMembers } from '@robis/database';
 import { MAX_PENDING_INVITATIONS } from '@robis/shared';
 import { and, asc, eq } from 'drizzle-orm';
 import {
@@ -276,16 +276,34 @@ describe('an invitation', () => {
     expect(byAdmin.statusCode).toBe(403);
   });
 
-  test('cannot be piled on one person past a limit', async () => {
+  test('throwaway workspaces cannot block a real invitation', async () => {
     const target = await createActor('Target');
-    let last = 0;
-    for (let n = 0; n <= MAX_PENDING_INVITATIONS; n++) {
-      const sender = await createActor(`Sender ${n}`);
-      const workspace = await createWorkspace(sender, `Workspace ${n}`);
-      last = (await invite(sender, workspace.id, target)).statusCode;
-      if (n < MAX_PENDING_INVITATIONS) expect(last).toBe(201);
+    // More strangers than any cap, each with a throwaway workspace.
+    for (let n = 0; n <= 11; n++) {
+      const stranger = await createActor(`Stranger ${n}`);
+      const throwaway = await createWorkspace(stranger, `Throwaway ${n}`);
+      expect((await invite(stranger, throwaway.id, target)).statusCode).toBe(201);
     }
-    expect(last).toBe(409);
+    const owner = await createActor('Owner');
+    const real = await createWorkspace(owner, 'Real team');
+    expect((await invite(owner, real.id, target)).statusCode).toBe(201);
+  });
+
+  test('one sender can only have so many unanswered at once', async () => {
+    const sender = await createActor('Sender');
+    const team = await createWorkspace(sender, 'Team');
+    // Written directly: the route's own rate limit would stop a loop of
+    // this many first, and that is not what is being tested.
+    const { db } = await getHarness();
+    for (let n = 0; n < MAX_PENDING_INVITATIONS; n++) {
+      const person = await createActor(`Person ${n}`);
+      await db
+        .insert(workspaceInvitations)
+        .values({ workspaceId: team.id, userId: person.id, invitedBy: sender.id });
+    }
+    const oneMore = await invite(sender, team.id, await createActor('One more'));
+    expect(oneMore.statusCode).toBe(409);
+    expect(oneMore.json().error).toBe('too_many_invitations');
   });
 
   test('still cannot make someone an owner unless an owner sends it', async () => {

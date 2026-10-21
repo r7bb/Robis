@@ -177,13 +177,16 @@ export async function invitationRoutes(app: FastifyInstance, opts: { db: Databas
             .limit(1);
           if (member) throw ApiError.conflict('That user is already a member', 'already_member');
 
-          const [waiting] = await tx
+          // Per sender, across every workspace: counted per invitee, a few
+          // throwaway workspaces could fill someone's cap and block a real
+          // team's invitation.
+          const [outstanding] = await tx
             .select({ n: count() })
             .from(workspaceInvitations)
-            .where(eq(workspaceInvitations.userId, invitee.id));
-          if ((waiting?.n ?? 0) >= MAX_PENDING_INVITATIONS) {
+            .where(eq(workspaceInvitations.invitedBy, actor.id));
+          if ((outstanding?.n ?? 0) >= MAX_PENDING_INVITATIONS) {
             throw ApiError.conflict(
-              'That person has too many invitations waiting already',
+              `You have ${MAX_PENDING_INVITATIONS} invitations waiting for an answer; withdraw some, or wait for replies`,
               'too_many_invitations',
             );
           }
