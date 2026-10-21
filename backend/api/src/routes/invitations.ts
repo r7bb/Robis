@@ -403,6 +403,14 @@ export async function invitationRoutes(app: FastifyInstance, opts: { db: Databas
             })
             .returning({ role: workspaceMembers.role });
 
+          // Read before the audit write, which takes the chain's lock and so
+          // goes last in the transaction (see `recordAudit`).
+          const [workspace] = await tx
+            .select({ id: workspaces.id, name: workspaces.name })
+            .from(workspaces)
+            .where(eq(workspaces.id, invitation.workspaceId))
+            .limit(1);
+
           // Already in by some other path: nothing joined, nothing to record.
           if (added) {
             await recordAudit(tx, auditActor(request), {
@@ -414,12 +422,6 @@ export async function invitationRoutes(app: FastifyInstance, opts: { db: Databas
               personal,
             });
           }
-
-          const [workspace] = await tx
-            .select({ id: workspaces.id, name: workspaces.name })
-            .from(workspaces)
-            .where(eq(workspaces.id, invitation.workspaceId))
-            .limit(1);
           return { workspace: workspace!, role: added?.role ?? invitation.role };
         });
 

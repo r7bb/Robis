@@ -149,20 +149,6 @@ export function auditHash(fields: ChainedFields, keyring?: AuditKeyring): string
 }
 
 /**
- * Append one event to its workspace's chain.
- *
- * Takes a transaction, not a database, and the type enforces it: the event
- * must commit or roll back with the change it describes, and the lock below
- * is only held until the end of a transaction.
- *
- * The advisory lock serialises appends per workspace, so two concurrent
- * writers cannot both read seq 41 and both write 42. It is held until commit,
- * which is also what keeps `seq` in commit order: event 43 cannot be numbered
- * until 42 is visible. Call this last in the transaction, so the lock is held
- * for as little of it as possible. Relies on READ COMMITTED (the default):
- * the select after the lock must see the previous holder's committed row.
- */
-/**
  * Take a workspace chain's append lock until the transaction ends.
  *
  * `hashtext` folds the workspace id to 32 bits. Two workspaces that collide
@@ -178,6 +164,20 @@ export async function lockAuditChain(tx: Tx, workspaceId: string) {
   );
 }
 
+/**
+ * Append one event to its workspace's chain.
+ *
+ * Takes a transaction, not a database, and the type enforces it: the event
+ * must commit or roll back with the change it describes, and the lock below
+ * is only held until the end of a transaction.
+ *
+ * The advisory lock serialises appends per workspace, so two concurrent
+ * writers cannot both read seq 41 and both write 42. It is held until commit,
+ * which is also what keeps `seq` in commit order: event 43 cannot be numbered
+ * until 42 is visible. Call this last in the transaction, so the lock is held
+ * for as little of it as possible. Relies on READ COMMITTED (the default):
+ * the select after the lock must see the previous holder's committed row.
+ */
 export async function recordAudit(tx: Tx, actor: AuditActor, input: AuditInput) {
   // Uuids are hashed in the form Postgres returns them, so a client that sent
   // one in upper case cannot produce a row that later fails verification.
