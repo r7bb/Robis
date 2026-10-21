@@ -78,6 +78,9 @@ describe('lookalike usernames', () => {
   test('a reserved name cannot be had by spelling it with a lookalike', () => {
     expect(usernameProblem('r0bis')).toBe('reserved');
     expect(usernameProblem('ad.min')).toBe('reserved');
+    // 1 reads as an i as easily as an l.
+    expect(usernameProblem('adm1n')).toBe('reserved');
+    expect(usernameProblem('1ndex')).toBeNull();
   });
 
   test('signing up as a lookalike of a taken name is refused', async () => {

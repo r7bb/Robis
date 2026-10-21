@@ -96,8 +96,13 @@ export function usernameProblem(candidate: string): UsernameProblem | null {
     return 'length';
   }
   if (!USERNAME.test(candidate) || candidate.includes('..')) return 'characters';
-  // By key, so `r0bis` and `ad.min` are reserved too.
-  if (RESERVED_KEYS.has(usernameKey(candidate))) return 'reserved';
+  // By key, so `r0bis` and `ad.min` are reserved too. A 1 reads as an i
+  // as easily as an l, so `adm1n` is checked both ways. Only for reserved
+  // names: between two people, 1 and l stay the one rule `usernameKey` has.
+  const asI = candidate.replace(/1/g, 'i');
+  if (RESERVED_KEYS.has(usernameKey(candidate)) || RESERVED_KEYS.has(usernameKey(asI))) {
+    return 'reserved';
+  }
   return null;
 }
 
