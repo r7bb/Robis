@@ -25,6 +25,13 @@ Newest first. The same list is the site's What's new page, linked from the
 header, where each entry opens to show how it was checked and, for features,
 where to find it and what each layer does.
 
+- **Email invitations that give nothing away** (2026-10-20). Inviting by
+  email answers the same whether or not the address has an account, sends
+  the same email either way, and the pending list shows the address as
+  typed. Whoever owns the address sees the invitation once it is confirmed.
+  The cap on unanswered invitations now counts per sender, so throwaway
+  workspaces cannot block a real one, and a reserved name spelled with a 1
+  for an i (adm1n) is refused.
 - **Safer by default before going live** (2026-10-20). Every service
   refuses to start without being told which environment it is in. In
   production the session cookie is always Secure and host-only. Writes from

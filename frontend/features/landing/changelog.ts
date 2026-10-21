@@ -41,6 +41,15 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-20',
     area: 'Security',
+    title: 'Email invitations that give nothing away',
+    summary:
+      'Inviting someone by email used to say “no account exists with that email”, which let anyone with a workspace check whether an address was registered. Now an email invitation answers the same whether or not the address has an account, the same email goes to it either way, and the pending list shows the address as typed, never who it turned out to be. Whoever owns the address sees the invitation once their address is confirmed, including someone who signs up later. The cap on unanswered invitations now counts per sender, so a stranger with throwaway workspaces cannot fill anyone’s and block a real team, and a reserved name spelled with a 1 for an i, such as adm1n, is refused.',
+    checked:
+      'Tests prove an invitation to an address with an account and one without answer with the same status and body, send the same email and show alike in the pending list; that an unconfirmed account does not see an email invitation and a confirmed one can accept it; that a later sign-up with the address sees it; that inviting a member’s address changes nothing and says the same; that twelve strangers with throwaway workspaces cannot block a real invitation while one sender with 50 waiting is refused the next; and that adm1n is reserved while 1ndex is not.',
+  },
+  {
+    date: '2026-10-20',
+    area: 'Security',
     title: 'Safer by default before going live',
     summary:
       'A review before deployment tightened the defaults. The API, the live feed, the worker and the command-line tools now refuse to start unless they are told whether they are in development, test or production, instead of assuming development. In production the session cookie is always Secure and carries the __Host- prefix, so no other subdomain or plain-http page can set it. Writes from another website are refused before they are read, the same check the live feed already made. Metrics moved to an internal port, while the health check stays public. A session unused for 7 days now ends, within the 30 it can live, and deleting a workspace asks for your password.',
