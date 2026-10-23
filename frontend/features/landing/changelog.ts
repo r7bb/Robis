@@ -41,6 +41,15 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-23',
     area: 'Security',
+    title: 'A strict security policy for every page',
+    summary:
+      'Every page now carries a Content-Security-Policy that runs only the scripts the server stamped with a fresh one-time value, so a script or event handler slipped into a page cannot run. Nothing may show Robis inside a frame, which stops clickjacking. Browsers are told to use HTTPS only, the camera is allowed for Robis itself (the welcome screen takes a picture) and every other powerful feature, such as the microphone and location, is turned off. The sign-up page now gets the same no-referrer, no-store treatment as the reset and verification pages, and the offline cache never keeps a page carrying a one-time link. Next.js is now on 15.5.28, which fixes a critical flaw in image optimisation.',
+    checked:
+      'Tests pin the policy: scripts only by nonce with strict-dynamic, no unsafe-inline or eval outside development, frame-ancestors none, connections only to the app, the API and the gateway, the camera for this origin only, and HSTS in production only, for this host; and that every API response forbids running script, framing and sniffing. A new browser smoke test, run in CI against the container stack, loads the landing, sign-in, sign-up, intro, How it works and What’s new pages and a signed-in workspace in Chrome and fails on any policy violation; it found zod probing for eval, now switched off in the browser. It also serves a page with a script and an onclick handler injected into its HTML, as a stored cross-site script would be, and checks that neither runs and both are reported. It also checks each response has a fresh nonce matching its scripts, that the WebGL landing is drawing with its own program, that a signed-in workspace stays clean once its API calls and socket have run, and, in a separate Chrome check, that the offline cache keeps the sign-in page but not a sign-up link.',
+  },
+  {
+    date: '2026-10-23',
+    area: 'Security',
     title: 'Sign up with your email first',
     summary:
       'Creating an account used to say “an account with that email already exists”, which let anyone check whether an address was registered. Now sign-up starts with just your address and always answers “check your inbox”, after the same short wait either way. A new address gets a link that finishes signing up, where you choose your name, username and password; an address that already has an account gets a reminder to sign in instead, so only whoever reads that inbox learns which it was. The link works once, for 24 hours, and opening it confirms your address, so a new account starts confirmed and can join workspaces at once. Asking again sends another link without cancelling the first, the link is taken out of the address bar once the page has read it, and a sign-up nobody finishes is cleared away a week after its link runs out.',

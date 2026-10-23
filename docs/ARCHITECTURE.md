@@ -654,6 +654,41 @@ The caller-keyed limit protects the server; it does nothing for the person
 being mailed, because the attacker chooses the address and a handful of
 addresses is enough to flood one mailbox.
 
+### The security policy trusts the server, not the page
+
+Every page carries a Content-Security-Policy with a fresh nonce
+(`frontend/middleware.ts`): `script-src 'self' 'nonce-…' 'strict-dynamic'`,
+`frame-ancestors 'none'`, connections only to the app, the API and the
+gateway. Next stamps its own scripts with the nonce while rendering, which
+is why every page renders per request rather than ahead of time. The fixed
+headers (HSTS in production, `nosniff`, a Permissions-Policy allowing only
+the camera, for this origin) are set in `next.config.ts`; both read
+`frontend/lib/security-headers.ts`. HSTS covers this host only, without
+`includeSubDomains`, because nothing here knows every subdomain of the
+deployed domain serves HTTPS. The API sends its own: `nosniff`, HSTS in
+production, and `default-src 'none'; frame-ancestors 'none'; sandbox`, so
+a file it serves, opened directly, cannot run anything on its origin.
+
+Every page now sends `no-store`, as Next does for pages rendered per
+request, so the service worker no longer decides what to keep by that
+header: it keeps pages for offline use and skips, by path, the pages whose
+URL carries a one-time link (`TOKEN_PAGES` in both `sw.js` and
+`next.config.ts`).
+
+What it stops is injected markup: a `<script>` or `onclick` that reaches
+the page through its HTML, as a stored cross-site script would, does not
+run. What it does not stop, by design of `'strict-dynamic'`, is script the
+page itself already runs adding more. Styles allow inline, because the
+server-rendered HTML carries `style` attributes for the landing's motion,
+and a style cannot run code.
+
+`bun run smoke:browser` checks this in a real Chrome against the running
+stack, and CI runs it. It fails on any reported violation on the public
+pages and a signed-in workspace, which is how zod's eval probe was found
+(the shared package now turns it off in browsers, in `no-eval.ts`), and it
+rewrites one page's HTML on the way in to prove that injected script and
+handlers are refused.
+
 ### Metrics label the route pattern, never the URL
 
 `/metrics` on the API's and the gateway's internal ports serves Prometheus text, written by hand

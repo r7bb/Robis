@@ -92,3 +92,20 @@ export function isForeignWrite(
   if (typeof origin === 'string' && origin !== webOrigin) return true;
   return headers['sec-fetch-site'] === 'cross-site';
 }
+
+/** Two years, as the web app sends; this host only. */
+const HSTS_MAX_AGE_S = 2 * 365 * 24 * 60 * 60;
+
+/**
+ * Headers on every API response. Nothing here is a page, so the policy
+ * allows nothing at all, and `sandbox` keeps a file opened directly from
+ * running anything on this origin even if a type check upstream were ever
+ * wrong. HTTPS is pinned in production, as the web app pins its own host.
+ */
+export function apiSecurityHeaders(production: boolean): Record<string, string> {
+  return {
+    'x-content-type-options': 'nosniff',
+    'content-security-policy': "default-src 'none'; frame-ancestors 'none'; sandbox",
+    ...(production ? { 'strict-transport-security': `max-age=${HSTS_MAX_AGE_S}` } : {}),
+  };
+}

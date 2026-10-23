@@ -1,3 +1,6 @@
+// First, before any schema: see the file.
+import './no-eval.ts';
+
 export * from './avatars.ts';
 export * from './consent.ts';
 export * from './demo.ts';

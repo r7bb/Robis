@@ -3,8 +3,7 @@
 import type { DocumentAwareness, ServerMessage } from '@robis/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as Y from 'yjs';
-
-const REALTIME_URL = process.env.NEXT_PUBLIC_REALTIME_URL ?? 'ws://localhost:4001/ws';
+import { REALTIME_URL } from './endpoints.ts';
 
 export type Collaborator = DocumentAwareness & { userId: string; name: string };
 

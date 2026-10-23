@@ -138,6 +138,12 @@ jobs:
       - name: Smoke test against the running containers
         run: bun run scripts/smoke/stack.ts
 
+      # The runner's own Chrome, under the web app's security policy: every
+      # page loads with no violation, injected markup does not run, and the
+      # WebGL landing still draws (on the software renderer; there is no GPU).
+      - name: Browser smoke test under the security policy
+        run: bun run scripts/smoke/browser.ts
+
       # Health is checked at start-up by `--wait`; this checks it again
       # after real traffic, so a service that fell over during the smoke
       # test fails the job too.

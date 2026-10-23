@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { connection } from 'next/server';
 import type { ReactNode } from 'react';
 import './globals.css';
 import { ServiceWorker } from '../components/service-worker.tsx';
@@ -19,7 +20,14 @@ export const viewport: Viewport = {
   themeColor: '#0e1014',
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+/**
+ * Rendered per request: the security policy carries a fresh nonce for each
+ * page (see `middleware.ts`), and Next can only stamp its scripts with one
+ * while rendering. A page built ahead of time would have scripts the policy
+ * refuses.
+ */
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  await connection();
   return (
     <html lang="en">
       {/*

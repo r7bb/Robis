@@ -37,6 +37,7 @@ export class Page {
     number,
     { resolve: (value: unknown) => void; reject: (error: Error) => void }
   >();
+  private readonly listeners = new Map<string, ((params: unknown) => void)[]>();
 
   private constructor(
     private readonly socket: WebSocket,
@@ -63,6 +64,9 @@ export class Page {
 
     socket.addEventListener('message', (event) => {
       const message = JSON.parse(String(event.data));
+      if (message.method) {
+        for (const listener of page.listeners.get(message.method) ?? []) listener(message.params);
+      }
       const waiting = message.id !== undefined ? page.pending.get(message.id) : undefined;
       if (!waiting) return;
 
@@ -82,6 +86,12 @@ export class Page {
     });
 
     return page;
+  }
+
+  /** Call `listener` with the params of every `method` event from now on. */
+  on<T = unknown>(method: string, listener: (params: T) => void) {
+    const all = this.listeners.get(method) ?? [];
+    this.listeners.set(method, [...all, listener as (params: unknown) => void]);
   }
 
   send<T = unknown>(

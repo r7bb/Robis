@@ -1,5 +1,9 @@
 import { fileURLToPath } from 'node:url';
 import type { NextConfig } from 'next';
+import { staticSecurityHeaders } from './lib/security-headers.ts';
+
+/** Pages whose URL carries a single-use token. */
+const TOKEN_PAGES = ['/reset-password', '/verify-email', '/signup'];
 
 const config: NextConfig = {
   /*
@@ -39,11 +43,14 @@ const config: NextConfig = {
    */
   devIndicators: false,
   /*
-   * The reset and verification pages carry a single-use token in the URL.
-   * `no-referrer` stops a link clicked on the page from handing that URL,
-   * token and all, to whatever site it leads to; `no-store` stops a shared
-   * or browser cache keeping a copy of a page whose whole point is that it
-   * works once.
+   * Every response gets the fixed security headers (the per-page
+   * Content-Security-Policy comes from `middleware.ts`).
+   *
+   * The reset, verification and sign-up pages carry a single-use token in
+   * the URL. `no-referrer` stops a link clicked on the page from handing
+   * that URL, token and all, to whatever site it leads to; `no-store` stops
+   * a shared or browser cache keeping a copy of a page whose whole point is
+   * that it works once.
    */
   async headers() {
     const tokenPage = [
@@ -51,11 +58,18 @@ const config: NextConfig = {
       { key: 'Cache-Control', value: 'no-store' },
     ];
     // The bare path and anything under it, so a future sub-route keeps the
-    // same protection. Query strings are covered either way.
-    return ['/reset-password', '/verify-email'].flatMap((path) => [
-      { source: path, headers: tokenPage },
-      { source: `${path}/:path*`, headers: tokenPage },
-    ]);
+    // same protection. Query strings are covered either way. Listed after
+    // the site-wide rule, so their Referrer-Policy is the one that wins.
+    return [
+      {
+        source: '/:path*',
+        headers: staticSecurityHeaders(process.env.NODE_ENV === 'production'),
+      },
+      ...TOKEN_PAGES.flatMap((path) => [
+        { source: path, headers: tokenPage },
+        { source: `${path}/:path*`, headers: tokenPage },
+      ]),
+    ];
   },
 };
 

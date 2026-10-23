@@ -148,6 +148,28 @@ describe('session cookies in production', () => {
   });
 });
 
+describe('API responses', () => {
+  test('may not run script or be framed when opened directly, and are not sniffed', async () => {
+    const response = await request('/health');
+    expect(response.headers['content-security-policy']).toBe(
+      "default-src 'none'; frame-ancestors 'none'; sandbox",
+    );
+    expect(response.headers['x-content-type-options']).toBe('nosniff');
+    // Plain HTTP in tests: nothing pins it.
+    expect(response.headers['strict-transport-security']).toBeUndefined();
+  });
+
+  test('pin HTTPS in production, for this host only', async () => {
+    const app = await productionApp();
+    try {
+      const response = await app.inject({ method: 'GET', url: '/health' });
+      expect(response.headers['strict-transport-security']).toMatch(/^max-age=\d{8,}$/);
+    } finally {
+      await app.close();
+    }
+  });
+});
+
 describe('writes from another site', () => {
   test('are refused by Origin, and by Sec-Fetch-Site', async () => {
     const owner = await createActor('Owner');

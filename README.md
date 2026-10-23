@@ -25,6 +25,11 @@ Newest first. The same list is the site's What's new page, linked from the
 header, where each entry opens to show how it was checked and, for features,
 where to find it and what each layer does.
 
+- **A strict security policy for every page** (2026-10-23). Pages run only
+  scripts the server stamped for that response, so injected script cannot
+  run; nothing may frame Robis; HTTPS is pinned in production; and only the
+  camera is allowed, for Robis itself. A browser test in CI loads the real
+  pages and fails on any violation.
 - **Sign up with your email first** (2026-10-23). Creating an account now
   starts with just your address and always says "check your inbox", so the
   form never reveals who already has an account. The link in that email

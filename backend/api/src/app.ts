@@ -5,7 +5,12 @@ import type { Database } from '@robis/database';
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
 import type { Env } from './env.ts';
 import { ApiError } from './errors.ts';
-import { isForeignWrite, requestIdFrom, trustProxySetting } from './hardening.ts';
+import {
+  apiSecurityHeaders,
+  isForeignWrite,
+  requestIdFrom,
+  trustProxySetting,
+} from './hardening.ts';
 import { type MediaStorage, storageFromEnv } from './media/storage.ts';
 import { createMetrics, registerMetrics } from './metrics.ts';
 import { attachUser } from './plugins/authz.ts';
@@ -118,6 +123,9 @@ export function buildApp({
 
   app.addHook('onRequest', async (request, reply) => {
     reply.header('x-request-id', request.id);
+    // The API serves JSON and raster images, never a page: opened directly,
+    // nothing it returns may run script or be framed.
+    reply.headers(apiSecurityHeaders(env.NODE_ENV === 'production'));
     // Before the body is read or a session resolved: a write from another
     // site is refused whatever it carries (see `isForeignWrite`).
     if (isForeignWrite(request.method, request.headers, env.WEB_ORIGIN)) {

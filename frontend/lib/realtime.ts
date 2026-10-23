@@ -3,8 +3,7 @@
 import type { ClientMessage, PresenceUser, ServerEvent, ServerMessage } from '@robis/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-
-const REALTIME_URL = process.env.NEXT_PUBLIC_REALTIME_URL ?? 'ws://localhost:4001/ws';
+import { REALTIME_URL } from './endpoints.ts';
 
 /** Must stay well under the gateway's presence TTL so a single dropped beat
  * does not evict a live connection. */

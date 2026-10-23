@@ -36,7 +36,7 @@
  * and claims open clients. That machinery already existed; it had simply
  * never run, because the version had never changed.
  */
-const VERSION = 'robis-v2';
+const VERSION = 'robis-v3';
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 
@@ -77,6 +77,18 @@ function isDynamic(url) {
   );
 }
 
+/**
+ * Pages whose URL carries a single-use token; the same list as
+ * TOKEN_PAGES in next.config.ts. Matched by path, not by `no-store`:
+ * every page is rendered per request now and sends `no-store`, and the rest
+ * must still be kept for offline use.
+ */
+const TOKEN_PAGES = ['/reset-password', '/verify-email', '/signup'];
+
+function isTokenPage(url) {
+  return TOKEN_PAGES.some((path) => url.pathname === path || url.pathname.startsWith(`${path}/`));
+}
+
 function isStaticAsset(url) {
   return url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/static/');
 }
@@ -87,8 +99,9 @@ async function networkFirst(request) {
   try {
     const response = await fetch(request);
     // Only cache successful, complete responses; a 404 or a redirect would be
-    // a bad thing to replay offline.
-    if (response.ok) cache.put(request, response.clone());
+    // a bad thing to replay offline. Nor a page whose URL carries a one-time
+    // link: the Cache API ignores the `no-store` those pages send.
+    if (response.ok && !isTokenPage(new URL(request.url))) cache.put(request, response.clone());
     return response;
   } catch {
     return (await cache.match(request)) ?? (await cache.match(OFFLINE_FALLBACK));

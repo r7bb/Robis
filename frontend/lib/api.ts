@@ -1,6 +1,8 @@
 import type { Avatar as AvatarRef, IssuePriority, IssueStatus, Role, ThemeId } from '@robis/shared';
 
-export const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+import { API_URL } from './endpoints.ts';
+
+export const BASE_URL = API_URL;
 
 export class ApiError extends Error {
   constructor(
