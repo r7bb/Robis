@@ -40,6 +40,15 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-23',
+    area: 'Site',
+    title: 'The demo account is ready in the container stack',
+    summary:
+      'Starting the container stack now creates the demo accounts, so it can be tried without signing up: rohit@robis.test, password robis-demo-password, owner of an Engineering workspace with projects, issues, channels and a team of three. The demo people start with a confirmed address and a picture, so signing in goes straight to the workspace. It happens once: later starts leave the accounts and anything changed in them alone. The demo password is refused in production, as before.',
+    checked:
+      'On the rebuilt stack, the seed ran on first start and reported four people, two projects and ten issues; a second start reported the owner already there and changed nothing; and in headless Chrome, signing in through the form as rohit@robis.test landed in the Engineering workspace as owner, with no welcome screen. The stack and browser smoke tests and the CI health check, which now expects the seed to have exited cleanly, all pass.',
+  },
+  {
+    date: '2026-10-23',
     area: 'Security',
     title: 'A strict security policy for every page',
     summary:

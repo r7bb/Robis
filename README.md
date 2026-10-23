@@ -25,6 +25,10 @@ Newest first. The same list is the site's What's new page, linked from the
 header, where each entry opens to show how it was checked and, for features,
 where to find it and what each layer does.
 
+- **The demo account is ready in the container stack** (2026-10-23). The
+  stack now seeds `rohit@robis.test` (password `robis-demo-password`) as
+  owner of a populated workspace, with a confirmed address and a picture,
+  so it can be tried without signing up.
 - **A strict security policy for every page** (2026-10-23). Pages run only
   scripts the server stamped for that response, so injected script cannot
   run; nothing may frame Robis; HTTPS is pinned in production; and only the
@@ -330,11 +334,18 @@ The whole stack also runs from its container images:
 ```bash
 docker compose -f deploy/compose.yaml up --build --wait
 bun run smoke:stack
+bun run smoke:browser
 ```
 
 The images are in [deploy/docker](deploy/docker). The stack serves plain
 http on 127.0.0.1, so its services run in development mode. Set
 `STACK_WEB_PORT` if port 3000 is taken.
+
+The stack seeds the demo accounts on its first start, so there is nothing
+to create: open http://localhost:3000 and sign in as `rohit@robis.test`
+with `robis-demo-password`, owner of the Engineering workspace (Alex, John
+and Mia sign in the same way, as admin, member and guest). Later starts
+leave the accounts and anything changed in them alone.
 
 To send real mail, give the worker `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`,
 `SMTP_PASS` and `MAIL_FROM` (`SMTP_SECURE=true` for port 465). Locally,

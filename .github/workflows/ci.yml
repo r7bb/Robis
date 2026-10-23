@@ -150,13 +150,13 @@ jobs:
       - name: Every service still healthy
         # Fields are service|state|health|exit code; health is empty for a
         # service without a check, which is why the separator is explicit.
-        # The one-shot migrator must have exited 0; everything else must be
-        # running, and healthy if it has a check.
+        # The one-shot migrator and seed must have exited 0; everything else
+        # must be running, and healthy if it has a check.
         run: |
           docker compose ps --all --format '{{.Service}}|{{.State}}|{{.Health}}|{{.ExitCode}}' \
             | tee services.txt
           awk -F'|' '
-            $1 == "migrate" { if ($2 != "exited" || $4 != "0") { print "not ok: " $0; bad = 1 }; next }
+            $1 == "migrate" || $1 == "seed" { if ($2 != "exited" || $4 != "0") { print "not ok: " $0; bad = 1 }; next }
             $2 != "running" || ($3 != "" && $3 != "healthy") { print "not ok: " $0; bad = 1 }
             END { exit bad }' services.txt
 

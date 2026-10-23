@@ -6,6 +6,9 @@
  *
  *   bun run db:seed           just the owner account
  *   bun run db:seed --team    plus four teammates, for multi-user demos
+ *   bun run db:seed --if-missing   leave everything alone if the owner
+ *                                  account already exists (the stack runs
+ *                                  this on every start; see compose.yaml)
  *
  * The default is a single account. The `--team` roster exists because presence,
  * live collaboration and the role model are only observable with more than one
@@ -57,6 +60,7 @@ if (process.env.NODE_ENV === 'production') {
 const PASSWORD = process.env.SEED_PASSWORD ?? DEMO_PASSWORD;
 
 const WITH_TEAM = process.argv.includes('--team');
+const IF_MISSING = process.argv.includes('--if-missing');
 
 type Person = { email: string; name: string; role: Role };
 
@@ -220,6 +224,19 @@ const MEETINGS: {
 const { db, close } = createDatabase(DATABASE_URL);
 
 try {
+  if (IF_MISSING) {
+    const [existing] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, OWNER.email))
+      .limit(1);
+    if (existing) {
+      console.log(`${OWNER.email} already exists; nothing seeded.`);
+      await close();
+      process.exit(0);
+    }
+  }
+
   // Clear every account this script can create, not just the ones it is about
   // to create, so switching between solo and --team leaves nothing behind.
   const seedEmails = [OWNER, ...TEAM].map((person) => person.email);
@@ -243,6 +260,13 @@ try {
         // Fixture people, not real ones: marked as having agreed and chosen
         // their names, so a fresh seed does not ask them on every sign-in.
         ...FIXTURE_CONSENT,
+        // Ready to use at once: the address counts as confirmed (so invites
+        // and joins work) and the picture is a generated one, so signing in
+        // goes straight to the workspace instead of the welcome screen.
+        emailVerifiedAt: new Date(),
+        avatarKind: 'generated' as const,
+        avatarRef: person.email.split('@')[0]!,
+        avatarUpdatedAt: new Date(),
       })),
     )
     .returning({ id: users.id, email: users.email });

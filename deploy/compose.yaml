@@ -90,6 +90,29 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
 
+  # The demo accounts, so the stack can be tried without signing up:
+  # rohit@robis.test (owner of the Robis workspace) and three teammates,
+  # password robis-demo-password. Once only: a later start finds the owner
+  # and leaves everything as it was. Development only; the seed refuses
+  # NODE_ENV=production, and the API refuses that password there.
+  seed:
+    <<: *hardened
+    image: robis-api:stack
+    # Mounted inside the API package, whose node_modules link the workspace
+    # packages the seed imports; the image itself carries no scripts.
+    command: [bun, backend/api/demo-seed.ts, --team, --if-missing]
+    volumes: ['../scripts/db/seed.ts:/app/backend/api/demo-seed.ts:ro']
+    environment:
+      <<: *app-env
+      # As the owner, like the migrator: the seed clears its own rows first.
+      DATABASE_URL: postgres://robis:robis@postgres:5432/robis
+      # The API's key, so the seed's audit entries verify like its own.
+      AUDIT_HMAC_KEYS: stack:cm9iaXMtc3RhY2stYXVkaXQta2V5LW5vdC1hLXNlY3JldA==
+    healthcheck: { disable: true }
+    restart: 'no'
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
   api:
     <<: *hardened
     image: robis-api:stack
@@ -103,6 +126,9 @@ services:
     ports: ['127.0.0.1:4000:4000']
     depends_on:
       migrate: { condition: service_completed_successfully }
+      # So the demo accounts exist before the first request (and so
+      # `up --wait` counts the seed's exit as finished, not failed).
+      seed: { condition: service_completed_successfully }
       s3: { condition: service_started }
       ml: { condition: service_healthy }
 
