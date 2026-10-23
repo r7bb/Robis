@@ -101,7 +101,9 @@ services:
     # Mounted inside the API package, whose node_modules link the workspace
     # packages the seed imports; the image itself carries no scripts.
     command: [bun, backend/api/demo-seed.ts, --team, --if-missing]
-    volumes: ['../scripts/db/seed.ts:/app/backend/api/demo-seed.ts:ro']
+    volumes:
+      - '../scripts/db/seed.ts:/app/backend/api/demo-seed.ts:ro'
+      - '../scripts/db/seed-extra.ts:/app/backend/api/seed-extra.ts:ro'
     environment:
       <<: *app-env
       # As the owner, like the migrator: the seed clears its own rows first.

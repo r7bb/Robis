@@ -1,18 +1,20 @@
 'use client';
 
+import { resolveTheme } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type CSSProperties, useEffect, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { MyInvitations } from '../../components/my-invitations.tsx';
 import { NotificationBell } from '../../components/notification-bell.tsx';
+import type { StarNode } from '../../features/home/constellation.tsx';
 import { HomeHero } from '../../features/home/home-hero.tsx';
 import { LiveFeed } from '../../features/home/live-feed.tsx';
 import { NeedsYou } from '../../features/home/needs-you.tsx';
 import { NewWorkspace } from '../../features/home/new-workspace.tsx';
 import { useHomeLive } from '../../features/home/use-home-live.ts';
 import { OVERVIEW_KEY, useOverview } from '../../features/home/use-overview.ts';
-import { WorkspaceTile } from '../../features/home/workspace-tile.tsx';
+import { WorkspaceGrid } from '../../features/home/workspace-grid.tsx';
 import { api, type Me, type WorkspaceSummary } from '../../lib/api.ts';
 import { getSyncEngine } from '../../lib/sync.ts';
 import { useRequireAvatar } from '../../lib/use-require-avatar.ts';
@@ -20,7 +22,8 @@ import './home.css';
 
 /**
  * Workspaces kept live on the home, each with its own gateway connection.
- * The rest still show their counts; they just do not pulse.
+ * The rest still show their counts; they just do not pulse, and are not in
+ * the constellation.
  */
 const LIVE_WORKSPACES = 6;
 /** One empty list, so memos keyed on it hold still while loading. */
@@ -86,6 +89,16 @@ export default function WorkspacesPage() {
   const live = useHomeLive({ myId, overview: overview.data, workspaceNames });
   const overviewById = new Map((overview.data?.workspaces ?? []).map((w) => [w.id, w]));
   const openTotal = (overview.data?.workspaces ?? []).reduce((sum, w) => sum + w.openIssues, 0);
+  const accentBy = new Map(list.map((w) => [w.id, resolveTheme(w.theme).tokens.accent]));
+  // The constellation: the workspaces kept live, in the same order as the tiles.
+  const stars: StarNode[] = list.slice(0, LIVE_WORKSPACES).map((w) => ({
+    id: w.id,
+    name: w.name,
+    accent: accentBy.get(w.id)!,
+    open: overviewById.get(w.id)?.openIssues ?? 0,
+    members: overviewById.get(w.id)?.memberCount ?? 0,
+    present: live.presentBy[w.id] ?? [],
+  }));
 
   // `/auth/me` failing means no valid session -- the cookie expired, or the
   // user just signed out. Redirecting has to happen in an effect: navigation
@@ -104,13 +117,14 @@ export default function WorkspacesPage() {
     <main className="min-h-[100dvh] bg-surface pb-20">
       <HomeHero
         firstName={firstName}
-        mode={live.mode}
-        pulse={live.pulse}
+        nodes={stars}
+        spark={live.spark}
+        offline={live.mode === 'offline'}
         connected={live.connected}
         partial={list.length > LIVE_WORKSPACES}
         here={live.others.length}
-        waiting={overview.data?.assignedTotal ?? 0}
-        open={openTotal}
+        waiting={overview.data ? overview.data.assignedTotal : null}
+        open={overview.data ? openTotal : null}
         actions={
           <>
             <NotificationBell />
@@ -139,6 +153,7 @@ export default function WorkspacesPage() {
             <MyInvitations me={me.data} focusAfter="workspaces-heading" />
           </div>
           <LiveFeed
+            accentBy={accentBy}
             items={live.feed}
             connected={live.connected}
             everConnected={live.everConnected}
@@ -167,42 +182,17 @@ export default function WorkspacesPage() {
           />
         </div>
 
-        {workspaces.isPending ? (
-          <div aria-hidden="true" className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {[0, 1, 2].map((n) => (
-              <div
-                key={n}
-                className="h-60 animate-pulse rounded-2xl border border-line bg-raised/50"
-              />
-            ))}
-          </div>
-        ) : list.length === 0 ? (
-          <div className="mt-5 rounded-2xl border border-dashed border-line px-6 py-14 text-center">
-            <p className="text-content">No workspaces yet.</p>
-            <p className="mt-1 text-sm text-muted">
-              Make one for your team, or accept an invitation above.
-            </p>
-          </div>
-        ) : (
-          <ul
-            className={`home-tiles mt-5 grid gap-4 sm:grid-cols-2 ${list.length >= 3 ? 'xl:grid-cols-3' : ''}`}
-          >
-            {list.map((workspace, index) => (
-              <WorkspaceTile
-                key={workspace.id}
-                workspace={workspace}
-                overview={overviewById.get(workspace.id)}
-                myId={myId}
-                live={index < LIVE_WORKSPACES}
-                signals={live.signals}
-                style={{ '--i': index } as CSSProperties}
-                onDelete={(password) =>
-                  deleteWorkspace.mutateAsync({ workspaceId: workspace.id, password })
-                }
-              />
-            ))}
-          </ul>
-        )}
+        <WorkspaceGrid
+          loading={workspaces.isPending}
+          workspaces={list}
+          overviewById={overviewById}
+          myId={myId}
+          liveCount={LIVE_WORKSPACES}
+          signals={live.signals}
+          onDelete={(workspaceId, password) =>
+            deleteWorkspace.mutateAsync({ workspaceId, password })
+          }
+        />
       </div>
     </main>
   );

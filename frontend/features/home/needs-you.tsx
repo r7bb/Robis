@@ -1,15 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import { StatusBadge } from '../../components/ui/badges.tsx';
 import type { AssignedIssue } from './use-overview.ts';
-
-const STATUS_LABEL: Record<AssignedIssue['status'], string> = {
-  TODO: 'To do',
-  IN_PROGRESS: 'In progress',
-  IN_REVIEW: 'In review',
-  DONE: 'Done',
-  CANCELED: 'Canceled',
-};
 
 /**
  * The open issues assigned to you, across every workspace, most recently
@@ -58,8 +51,8 @@ export function NeedsYou({
                 <span className="hidden shrink-0 text-xs text-muted sm:inline">
                   {issue.workspaceName}
                 </span>
-                <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[11px] text-muted">
-                  {STATUS_LABEL[issue.status]}
+                <span className="shrink-0">
+                  <StatusBadge status={issue.status} />
                 </span>
               </Link>
             </li>

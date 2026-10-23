@@ -41,6 +41,15 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-23',
     area: 'Product',
+    title: 'Your workspaces as a live constellation',
+    summary:
+      'The signed-in home has a picture of its own now, instead of the landing page’s field. Each of your workspaces is a glowing node in its theme’s colour, sized by what is open, joined to the others by drifting lines. Teammates who are online circle the workspace they are in, and when someone makes a change a spark flies from them to that workspace, which blooms. Behind it, an aurora takes the colours of the time of day: warm in the morning, clear in the afternoon, deep in the evening. Numbers that rise show a small +1, tiles lean toward the pointer, feed lines carry their workspace’s colour and assigned issues show their status colours. The demo now has three workspaces in three themes to show it. Still under reduced motion, as before.',
+    checked:
+      'Tests prove the layout keeps every workspace inside the scene and apart from the others, beside the greeting on a wide screen and below it on a narrow one, the same every time; that busier workspaces are bigger within bounds; the palette for each part of the day; and that a spark starts at its sender and lands on its workspace. Headless Chrome watched a teammate’s change spark across to its workspace and checked the phone layout, reduced motion and the security policy. The demo seed adds the two new workspaces to an existing demo account without touching anything else, and a full reseed now only deletes workspaces the demo accounts created.',
+  },
+  {
+    date: '2026-10-23',
+    area: 'Product',
     title: 'A live home after you sign in',
     summary:
       'The page you land on after signing in used to be a plain list of workspace names. Now it greets you over the same moving field of points as the landing page, and that field reacts to your own workspaces: every change a teammate makes sends a ring across it, it quickens while someone else is here and greys if the connection drops. Below it, the open issues assigned to you, a live feed of what is happening, and a tile for each workspace with its open issues, two weeks of activity, who is in it and who is here right now, and what happened last. Tiles pulse when their workspace changes, and the numbers count to their new values. Everything is still under reduced motion, works from the keyboard and fits a phone.',

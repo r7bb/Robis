@@ -38,7 +38,8 @@ import {
   TERMS_VERSION,
 } from '@robis/shared';
 import { loadConfig } from '@robis/shared/config';
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
+import { EXTRA_SLUGS, seedExtraWorkspaces } from './seed-extra.ts';
 
 // Before anything else, and failing closed: see `loadConfig`.
 const { databaseUrl: DATABASE_URL, nodeEnv } = loadConfig();
@@ -230,7 +231,26 @@ try {
       .where(eq(users.email, OWNER.email))
       .limit(1);
     if (existing) {
-      console.log(`${OWNER.email} already exists; nothing seeded.`);
+      // Leave what is there alone, but add any demo workspace that is new.
+      const roster = await db
+        .select({ id: users.id, email: users.email })
+        .from(users)
+        .where(
+          inArray(
+            users.email,
+            [OWNER, ...TEAM].map((p) => p.email),
+          ),
+        );
+      const added = await seedExtraWorkspaces(
+        db,
+        existing.id,
+        new Map(roster.map((r) => [r.email, r.id])),
+      );
+      console.log(
+        added.length > 0
+          ? `${OWNER.email} already exists; added ${added.join(' and ')}.`
+          : `${OWNER.email} already exists; nothing seeded.`,
+      );
       await close();
       process.exit(0);
     }
@@ -242,7 +262,22 @@ try {
 
   // Workspaces cascade to projects and issues; users are deleted after, because
   // `created_by` is ON DELETE RESTRICT.
-  await db.delete(workspaces).where(eq(workspaces.slug, slugify(WORKSPACE_NAME)));
+  // Only the demo's own: a slug like "design" may belong to someone real.
+  const seedUsers = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(inArray(users.email, seedEmails));
+  if (seedUsers.length > 0) {
+    await db.delete(workspaces).where(
+      and(
+        inArray(workspaces.slug, [slugify(WORKSPACE_NAME), ...EXTRA_SLUGS]),
+        inArray(
+          workspaces.createdBy,
+          seedUsers.map((u) => u.id),
+        ),
+      ),
+    );
+  }
   await db.delete(users).where(inArray(users.email, seedEmails));
 
   const passwordHash = await hashPassword(PASSWORD);
@@ -463,10 +498,13 @@ try {
     ]),
   );
 
+  const extra = await seedExtraWorkspaces(db, ownerId, idByEmail);
+
   const who = WITH_TEAM ? `${PEOPLE.length} users` : '1 user';
   console.log(
     `Seeded "${WORKSPACE_NAME}": ${who}, ${PROJECTS.length} projects, ${issueCount} issues.`,
   );
+  if (extra.length > 0) console.log(`Also seeded ${extra.join(' and ')}.`);
   console.log(`Sign in as ${OWNER.email} with password "${PASSWORD}".`);
 
   if (!WITH_TEAM) {

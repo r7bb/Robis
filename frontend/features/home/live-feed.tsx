@@ -16,10 +16,13 @@ const TICK_MS = 30_000;
  */
 export function LiveFeed({
   items,
+  accentBy,
   connected,
   everConnected,
 }: {
   items: readonly FeedItem[];
+  /** Each workspace's accent, so a line carries the colour of its tile. */
+  accentBy: ReadonlyMap<string, string>;
   connected: boolean;
   /** Before the first connection it is connecting, not reconnecting. */
   everConnected: boolean;
@@ -62,8 +65,19 @@ export function LiveFeed({
                   href={item.href}
                   className="flex items-baseline justify-between gap-3 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-surface/60 focus-visible:bg-surface/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
                 >
-                  <span className="min-w-0 truncate text-muted">
-                    <span className="text-content">{item.text}</span> in {item.workspaceName}
+                  <span className="flex min-w-0 items-baseline gap-2.5">
+                    <span
+                      aria-hidden="true"
+                      className="h-3 w-1 shrink-0 translate-y-0.5 rounded-full bg-accent"
+                      style={
+                        accentBy.has(item.workspaceId)
+                          ? { backgroundColor: `rgb(${accentBy.get(item.workspaceId)})` }
+                          : undefined
+                      }
+                    />
+                    <span className="min-w-0 truncate text-muted">
+                      <span className="text-content">{item.text}</span> in {item.workspaceName}
+                    </span>
                   </span>
                   <time
                     aria-hidden="true"

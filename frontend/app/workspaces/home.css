@@ -122,3 +122,90 @@
     opacity: 0.35;
   }
 }
+
+/*
+ * The hero's aurora: three soft lights in the hour's colours and the first
+ * workspace's accent, drifting slowly. Plain gradients, no blur filter, so
+ * it costs almost nothing to paint.
+ */
+.home-aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.home-aurora-blob {
+  position: absolute;
+  width: 62vmax;
+  height: 62vmax;
+  border-radius: 50%;
+  opacity: 0.9;
+}
+
+.home-aurora-a {
+  left: -18vmax;
+  top: -30vmax;
+  background: radial-gradient(circle, rgb(var(--aurora-a) / 0.2), transparent 62%);
+}
+
+.home-aurora-b {
+  right: -16vmax;
+  top: -26vmax;
+  background: radial-gradient(circle, rgb(var(--aurora-b) / 0.18), transparent 62%);
+}
+
+.home-aurora-c {
+  left: 30%;
+  top: -12vmax;
+  background: radial-gradient(circle, rgb(var(--aurora-c) / 0.16), transparent 60%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .home-aurora-a {
+    animation: home-drift 26s ease-in-out infinite alternate;
+  }
+  .home-aurora-b {
+    animation: home-drift 31s ease-in-out -9s infinite alternate-reverse;
+  }
+  .home-aurora-c {
+    animation: home-drift 22s ease-in-out -4s infinite alternate;
+  }
+}
+
+@keyframes home-drift {
+  from {
+    translate: 0 0;
+    scale: 1;
+  }
+  to {
+    translate: 6vmax 4vmax;
+    scale: 1.12;
+  }
+}
+
+/* A tile lifts and leans toward the pointer (`trackPointer`). */
+@media (prefers-reduced-motion: no-preference) {
+  .home-tile:hover {
+    transform: perspective(900px) translateY(-2px) rotateX(var(--tilt-x, 0deg))
+      rotateY(var(--tilt-y, 0deg));
+  }
+
+  /* "+2" floats up off a number that just rose, and fades. */
+  .home-delta {
+    animation: home-delta 1.4s var(--ease) both;
+  }
+}
+
+@keyframes home-delta {
+  0% {
+    opacity: 0;
+    translate: 0 4px;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    translate: 0 -18px;
+  }
+}

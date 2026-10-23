@@ -20,11 +20,28 @@ export type TileSignals = {
   onGone: (workspaceId: string) => void;
 };
 
-/** Follows the pointer with two CSS variables: no React render per move. */
-function trackSpotlight(event: PointerEvent<HTMLElement>) {
-  const box = event.currentTarget.getBoundingClientRect();
-  event.currentTarget.style.setProperty('--spot-x', `${event.clientX - box.left}px`);
-  event.currentTarget.style.setProperty('--spot-y', `${event.clientY - box.top}px`);
+/** Degrees a tile leans toward the pointer at its edge. */
+const TILT_DEG = 5;
+
+/**
+ * Follows the pointer with CSS variables, no React render per move: the
+ * spotlight's centre, and a slight lean toward the pointer (`home.css`
+ * applies it only when motion is welcome).
+ */
+function trackPointer(event: PointerEvent<HTMLElement>) {
+  const el = event.currentTarget;
+  const box = el.getBoundingClientRect();
+  const x = event.clientX - box.left;
+  const y = event.clientY - box.top;
+  el.style.setProperty('--spot-x', `${x}px`);
+  el.style.setProperty('--spot-y', `${y}px`);
+  el.style.setProperty('--tilt-x', `${((0.5 - y / box.height) * TILT_DEG).toFixed(2)}deg`);
+  el.style.setProperty('--tilt-y', `${((x / box.width - 0.5) * TILT_DEG).toFixed(2)}deg`);
+}
+
+function resetTilt(event: PointerEvent<HTMLElement>) {
+  event.currentTarget.style.setProperty('--tilt-x', '0deg');
+  event.currentTarget.style.setProperty('--tilt-y', '0deg');
 }
 
 /**
@@ -80,9 +97,10 @@ export function WorkspaceTile({
 
   return (
     <li
-      onPointerMove={trackSpotlight}
+      onPointerMove={trackPointer}
+      onPointerLeave={resetTilt}
       style={{ ...style, '--tile-accent': accent } as CSSProperties}
-      className="home-tile group relative isolate flex flex-col overflow-hidden rounded-2xl border border-line bg-raised/70 p-5 transition-[border-color,transform] duration-300 [transition-timing-function:var(--ease)] focus-within:border-[rgb(var(--tile-accent)/0.6)] hover:-translate-y-0.5 hover:border-[rgb(var(--tile-accent)/0.45)]"
+      className="home-tile group relative isolate flex flex-col overflow-hidden rounded-2xl border border-line bg-raised/70 bg-[linear-gradient(to_bottom,rgb(var(--tile-accent)/0.1),transparent_45%)] p-5 transition-[border-color,transform] duration-300 [transition-timing-function:var(--ease)] focus-within:border-[rgb(var(--tile-accent)/0.6)] hover:border-[rgb(var(--tile-accent)/0.45)]"
     >
       <span aria-hidden="true" className="home-tile-spot" />
       {pulse > 0 && <span aria-hidden="true" key={pulse} className="home-tile-pulse" />}

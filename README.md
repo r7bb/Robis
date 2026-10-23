@@ -25,6 +25,10 @@ Newest first. The same list is the site's What's new page, linked from the
 header, where each entry opens to show how it was checked and, for features,
 where to find it and what each layer does.
 
+- **Your workspaces as a live constellation** (2026-10-23). The home has a
+  picture of its own: your workspaces as glowing nodes in their theme
+  colours, teammates circling where they are, and a spark for every change,
+  over an aurora in the colours of the time of day.
 - **A live home after you sign in** (2026-10-23). The first page after
   signing in now greets you over the landing's field of points, which
   ripples with your teammates' changes, and shows what is assigned to you,
