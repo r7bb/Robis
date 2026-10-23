@@ -146,7 +146,7 @@ with Postgres on the same machine. Method and percentiles in
 
 ## Latest
 
-- **Your workspaces as a live constellation.** The home's own picture:
+- **A live river of your team’s two weeks.** The home's own picture:
   your workspaces as glowing nodes in their theme colours, teammates
   circling where they are, and a spark for every change.
 - **A live home after you sign in.** What is assigned to you, a live feed,

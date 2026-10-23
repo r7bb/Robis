@@ -209,3 +209,47 @@
     translate: 0 -18px;
   }
 }
+
+/* The activity river: bands rise in from the baseline, one after another. */
+.home-river-band {
+  transform-box: fill-box;
+  transform-origin: bottom;
+}
+
+/* A ripple from today's edge of the band a live event belongs to. */
+.home-ripple {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .home-river-band {
+    animation: home-river-rise 900ms var(--ease) both;
+  }
+
+  .home-ripple {
+    animation: home-ripple 1.3s var(--ease) both;
+  }
+}
+
+@keyframes home-river-rise {
+  from {
+    opacity: 0;
+    scale: 1 0.2;
+  }
+  to {
+    opacity: 1;
+    scale: 1 1;
+  }
+}
+
+@keyframes home-ripple {
+  0% {
+    opacity: 0.9;
+    scale: 0.6;
+    box-shadow: 0 0 0 0 currentColor;
+  }
+  100% {
+    opacity: 0;
+    scale: 5;
+  }
+}

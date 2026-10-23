@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo } from 'react';
 import { MyInvitations } from '../../components/my-invitations.tsx';
 import { NotificationBell } from '../../components/notification-bell.tsx';
-import type { StarNode } from '../../features/home/constellation.tsx';
+import type { RiverSeries } from '../../features/home/activity-river.tsx';
 import { HomeHero } from '../../features/home/home-hero.tsx';
 import { LiveFeed } from '../../features/home/live-feed.tsx';
 import { NeedsYou } from '../../features/home/needs-you.tsx';
@@ -23,7 +23,7 @@ import './home.css';
 /**
  * Workspaces kept live on the home, each with its own gateway connection.
  * The rest still show their counts; they just do not pulse, and are not in
- * the constellation.
+ * the activity river.
  */
 const LIVE_WORKSPACES = 6;
 /** One empty list, so memos keyed on it hold still while loading. */
@@ -90,14 +90,12 @@ export default function WorkspacesPage() {
   const overviewById = new Map((overview.data?.workspaces ?? []).map((w) => [w.id, w]));
   const openTotal = (overview.data?.workspaces ?? []).reduce((sum, w) => sum + w.openIssues, 0);
   const accentBy = new Map(list.map((w) => [w.id, resolveTheme(w.theme).tokens.accent]));
-  // The constellation: the workspaces kept live, in the same order as the tiles.
-  const stars: StarNode[] = list.slice(0, LIVE_WORKSPACES).map((w) => ({
+  // The river: the workspaces kept live, in the same order as the tiles.
+  const river: RiverSeries[] = list.slice(0, LIVE_WORKSPACES).map((w) => ({
     id: w.id,
     name: w.name,
     accent: accentBy.get(w.id)!,
-    open: overviewById.get(w.id)?.openIssues ?? 0,
-    members: overviewById.get(w.id)?.memberCount ?? 0,
-    present: live.presentBy[w.id] ?? [],
+    values: overviewById.get(w.id)?.activity ?? Array<number>(14).fill(0),
   }));
 
   // `/auth/me` failing means no valid session -- the cookie expired, or the
@@ -117,7 +115,7 @@ export default function WorkspacesPage() {
     <main className="min-h-[100dvh] bg-surface pb-20">
       <HomeHero
         firstName={firstName}
-        nodes={stars}
+        series={river}
         spark={live.spark}
         offline={live.mode === 'offline'}
         connected={live.connected}

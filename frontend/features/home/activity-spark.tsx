@@ -16,7 +16,7 @@ const dayLabel = new Intl.DateTimeFormat(undefined, {
 });
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-function dayOf(index: number, count: number): string {
+export function dayOf(index: number, count: number): string {
   if (index === count - 1) return 'Today';
   return dayLabel.format(new Date(Date.now() - (count - 1 - index) * DAY_MS));
 }

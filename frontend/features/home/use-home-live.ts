@@ -5,8 +5,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ConnectionState } from '../../lib/realtime.ts';
 import type { FieldMode } from '../landing/field-modes.ts';
-import type { SparkSignal } from './constellation.tsx';
-import { describeEvent, type FeedItem, feedItemFrom, othersHere } from './describe.ts';
+import {
+  describeEvent,
+  type FeedItem,
+  feedItemFrom,
+  othersHere,
+  type SparkSignal,
+} from './describe.ts';
 import { OVERVIEW_KEY, type Overview } from './use-overview.ts';
 import type { TileSignals } from './workspace-tile.tsx';
 
@@ -154,18 +159,9 @@ export function useHomeLive({
   const offline = !online || (states.length > 0 && states.every((s) => s === 'offline'));
   const mode: FieldMode = offline ? 'offline' : others.length > 0 ? 'realtime' : 'idle';
 
-  // Everyone else connected, per workspace, for the constellation.
-  const presentBy = Object.fromEntries(
-    Object.entries(presence).map(([id, p]) => [
-      id,
-      p.users.filter((u) => u.userId !== myId).map((u) => u.userId),
-    ]),
-  );
-
   return {
     signals,
     spark,
-    presentBy,
     // A deleted workspace's lines go with it.
     feed: feed.filter((item) => workspaceNames.has(item.workspaceId)),
     others,

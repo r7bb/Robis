@@ -86,3 +86,6 @@ export function greetingFor(hour: number): string {
   if (hour >= 12 && hour < 18) return 'Good afternoon';
   return 'Good evening';
 }
+
+/** The latest live event, for the hero: `seq` goes up by one each time. */
+export type SparkSignal = { workspaceId: string; actorId: string; seq: number };
