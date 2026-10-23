@@ -35,7 +35,8 @@
     "screenshots": "bun run scripts/capture/screenshots.ts",
     "mail:start": "bun run scripts/mail/sink.ts",
     "smoke:stack": "bun run scripts/smoke/stack.ts",
-    "smoke:browser": "bun run scripts/smoke/browser.ts"
+    "smoke:browser": "bun run scripts/smoke/browser.ts",
+    "capture:motion": "bun run scripts/capture/motion.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.12",

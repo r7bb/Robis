@@ -164,7 +164,9 @@ async function signIn(page: Page) {
 async function openWorkspace(page: Page): Promise<string> {
   await page.goto(`${WEB}/workspaces`);
   await page.waitForText('Engineering');
-  await page.click('a[href^="/workspaces/"]');
+  // The Engineering tile by name: the home also links to issues and other
+  // workspaces, so "the first workspace link" is no longer it.
+  await page.clickText('.home-tile a[href^="/workspaces/"]', 'Engineering');
   // The shell's own furniture rather than a panel's contents: projects and
   // documents now live behind tabs, so waiting on either would depend on
   // which tab happens to open first.
@@ -628,6 +630,10 @@ const chrome = Bun.spawn(
     '--no-default-browser-check',
     '--hide-scrollbars',
     `--window-size=${WIDTH},${HEIGHT}`,
+    // `localhost` as 127.0.0.1, so nothing else listening on [::1] answers.
+    '--host-resolver-rules=MAP localhost 127.0.0.1',
+    // WebGL on the software renderer, for the landing's field and the home.
+    '--enable-unsafe-swiftshader',
     'about:blank',
   ],
   { stdout: 'ignore', stderr: 'ignore' },

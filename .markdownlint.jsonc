@@ -1,0 +1,10 @@
+{
+  // The README is laid out as a product page: a centred hero, image grids
+  // and a moving picture first, which Markdown alone cannot do. So inline
+  // HTML is allowed, and the first line may be that picture rather than a
+  // heading. Every other rule stays on.
+  "MD033": false,
+  "MD041": false,
+  // HTML and table lines cannot be wrapped; prose here is wrapped by hand.
+  "MD013": false
+}
