@@ -10,6 +10,7 @@ import {
   getHarness,
   request,
   resetDatabase,
+  signUp,
 } from './harness.ts';
 
 beforeEach(resetDatabase);
@@ -17,11 +18,8 @@ afterAll(closeHarness);
 
 const PASSWORD = 'correct-horse-battery-staple';
 
-function register(payload: Record<string, unknown>) {
-  return request('/auth/register', {
-    method: 'POST',
-    payload: { name: 'Ada', password: PASSWORD, ageConfirmed: true, ...payload },
-  });
+function register(payload: Record<string, unknown> & { email: string }) {
+  return signUp({ name: 'Ada', password: PASSWORD, ageConfirmed: true, ...payload });
 }
 
 describe('the username rule', () => {
@@ -65,9 +63,11 @@ describe('signing up with a username', () => {
   });
 
   test('the age confirmation is required, as true, not merely present', async () => {
-    const missing = await request('/auth/register', {
-      method: 'POST',
-      payload: { email: 'ada@robis.test', name: 'Ada', username: 'ada', password: PASSWORD },
+    const missing = await signUp({
+      email: 'ada@robis.test',
+      name: 'Ada',
+      username: 'ada',
+      password: PASSWORD,
     });
     const declined = await register({
       email: 'ada@robis.test',

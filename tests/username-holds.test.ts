@@ -13,6 +13,7 @@ import {
   getHarness,
   request,
   resetDatabase,
+  signUp,
 } from './harness.ts';
 
 /**
@@ -28,15 +29,12 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 async function register(username: string) {
   const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  return request('/auth/register', {
-    method: 'POST',
-    payload: {
-      email: `${username.replace(/[^a-z0-9]/g, '')}-${stamp}@robis.test`,
-      name: username,
-      username,
-      password: 'correct-horse-battery-staple',
-      ageConfirmed: true,
-    },
+  return signUp({
+    email: `${username.replace(/[^a-z0-9]/g, '')}-${stamp}@robis.test`,
+    name: username,
+    username,
+    password: 'correct-horse-battery-staple',
+    ageConfirmed: true,
   });
 }
 

@@ -39,6 +39,15 @@ export type Entry = {
 
 export const CHANGELOG: readonly Entry[] = [
   {
+    date: '2026-10-23',
+    area: 'Security',
+    title: 'Sign up with your email first',
+    summary:
+      'Creating an account used to say “an account with that email already exists”, which let anyone check whether an address was registered. Now sign-up starts with just your address and always answers “check your inbox”, after the same short wait either way. A new address gets a link that finishes signing up, where you choose your name, username and password; an address that already has an account gets a reminder to sign in instead, so only whoever reads that inbox learns which it was. The link works once, for 24 hours, and opening it confirms your address, so a new account starts confirmed and can join workspaces at once. Asking again sends another link without cancelling the first, the link is taken out of the address bar once the page has read it, and a sign-up nobody finishes is cleared away a week after its link runs out.',
+    checked:
+      'Tests prove starting a sign-up answers the same status and body for a new address and a registered one, mails a finishing link to the first and a reminder without a link to the second, is limited per address, and refuses something that is not an address; that the link creates a confirmed account with the consent recorded, works once, expires, is not cancelled by someone asking again for the same address, makes one account when two finishes race with it, and survives a refused username; that unfinished sign-ups are swept a week after their link runs out while recent ones stay; and that a second sign-up for a registered address in any letter case makes no account. Every other suite now signs people up the same way. The stack smoke test signs up from the link the worker actually mailed, and the form was walked in headless Chrome from address to inbox to finished account, and at phone width, checking the link leaves the address bar and the form still finishes.',
+  },
+  {
     date: '2026-10-20',
     area: 'Security',
     title: 'Email invitations that give nothing away',

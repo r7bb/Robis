@@ -125,7 +125,7 @@ describe('an invitation by email', () => {
   test('waits for the address to be confirmed, then can be accepted', async () => {
     const owner = await createActor('Owner');
     const workspace = await createWorkspace(owner, 'Design');
-    const existing = await createActor('Existing');
+    const existing = await createActor('Existing', { unconfirmed: true });
     await inviteByEmail(owner, workspace.id, existing.email);
 
     // An unconfirmed address is only a claim, so nothing shows yet.
@@ -201,6 +201,9 @@ describe('an invitation', () => {
 
   test('cannot be accepted before the email address is confirmed', async () => {
     const { invitee, invitationId } = await setup();
+    // As an account from before email-first sign-up: not confirmed yet.
+    const { db } = await getHarness();
+    await db.update(users).set({ emailVerifiedAt: null }).where(eq(users.id, invitee.id));
     const response = await request(`/invitations/${invitationId}/accept`, {
       method: 'POST',
       actor: invitee,

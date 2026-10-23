@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import {
   createSession,
   hashPassword,
+  hashSessionToken,
   listSessions,
   revokeAllSessions,
   revokeAuthTokens,
@@ -13,12 +14,14 @@ import {
   type AccountEventOptions,
   type AccountEventType,
   canHoldAnother,
+  claimSignup,
   type Database,
   deferAccountEvent,
   lockUsername,
   recordAccountEvent,
   recordAccountEventNow,
   releaseUsername,
+  signups,
   type Tx,
   usernameClaim,
   users,
@@ -32,7 +35,7 @@ import {
   updateProfileSchema,
   usernameProblem,
 } from '@robis/shared';
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, gt, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import type { RateLimits } from '../app.ts';
 import { assertPasswordAllowed, isRefusedDemoPassword } from '../demo-password.ts';
@@ -42,18 +45,28 @@ import { avatarOf } from '../media/avatars.ts';
 import { currentUser, requireAuth, sessionToken } from '../plugins/authz.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
 import { parse } from '../validate.ts';
-import { createVerificationSender } from '../verification.ts';
 
 /** Failed sign-ins for one account within this window are one history entry. */
 const FAILED_SIGN_IN_WINDOW_MS = 5 * 60_000;
+
+/**
+ * A sign-up refused inside its transaction, thrown so the link it claimed
+ * is given back. Carries the address for the 409 the caller is shown.
+ */
+class RegistrationRefused extends Error {
+  constructor(
+    readonly reason: 'held' | 'taken',
+    readonly email: string,
+  ) {
+    super(`registration refused: ${reason}`);
+  }
+}
 
 export async function authRoutes(
   app: FastifyInstance,
   opts: { db: Database; env: Env; limits: RateLimits },
 ) {
   const { db, env, limits } = opts;
-
-  const sendVerification = createVerificationSender({ db, log: app.log });
 
   /**
    * Verified when no user matches, so a login attempt costs the same whether or
@@ -139,6 +152,12 @@ export async function authRoutes(
       'username_held',
     );
 
+  const signupLinkInvalid = () =>
+    ApiError.badRequest(
+      'That sign-up link has expired or was already used; start again from the sign-up page',
+      'signup_link_invalid',
+    );
+
   /**
    * Lock both names' keys, then refuse the new one if someone else has or
    * holds it, or if this account already holds as many old names as it may.
@@ -185,60 +204,86 @@ export async function authRoutes(
     }
     const agreed = input.termsVersion === TERMS_VERSION;
     assertPasswordAllowed(env, input.password);
+
+    // The link stands for the address: whoever opened it can read that
+    // inbox, so the account starts with the address confirmed. Looked up
+    // here only to refuse a dead link before hashing a password; the claim
+    // that counts is made inside the transaction.
+    const tokenHash = hashSessionToken(input.token);
+    const [signup] = await db
+      .select({ id: signups.id })
+      .from(signups)
+      .where(and(eq(signups.tokenHash, tokenHash), gt(signups.expiresAt, sql`now()`)))
+      .limit(1);
+    if (!signup) throw signupLinkInvalid();
     const passwordHash = await hashPassword(input.password);
 
-    const user = await db.transaction(async (tx) => {
-      // A held name is refused here; a taken one (or a lookalike of one) is
-      // left to the unique indexes below, which cannot lose a race.
-      await lockUsername(tx, input.username);
-      if ((await usernameClaim(tx, input.username, null)) === 'held') return 'held' as const;
+    const outcome = await db
+      .transaction(async (tx) => {
+        // First, so a second finish with the same link waits here and then
+        // finds it used. Thrown refusals below roll the claim back.
+        const email = await claimSignup(tx, tokenHash);
+        if (!email) throw signupLinkInvalid();
 
-      const [row] = await tx
-        .insert(users)
-        .values({
-          email: input.email,
-          name: input.name,
-          username: input.username,
-          passwordHash,
-          // The name was chosen on this form.
-          usernameConfirmedAt: sql`now()`,
-          // Agreed just now, but only if the form said which terms it showed;
-          // a client that did not is asked on its first visit instead.
-          ...(agreed
-            ? {
-                ageConfirmedAt: sql`now()`,
-                termsVersion: TERMS_VERSION,
-                termsAcceptedAt: sql`now()`,
-              }
-            : {}),
-        })
-        // Losing the race on any unique index returns no row, which we
-        // translate into the same 409 as the checked case. Doing this instead
-        // of a SELECT-then-INSERT removes the race entirely.
-        .onConflictDoNothing()
-        .returning(PUBLIC_USER);
-      if (row && agreed) {
-        await recordAccountEvent(tx, row.id, 'auth.terms_accepted', {
-          payload: { termsVersion: TERMS_VERSION },
-          requestId: request.id,
-        });
-      }
-      return row ?? null;
-    });
+        // A held name is refused here; a taken one (or a lookalike of one)
+        // is left to the unique indexes below, which cannot lose a race.
+        await lockUsername(tx, input.username);
+        if ((await usernameClaim(tx, input.username, null)) === 'held') {
+          throw new RegistrationRefused('held', email);
+        }
 
-    if (user === 'held') {
-      // The address is still said first when it is taken too.
-      const conflict = await registrationConflict(input.email);
-      throw conflict.code === 'email_taken' ? conflict : usernameHeld();
+        const [row] = await tx
+          .insert(users)
+          .values({
+            email,
+            name: input.name,
+            username: input.username,
+            passwordHash,
+            emailVerifiedAt: sql`now()`,
+            // The name was chosen on this form.
+            usernameConfirmedAt: sql`now()`,
+            // Agreed just now, but only if the form said which terms it
+            // showed; a client that did not is asked on its first visit.
+            ...(agreed
+              ? {
+                  ageConfirmedAt: sql`now()`,
+                  termsVersion: TERMS_VERSION,
+                  termsAcceptedAt: sql`now()`,
+                }
+              : {}),
+          })
+          // Losing the race on any unique index returns no row, which we
+          // translate into the same 409 as the checked case. Doing this
+          // instead of a SELECT-then-INSERT removes the race entirely.
+          .onConflictDoNothing()
+          .returning(PUBLIC_USER);
+        if (!row) throw new RegistrationRefused('taken', email);
+        if (agreed) {
+          await recordAccountEvent(tx, row.id, 'auth.terms_accepted', {
+            payload: { termsVersion: TERMS_VERSION },
+            requestId: request.id,
+          });
+        }
+        return row;
+      })
+      .catch((error: unknown) => {
+        if (error instanceof RegistrationRefused) return error;
+        throw error;
+      });
+
+    if (outcome instanceof RegistrationRefused) {
+      // Only the holder of the link sees email_taken, and they own the
+      // inbox it names, so this tells nobody else anything. The address is
+      // still said first when it is taken too.
+      const conflict = await registrationConflict(outcome.email);
+      throw outcome.reason === 'held' && conflict.code !== 'email_taken'
+        ? usernameHeld()
+        : conflict;
     }
-    if (!user) throw await registrationConflict(input.email);
+    const user = outcome;
 
     const { token, expiresAt } = await createSession(db, user.id, request.headers['user-agent']);
     reply.setCookie(app.sessionCookieName, token, { ...cookieOptions, expires: expiresAt });
-
-    // Queued: one insert, so sign-up never waits on a mail server, and the
-    // worker retries a failed send instead of losing the link.
-    await sendVerification(user.id);
 
     return reply.status(201).send({ user });
   });

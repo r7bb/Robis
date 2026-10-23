@@ -25,17 +25,21 @@ async function verificationTokenFor(email: string): Promise<string> {
   return match[1]!;
 }
 
-describe('registering', () => {
-  test('sends a verification link', async () => {
-    const actor = await createActor('Newcomer');
+/**
+ * Sign-up is email first now, so a new account starts confirmed; these
+ * cover accounts from before that, which still confirm by link.
+ */
+describe('an account from before email-first sign-up', () => {
+  test('is sent a verification link', async () => {
+    const actor = await createActor('Newcomer', { unconfirmed: true });
 
     const mail = (await getMailer()).lastTo(actor.email);
     expect(mail?.subject).toMatch(/verif/i);
     expect(mail?.text).toContain('/verify-email?token=');
   });
 
-  test('leaves the account unverified until the link is used', async () => {
-    const actor = await createActor('Newcomer');
+  test('stays unverified until the link is used', async () => {
+    const actor = await createActor('Newcomer', { unconfirmed: true });
 
     const me = (await request('/auth/me', { actor })).json();
     expect(me.user.emailVerified).toBe(false);
@@ -43,7 +47,7 @@ describe('registering', () => {
 
   /** An unverified address must not block anything today. */
   test('an unverified account can still do its work', async () => {
-    const actor = await createActor('Newcomer');
+    const actor = await createActor('Newcomer', { unconfirmed: true });
 
     const created = await request('/workspaces', {
       method: 'POST',
@@ -57,7 +61,7 @@ describe('registering', () => {
 
 describe('verifying', () => {
   test('marks the address as verified', async () => {
-    const actor = await createActor('Newcomer');
+    const actor = await createActor('Newcomer', { unconfirmed: true });
     const token = await verificationTokenFor(actor.email);
 
     expect((await verify(token)).statusCode).toBe(200);
@@ -67,7 +71,7 @@ describe('verifying', () => {
   });
 
   test('needs no session, since the link is the proof', async () => {
-    const actor = await createActor('Newcomer');
+    const actor = await createActor('Newcomer', { unconfirmed: true });
     const token = await verificationTokenFor(actor.email);
 
     // Clicking from a mail client means arriving signed out.
@@ -75,7 +79,7 @@ describe('verifying', () => {
   });
 
   test('works exactly once', async () => {
-    const actor = await createActor('Newcomer');
+    const actor = await createActor('Newcomer', { unconfirmed: true });
     const token = await verificationTokenFor(actor.email);
 
     expect((await verify(token)).statusCode).toBe(200);
@@ -83,7 +87,7 @@ describe('verifying', () => {
   });
 
   test('an unknown token is refused', async () => {
-    await createActor('Newcomer');
+    await createActor('Newcomer', { unconfirmed: true });
 
     expect((await verify('not-a-real-token')).statusCode).toBe(400);
   });
@@ -93,7 +97,7 @@ describe('verifying', () => {
    * so it must not be spendable on the flow that changes a password.
    */
   test('cannot be spent as a password reset', async () => {
-    const actor = await createActor('Newcomer');
+    const actor = await createActor('Newcomer', { unconfirmed: true });
     const token = await verificationTokenFor(actor.email);
 
     const misused = await request('/auth/password/reset', {
@@ -113,7 +117,7 @@ describe('verifying', () => {
 
 describe('resending', () => {
   test('issues a fresh link and retires the previous one', async () => {
-    const actor = await createActor('Newcomer');
+    const actor = await createActor('Newcomer', { unconfirmed: true });
     const first = await verificationTokenFor(actor.email);
 
     const resent = await request('/auth/email/resend', { method: 'POST', actor });
@@ -126,7 +130,7 @@ describe('resending', () => {
   });
 
   test('requires a session', async () => {
-    await createActor('Newcomer');
+    await createActor('Newcomer', { unconfirmed: true });
 
     // Without one this would be an open mail-sending endpoint keyed on any
     // address an attacker chose.
@@ -134,7 +138,7 @@ describe('resending', () => {
   });
 
   test('is a no-op once the address is verified', async () => {
-    const actor = await createActor('Newcomer');
+    const actor = await createActor('Newcomer', { unconfirmed: true });
     await verify(await verificationTokenFor(actor.email));
 
     const mailer = await getMailer();

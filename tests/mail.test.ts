@@ -150,7 +150,7 @@ describe('a mail server that is down', () => {
 
 describe('one waiting email per account', () => {
   test('asking twice before it is sent queues one reset', async () => {
-    const actor = await createActor('Holder');
+    const actor = await createActor('Holder', { unconfirmed: true });
     for (let i = 0; i < 2; i++) {
       await request('/auth/password/forgot', { method: 'POST', payload: { email: actor.email } });
     }
@@ -161,8 +161,8 @@ describe('one waiting email per account', () => {
   });
 
   test('resending while the first is waiting queues nothing new', async () => {
-    const actor = await createActor('Holder');
-    // Sign-up already queued one; the button adds nothing until it is sent.
+    const actor = await createActor('Holder', { unconfirmed: true });
+    // One is already queued for this account; the button adds nothing until it is sent.
     for (let i = 0; i < 3; i++) {
       expect((await request('/auth/email/resend', { method: 'POST', actor })).statusCode).toBe(200);
     }
@@ -173,7 +173,7 @@ describe('one waiting email per account', () => {
   });
 
   test('once one is sent, the next request queues again', async () => {
-    const actor = await createActor('Holder');
+    const actor = await createActor('Holder', { unconfirmed: true });
     const forgot = () =>
       request('/auth/password/forgot', { method: 'POST', payload: { email: actor.email } });
 
@@ -189,7 +189,7 @@ describe('one waiting email per account', () => {
 
   test('asking for no kinds claims nothing', async () => {
     const { db } = await getHarness();
-    await createActor('Holder');
+    await createActor('Holder', { unconfirmed: true });
     expect(await claimJobs(db, 'test', 5, new Date(), [])).toEqual([]);
   });
 });

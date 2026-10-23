@@ -4,6 +4,7 @@ import {
   comments,
   type Database,
   deleteExpiredUsernameHolds,
+  deleteStaleSignups,
   issues,
   notifications,
   projects,
@@ -119,6 +120,8 @@ export const cleanupSessions = async (_payload: unknown, { db }: { db: Database 
   await deleteExpiredAuthTokens(db);
   // So do username holds, once their 90 days are up.
   await deleteExpiredUsernameHolds(db);
+  // And sign-ups nobody finished, which would otherwise name an address forever.
+  await deleteStaleSignups(db);
 };
 
 /** Periodic scan that decides who could use a prompt. See `nudges.ts`. */

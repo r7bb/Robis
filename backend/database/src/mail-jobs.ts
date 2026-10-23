@@ -17,12 +17,21 @@ import { jobs } from './schema.ts';
 export const MAIL_PASSWORD_RESET_JOB = 'mail.password_reset';
 export const MAIL_EMAIL_VERIFICATION_JOB = 'mail.email_verification';
 export const MAIL_WORKSPACE_INVITATION_JOB = 'mail.workspace_invitation';
+/** A link to finish signing up, for an address with no account. */
+export const MAIL_SIGNUP_JOB = 'mail.signup';
+/** For an address that already has one: a reminder, not a second account. */
+export const MAIL_SIGNUP_EXISTING_JOB = 'mail.signup_existing';
 
 export const MAIL_JOBS = [
   MAIL_PASSWORD_RESET_JOB,
   MAIL_EMAIL_VERIFICATION_JOB,
   MAIL_WORKSPACE_INVITATION_JOB,
+  MAIL_SIGNUP_JOB,
+  MAIL_SIGNUP_EXISTING_JOB,
 ] as const;
+
+/** A sign-up waiting for its link: the job names the row, never the address. */
+export type SignupMailPayload = { signupId: string };
 
 /** An invitation sent to an address: the job names the invitation only. */
 export type InvitationMailPayload = { invitationId: string };
@@ -75,4 +84,23 @@ export async function queueInvitationMail(db: Executor, invitationId: string) {
       maxAttempts: MAIL_ATTEMPTS,
     })
     .onConflictDoNothing();
+}
+
+/** Mail a link that finishes this sign-up. */
+export async function queueSignupMail(db: Executor, signupId: string) {
+  const payload: SignupMailPayload = { signupId };
+  await db
+    .insert(jobs)
+    .values({
+      kind: MAIL_SIGNUP_JOB,
+      payload: JSON.stringify(payload),
+      runAt: new Date(),
+      maxAttempts: MAIL_ATTEMPTS,
+    })
+    .onConflictDoNothing();
+}
+
+/** Tell an account holder someone tried to sign up with their address. */
+export function queueSignupExistingMail(db: Executor, userId: string) {
+  return queueAccountMail(db, MAIL_SIGNUP_EXISTING_JOB, userId);
 }

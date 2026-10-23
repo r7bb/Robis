@@ -96,8 +96,21 @@ export const confirmPasswordSchema = z.object({
 });
 export type ConfirmPasswordInput = z.infer<typeof confirmPasswordSchema>;
 
+/**
+ * Starting a sign-up: only the address. The answer is always "check your
+ * inbox" (see the route), so this names nothing about who has an account.
+ */
+export const signupStartSchema = z.object({
+  email: z.string().trim().toLowerCase().pipe(z.email().max(254)),
+});
+export type SignupStartInput = z.infer<typeof signupStartSchema>;
+
+/**
+ * Finishing a sign-up, from the mailed link: the link's token stands for
+ * the address, which is proved by having opened it.
+ */
 export const registerSchema = z.object({
-  email: z.email().max(254).toLowerCase().trim(),
+  token: z.string().min(1).max(200),
   name: z.string().trim().min(1).max(80),
   username: usernameSchema,
   password: passwordSchema,

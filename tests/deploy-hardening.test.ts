@@ -15,6 +15,7 @@ import {
   MEDIA_ROOT,
   request,
   resetDatabase,
+  signUp as signUpThrough,
   TEST_URL,
 } from './harness.ts';
 
@@ -100,6 +101,7 @@ async function productionApp() {
     env,
     storage: localDiskStorage(MEDIA_ROOT),
     rateLimits: { authPerMinute: 100_000 },
+    signupFloorMs: 0,
   });
   await app.ready();
   return app;
@@ -107,10 +109,9 @@ async function productionApp() {
 
 async function signUp(app: Awaited<ReturnType<typeof productionApp>>) {
   const stamp = `${Date.now()}${Math.random().toString(36).slice(2, 6)}`;
-  return app.inject({
-    method: 'POST',
-    url: '/auth/register',
-    payload: {
+  // Email first, as everyone signs up: the shared worker mails the link.
+  return signUpThrough(
+    {
       email: `prod-${stamp}@robis.test`,
       name: 'Prod',
       username: `prod_${stamp}`,
@@ -118,7 +119,8 @@ async function signUp(app: Awaited<ReturnType<typeof productionApp>>) {
       ageConfirmed: true,
       termsVersion: TERMS_VERSION,
     },
-  });
+    app,
+  );
 }
 
 describe('session cookies in production', () => {

@@ -26,6 +26,7 @@ Written to be checkable. Every row names a file you can open.
 | Feature | Where |
 | --- | --- |
 | Register, sign in, sign out | `backend/api/src/routes/auth.ts` |
+| Email-first sign-up: always "check your inbox", finished from a mailed link that confirms the address | `backend/api/src/routes/signup.ts`, `frontend/app/signup/` |
 | Argon2id password hashing | `backend/auth/src/password.ts` |
 | Opaque server-side sessions (SHA-256 token hash) | `backend/auth/src/sessions.ts` |
 | Login timing equalisation | `backend/api/src/routes/auth.ts` |

@@ -12,6 +12,7 @@ import {
   getMailer,
   request,
   resetDatabase,
+  signUp,
   TEST_URL,
 } from './harness.ts';
 
@@ -55,15 +56,12 @@ describe('outside development', () => {
   });
 
   test('it cannot be chosen at sign-up', async () => {
-    const response = await request('/auth/register', {
-      method: 'POST',
-      payload: {
-        email: 'new@robis.test',
-        name: 'New',
-        username: 'new_person',
-        password: DEMO_PASSWORD,
-        ageConfirmed: true,
-      },
+    const response = await signUp({
+      email: 'new@robis.test',
+      name: 'New',
+      username: 'new_person',
+      password: DEMO_PASSWORD,
+      ageConfirmed: true,
     });
 
     expect(response.statusCode).toBe(400);

@@ -11,6 +11,7 @@ import {
   getHarness,
   request,
   resetDatabase,
+  signUp,
 } from './harness.ts';
 
 /**
@@ -73,15 +74,12 @@ describe('consent at sign-up', () => {
 
   test('without saying which terms the page showed, is not counted as agreeing', async () => {
     const stamp = Date.now();
-    const response = await request('/auth/register', {
-      method: 'POST',
-      payload: {
-        email: `silent-${stamp}@robis.test`,
-        name: 'Silent',
-        username: `silent_${stamp}`,
-        password: 'correct-horse-battery-staple',
-        ageConfirmed: true,
-      },
+    const response = await signUp({
+      email: `silent-${stamp}@robis.test`,
+      name: 'Silent',
+      username: `silent_${stamp}`,
+      password: 'correct-horse-battery-staple',
+      ageConfirmed: true,
     });
     expect(response.statusCode).toBe(201);
     const cookie = String(response.headers['set-cookie']).split(';')[0]!;
@@ -90,16 +88,13 @@ describe('consent at sign-up', () => {
   });
 
   test('to terms the page no longer shows is refused', async () => {
-    const response = await request('/auth/register', {
-      method: 'POST',
-      payload: {
-        email: `stale-${Date.now()}@robis.test`,
-        name: 'Stale',
-        username: `stale_${Date.now()}`,
-        password: 'correct-horse-battery-staple',
-        ageConfirmed: true,
-        termsVersion: '2000-01-01',
-      },
+    const response = await signUp({
+      email: `stale-${Date.now()}@robis.test`,
+      name: 'Stale',
+      username: `stale_${Date.now()}`,
+      password: 'correct-horse-battery-staple',
+      ageConfirmed: true,
+      termsVersion: '2000-01-01',
     });
     expect(response.statusCode).toBe(409);
     expect(response.json().error).toBe('terms_changed');

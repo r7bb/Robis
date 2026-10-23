@@ -26,6 +26,7 @@ import { memberRoutes } from './routes/members.ts';
 import { notificationRoutes } from './routes/notifications.ts';
 import { projectRoutes } from './routes/projects.ts';
 import { searchRoutes } from './routes/search.ts';
+import { signupRoutes } from './routes/signup.ts';
 import { workspaceRoutes } from './routes/workspaces.ts';
 import { createSuggestionClient, type SuggestionClient } from './suggestions.ts';
 
@@ -83,6 +84,12 @@ export type AppDeps = {
   suggestions?: SuggestionClient;
   /** Uploaded files: the driver `STORAGE_DRIVER` names, unless a test supplies one. */
   storage?: MediaStorage;
+  /**
+   * The least time starting a sign-up takes to answer, so its two branches
+   * cannot be told apart by timing. Tests set it to 0, having nothing to
+   * hide from themselves and hundreds of sign-ups to make.
+   */
+  signupFloorMs?: number;
 };
 
 export function buildApp({
@@ -92,6 +99,7 @@ export function buildApp({
   rateLimits,
   suggestions,
   storage = storageFromEnv(env),
+  signupFloorMs,
 }: AppDeps): FastifyInstance {
   const limits: RateLimits = { ...DEFAULT_RATE_LIMITS, ...rateLimits };
   // Typed as plain HTTP/1 options so Fastify picks that overload: a union
@@ -179,6 +187,7 @@ export function buildApp({
 
   app.register(authRoutes, { db, env, limits });
   app.register(authRecoveryRoutes, { db, env, limits });
+  app.register(signupRoutes, { db, limits, floorMs: signupFloorMs });
   app.register(workspaceRoutes, { db });
   app.register(memberRoutes, { db });
   app.register(invitationRoutes, { db });

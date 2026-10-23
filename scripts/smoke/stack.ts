@@ -2,8 +2,8 @@
  * Smoke test against a running stack: `bun run smoke:stack`.
  *
  * Drives the containers the way a new person would, over their published
- * ports: sign up, confirm the address from the email the worker actually
- * sent, choose a picture, make a workspace and an issue, watch the issue
+ * ports: start signing up, finish from the link the worker actually
+ * mailed (which confirms the address), choose a picture, make a workspace and an issue, watch the issue
  * arrive over the WebSocket, and attach an image that lands in object
  * storage. Exits non-zero, saying which step failed, on the first problem.
  *
@@ -124,9 +124,26 @@ async function main() {
     await expectStatus('web', response, 200);
   });
 
-  await step('sign up', async () => {
+  // Email first: start with the address, then finish with the link the
+  // worker actually mailed, which also proves the address.
+  await step('start signing up', async () => {
+    const response = await api('POST', '/auth/signup', { email });
+    await expectStatus('sign up', response, 202);
+  });
+
+  await step('finish signing up from the emailed link', async () => {
+    const text = await until('sign-up email', MAIL_WAIT_MS, async () => {
+      const { messages } = (await (await fetch(`${MAIL}/messages`)).json()) as {
+        messages: { to: string[]; text: string }[];
+      };
+      return messages.find((m) => m.to.includes(email))?.text;
+    });
+    const link = /https?:\/\/\S+\/signup\?token=\S+/.exec(text)?.[0];
+    if (!link) fail('sign-up email', `no link in:\n${text}`);
+    const token = new URL(link).searchParams.get('token');
+
     const response = await api('POST', '/auth/register', {
-      email,
+      token,
       name: 'Smoke Test',
       username: `smoke_${run}`,
       password: `smoke-password-${run}`,
@@ -134,6 +151,10 @@ async function main() {
     });
     await expectStatus('sign up', response, 201);
     if (!cookie) fail('sign up', 'no session cookie');
+    const me = (await (await api('GET', '/auth/me')).json()) as {
+      user: { emailVerified: boolean };
+    };
+    if (!me.user.emailVerified) fail('sign up', 'the link did not confirm the address');
   });
 
   // Signed up without saying which terms were shown, so the account is
@@ -148,24 +169,6 @@ async function main() {
       ageConfirmed: true,
     });
     await expectStatus('terms', response, 200);
-  });
-
-  await step('confirm the address from the email', async () => {
-    const text = await until('verification email', MAIL_WAIT_MS, async () => {
-      const { messages } = (await (await fetch(`${MAIL}/messages`)).json()) as {
-        messages: { to: string[]; text: string }[];
-      };
-      return messages.find((m) => m.to.includes(email))?.text;
-    });
-    const link = /https?:\/\/\S+verify-email\?token=\S+/.exec(text)?.[0];
-    if (!link) fail('verification email', `no link in:\n${text}`);
-    const token = new URL(link).searchParams.get('token');
-
-    await expectStatus('verify', await api('POST', '/auth/email/verify', { token }), 200);
-    const me = (await (await api('GET', '/auth/me')).json()) as {
-      user: { emailVerified: boolean };
-    };
-    if (!me.user.emailVerified) fail('verify', 'the account still reads as unverified');
   });
 
   await step('choose a picture', async () => {

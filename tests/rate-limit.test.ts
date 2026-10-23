@@ -30,6 +30,7 @@ async function throttledApp(authPerMinute: number) {
     db,
     env,
     rateLimits: { authPerMinute, searchPerMinute: authPerMinute },
+    signupFloorMs: 0,
   });
   await app.ready();
   return app;
@@ -39,19 +40,15 @@ let counter = 0;
 const register = (app: Awaited<ReturnType<typeof throttledApp>>, ip = '10.0.0.1') =>
   app.inject({
     method: 'POST',
-    url: '/auth/register',
+    // Signing in: one credential limiter and nothing else, so the budget
+    // headers are its own. A wrong password is still an allowed request.
+    url: '/auth/login',
     // The socket address itself, which is what the limiter keys on now that
     // no proxy is trusted by default. It used to set X-Forwarded-For, which
     // only worked because any client could: the hole this test now proves
     // closed from the other side (see tests/hardening.test.ts).
     remoteAddress: ip,
-    payload: {
-      email: `limited${++counter}-${Date.now()}@robis.test`,
-      name: 'Limited',
-      username: `limited${counter}_${Date.now()}`,
-      password: 'correct-horse-battery-staple',
-      ageConfirmed: true,
-    },
+    payload: { email: `limited${++counter}-${Date.now()}@robis.test`, password: 'not the one' },
   });
 
 beforeEach(async () => {
@@ -67,7 +64,7 @@ describe('credential endpoints', () => {
     const app = await throttledApp(3);
 
     for (let i = 0; i < 3; i++) {
-      expect((await register(app)).statusCode).toBe(201);
+      expect((await register(app)).statusCode).toBe(401);
     }
 
     await app.close();
@@ -123,7 +120,7 @@ describe('credential endpoints', () => {
     expect((await register(app, '10.0.0.1')).statusCode).toBe(429);
 
     // A different caller still has its full budget.
-    expect((await register(app, '10.0.0.2')).statusCode).toBe(201);
+    expect((await register(app, '10.0.0.2')).statusCode).toBe(401);
 
     await app.close();
   });

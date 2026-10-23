@@ -14,6 +14,7 @@ import { join } from 'node:path';
 import { buildApp } from '@robis/api/app';
 import { loadEnv } from '@robis/api/env';
 import { localDiskStorage } from '@robis/api/media/storage';
+import { resetRateLimits } from '@robis/api/rate-limit';
 import type { SimilarIssue, TriageSuggestion } from '@robis/api/suggestions';
 import {
   createDatabase,
@@ -31,6 +32,7 @@ import { TERMS_VERSION } from '@robis/shared';
 import { mailHandlers } from '@robis/worker/mail';
 import { Runner } from '@robis/worker/runner';
 import { and, eq, isNull } from 'drizzle-orm';
+import type { FastifyInstance } from 'fastify';
 import postgres from 'postgres';
 
 const ADMIN_URL = process.env.TEST_ADMIN_URL ?? 'postgres://robis:robis@localhost:5433/postgres';
@@ -60,6 +62,7 @@ const TABLES = [
   'workspace_members',
   'workspaces',
   'sessions',
+  'signups',
   'username_history',
   'users',
 ];
@@ -222,6 +225,7 @@ export async function getHarness() {
     suggestions: { similar: suggestionStub, triage: triageStub },
     // Uploads go to a throwaway directory, never into the repository.
     storage: localDiskStorage(MEDIA_ROOT),
+    signupFloorMs: 0,
     rateLimits: {
       authPerMinute: 100_000,
       searchPerMinute: 100_000,
@@ -257,6 +261,9 @@ export async function resetDatabase() {
   // before the tables are emptied under it.
   await settleDeferredAccountEvents();
   mailer.clear();
+  // Buckets are process-wide; each test starts with a full budget, as it
+  // starts with empty tables.
+  resetRateLimits();
   // RESTART IDENTITY keeps sequences predictable across tests. The audit
   // trail refuses TRUNCATE by trigger -- that is the point of it -- so the
   // guard is lifted for this one statement, inside the same transaction, and
@@ -299,32 +306,71 @@ export const ACTOR_PASSWORD = 'correct-horse-battery-staple';
 
 let userCounter = 0;
 
+/** What the sign-up form collects; only the address is needed to start. */
+export type SignUpFields = {
+  email: string;
+  name?: string;
+  username?: string;
+  password?: string;
+  ageConfirmed?: boolean;
+  termsVersion?: string;
+};
+
+/**
+ * Sign up the way a person does, email first: start with the address,
+ * take the link from the mail the worker sends, and finish with it.
+ * Returns the finishing response (201 with a session cookie on success).
+ */
+export async function signUp(fields: SignUpFields, app?: FastifyInstance) {
+  const { app: defaultApp } = await getHarness();
+  const target = app ?? defaultApp;
+  const { email, ...rest } = fields;
+
+  const started = await target.inject({
+    method: 'POST',
+    url: '/auth/signup',
+    payload: { email },
+  });
+  if (started.statusCode !== 202) {
+    throw new Error(`Failed to start sign-up: ${started.statusCode} ${started.body}`);
+  }
+  const mail = (await getMailer()).lastTo(email.trim().toLowerCase());
+  const token = /\/signup\?token=([A-Za-z0-9_-]+)/.exec(mail?.text ?? '')?.[1];
+  if (!token) throw new Error(`No sign-up link was mailed to ${email}`);
+
+  return target.inject({ method: 'POST', url: '/auth/register', payload: { token, ...rest } });
+}
+
 /**
  * Register a fresh user and return their identity plus session cookie.
  *
  * Every actor picks a generated avatar straight away, as a real person must
  * before using a workspace. Pass `withAvatar: false` to test the gate.
+ *
+ * Sign-up proves the address, so an actor starts confirmed. `unconfirmed`
+ * makes one as an account from before email-first sign-up would be:
+ * unconfirmed, with a confirmation link waiting in its inbox.
  */
 export async function createActor(
   name = `User ${++userCounter}`,
-  { withAvatar = true, email: chosenEmail }: { withAvatar?: boolean; email?: string } = {},
+  {
+    withAvatar = true,
+    email: chosenEmail,
+    unconfirmed = false,
+  }: { withAvatar?: boolean; email?: string; unconfirmed?: boolean } = {},
 ): Promise<Actor> {
-  const { app } = await getHarness();
+  const { app, ownerDb } = await getHarness();
   const email = chosenEmail ?? `user${userCounter}-${Date.now()}@robis.test`;
   // Unique per run, like the email, and always a valid username.
   const username = `user${userCounter}_${Date.now()}`;
 
-  const response = await app.inject({
-    method: 'POST',
-    url: '/auth/register',
-    payload: {
-      email,
-      name,
-      username,
-      password: 'correct-horse-battery-staple',
-      ageConfirmed: true,
-      termsVersion: TERMS_VERSION,
-    },
+  const response = await signUp({
+    email,
+    name,
+    username,
+    password: ACTOR_PASSWORD,
+    ageConfirmed: true,
+    termsVersion: TERMS_VERSION,
   });
 
   if (response.statusCode !== 201) {
@@ -338,6 +384,18 @@ export async function createActor(
   const user = response.json().user as { id: string };
 
   const actor = { id: user.id, email, name, username, cookie: raw.split(';')[0]! };
+
+  if (unconfirmed) {
+    await ownerDb.update(users).set({ emailVerifiedAt: null }).where(eq(users.id, actor.id));
+    const resent = await app.inject({
+      method: 'POST',
+      url: '/auth/email/resend',
+      headers: { cookie: actor.cookie },
+    });
+    if (resent.statusCode !== 200) {
+      throw new Error(`Failed to queue a confirmation link: ${resent.statusCode} ${resent.body}`);
+    }
+  }
 
   if (withAvatar) {
     const avatar = await app.inject({

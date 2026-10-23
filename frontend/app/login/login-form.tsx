@@ -1,11 +1,9 @@
 'use client';
 
-import { MINIMUM_AGE, TERMS_VERSION } from '@robis/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
-import { UsernameField } from '../../features/account/username-field.tsx';
 import { ApiError, api, type Me } from '../../lib/api.ts';
 import { getSyncEngine } from '../../lib/sync.ts';
 
@@ -15,17 +13,22 @@ export type Mode = 'login' | 'register';
  * The sign-in and sign-up form. `initialMode` comes from the page, which
  * reads `?mode=register` on the server, so the intro's "Create account"
  * lands on the sign-up form from the first paint.
+ *
+ * Signing up is email first: this asks only for the address and always
+ * says "check your inbox", whatever the address, so the form cannot be
+ * used to learn who has an account. The mailed link opens `/signup`,
+ * where the name, username, password and the age and terms question are
+ * asked.
  */
 export function LoginForm({ initialMode }: { initialMode: Mode }) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
   const [mode, setMode] = useState<Mode>(initialMode);
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
-  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [password, setPassword] = useState('');
+  /** The address a sign-up link went to, once one has. */
+  const [sentTo, setSentTo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -35,20 +38,12 @@ export function LoginForm({ initialMode }: { initialMode: Mode }) {
     setSubmitting(true);
 
     try {
-      const body =
-        mode === 'register'
-          ? {
-              name,
-              email,
-              username: username.trim().toLowerCase(),
-              password,
-              ageConfirmed,
-              // The terms this form showed, so a stale page cannot agree to
-              // something that has since changed.
-              termsVersion: TERMS_VERSION,
-            }
-          : { email, password };
-      const signedIn = await api<Me>(`/auth/${mode}`, { method: 'POST', body });
+      if (mode === 'register') {
+        await api('/auth/signup', { method: 'POST', body: { email } });
+        setSentTo(email.trim());
+        return;
+      }
+      const signedIn = await api<Me>('/auth/login', { method: 'POST', body: { email, password } });
 
       // Offline data left by a different account on this browser must not be
       // shown to this person, or sent under their session.
@@ -73,68 +68,61 @@ export function LoginForm({ initialMode }: { initialMode: Mode }) {
           {mode === 'login' ? 'Sign in to your workspace.' : 'Create an account.'}
         </p>
 
-        <form onSubmit={onSubmit} className="mt-6 space-y-3">
-          {mode === 'register' && (
-            <Field label="Name" value={name} onChange={setName} autoComplete="name" required />
-          )}
-
-          <Field
-            label="Email"
-            type="email"
-            value={email}
-            onChange={setEmail}
-            autoComplete="email"
-            required
-          />
-
-          {mode === 'register' && <UsernameField value={username} onChange={setUsername} />}
-
-          <Field
-            label="Password"
-            type="password"
-            value={password}
-            onChange={setPassword}
-            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-            required
-          />
-
-          {mode === 'register' && (
-            <label className="flex items-start gap-2 text-sm text-muted">
-              <input
-                type="checkbox"
-                checked={ageConfirmed}
-                onChange={(event) => setAgeConfirmed(event.target.checked)}
-                required
-                className="mt-0.5 h-4 w-4 accent-[var(--accent,currentColor)]"
-              />
-              <span>
-                I am at least {MINIMUM_AGE}, and I agree to the{' '}
-                <Link href="/terms" className="text-content underline underline-offset-2">
-                  terms
-                </Link>{' '}
-                and the{' '}
-                <Link href="/privacy" className="text-content underline underline-offset-2">
-                  privacy notice
-                </Link>
-                .
-              </span>
-            </label>
-          )}
-
-          {error && (
-            <p role="alert" className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger-soft">
-              {error}
+        {mode === 'register' && sentTo ? (
+          <div role="status" className="mt-6 rounded-md border border-line bg-raised px-4 py-3">
+            <p className="text-sm font-medium text-content">Check your inbox</p>
+            <p className="mt-1 text-sm text-muted">
+              If {sentTo} can be used for a new account, a link to finish signing up is on its way.
+              It works once, for 24 hours. Nothing arrived? Check spam, or send it again.
             </p>
-          )}
+            <button
+              type="button"
+              onClick={() => setSentTo(null)}
+              className="mt-3 text-sm text-muted underline-offset-4 hover:text-content hover:underline"
+            >
+              Use a different address
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={onSubmit} className="mt-6 space-y-3">
+            <Field
+              label="Email"
+              type="email"
+              value={email}
+              onChange={setEmail}
+              autoComplete="email"
+              required
+            />
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full rounded-md bg-accent px-3 py-2 text-sm font-medium text-accent-contrast transition hover:bg-accent-hover active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-surface motion-reduce:transition-none motion-reduce:active:translate-y-0 disabled:opacity-50 disabled:active:translate-y-0"
-          >
-            {submitting ? 'Working…' : mode === 'login' ? 'Sign in' : 'Create account'}
-          </button>
-        </form>
+            {mode === 'login' && (
+              <Field
+                label="Password"
+                type="password"
+                value={password}
+                onChange={setPassword}
+                autoComplete="current-password"
+                required
+              />
+            )}
+
+            {error && (
+              <p
+                role="alert"
+                className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger-soft"
+              >
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full rounded-md bg-accent px-3 py-2 text-sm font-medium text-accent-contrast transition hover:bg-accent-hover active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-surface motion-reduce:transition-none motion-reduce:active:translate-y-0 disabled:opacity-50 disabled:active:translate-y-0"
+            >
+              {submitting ? 'Working…' : mode === 'login' ? 'Sign in' : 'Send me a link'}
+            </button>
+          </form>
+        )}
 
         {mode === 'login' && (
           <Link
@@ -150,6 +138,7 @@ export function LoginForm({ initialMode }: { initialMode: Mode }) {
           onClick={() => {
             setMode(mode === 'login' ? 'register' : 'login');
             setError(null);
+            setSentTo(null);
           }}
           className="mt-4 text-sm text-muted underline-offset-4 hover:text-content hover:underline"
         >
@@ -160,7 +149,7 @@ export function LoginForm({ initialMode }: { initialMode: Mode }) {
   );
 }
 
-function Field({
+export function Field({
   label,
   value,
   onChange,

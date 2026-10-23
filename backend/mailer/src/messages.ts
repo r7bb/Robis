@@ -102,3 +102,48 @@ export function workspaceInvitationMail(
     ].join('\n'),
   };
 }
+
+/**
+ * The link that finishes signing up. Opening it is what proves the
+ * address, so the account it makes starts with the address confirmed.
+ */
+export function signupMail(to: string, link: string, expiresInMinutes: number): Mail {
+  return {
+    to,
+    subject: 'Finish signing up for Robis',
+    text: [
+      'Someone asked to create a Robis account with this address.',
+      '',
+      'Open this link to choose your name, username and password:',
+      link,
+      '',
+      `The link works once and expires in ${humanDuration(expiresInMinutes)}.`,
+      '',
+      'If this was not you, ignore this message; no account has been made.',
+    ].join('\n'),
+  };
+}
+
+/**
+ * For an address that already has an account, in place of a sign-up
+ * link: the form said "check your inbox" either way, so only the owner of
+ * the inbox learns which it was.
+ */
+export function signupExistingMail(to: string, links: { signIn: string; reset: string }): Mail {
+  return {
+    to,
+    subject: 'You already have a Robis account',
+    text: [
+      'Someone asked to create a Robis account with this address, but it',
+      'already has one, so nothing new was made.',
+      '',
+      'Sign in here:',
+      links.signIn,
+      '',
+      'Forgotten the password? Reset it here:',
+      links.reset,
+      '',
+      'If this was not you, you can ignore this message.',
+    ].join('\n'),
+  };
+}

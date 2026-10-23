@@ -25,6 +25,11 @@ Newest first. The same list is the site's What's new page, linked from the
 header, where each entry opens to show how it was checked and, for features,
 where to find it and what each layer does.
 
+- **Sign up with your email first** (2026-10-23). Creating an account now
+  starts with just your address and always says "check your inbox", so the
+  form never reveals who already has an account. The link in that email
+  finishes signing up, works once for 24 hours, and confirms your address
+  as it does. Asking again never cancels a link already sent.
 - **Email invitations that give nothing away** (2026-10-20). Inviting by
   email answers the same whether or not the address has an account, sends
   the same email either way, and the pending list shows the address as

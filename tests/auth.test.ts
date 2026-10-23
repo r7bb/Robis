@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
 import { SESSION_COOKIE } from '@robis/auth';
-import { closeHarness, createActor, request, resetDatabase } from './harness.ts';
+import { closeHarness, createActor, getMailer, request, resetDatabase, signUp } from './harness.ts';
 
 beforeEach(resetDatabase);
 afterAll(closeHarness);
@@ -9,15 +9,12 @@ const PASSWORD = 'correct-horse-battery-staple';
 
 describe('registration', () => {
   test('creates an account and starts a session', async () => {
-    const response = await request('/auth/register', {
-      method: 'POST',
-      payload: {
-        email: 'ada@robis.test',
-        name: 'Ada',
-        password: PASSWORD,
-        username: 'ada',
-        ageConfirmed: true,
-      },
+    const response = await signUp({
+      email: 'ada@robis.test',
+      name: 'Ada',
+      password: PASSWORD,
+      username: 'ada',
+      ageConfirmed: true,
     });
 
     expect(response.statusCode).toBe(201);
@@ -29,58 +26,46 @@ describe('registration', () => {
   });
 
   test('never returns the password hash', async () => {
-    const response = await request('/auth/register', {
-      method: 'POST',
-      payload: {
-        email: 'ada@robis.test',
-        name: 'Ada',
-        password: PASSWORD,
-        username: 'ada',
-        ageConfirmed: true,
-      },
+    const response = await signUp({
+      email: 'ada@robis.test',
+      name: 'Ada',
+      password: PASSWORD,
+      username: 'ada',
+      ageConfirmed: true,
     });
 
     expect(response.body).not.toContain('argon2');
     expect(response.json().user.passwordHash).toBeUndefined();
   });
 
-  test('rejects a duplicate email regardless of casing', async () => {
-    await request('/auth/register', {
-      method: 'POST',
-      payload: {
-        email: 'ada@robis.test',
-        name: 'Ada',
-        password: PASSWORD,
-        username: 'ada',
-        ageConfirmed: true,
-      },
+  test('a second sign-up for a taken address, in any case, makes no account', async () => {
+    await signUp({
+      email: 'ada@robis.test',
+      name: 'Ada',
+      password: PASSWORD,
+      username: 'ada',
+      ageConfirmed: true,
     });
 
-    const response = await request('/auth/register', {
+    // Starting looks the same as for a new address; the inbox's owner gets
+    // a reminder instead of a link, so there is no second account to finish.
+    const started = await request('/auth/signup', {
       method: 'POST',
-      payload: {
-        email: 'ADA@Robis.test',
-        name: 'Impostor',
-        password: PASSWORD,
-        username: 'impostor',
-        ageConfirmed: true,
-      },
+      payload: { email: 'ADA@Robis.test' },
     });
-
-    expect(response.statusCode).toBe(409);
-    expect(response.json().error).toBe('email_taken');
+    expect(started.statusCode).toBe(202);
+    const mail = (await getMailer()).lastTo('ada@robis.test');
+    expect(mail?.subject).toMatch(/already have/i);
+    expect(mail?.text).not.toContain('/signup?token=');
   });
 
   test('rejects a password below the length floor', async () => {
-    const response = await request('/auth/register', {
-      method: 'POST',
-      payload: {
-        email: 'ada@robis.test',
-        name: 'Ada',
-        password: 'short',
-        username: 'ada',
-        ageConfirmed: true,
-      },
+    const response = await signUp({
+      email: 'ada@robis.test',
+      name: 'Ada',
+      password: 'short',
+      username: 'ada',
+      ageConfirmed: true,
     });
 
     expect(response.statusCode).toBe(400);

@@ -146,6 +146,33 @@ export const usernameHistory = pgTable(
   ],
 );
 
+/**
+ * A sign-up that has been started and not finished (email-first sign-up).
+ *
+ * Starting one only names an address; the link mailed to it is what
+ * finishes it, so an address is proved before an account exists, and the
+ * form never says whether one already does. One row per request, each
+ * holding only the hash of its own link, issued by the worker when it sends
+ * the mail (so the link itself is never stored). Asking again adds a row
+ * rather than replacing one, so a stranger typing your address cannot
+ * cancel the link you hold. Finishing deletes every row for the address.
+ */
+export const signups = pgTable(
+  'signups',
+  {
+    id: id(),
+    /** Lowercased, as account addresses are. */
+    email: text('email').notNull(),
+    tokenHash: text('token_hash'),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('signups_email_idx').on(t.email),
+    uniqueIndex('signups_token_hash_key').on(t.tokenHash),
+  ],
+);
+
 /** What a one-time token is for. Narrow, so the column cannot drift. */
 export const AUTH_TOKEN_PURPOSES = ['password_reset', 'email_verification'] as const;
 export type AuthTokenPurpose = (typeof AUTH_TOKEN_PURPOSES)[number];

@@ -1,10 +1,14 @@
-import { issueAuthToken, ttlMinutesFor } from '@robis/auth';
+import { generateSessionToken, hashSessionToken, issueAuthToken, ttlMinutesFor } from '@robis/auth';
 import {
   type AccountMailPayload,
   type InvitationMailPayload,
   MAIL_EMAIL_VERIFICATION_JOB,
   MAIL_PASSWORD_RESET_JOB,
+  MAIL_SIGNUP_EXISTING_JOB,
+  MAIL_SIGNUP_JOB,
   MAIL_WORKSPACE_INVITATION_JOB,
+  type SignupMailPayload,
+  signups,
   users,
   workspaceInvitations,
   workspaces,
@@ -13,11 +17,16 @@ import {
   linkFor,
   type Mailer,
   passwordResetMail,
+  signupExistingMail,
+  signupMail,
   verifyEmailMail,
   workspaceInvitationMail,
 } from '@robis/mailer';
 import { eq } from 'drizzle-orm';
 import type { Handlers } from './runner.ts';
+
+/** How long a link to finish signing up works. */
+export const SIGNUP_LINK_MINUTES = 24 * 60;
 
 /**
  * The origin every mailed link starts with.
@@ -89,6 +98,44 @@ export function mailHandlers(deps: { mailer: Mailer; webOrigin: string }): Handl
           linkFor(webOrigin, '/verify-email', token),
           ttlMinutesFor('email_verification'),
         ),
+      );
+    },
+
+    [MAIL_SIGNUP_JOB]: async (payload, { db }) => {
+      const { signupId } = payload as SignupMailPayload;
+      // Issued here, at send time, as account links are: the link itself is
+      // never written down. Each request has its own row, so asking again
+      // sends a second link and leaves the first one working.
+      const token = generateSessionToken();
+      const [signup] = await db
+        .update(signups)
+        .set({
+          tokenHash: hashSessionToken(token),
+          expiresAt: new Date(Date.now() + SIGNUP_LINK_MINUTES * 60_000),
+        })
+        .where(eq(signups.id, signupId))
+        .returning({ email: signups.email });
+      // Finished in the meantime: nothing to send.
+      if (!signup) return;
+
+      await mailer.send(
+        signupMail(signup.email, linkFor(webOrigin, '/signup', token), SIGNUP_LINK_MINUTES),
+      );
+    },
+
+    [MAIL_SIGNUP_EXISTING_JOB]: async (payload, { db }) => {
+      const { userId } = payload as AccountMailPayload;
+      const [user] = await db
+        .select({ email: users.email })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+      if (!user) return;
+      await mailer.send(
+        signupExistingMail(user.email, {
+          signIn: `${webOrigin}/login`,
+          reset: `${webOrigin}/forgot-password`,
+        }),
       );
     },
 

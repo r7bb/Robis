@@ -615,6 +615,29 @@ Four details carry more weight than they look like they should:
 
 ### Not leaking which addresses have accounts
 
+Three places could say whether an address is registered, and none does:
+
+- **Sign-up is email first.** `POST /auth/signup` takes only the address and
+  always answers `202 { status: "check_inbox" }`, after the same floor as a
+  reset request, limited per caller and per address. A new address is mailed
+  a link that finishes signing up (`POST /auth/register` with its token);
+  an address that already has an account is mailed a reminder to sign in
+  instead. Only the owner of the inbox learns which it was. The link is
+  issued by the worker at send time and stored only as a hash, works once
+  and for 24 hours; opening it proves the address, so the account starts
+  confirmed. Each request is its own `signups` row with its own link, so
+  someone typing your address cannot cancel the link you already hold.
+  Finishing claims every row for the address in one `DELETE ... RETURNING`
+  inside the transaction that makes the account (`claimSignup`), so two
+  finishes racing with one link make one account, and a refused username
+  rolls the claim back. The hourly housekeeping job drops sign-ups a week
+  after their link ran out, so an unfinished one does not name an address
+  forever.
+- **Invitations by email** answer the same whether or not the address has
+  an account, send the same email either way, and appear in the pending
+  list as the address typed (`routes/invitations.ts`).
+- **Reset requests**, as follows.
+
 `POST /auth/password/forgot` always answers `202` with the same body: unknown
 address, malformed address, or real account. The schema is parsed permissively
 so a bad address cannot even produce a validation error, because that would
