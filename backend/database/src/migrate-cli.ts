@@ -6,21 +6,15 @@
  * image runs this file directly. `bun run db:migrate` reaches it through
  * `scripts/db/migrate.ts`.
  */
-import { requireNodeEnv } from '@robis/shared';
+import { loadConfig } from '@robis/shared/config';
 import { createDatabase } from './index.ts';
 import { MIGRATIONS_DIR, runMigrations } from './migrate.ts';
 
-// Before anything else: see `requireNodeEnv`.
-requireNodeEnv(process.env.NODE_ENV);
+// Before anything else, and failing closed: see `loadConfig`. As the owner:
+// migrations create and alter tables, which the runtime role cannot.
+const { migrationDatabaseUrl } = loadConfig(process.env, { asOwner: true });
 
-// The owner: migrations create and alter tables, which the application's
-// runtime role cannot (see roles.ts).
-const DATABASE_URL =
-  process.env.MIGRATION_DATABASE_URL ??
-  process.env.DATABASE_URL ??
-  'postgres://robis:robis@localhost:5433/robis';
-
-const { db, close } = createDatabase(DATABASE_URL, { max: 1 });
+const { db, close } = createDatabase(migrationDatabaseUrl, { max: 1 });
 
 try {
   await runMigrations(db);

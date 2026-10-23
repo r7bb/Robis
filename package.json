@@ -18,7 +18,7 @@
     "db:start": "bun run scripts/db/dev-db.ts start",
     "db:stop": "bun run scripts/db/dev-db.ts stop",
     "db:reset": "bun run scripts/db/dev-db.ts reset",
-    "db:migrate": "bun run scripts/db/migrate.ts",
+    "db:migrate": "NODE_ENV=${NODE_ENV:-development} bun run scripts/db/migrate.ts",
     "db:roles": "bun backend/database/src/roles-cli.ts",
     "audit:seal": "bun backend/database/src/audit-seal-cli.ts",
     "audit:erase": "bun backend/database/src/audit-erase-cli.ts",

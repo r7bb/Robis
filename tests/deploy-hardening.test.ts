@@ -34,7 +34,8 @@ const PASSWORD = 'correct-horse-battery-staple';
 
 /** Run a service entry point with no NODE_ENV, and see it refuse. */
 async function bootWithoutNodeEnv(entry: string) {
-  const child = Bun.spawn(['bun', entry], {
+  // No .env either: a developer's own would otherwise supply NODE_ENV.
+  const child = Bun.spawn(['bun', '--no-env-file', entry], {
     cwd: ROOT,
     env: {
       PATH: process.env.PATH ?? '',
@@ -54,6 +55,16 @@ describe('NODE_ENV', () => {
   test('unset, the API configuration refuses to load', () => {
     expect(() => loadEnv({ DATABASE_URL: TEST_URL } as unknown as NodeJS.ProcessEnv)).toThrow(
       /NODE_ENV/,
+    );
+  });
+
+  test('in production, the API refuses a missing database or web origin, or a plain-http one', () => {
+    const production = (settings: Record<string, string>) => () =>
+      loadEnv({ NODE_ENV: 'production', MEDIA_DIR: MEDIA_ROOT, ...settings } as NodeJS.ProcessEnv);
+    expect(production({ WEB_ORIGIN: 'https://robis.example' })).toThrow(/DATABASE_URL/);
+    expect(production({ DATABASE_URL: TEST_URL })).toThrow(/WEB_ORIGIN/);
+    expect(production({ DATABASE_URL: TEST_URL, WEB_ORIGIN: 'http://robis.example' })).toThrow(
+      /https/,
     );
   });
 

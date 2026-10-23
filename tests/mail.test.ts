@@ -16,7 +16,8 @@ import {
   SmtpSendError,
   verifyEmailMail,
 } from '@robis/mailer';
-import { mailHandlers, mailOriginFromEnv } from '@robis/worker/mail';
+import { loadConfig } from '@robis/shared/config';
+import { mailHandlers } from '@robis/worker/mail';
 import { Runner } from '@robis/worker/runner';
 import { eq } from 'drizzle-orm';
 import { type MailSink, parseMessage, startMailSink } from '../scripts/mail/sink-server.ts';
@@ -268,12 +269,12 @@ describe('configuration', () => {
   });
 
   test('mailed links must be https in production', () => {
-    expect(() =>
-      mailOriginFromEnv({ NODE_ENV: 'production', WEB_ORIGIN: 'http://robis.example' }),
-    ).toThrow(/https/);
-    expect(
-      mailOriginFromEnv({ NODE_ENV: 'production', WEB_ORIGIN: 'https://robis.example/' }),
-    ).toBe('https://robis.example');
+    // The worker takes its origin from the shared loader (see config.test.ts).
+    const db = 'postgres://db/robis';
+    const load = (WEB_ORIGIN: string) =>
+      loadConfig({ NODE_ENV: 'production', DATABASE_URL: db, WEB_ORIGIN }, { webOrigin: true });
+    expect(() => load('http://robis.example')).toThrow(/https/);
+    expect(load('https://robis.example/').webOrigin).toBe('https://robis.example');
   });
 });
 

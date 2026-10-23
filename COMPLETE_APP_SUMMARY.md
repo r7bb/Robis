@@ -28,6 +28,7 @@ Written to be checkable. Every row names a file you can open.
 | Register, sign in, sign out | `backend/api/src/routes/auth.ts` |
 | Email-first sign-up: always "check your inbox", finished from a mailed link that confirms the address | `backend/api/src/routes/signup.ts`, `frontend/app/signup/` |
 | Argon2id password hashing | `backend/auth/src/password.ts` |
+| One configuration loader for every service and CLI, failing closed in production | `shared/contracts/src/config.ts` |
 | Demo accounts seeded on the container stack's first start (owner rohit@robis.test) | `scripts/db/seed.ts`, `deploy/compose.yaml` |
 | Security headers: nonce-based Content-Security-Policy, no framing, HSTS in production, camera for this origin only | `frontend/middleware.ts`, `frontend/lib/security-headers.ts`, `scripts/smoke/browser.ts` |
 | Opaque server-side sessions (SHA-256 token hash) | `backend/auth/src/sessions.ts` |

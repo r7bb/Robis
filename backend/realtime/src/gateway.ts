@@ -87,8 +87,8 @@ export type GatewayOptions = {
   /** Raw client: LISTEN holds a dedicated connection and must bypass the pool. */
   listenClient: postgres.Sql;
   port?: number;
-  /** Origin allowed to open a socket. */
-  webOrigin?: string;
+  /** Origin allowed to open a socket. No default: see `loadConfig`. */
+  webOrigin: string;
   instanceId?: string;
   /** The session cookie's name: `__Host-robis_session` in production. */
   sessionCookie?: string;
@@ -112,13 +112,7 @@ function readCookie(header: string | null, name: string): string | null {
 }
 
 export async function createGateway(options: GatewayOptions) {
-  const {
-    db,
-    listenClient,
-    port = 4001,
-    webOrigin = 'http://localhost:3000',
-    sessionCookie = SESSION_COOKIE,
-  } = options;
+  const { db, listenClient, port = 4001, webOrigin, sessionCookie = SESSION_COOKIE } = options;
   const instanceId = options.instanceId ?? crypto.randomUUID();
 
   const presence = new PresenceRegistry();

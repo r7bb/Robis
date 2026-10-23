@@ -1,27 +1,19 @@
 import { sessionCookieName } from '@robis/auth';
 import { createDatabase } from '@robis/database';
-import { requireNodeEnv, webOriginOf } from '@robis/shared';
+import { loadConfig, portFrom } from '@robis/shared/config';
 import postgres from 'postgres';
 import { createGateway } from './gateway.ts';
 
-// Before anything else: see `requireNodeEnv`.
-const NODE_ENV = requireNodeEnv(process.env.NODE_ENV);
+// Before anything else, and failing closed: see `loadConfig`. The origin
+// is the one the gateway checks every connection's Origin against.
+const {
+  nodeEnv: NODE_ENV,
+  databaseUrl: DATABASE_URL,
+  webOrigin: WEB_ORIGIN,
+  metricsHost,
+} = loadConfig(process.env, { webOrigin: true });
 
-const DATABASE_URL = process.env.DATABASE_URL;
-if (!DATABASE_URL) throw new Error('DATABASE_URL is required');
-
-const PORT = portFrom('REALTIME_PORT', 4001);
-const WEB_ORIGIN = webOriginOf(process.env.WEB_ORIGIN ?? 'http://localhost:3000');
-
-/** A port from the environment, checked now rather than failing later. */
-function portFrom(name: string, fallback: number): number {
-  const raw = process.env[name];
-  const value = raw === undefined ? fallback : Number(raw);
-  if (!Number.isInteger(value) || value < 1 || value > 65535) {
-    throw new Error(`${name} must be a port number; got "${raw}".`);
-  }
-  return value;
-}
+const PORT = portFrom(process.env, 'REALTIME_PORT', 4001);
 
 const { db, close } = createDatabase(DATABASE_URL, { max: 5 });
 
@@ -36,8 +28,8 @@ const gateway = await createGateway({
   webOrigin: WEB_ORIGIN,
   sessionCookie: sessionCookieName(NODE_ENV),
   metrics: {
-    port: portFrom('REALTIME_METRICS_PORT', 9465),
-    hostname: process.env.METRICS_HOST ?? '127.0.0.1',
+    port: portFrom(process.env, 'REALTIME_METRICS_PORT', 9465),
+    hostname: metricsHost,
   },
 });
 

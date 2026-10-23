@@ -6,19 +6,17 @@ import {
   STORAGE_PURGE_JOB,
 } from '@robis/database';
 import { mailerFromEnv } from '@robis/mailer';
-import { requireNodeEnv } from '@robis/shared';
+import { loadConfig } from '@robis/shared/config';
 import { auditStreamConfig, httpSink, streamAuditEvents } from './audit-stream.ts';
 import { handlers } from './handlers.ts';
 import { DEFAULT_HEARTBEAT_FILE, heartbeat } from './heartbeat.ts';
-import { mailHandlers, mailOriginFromEnv } from './mail.ts';
+import { mailHandlers } from './mail.ts';
 import { Runner } from './runner.ts';
 import { storagePurgeHandler, workerStorage } from './storage-purge.ts';
 
-// Before anything else: see `requireNodeEnv`.
-requireNodeEnv(process.env.NODE_ENV);
-
-const DATABASE_URL = process.env.DATABASE_URL;
-if (!DATABASE_URL) throw new Error('DATABASE_URL is required');
+// Before anything else, and failing closed: see `loadConfig`. The origin is
+// the one every mailed link is built from.
+const { databaseUrl: DATABASE_URL, webOrigin } = loadConfig(process.env, { webOrigin: true });
 
 const { db, close } = createDatabase(DATABASE_URL, { max: 5 });
 
@@ -43,7 +41,16 @@ const HOUR_MS = 60 * 60 * 1000;
  * account gets a prompt the same session, rare enough that the weekly dedupe
  * bucket does the real rate limiting.
  */
-const NUDGE_INTERVAL_MS = Number(process.env.NUDGE_INTERVAL_MS ?? 15 * 60 * 1000);
+const NUDGE_INTERVAL_MS = positiveMs(process.env.NUDGE_INTERVAL_MS, 15 * 60 * 1000);
+
+/** A duration from the environment, checked now: NaN would schedule nothing. */
+function positiveMs(raw: string | undefined, fallback: number): number {
+  const value = raw?.trim() ? Number(raw) : fallback;
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`NUDGE_INTERVAL_MS must be a whole number of milliseconds; got "${raw}".`);
+  }
+  return value;
+}
 
 async function scheduleMaintenance() {
   await enqueue(db, 'sessions.cleanup', {}, { delayMs: HOUR_MS });
@@ -71,10 +78,7 @@ const reschedule = <T extends keyof typeof handlers>(
  * In production with no SMTP configured this throws, and the worker refuses
  * to start rather than quietly print reset links into its log.
  */
-Object.assign(
-  handlers,
-  mailHandlers({ mailer: mailerFromEnv(process.env), webOrigin: mailOriginFromEnv(process.env) }),
-);
+Object.assign(handlers, mailHandlers({ mailer: mailerFromEnv(process.env), webOrigin }));
 
 // Files left behind by deleted issues, comments and workspaces.
 handlers[STORAGE_PURGE_JOB] = storagePurgeHandler(workerStorage(process.env));

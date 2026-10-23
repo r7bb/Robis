@@ -40,6 +40,15 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-23',
+    area: 'Security',
+    title: 'One configuration loader that fails closed',
+    summary:
+      'The API, the realtime gateway, the worker and every command-line tool now read their settings through one loader with one set of rules. The environment must be named; nothing guesses. In production nothing falls back to a local default: a missing database address or web address, or a web address that is not https, stops the service at start-up with every problem listed, instead of quietly connecting to localhost or mailing links nobody can open. Before, the command-line tools fell back to a local database even in production, and the gateway to a local web address.',
+    checked:
+      'Tests prove the loader refuses an unset environment, uses local defaults only outside production, refuses a missing or plain-http web address and a missing database in production, requires the owner’s own address for migrations in production and refuses a service given only that one, never repeats a rejected web address (it may hold a password), and reports every problem at once. Every entry point, the API, gateway, worker and five command-line tools, is started in production with no database and must refuse, naming it; the five tools did not before. Each runs without the developer’s own .env file, so it cannot supply the answer.',
+  },
+  {
+    date: '2026-10-23',
     area: 'Site',
     title: 'The demo account is ready in the container stack',
     summary:

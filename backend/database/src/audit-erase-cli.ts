@@ -6,13 +6,13 @@
  * Without `--confirm` it only counts what it would change. The chain still
  * verifies afterwards; the events stay, naming nobody.
  */
-import { requireNodeEnv } from '@robis/shared';
+import { loadConfig } from '@robis/shared/config';
 import { countAuditPersonalData, eraseAuditPersonalData } from './audit-redaction.ts';
 import { createDatabase } from './index.ts';
 import { eraseUsernameHistory } from './usernames.ts';
 
-// Before anything else: see `requireNodeEnv`.
-requireNodeEnv(process.env.NODE_ENV);
+// Before anything else, and failing closed: see `loadConfig`.
+const { databaseUrl: DATABASE_URL } = loadConfig();
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -22,7 +22,6 @@ if (!subjectId || !UUID.test(subjectId)) {
   process.exit(2);
 }
 
-const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://robis:robis@localhost:5433/robis';
 const { db, close } = createDatabase(DATABASE_URL, { max: 1 });
 
 try {

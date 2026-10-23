@@ -1,21 +1,24 @@
 import { isAbsolute } from 'node:path';
-import { NODE_ENVS, requireNodeEnv, webOriginOf } from '@robis/shared';
+import { NODE_ENVS } from '@robis/shared';
+import { loadConfig } from '@robis/shared/config';
 import { z } from 'zod';
 
 const envSchema = z.object({
-  DATABASE_URL: z.string().min(1),
+  // Checked by `loadConfig` first, with its production rules; see below.
+  DATABASE_URL: z.string().default(''),
   API_PORT: z.coerce.number().int().min(1).max(65535).default(4000),
   API_HOST: z.string().default('127.0.0.1'),
   /** Where `/metrics` is served, apart from the public port; see `serveMetrics`. */
   METRICS_PORT: z.coerce.number().int().min(1).max(65535).default(9464),
-  METRICS_HOST: z.string().default('127.0.0.1'),
+  // Resolved by `loadConfig`, as for every service.
+  METRICS_HOST: z.string().default(''),
   /**
    * Which proxies may set the client address through X-Forwarded-For.
    * Empty trusts none; a number trusts that many hops; otherwise addresses or
    * CIDRs, comma-separated. See `trustProxySetting`.
    */
   TRUST_PROXY: z.string().default(''),
-  WEB_ORIGIN: z.string().default('http://localhost:3000'),
+  WEB_ORIGIN: z.string().default(''),
   /**
    * Whether session cookies are HTTPS-only outside production. In production
    * they always are, whatever this says (see `auth.ts`); this only lets local
@@ -74,9 +77,9 @@ const envSchema = z.object({
 export type Env = z.infer<typeof envSchema>;
 
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
-  // First, and on its own: everything below has defaults that are only
-  // safe once the environment is known.
-  requireNodeEnv(source.NODE_ENV);
+  // First, and failing closed: NODE_ENV, the database and the web origin,
+  // with the rules every service shares (see `loadConfig`).
+  const shared = loadConfig(source, { webOrigin: true });
   const parsed = envSchema.safeParse(source);
 
   if (!parsed.success) {
@@ -86,28 +89,22 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     throw new Error(`Invalid environment configuration:\n${issues}`);
   }
 
-  // As a browser spells it, so the exact comparisons against Origin hold.
-  parsed.data.WEB_ORIGIN = webOriginOf(parsed.data.WEB_ORIGIN);
-
-  /*
-   * `WEB_ORIGIN` is not only the CORS allowance: it is the origin every
-   * mailed reset and verification link is built from. Left at its local
-   * default, a production deploy mails `http://localhost:3000` links that
-   * nobody can open, over a scheme that would leak the token if they could.
-   */
-  if (parsed.data.NODE_ENV === 'production' && !parsed.data.WEB_ORIGIN.startsWith('https://')) {
-    throw new Error(
-      `WEB_ORIGIN must be an https origin in production; got "${parsed.data.WEB_ORIGIN}". ` +
-        'It is the origin password-reset links are built from.',
-    );
-  }
+  // As the shared loader resolved them: its defaults apply only outside
+  // production, and WEB_ORIGIN is spelled as a browser sends it and https
+  // in production, since every mailed link is built from it.
+  const env: Env = {
+    ...parsed.data,
+    DATABASE_URL: shared.databaseUrl,
+    WEB_ORIGIN: shared.webOrigin,
+    METRICS_HOST: shared.metricsHost,
+  };
 
   // A half-configured object store would fail on the first upload, in front
   // of a user; refusing to start says so to whoever deployed it instead.
-  if (parsed.data.STORAGE_DRIVER === 's3') {
+  if (env.STORAGE_DRIVER === 's3') {
     const missing = (
       ['S3_ENDPOINT', 'S3_BUCKET', 'S3_ACCESS_KEY_ID', 'S3_SECRET_ACCESS_KEY'] as const
-    ).filter((name) => !parsed.data[name]);
+    ).filter((name) => !env[name]);
     if (missing.length > 0) {
       throw new Error(`STORAGE_DRIVER=s3 needs ${missing.join(', ')}.`);
     }
@@ -116,14 +113,12 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
   // Relative, it would resolve against whatever directory the process was
   // started from, and pictures would land somewhere different on each deploy.
   if (
-    parsed.data.NODE_ENV === 'production' &&
-    parsed.data.STORAGE_DRIVER === 'local' &&
-    !isAbsolute(parsed.data.MEDIA_DIR)
+    env.NODE_ENV === 'production' &&
+    env.STORAGE_DRIVER === 'local' &&
+    !isAbsolute(env.MEDIA_DIR)
   ) {
-    throw new Error(
-      `MEDIA_DIR must be an absolute path in production; got "${parsed.data.MEDIA_DIR}".`,
-    );
+    throw new Error(`MEDIA_DIR must be an absolute path in production; got "${env.MEDIA_DIR}".`);
   }
 
-  return parsed.data;
+  return env;
 }

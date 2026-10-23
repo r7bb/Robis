@@ -34,14 +34,14 @@ import {
   type IssuePriority,
   type IssueStatus,
   type Role,
-  requireNodeEnv,
   slugify,
   TERMS_VERSION,
 } from '@robis/shared';
+import { loadConfig } from '@robis/shared/config';
 import { eq, inArray } from 'drizzle-orm';
 
-// Before anything else: see `requireNodeEnv`.
-requireNodeEnv(process.env.NODE_ENV);
+// Before anything else, and failing closed: see `loadConfig`.
+const { databaseUrl: DATABASE_URL, nodeEnv } = loadConfig();
 
 const FIXTURE_CONSENT = {
   ageConfirmedAt: new Date(),
@@ -50,10 +50,9 @@ const FIXTURE_CONSENT = {
   usernameConfirmedAt: new Date(),
 };
 
-const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://robis:robis@localhost:5433/robis';
 // The seed is demo data with a public password; it has no business near a
 // real deployment, and the API would refuse that password there anyway.
-if (process.env.NODE_ENV === 'production') {
+if (nodeEnv === 'production') {
   throw new Error('db:seed refuses to run with NODE_ENV=production.');
 }
 

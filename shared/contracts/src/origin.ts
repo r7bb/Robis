@@ -12,10 +12,16 @@ export function webOriginOf(raw: string): string {
   try {
     url = new URL(raw);
   } catch {
-    throw new Error(`WEB_ORIGIN must be an origin like https://robis.example; got "${raw}".`);
+    // The value is not repeated: whatever it is, it may hold a secret.
+    throw new Error('WEB_ORIGIN must be an origin like https://robis.example.');
   }
-  if (url.pathname !== '/' || url.search || url.hash || url.username || url.password) {
-    throw new Error(`WEB_ORIGIN must be a bare origin, with no path or query; got "${raw}".`);
+  if (url.username || url.password) {
+    throw new Error('WEB_ORIGIN must not contain a user name or password.');
+  }
+  if (url.pathname !== '/' || url.search || url.hash) {
+    throw new Error(
+      `WEB_ORIGIN must be a bare origin, with no path or query; got "${url.origin}/…".`,
+    );
   }
   return url.origin;
 }

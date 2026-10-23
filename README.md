@@ -25,6 +25,10 @@ Newest first. The same list is the site's What's new page, linked from the
 header, where each entry opens to show how it was checked and, for features,
 where to find it and what each layer does.
 
+- **One configuration loader that fails closed** (2026-10-23). Every
+  service and command-line tool reads its settings the same way, and in
+  production a missing database or web address, or a plain-http one,
+  stops it at start-up instead of falling back to localhost.
 - **The demo account is ready in the container stack** (2026-10-23). The
   stack now seeds `rohit@robis.test` (password `robis-demo-password`) as
   owner of a populated workspace, with a confirmed address and a picture,

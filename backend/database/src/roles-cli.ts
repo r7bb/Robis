@@ -7,17 +7,12 @@
  * role and its password come from APP_DB_ROLE and APP_DB_PASSWORD; outside
  * development a real password is required. See `roles.ts`.
  */
-import { requireNodeEnv } from '@robis/shared';
+import { loadConfig } from '@robis/shared/config';
 import { createDatabase } from './index.ts';
 import { ensureRuntimeRole, runtimeRoleFromEnv } from './roles.ts';
 
-// Before anything else: see `requireNodeEnv`.
-requireNodeEnv(process.env.NODE_ENV);
-
-const OWNER_URL =
-  process.env.MIGRATION_DATABASE_URL ??
-  process.env.DATABASE_URL ??
-  'postgres://robis:robis@localhost:5433/robis';
+// Before anything else, and failing closed: see `loadConfig`.
+const { migrationDatabaseUrl: OWNER_URL } = loadConfig(process.env, { asOwner: true });
 
 const role = runtimeRoleFromEnv(process.env);
 const { db, close } = createDatabase(OWNER_URL, { max: 1 });

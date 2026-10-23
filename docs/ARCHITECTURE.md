@@ -654,6 +654,26 @@ The caller-keyed limit protects the server; it does nothing for the person
 being mailed, because the attacker chooses the address and a handful of
 addresses is enough to flood one mailbox.
 
+### Configuration fails closed
+
+Every service and CLI starts from one loader, `loadConfig` in
+`shared/contracts/src/config.ts` (imported as `@robis/shared/config`, so
+the web bundle never sees it). NODE_ENV must be development, test or
+production; nothing guesses. Outside production the database and the web
+app fall back to their local addresses; in production nothing falls back
+to anything, and a missing `DATABASE_URL` or `WEB_ORIGIN`, or a plain-http
+`WEB_ORIGIN`, refuses to start, naming every problem at once. The migrator
+and the roles CLI connect as the owner: in production they require
+`MIGRATION_DATABASE_URL` and will not try the runtime role's URL, which
+cannot create tables or roles; locally the two are one account. A rejected
+`WEB_ORIGIN` is named but never repeated, since it may hold a password. Before this, the CLIs fell back to a localhost database
+even in production, and the gateway to a localhost web origin.
+
+The API keeps its own schema for what only it reads (ports, storage, the
+ML service) and takes the shared values from the loader. Tests start every
+entry point in production with no database and check it refuses, with
+`--no-env-file` so a developer's own `.env` cannot answer for it.
+
 ### The security policy trusts the server, not the page
 
 Every page carries a Content-Security-Policy with a fresh nonce
