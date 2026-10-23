@@ -26,6 +26,8 @@ const PORT = Number(process.env.SMOKE_CDP_PORT ?? 9487);
 const MAIL_WAIT_MS = 30_000;
 /** Long enough for a signed-in page to fetch its data and open its socket. */
 const SETTLE_MS = 3_000;
+/** Polls of 200 ms each for Chrome's debugging port: a minute in all. */
+const CHROME_START_POLLS = 300;
 
 const PUBLIC_PAGES = ['/', '/login', '/start', '/how-it-works', '/whats-new', '/signup'];
 
@@ -206,18 +208,25 @@ async function main() {
       ...(process.env.CI ? ['--no-sandbox'] : []),
       'about:blank',
     ],
-    { stdout: 'ignore', stderr: 'ignore' },
+    { stdout: 'ignore', stderr: 'pipe' },
   );
+  // Read as it comes, so a full pipe never stalls Chrome; shown if it fails.
+  const chromeLog = new Response(chrome.stderr).text();
 
   try {
     let target: Target | undefined;
-    for (let i = 0; i < 75 && !target; i++) {
+    // A cold start on a CI runner can take a while.
+    for (let i = 0; i < CHROME_START_POLLS && !target && chrome.exitCode === null; i++) {
       await Bun.sleep(200);
       target = await listTargets(PORT)
         .then((all) => all.find((t) => t.type === 'page'))
         .catch(() => undefined);
     }
-    if (!target) throw new Error('Chrome did not start');
+    if (!target) {
+      chrome.kill();
+      const output = await chromeLog;
+      throw new Error(`Chrome did not start (exit ${chrome.exitCode}):\n${output.slice(-2000)}`);
+    }
     const page = await Page.attach(target, {
       port: PORT,
       shotsDir: `${process.env.TMPDIR ?? '/tmp'}/`,
