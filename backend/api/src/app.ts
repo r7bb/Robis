@@ -29,6 +29,7 @@ import { issueRoutes } from './routes/issues.ts';
 import { meetingRoutes } from './routes/meetings.ts';
 import { memberRoutes } from './routes/members.ts';
 import { notificationRoutes } from './routes/notifications.ts';
+import { overviewRoutes } from './routes/overview.ts';
 import { projectRoutes } from './routes/projects.ts';
 import { searchRoutes } from './routes/search.ts';
 import { signupRoutes } from './routes/signup.ts';
@@ -197,6 +198,7 @@ export function buildApp({
   app.register(authRecoveryRoutes, { db, env, limits });
   app.register(signupRoutes, { db, limits, floorMs: signupFloorMs });
   app.register(workspaceRoutes, { db });
+  app.register(overviewRoutes, { db });
   app.register(memberRoutes, { db });
   app.register(invitationRoutes, { db });
   app.register(consentRoutes, { db });

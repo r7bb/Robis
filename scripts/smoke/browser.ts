@@ -296,6 +296,19 @@ async function main() {
     // From an ordinary page, not the rewritten one.
     await page.goto(`${WEB}/login`);
     const workspaceId = await signUpInBrowser(page);
+    // The signed-in home: the field, the overview and a live connection per workspace.
+    await page.send('Runtime.evaluate', { expression: 'window.__violations = []' });
+    await visit(page, '/workspaces');
+    await Bun.sleep(SETTLE_MS);
+    check(
+      'the home shows the workspace, live',
+      await page.eval<boolean>(
+        "document.querySelectorAll('.home-tile').length === 1 && document.body.textContent.includes('Connected')",
+      ),
+    );
+    const home = await page.eval<string[]>('window.__violations');
+    check('the home, once settled: no violations', home.length === 0, home.join(' | '));
+
     await page.send('Runtime.evaluate', { expression: 'window.__violations = []' });
     await visit(page, `/workspaces/${workspaceId}`);
     // Its API calls and the gateway socket start after hydration; a wrong

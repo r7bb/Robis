@@ -40,6 +40,15 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-23',
+    area: 'Product',
+    title: 'A live home after you sign in',
+    summary:
+      'The page you land on after signing in used to be a plain list of workspace names. Now it greets you over the same moving field of points as the landing page, and that field reacts to your own workspaces: every change a teammate makes sends a ring across it, it quickens while someone else is here and greys if the connection drops. Below it, the open issues assigned to you, a live feed of what is happening, and a tile for each workspace with its open issues, two weeks of activity, who is in it and who is here right now, and what happened last. Tiles pulse when their workspace changes, and the numbers count to their new values. Everything is still under reduced motion, works from the keyboard and fits a phone.',
+    checked:
+      'Tests prove the new overview counts open issues and two weeks of activity, lists the open issues assigned to you newest first with the true total beyond five, names the latest action without a comment’s text, and includes only workspaces you are in, even if an issue there is still assigned to you after you leave. Headless Chrome signed in as the demo owner, watched a teammate open an issue from another session arrive in the feed and pulse its tile, and checked the phone layout, reduced motion and that the page raises no security policy violation; the browser smoke test in CI now loads it too.',
+  },
+  {
+    date: '2026-10-23',
     area: 'Security',
     title: 'One configuration loader that fails closed',
     summary:

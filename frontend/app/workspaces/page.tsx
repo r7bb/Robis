@@ -1,22 +1,38 @@
 'use client';
 
-import { can } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type FormEvent, useEffect, useState } from 'react';
-import { DeleteButton } from '../../components/delete-button.tsx';
+import { type CSSProperties, useEffect, useMemo } from 'react';
 import { MyInvitations } from '../../components/my-invitations.tsx';
 import { NotificationBell } from '../../components/notification-bell.tsx';
-import { RoleBadge } from '../../components/ui/primitives.tsx';
+import { HomeHero } from '../../features/home/home-hero.tsx';
+import { LiveFeed } from '../../features/home/live-feed.tsx';
+import { NeedsYou } from '../../features/home/needs-you.tsx';
+import { NewWorkspace } from '../../features/home/new-workspace.tsx';
+import { useHomeLive } from '../../features/home/use-home-live.ts';
+import { OVERVIEW_KEY, useOverview } from '../../features/home/use-overview.ts';
+import { WorkspaceTile } from '../../features/home/workspace-tile.tsx';
 import { api, type Me, type WorkspaceSummary } from '../../lib/api.ts';
 import { getSyncEngine } from '../../lib/sync.ts';
 import { useRequireAvatar } from '../../lib/use-require-avatar.ts';
+import './home.css';
 
+/**
+ * Workspaces kept live on the home, each with its own gateway connection.
+ * The rest still show their counts; they just do not pulse.
+ */
+const LIVE_WORKSPACES = 6;
+/** One empty list, so memos keyed on it hold still while loading. */
+const NONE: WorkspaceSummary[] = [];
+
+/**
+ * The signed-in home: who is here, what needs you, what is happening, and
+ * every workspace you are in. See `frontend/features/home`.
+ */
 export default function WorkspacesPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [name, setName] = useState('');
 
   const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/auth/me'), retry: false });
   useRequireAvatar(me.data);
@@ -26,6 +42,12 @@ export default function WorkspacesPage() {
     queryFn: () => api<{ workspaces: WorkspaceSummary[] }>('/workspaces'),
     enabled: me.isSuccess,
   });
+  const overview = useOverview(me.isSuccess);
+
+  const refreshAll = () => {
+    queryClient.invalidateQueries({ queryKey: ['workspaces'] });
+    queryClient.invalidateQueries({ queryKey: OVERVIEW_KEY });
+  };
 
   const createWorkspace = useMutation({
     mutationFn: (workspaceName: string) =>
@@ -33,16 +55,13 @@ export default function WorkspacesPage() {
         method: 'POST',
         body: { name: workspaceName },
       }),
-    onSuccess: () => {
-      setName('');
-      queryClient.invalidateQueries({ queryKey: ['workspaces'] });
-    },
+    onSuccess: refreshAll,
   });
 
   const deleteWorkspace = useMutation({
     mutationFn: ({ workspaceId, password }: { workspaceId: string; password: string }) =>
       api<void>(`/workspaces/${workspaceId}`, { method: 'DELETE', body: { password } }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspaces'] }),
+    onSuccess: refreshAll,
   });
 
   const signOut = useMutation({
@@ -61,11 +80,19 @@ export default function WorkspacesPage() {
     },
   });
 
+  const list = workspaces.data?.workspaces ?? NONE;
+  const workspaceNames = useMemo(() => new Map(list.map((w) => [w.id, w.name])), [list]);
+  const myId = me.data?.user.id ?? '';
+  const live = useHomeLive({ myId, overview: overview.data, workspaceNames });
+  const overviewById = new Map((overview.data?.workspaces ?? []).map((w) => [w.id, w]));
+  const openTotal = (overview.data?.workspaces ?? []).reduce((sum, w) => sum + w.openIssues, 0);
+
   // `/auth/me` failing means no valid session -- the cookie expired, or the
   // user just signed out. Redirecting has to happen in an effect: navigation
   // updates the router's state, and React forbids updating another component
   // while this one is rendering.
   const unauthenticated = me.isError;
+  const firstName = me.data?.user.name.split(' ')[0];
 
   useEffect(() => {
     if (unauthenticated) router.replace('/login');
@@ -73,103 +100,110 @@ export default function WorkspacesPage() {
 
   if (unauthenticated) return null;
 
-  function onCreate(event: FormEvent) {
-    event.preventDefault();
-    if (name.trim()) createWorkspace.mutate(name.trim());
-  }
-
   return (
-    <main className="mx-auto max-w-3xl px-6 py-12">
-      <header className="flex items-baseline justify-between">
-        <div>
-          <h1
-            id="workspaces-heading"
-            tabIndex={-1}
-            className="text-xl font-semibold tracking-tight text-content focus:outline-none"
-          >
-            Workspaces
-          </h1>
-          {me.data && <p className="mt-1 text-sm text-muted">Signed in as {me.data.user.name}</p>}
-        </div>
-
-        <div className="flex items-center gap-4">
-          <NotificationBell />
-
-          <Link href="/account" className="whitespace-nowrap text-sm text-muted hover:text-content">
-            Account
-          </Link>
-
-          <button
-            type="button"
-            onClick={() => signOut.mutate()}
-            className="whitespace-nowrap text-sm text-muted hover:text-content"
-          >
-            Sign out
-          </button>
-        </div>
-      </header>
-
-      <form onSubmit={onCreate} className="mt-8 flex gap-2">
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="New workspace name"
-          className="flex-1 rounded-md border border-line bg-raised px-3 py-2 text-sm outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
-        />
-        <button
-          type="submit"
-          disabled={createWorkspace.isPending || !name.trim()}
-          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-contrast hover:bg-accent-hover disabled:opacity-50"
-        >
-          Create
-        </button>
-      </form>
-
-      {createWorkspace.isError && (
-        <p role="alert" className="mt-3 text-sm text-danger-soft">
-          {(createWorkspace.error as Error).message}
-        </p>
-      )}
-
-      <MyInvitations me={me.data} focusAfter="workspaces-heading" />
-
-      <ul className="mt-8 space-y-2">
-        {workspaces.data?.workspaces.map((workspace) => (
-          <li
-            key={workspace.id}
-            className="flex items-center rounded-lg border border-line bg-raised transition hover:border-faint"
-          >
+    <main className="min-h-[100dvh] bg-surface pb-20">
+      <HomeHero
+        firstName={firstName}
+        mode={live.mode}
+        pulse={live.pulse}
+        connected={live.connected}
+        partial={list.length > LIVE_WORKSPACES}
+        here={live.others.length}
+        waiting={overview.data?.assignedTotal ?? 0}
+        open={openTotal}
+        actions={
+          <>
+            <NotificationBell />
             <Link
-              href={`/workspaces/${workspace.id}`}
-              className="flex flex-1 items-center justify-between px-4 py-3"
+              href="/account"
+              className="whitespace-nowrap text-sm text-muted hover:text-content"
             >
-              <span>
-                <span className="font-medium text-content">{workspace.name}</span>
-                <span className="ml-2 text-xs text-faint">/{workspace.slug}</span>
-              </span>
-              <RoleBadge role={workspace.role} />
+              Account
             </Link>
+            <button
+              type="button"
+              onClick={() => signOut.mutate()}
+              className="whitespace-nowrap text-sm text-muted hover:text-content"
+            >
+              Sign out
+            </button>
+          </>
+        }
+      />
 
-            <DeleteButton
-              allowed={can(workspace.role, 'workspace:delete')}
-              kind="workspace"
-              name={workspace.name}
-              cascade="Every project, issue, document, comment and membership in this workspace is deleted. Other members lose access immediately."
-              requiresPassword
-              onConfirm={(password) =>
-                deleteWorkspace.mutateAsync({ workspaceId: workspace.id, password })
-              }
-              className="mr-2"
-            />
-          </li>
-        ))}
-      </ul>
+      {/* Positioned, so it paints above the hero it overlaps. */}
+      <div className="relative mx-auto -mt-6 max-w-6xl px-4 sm:px-6">
+        <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
+          <div className="min-w-0 space-y-4">
+            <NeedsYou issues={overview.data?.assigned ?? []} loading={overview.isPending} />
+            <MyInvitations me={me.data} focusAfter="workspaces-heading" />
+          </div>
+          <LiveFeed
+            items={live.feed}
+            connected={live.connected}
+            everConnected={live.everConnected}
+          />
+        </div>
 
-      {workspaces.isSuccess && workspaces.data.workspaces.length === 0 && (
-        <p className="mt-8 text-sm text-faint">
-          No workspaces yet. Create one above to get started.
-        </p>
-      )}
+        {overview.isError && (
+          <p role="alert" className="mt-4 text-sm text-danger-soft">
+            The workspace summary did not load.{' '}
+            <button
+              type="button"
+              onClick={() => overview.refetch()}
+              className="underline underline-offset-2 hover:text-content"
+            >
+              Try again
+            </button>
+          </p>
+        )}
+
+        <div className="mt-12 flex flex-wrap items-center justify-between gap-4">
+          <h2 className="text-xl font-semibold tracking-tight text-content">Your workspaces</h2>
+          <NewWorkspace
+            onCreate={(name) => createWorkspace.mutateAsync(name)}
+            pending={createWorkspace.isPending}
+            error={createWorkspace.isError ? (createWorkspace.error as Error).message : null}
+          />
+        </div>
+
+        {workspaces.isPending ? (
+          <div aria-hidden="true" className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {[0, 1, 2].map((n) => (
+              <div
+                key={n}
+                className="h-60 animate-pulse rounded-2xl border border-line bg-raised/50"
+              />
+            ))}
+          </div>
+        ) : list.length === 0 ? (
+          <div className="mt-5 rounded-2xl border border-dashed border-line px-6 py-14 text-center">
+            <p className="text-content">No workspaces yet.</p>
+            <p className="mt-1 text-sm text-muted">
+              Make one for your team, or accept an invitation above.
+            </p>
+          </div>
+        ) : (
+          <ul
+            className={`home-tiles mt-5 grid gap-4 sm:grid-cols-2 ${list.length >= 3 ? 'xl:grid-cols-3' : ''}`}
+          >
+            {list.map((workspace, index) => (
+              <WorkspaceTile
+                key={workspace.id}
+                workspace={workspace}
+                overview={overviewById.get(workspace.id)}
+                myId={myId}
+                live={index < LIVE_WORKSPACES}
+                signals={live.signals}
+                style={{ '--i': index } as CSSProperties}
+                onDelete={(password) =>
+                  deleteWorkspace.mutateAsync({ workspaceId: workspace.id, password })
+                }
+              />
+            ))}
+          </ul>
+        )}
+      </div>
     </main>
   );
 }

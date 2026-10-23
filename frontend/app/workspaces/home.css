@@ -1,0 +1,124 @@
+/*
+ * The signed-in home's motion (frontend/features/home). Every animation is
+ * behind `prefers-reduced-motion: no-preference`; without it the page is
+ * complete and still, and the numbers simply show their new values.
+ */
+
+/* A soft light under the pointer, in the workspace's own accent. */
+.home-tile-spot {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--quick) var(--ease);
+  background: radial-gradient(
+    380px circle at var(--spot-x, 50%) var(--spot-y, 0%),
+    rgb(var(--tile-accent) / 0.14),
+    transparent 62%
+  );
+}
+
+.home-tile:hover .home-tile-spot,
+.home-tile:focus-within .home-tile-spot {
+  opacity: 1;
+}
+
+/* One glow per live event in this workspace. */
+.home-tile-pulse {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .home-tile-pulse {
+    animation: home-pulse 1.4s var(--ease);
+  }
+
+  .home-rise {
+    animation: home-rise 700ms var(--ease) both;
+  }
+
+  .home-tiles > li {
+    animation: home-rise 600ms var(--ease) both;
+    animation-delay: calc(var(--i, 0) * 70ms);
+  }
+
+  .home-feed-item {
+    animation: home-slide-in var(--entrance) var(--ease) both;
+  }
+
+  .home-expand {
+    animation: home-expand var(--quick) var(--ease) both;
+  }
+
+  /* The connection dot breathes while connected: real state, not decoration. */
+  .home-live-dot {
+    animation: home-breathe 2.4s ease-in-out infinite;
+  }
+}
+
+@keyframes home-pulse {
+  0% {
+    opacity: 1;
+    box-shadow:
+      inset 0 0 0 1px rgb(var(--tile-accent) / 0.9),
+      inset 0 0 48px rgb(var(--tile-accent) / 0.28);
+  }
+  100% {
+    opacity: 0;
+    box-shadow:
+      inset 0 0 0 1px rgb(var(--tile-accent) / 0),
+      inset 0 0 48px rgb(var(--tile-accent) / 0);
+  }
+}
+
+/* `translate`, not `transform`: a filled animation on transform would pin
+   it, and the tiles' hover lift (a transform) would never show. */
+@keyframes home-rise {
+  from {
+    opacity: 0;
+    translate: 0 14px;
+  }
+  to {
+    opacity: 1;
+    translate: none;
+  }
+}
+
+@keyframes home-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes home-expand {
+  from {
+    opacity: 0;
+    transform: scaleX(0.92);
+    transform-origin: left center;
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes home-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}

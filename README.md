@@ -25,6 +25,11 @@ Newest first. The same list is the site's What's new page, linked from the
 header, where each entry opens to show how it was checked and, for features,
 where to find it and what each layer does.
 
+- **A live home after you sign in** (2026-10-23). The first page after
+  signing in now greets you over the landing's field of points, which
+  ripples with your teammates' changes, and shows what is assigned to you,
+  a live feed, and a tile per workspace with its open issues, activity and
+  who is here now.
 - **One configuration loader that fails closed** (2026-10-23). Every
   service and command-line tool reads its settings the same way, and in
   production a missing database or web address, or a plain-http one,

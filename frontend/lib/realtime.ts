@@ -32,6 +32,12 @@ export function useRealtime(
    * it repaint -- it needs an explicit nudge to pull and reconcile.
    */
   onEvent?: (event: ServerEvent) => void,
+  /**
+   * Refetch every query when the subscription is (re)established. On for a
+   * workspace page, which shows everything that could have changed; the
+   * home keeps several sockets and refreshes only its own overview.
+   */
+  { refetchOnReady = true }: { refetchOnReady?: boolean } = {},
 ) {
   const queryClient = useQueryClient();
   const [presence, setPresence] = useState<PresenceUser[]>([]);
@@ -47,6 +53,8 @@ export function useRealtime(
   // being torn down and rebuilt every time the user navigates.
   const locationRef = useRef(location);
   locationRef.current = location;
+  const refetchOnReadyRef = useRef(refetchOnReady);
+  refetchOnReadyRef.current = refetchOnReady;
 
   useEffect(() => {
     if (!workspaceId) return;
@@ -121,6 +129,14 @@ export function useRealtime(
       }
     }
 
+    function handleReady() {
+      setState('live');
+      if (locationRef.current) send({ type: 'location', location: locationRef.current });
+      // Anything that changed while we were disconnected is invisible to
+      // us, so treat a fresh subscription as "refetch everything".
+      if (refetchOnReadyRef.current) queryClient.invalidateQueries();
+    }
+
     function connect() {
       if (disposed) return;
       setState((current) => (current === 'live' ? 'connecting' : current));
@@ -138,11 +154,7 @@ export function useRealtime(
 
         switch (message.type) {
           case 'ready':
-            setState('live');
-            if (locationRef.current) send({ type: 'location', location: locationRef.current });
-            // Anything that changed while we were disconnected is invisible to
-            // us, so treat a fresh subscription as "refetch everything".
-            queryClient.invalidateQueries();
+            handleReady();
             return;
 
           case 'presence':

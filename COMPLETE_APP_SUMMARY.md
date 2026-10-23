@@ -55,6 +55,7 @@ second "consumed" state to get wrong.
 
 | Feature | Where |
 | --- | --- |
+| Live home after sign-in: field that ripples with live events, what needs you, live feed, workspace tiles with activity and presence | `frontend/app/workspaces/page.tsx`, `frontend/features/home/`, `backend/api/src/routes/overview.ts` |
 | Create workspaces, invite members, set roles | `backend/api/src/routes/workspaces.ts`, `members.ts` |
 | Invitations the invited person accepts or declines; joining needs a confirmed email | `backend/api/src/routes/invitations.ts`, `frontend/components/my-invitations.tsx` |
 | Email invitations that answer the same whether or not the address has an account; cap per sender | `backend/api/src/routes/invitation-helpers.ts`, `backend/worker/src/mail.ts` |

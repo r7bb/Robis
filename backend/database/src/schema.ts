@@ -412,6 +412,10 @@ export const issues = pgTable(
   (t) => [
     uniqueIndex('issues_project_number_key').on(t.projectId, t.number),
     index('issues_workspace_id_idx').on(t.workspaceId),
+    // The home's overview: the latest issue per workspace, and the last two
+    // weeks of creations and edits (routes/overview.ts).
+    index('issues_workspace_created_idx').on(t.workspaceId, t.createdAt),
+    index('issues_workspace_updated_idx').on(t.workspaceId, t.updatedAt),
     index('issues_project_status_idx').on(t.projectId, t.status),
     // Matches the keyset page query's filter and ordering exactly, so
     // paging stays an index scan instead of a sort.
@@ -443,6 +447,8 @@ export const comments = pgTable(
   },
   (t) => [
     index('comments_issue_id_idx').on(t.issueId, t.createdAt),
+    // The home's overview, as for issues.
+    index('comments_workspace_created_idx').on(t.workspaceId, t.createdAt),
     index('comments_search_idx').using('gin', t.searchVector),
   ],
 );
