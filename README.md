@@ -156,7 +156,7 @@ What comes next is in [docs/PLATFORM_PLAN.md](docs/PLATFORM_PLAN.md).
 > shares one rate-limit bucket. Set the number of trusted hops (`1` for one
 > proxy) or the proxy's addresses, and keep the API port unreachable except
 > through that proxy.
-
+>
 > **Streaming the audit trail to a SIEM.** Set `AUDIT_STREAM_URL` (https, or
 > http to localhost only) and optionally `AUDIT_STREAM_TOKEN` for the worker.
 > It POSTs `{ "source": "robis", "events": [...] }` in batches of up to 100
@@ -243,7 +243,7 @@ clients in 5.8 ms at p50.
 
 ## How it is put together
 
-```
+```text
 frontend/        Next.js 15, React 19, Tailwind
 backend/
   api/           Fastify HTTP API
@@ -271,8 +271,8 @@ wants.
 
 ### A few decisions, and why
 
-| Choice                    | Instead of     | Because                                                                                                         |
-| ------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------- |
+| Choice                    | Instead of     | Because                                                                                                          |
+| ------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------- |
 | Postgres `LISTEN/NOTIFY`  | Redis pub/sub  | The event publishes in the same transaction as the write, so an event cannot exist for a change that rolled back |
 | Postgres `SKIP LOCKED`    | a queue broker | Jobs enqueue transactionally with the work that causes them. One fewer service to run                            |
 | Keyset pagination         | `OFFSET`       | `OFFSET` re-counts every page and shifts under concurrent inserts, so readers skip rows and see others twice     |
@@ -312,19 +312,19 @@ figures. See **[robis-ml/README.md](robis-ml/README.md)**.
 
 ## Commands
 
-| Command               | What it does                         |
-| --------------------- | ------------------------------------ |
-| `bun test`            | the suite; counts in the roadmap     |
-| `bun run typecheck`   | every package                        |
-| `bun run lint`        | Biome                                |
-| `bun run loadtest`    | the benchmark above                  |
-| `bun run screenshots` | recapture every image in this README |
-| `bun run db:reset`    | drop and recreate the dev database   |
-| `bun run db:roles`    | create the app's runtime database role |
-| `bun run audit:seal`  | sign audit trails from before signing, once |
+| Command               | What it does                                   |
+| --------------------- | ---------------------------------------------- |
+| `bun test`            | the suite; counts in the roadmap               |
+| `bun run typecheck`   | every package                                  |
+| `bun run lint`        | Biome                                          |
+| `bun run loadtest`    | the benchmark above                            |
+| `bun run screenshots` | recapture every image in this README           |
+| `bun run db:reset`    | drop and recreate the dev database             |
+| `bun run db:roles`    | create the app's runtime database role         |
+| `bun run audit:seal`  | sign audit trails from before signing, once    |
 | `bun run audit:erase` | erase a person's fields from the trail (draft) |
-| `bun run mail:start`  | local mail inbox, SMTP on port 1025  |
-| `bun run smoke:stack` | drive a running container stack      |
+| `bun run mail:start`  | local mail inbox, SMTP on port 1025            |
+| `bun run smoke:stack` | drive a running container stack                |
 
 A deployment runs migrations and `db:roles` as the database owner
 (`MIGRATION_DATABASE_URL`), and the services as the runtime role
@@ -351,7 +351,7 @@ http on 127.0.0.1, so its services run in development mode. Set
 `STACK_WEB_PORT` if port 3000 is taken.
 
 The stack seeds the demo accounts on its first start, so there is nothing
-to create: open http://localhost:3000 and sign in as `rohit@robis.test`
+to create: open <http://localhost:3000> and sign in as `rohit@robis.test`
 with `robis-demo-password`, owner of the Engineering workspace (Alex, John
 and Mia sign in the same way, as admin, member and guest). Later starts
 leave the accounts and anything changed in them alone.
