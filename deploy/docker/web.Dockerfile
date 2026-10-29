@@ -35,6 +35,12 @@ ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} \
     NEXT_OUTPUT=standalone \
     NEXT_TELEMETRY_DISABLED=1
 RUN bun --filter '@robis/web' build
+# Next traces its own image library into the standalone server even though
+# `images.unoptimized` means it is never loaded: the landing's images are
+# prerendered at build. Removed, so the web image carries no sharp (stage 2,
+# item 19); `bun run smoke:images` checks it.
+RUN cd frontend/.next/standalone/node_modules/.bun \
+  && rm -rf sharp@* @img+sharp-* next@*/node_modules/sharp next@*/node_modules/@img
 
 # ---------------------------------------------------------------------------
 # What ships: the pinned image plus Debian's security updates since it was

@@ -6,6 +6,8 @@
  * worker images must hold no sharp (a native image library, and the API's
  * alone) and no Fastify (the API's web server). The API image must hold
  * both, which is the proof the search would see them if they were there.
+ * The web image holds no sharp either (stage 2, item 19): it serves images
+ * as they are, prerendered at build.
  * Exits non-zero, naming the image, on the first that is wrong.
  *
  * Imports nothing from the repository, so CI can run it without installing.
@@ -67,6 +69,13 @@ for (const service of ['realtime', 'worker']) {
     );
   }
 }
+
+const web = await installed(`robis-web:${TAG}`);
+const webSharp = web.filter((path) => path.endsWith('/sharp'));
+report(
+  webSharp.length === 0,
+  `the web image holds no sharp${webSharp.length ? ` (found ${webSharp.join(', ')})` : ''}`,
+);
 
 if (failed) {
   process.stdout.write('Image contents check failed.\n');

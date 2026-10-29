@@ -26,7 +26,7 @@ const STEPS = [
     title: 'File it.',
     body: 'Changes reach everyone on the board as you make them.',
     dot: 'bg-emerald-400',
-    shot: '/shots/board.png',
+    shot: '/shots/board.webp',
     alt: 'The issue board with a live connection, everything synced.',
   },
   {
@@ -34,7 +34,7 @@ const STEPS = [
     title: 'Keep working.',
     body: 'Edits land in a queue on your device, and the board keeps taking them.',
     dot: 'bg-amber-300',
-    shot: '/shots/offline.png',
+    shot: '/shots/offline.webp',
     alt: 'The board with the network disabled, showing unsynced changes.',
   },
   {
@@ -42,7 +42,7 @@ const STEPS = [
     title: 'Nothing lost.',
     body: 'The queue drains in order, and a retry cannot create anything twice.',
     dot: 'bg-emerald-400',
-    shot: '/shots/reconnected.png',
+    shot: '/shots/reconnected.webp',
     alt: 'The same board after reconnecting, every queued change applied.',
   },
 ] as const;

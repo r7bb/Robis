@@ -16,7 +16,7 @@ is in `node_modules/geist/LICENSE.TXT` and at <https://openfontlicense.org>.
 ## sharp and libvips
 
 Used by the API to decode, resize and re-encode profile pictures, which is
-also what strips their metadata. `sharp` 0.34.5 is licensed under the Apache
+also what strips their metadata. `sharp` 0.35.5 is licensed under the Apache
 License 2.0. It loads a prebuilt `libvips` (`@img/sharp-libvips-*`), licensed
 under the GNU LGPL 3.0 or later, as a separate shared library, together with
 the libraries libvips bundles under their own licences (listed in the

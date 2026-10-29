@@ -37,3 +37,6 @@ __pycache__/
 
 # The production-mode CI stack's throwaway certificate (scripts/smoke/throwaway-tls.ts).
 deploy/.tls/
+
+# Prerendered by frontend/build/landing-images.ts before every build.
+frontend/public/shots/*.webp

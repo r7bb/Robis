@@ -146,12 +146,12 @@ with Postgres on the same machine. Method and percentiles in
 
 ## Latest
 
+- **One image library, and none in the web app.** One sharp across the
+  repository; the landing's screenshots are WebP made at build.
 - **Every package lists what it uses.** The top level installs only
   tooling, and CI refuses an undeclared import.
 - **Each image carries only its own service.** The gateway and worker
   images hold none of the API's packages, checked in CI.
-- **No service reaches into another.** File storage is its own package,
-  and CI refuses any import from one service into another.
 
 Everything else, newest first, with how each was checked:
 [What's new](docs/WHATS_NEW.md).

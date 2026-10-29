@@ -41,6 +41,10 @@
     "smoke:images": "bun run scripts/smoke/image-contents.ts",
     "capture:motion": "bun run scripts/capture/motion.ts"
   },
+  "//overrides": "Next brings its own sharp for image optimisation, which the app does not use (images.unoptimized); pinned to the API's so the lockfile holds one.",
+  "overrides": {
+    "sharp": "0.35.5"
+  },
   "devDependencies": {
     "@biomejs/biome": "^2.5.12",
     "@types/bun": "latest",

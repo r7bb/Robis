@@ -41,6 +41,15 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-29',
     area: 'Site',
+    title: 'One image library, and none in the web app',
+    summary:
+      'The API resizes uploads with sharp, and the web app used to carry a second copy that Next.js loads to resize pictures on each request. Now there is one version of sharp, the current one, across the repository. The landing’s screenshots are converted to WebP at the size the page shows them, once, before each build, and the web app serves them as they are, so its image no longer holds an image library at all. Each screenshot is about a quarter of the size of the picture it replaces.',
+    checked:
+      'Tests prove the lockfile resolves sharp to a single version with matching native binaries, that Next is set to serve images as they are, and that the landing asks only for WebP files that each have a source to be made from. The image check now also looks inside the web image: it found sharp there before and finds none after. The API’s image tests pass on the new version, and the full suite passes. On the rebuilt stack every service came up healthy and the stack and browser smoke tests passed.',
+  },
+  {
+    date: '2026-10-29',
+    area: 'Site',
     title: 'Every package lists what it uses',
     summary:
       'The repository’s top level used to install the database driver, the web server, the image library and every one of its own packages, so the tests and scripts worked whether or not anything declared what they used. It now installs only the tools that run across everything: the formatter, the type checker and the runtime’s types. The tests and the scripts are packages of their own that list what they import, and nothing reaches into another package by a relative path.',

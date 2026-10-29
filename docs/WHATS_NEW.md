@@ -4,6 +4,9 @@ Newest first. The same list is the site's What's new page, where each entry
 opens to show how it was checked and, for features, where to find it and
 what each layer does. Back to the [README](../README.md).
 
+- **One image library, and none in the web app** (2026-10-29). One sharp
+  version across the repository; the landing's screenshots are WebP made at
+  build, and the web image carries no image library.
 - **Every package lists what it uses** (2026-10-29). The top level installs
   only tooling; the tests and scripts are packages that declare their
   imports, checked in CI.

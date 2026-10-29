@@ -233,7 +233,7 @@ export default function HowItWorks() {
 
           <Reveal delay={160} className="mt-[clamp(2.5rem,6vh,4rem)]">
             <Shot
-              src="/shots/offline.png"
+              src="/shots/offline.webp"
               alt="The board with the network disabled, showing changes saved on the device but not yet synced."
             />
           </Reveal>
