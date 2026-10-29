@@ -125,7 +125,9 @@ services:
       AUDIT_HMAC_KEYS: stack:cm9iaXMtc3RhY2stYXVkaXQta2V5LW5vdC1hLXNlY3JldA==
       ML_SERVICE_URL: http://ml:8000
       ML_SERVICE_TOKEN: robis-stack-ml-token
-    ports: ['127.0.0.1:4000:4000']
+      # One hop: the edge proxy, which sets X-Forwarded-For. Rate limits key
+      # on the client's address, not the proxy's.
+      TRUST_PROXY: '1'
     depends_on:
       migrate: { condition: service_completed_successfully }
       # So the demo accounts exist before the first request (and so
@@ -139,7 +141,6 @@ services:
     build: { <<: *backend-build, target: realtime }
     image: robis-realtime:stack
     environment: *app-env
-    ports: ['127.0.0.1:4001:4001']
     depends_on:
       migrate: { condition: service_completed_successfully }
 
@@ -176,10 +177,29 @@ services:
     build:
       context: ..
       dockerfile: deploy/docker/web.Dockerfile
-      args:
-        NEXT_PUBLIC_API_URL: http://localhost:4000
-        NEXT_PUBLIC_REALTIME_URL: ws://localhost:4001/ws
     image: robis-web:stack
-    ports: ['127.0.0.1:${STACK_WEB_PORT:-3000}:3000']
     depends_on:
       api: { condition: service_healthy }
+
+  # The one address the stack is reached at (stage 1, item 3): the web app
+  # at /, the API at /api and the gateway at /ws, all on one origin, so the
+  # web image holds no addresses and needs no CORS. The API and gateway are
+  # not published; only this is. Caddy (Apache-2.0), pinned.
+  edge:
+    <<: *hardened
+    image: caddy:2.11.7-alpine@sha256:eb4d35b7452d1ab6171fbdbe8d9275b2301dad6dad92115d91e19fb9b24d510f
+    # The image's binary carries the bind-low-ports capability as a file
+    # attribute; with every capability dropped the kernel refuses to run it.
+    # This one back, and nothing else.
+    cap_add: [NET_BIND_SERVICE]
+    volumes: ['./Caddyfile:/etc/caddy/Caddyfile:ro']
+    ports: ['127.0.0.1:${STACK_WEB_PORT:-3000}:8080']
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:8080/api/health > /dev/null']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    depends_on:
+      web: { condition: service_started }
+      api: { condition: service_healthy }
+      realtime: { condition: service_started }

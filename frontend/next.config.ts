@@ -1,6 +1,25 @@
 import { fileURLToPath } from 'node:url';
 import type { NextConfig } from 'next';
+import { localEndpoints } from './lib/build-guard.ts';
 import { staticSecurityHeaders } from './lib/security-headers.ts';
+
+const production = process.env.NODE_ENV === 'production';
+
+/*
+ * One web image for every address: it uses /api and /ws on its own origin
+ * (see lib/endpoints.ts). A production build that bakes in localhost would
+ * work on the build machine only, so it is refused here, at build time.
+ */
+const local = production ? localEndpoints(process.env) : [];
+if (local.length > 0) {
+  throw new Error(
+    `Refusing a production build that points at this machine: ${local.join(', ')}. ` +
+      "Leave them unset to use /api and /ws on the app's own origin.",
+  );
+}
+
+/** The API in development, which the edge proxy stands in for elsewhere. */
+const DEV_API = process.env.DEV_API_ORIGIN ?? 'http://localhost:4000';
 
 /** Pages whose URL carries a single-use token. */
 const TOKEN_PAGES = ['/reset-password', '/verify-email', '/signup'];
@@ -52,6 +71,15 @@ const config: NextConfig = {
    * a shared or browser cache keeping a copy of a page whose whole point is
    * that it works once.
    */
+  /*
+   * In development there is no edge proxy, so /api is forwarded to the API
+   * here. The gateway is reached directly (`bun run dev:web` sets its
+   * address), since a rewrite does not carry a WebSocket.
+   */
+  async rewrites() {
+    return production ? [] : [{ source: '/api/:path*', destination: `${DEV_API}/:path*` }];
+  },
+
   async headers() {
     const tokenPage = [
       { key: 'Referrer-Policy', value: 'no-referrer' },

@@ -19,8 +19,10 @@ import sharp from 'sharp';
 import { findChrome, listTargets, Page, type Target } from './cdp.ts';
 
 const WEB = process.env.SMOKE_WEB_URL ?? 'http://localhost:3000';
-const API = process.env.SMOKE_API_URL ?? 'http://127.0.0.1:4000';
-const WEB_API = process.env.SMOKE_WEB_API_URL ?? 'http://localhost:4000';
+// Through the edge proxy: by address from this script, and the session
+// cookie for the web app's own origin, where the API now lives.
+const API = process.env.SMOKE_API_URL ?? 'http://127.0.0.1:3000/api';
+const WEB_API = process.env.SMOKE_WEB_API_URL ?? WEB;
 const SHOTS = new URL('../../imgs/', import.meta.url).pathname;
 const PORT = 9493;
 const WIDTH = 1280;

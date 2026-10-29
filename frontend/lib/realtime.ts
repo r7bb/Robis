@@ -3,7 +3,7 @@
 import type { ClientMessage, PresenceUser, ServerEvent, ServerMessage } from '@robis/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { REALTIME_URL } from './endpoints.ts';
+import { realtimeUrl } from './endpoints.ts';
 
 /** Must stay well under the gateway's presence TTL so a single dropped beat
  * does not evict a live connection. */
@@ -141,7 +141,7 @@ export function useRealtime(
       if (disposed) return;
       setState((current) => (current === 'live' ? 'connecting' : current));
 
-      const socket = new WebSocket(REALTIME_URL);
+      const socket = new WebSocket(realtimeUrl());
       socketRef.current = socket;
 
       socket.onopen = () => {

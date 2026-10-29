@@ -11,8 +11,6 @@
  * nothing from the repository, so CI can run it without installing it.
  */
 
-const API = process.env.SMOKE_API_URL ?? 'http://127.0.0.1:4000';
-const REALTIME = process.env.SMOKE_REALTIME_URL ?? 'ws://127.0.0.1:4001/ws';
 // The sink checks Host, and accepts 127.0.0.1 as readily as localhost.
 const MAIL = process.env.SMOKE_MAIL_URL ?? 'http://127.0.0.1:8025';
 const WEB_PORT = process.env.STACK_WEB_PORT ?? 3000;
@@ -20,6 +18,9 @@ const WEB_PORT = process.env.STACK_WEB_PORT ?? 3000;
 // resolves; the Origin sent to the gateway is what a browser would send.
 const WEB = process.env.SMOKE_WEB_URL ?? `http://127.0.0.1:${WEB_PORT}`;
 const WEB_ORIGIN = process.env.SMOKE_WEB_ORIGIN ?? `http://localhost:${WEB_PORT}`;
+// Everything through the edge proxy, on the web app's own address.
+const API = process.env.SMOKE_API_URL ?? `${WEB}/api`;
+const REALTIME = process.env.SMOKE_REALTIME_URL ?? `${WEB.replace(/^http/, 'ws')}/ws`;
 
 /** Mail is sent by the worker from a queue it polls every second. */
 const MAIL_WAIT_MS = 30_000;

@@ -56,6 +56,10 @@ image (the PostgreSQL License).
 
 ## Used only in CI
 
+**Caddy** (`caddy:2.11.7-alpine`, pinned by digest), Apache License 2.0. The
+edge proxy in the container stack: it serves the web app, the API at `/api`
+and the gateway at `/ws` from one origin. Used unmodified, as its image.
+
 **Adobe S3Mock** (`adobe/s3mock:5.2.3`), Apache License 2.0. A test double
 for S3 that runs as a service container so the storage driver's contract
 tests run against a real S3-compatible server. It is never shipped with

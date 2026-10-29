@@ -3,7 +3,7 @@
 import type { DocumentAwareness, ServerMessage } from '@robis/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as Y from 'yjs';
-import { REALTIME_URL } from './endpoints.ts';
+import { realtimeUrl } from './endpoints.ts';
 
 export type Collaborator = DocumentAwareness & { userId: string; name: string };
 
@@ -41,7 +41,7 @@ export function useDocument(workspaceId: string, documentId: string): DocumentSt
     const doc = new Y.Doc();
     docRef.current = doc;
 
-    const socket = new WebSocket(REALTIME_URL);
+    const socket = new WebSocket(realtimeUrl());
     socketRef.current = socket;
 
     let disposed = false;

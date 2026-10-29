@@ -1,5 +1,4 @@
 import cookie from '@fastify/cookie';
-import cors from '@fastify/cors';
 import { sessionCookieName } from '@robis/auth';
 import type { Database } from '@robis/database';
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
@@ -137,12 +136,9 @@ export function buildApp({
   });
 
   app.register(cookie);
-  app.register(cors, {
-    // Cookies are only sent cross-origin when the origin is explicitly allowed
-    // and credentials are enabled; a wildcard would silently disable both.
-    origin: env.WEB_ORIGIN,
-    credentials: true,
-  });
+  // No CORS: the web app reaches the API on its own origin, at /api behind
+  // the edge proxy (and through a rewrite in development), so no response
+  // needs to be readable by another site, and none says it may be.
 
   /*
    * Built here rather than by the caller because it needs `app.log`, and

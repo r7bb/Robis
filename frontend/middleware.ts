@@ -1,9 +1,11 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { API_URL, REALTIME_URL } from './lib/endpoints.ts';
+import { API_URL } from './lib/endpoints.ts';
 import { contentSecurityPolicy, originOf } from './lib/security-headers.ts';
 
 const API_ORIGIN = originOf(API_URL);
-const REALTIME_ORIGIN = originOf(REALTIME_URL);
+// Relative addresses are the app's own origin, which 'self' already covers
+// (WebSockets included); only an override elsewhere needs naming.
+const REALTIME_ORIGIN = originOf(process.env.NEXT_PUBLIC_REALTIME_URL ?? '');
 
 /**
  * A fresh nonce on every page, in the Content-Security-Policy of both the

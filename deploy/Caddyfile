@@ -1,0 +1,29 @@
+# The edge proxy: one origin for the whole app (stage 1, item 3).
+#
+#   /api/*   the API, with the /api prefix taken off
+#   /ws      the realtime gateway, WebSocket upgrade included
+#   /        the web app
+#
+# Plain HTTP on 8080 inside the container: the stack runs on 127.0.0.1 in
+# development mode. A deployment terminates TLS here, or in front of it;
+# see docs/DEPLOY.md.
+{
+	admin off
+	auto_https off
+}
+
+:8080 {
+	handle_path /api/* {
+		reverse_proxy api:4000
+	}
+
+	# Exactly /ws: nothing else on the gateway (its health or metrics) is
+	# reachable through the proxy.
+	handle /ws {
+		reverse_proxy realtime:4001
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+}

@@ -654,6 +654,20 @@ The caller-keyed limit protects the server; it does nothing for the person
 being mailed, because the attacker chooses the address and a handful of
 addresses is enough to flood one mailbox.
 
+### One origin, behind an edge proxy
+
+The web app, the API and the gateway share one address: an edge proxy
+(Caddy, [deploy/Caddyfile](../deploy/Caddyfile)) serves the app at `/`, the
+API at `/api` with the prefix removed, and the gateway at `/ws`. The web
+image holds no addresses (`frontend/lib/endpoints.ts` uses `/api`, and
+works out `ws:` or `wss:` for `/ws` from the page), so one built image
+runs anywhere, and `next.config.ts` refuses a production build whose
+overrides name localhost. With one origin there is no CORS at all: the API
+no longer registers it, and a test checks no response grants another site
+access. Development has no proxy, so Next rewrites `/api` to the API and
+the gateway is reached directly. The topology and a database connection
+budget are in [DEPLOY.md](DEPLOY.md).
+
 ### Configuration fails closed
 
 Every service and CLI starts from one loader, `loadConfig` in

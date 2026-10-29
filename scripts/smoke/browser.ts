@@ -14,15 +14,17 @@
 
 import { findChrome, listTargets, Page, type Target } from '../capture/cdp.ts';
 
-const API = process.env.SMOKE_API_URL ?? 'http://127.0.0.1:4000';
 // The API as the web app was built to reach it: the only one its policy allows.
-const WEB_API = process.env.SMOKE_WEB_API_URL ?? 'http://localhost:4000';
+const WEB_API = process.env.SMOKE_WEB_API_URL ?? '/api';
 const MAIL = process.env.SMOKE_MAIL_URL ?? 'http://127.0.0.1:8025';
 const WEB_PORT = process.env.STACK_WEB_PORT ?? 3000;
 // `localhost`, as the stack's WEB_ORIGIN names it; Chrome is told it means
 // 127.0.0.1 so another program on [::1] cannot answer instead.
 const WEB = process.env.SMOKE_WEB_URL ?? `http://localhost:${WEB_PORT}`;
 const PORT = Number(process.env.SMOKE_CDP_PORT ?? 9487);
+// From this script (not the page): the proxy, by address, so nothing else on
+// [::1] answers for localhost.
+const API = process.env.SMOKE_API_URL ?? `http://127.0.0.1:${WEB_PORT}/api`;
 const MAIL_WAIT_MS = 30_000;
 /** Long enough for a signed-in page to fetch its data and open its socket. */
 const SETTLE_MS = 3_000;

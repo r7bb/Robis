@@ -23,8 +23,11 @@ COPY scripts ./scripts
 # Frozen: see backend.Dockerfile.
 RUN bun install --frozen-lockfile --filter '@robis/web'
 
-ARG NEXT_PUBLIC_API_URL=http://localhost:4000
-ARG NEXT_PUBLIC_REALTIME_URL=ws://localhost:4001/ws
+# Empty by default: the app reaches the API at /api and the gateway at /ws
+# on its own origin, through the edge proxy, so one image runs anywhere.
+# A production build refuses either one naming localhost (next.config.ts).
+ARG NEXT_PUBLIC_API_URL=
+ARG NEXT_PUBLIC_REALTIME_URL=
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} \
     NEXT_PUBLIC_REALTIME_URL=${NEXT_PUBLIC_REALTIME_URL} \
     NEXT_OUTPUT=standalone \

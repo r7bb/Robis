@@ -11,6 +11,12 @@ bun run smoke:stack
 bun run smoke:browser
 ```
 
+Everything is reached through one address, the edge proxy on port 3000:
+the web app at `/`, the API at `/api` and the gateway at `/ws`. Open it at
+<http://localhost:3000> exactly: writes and the live socket are accepted
+only from that origin, so `127.0.0.1:3000` would refuse them. The layout,
+and what a real deployment adds, is in [DEPLOY.md](DEPLOY.md).
+
 The images are in [deploy/docker](../deploy/docker). The stack serves plain
 http on 127.0.0.1, so its services run in development mode. Set
 `STACK_WEB_PORT` if port 3000 is taken.

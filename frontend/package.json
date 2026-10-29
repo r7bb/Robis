@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "NEXT_DIST_DIR=.next-dev next dev",
+    "dev": "NEXT_DIST_DIR=.next-dev NEXT_PUBLIC_REALTIME_URL=ws://localhost:4001/ws next dev",
     "build": "next build",
     "start": "next start"
   },

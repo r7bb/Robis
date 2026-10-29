@@ -4,6 +4,10 @@ Newest first. The same list is the site's What's new page, where each entry
 opens to show how it was checked and, for features, where to find it and
 what each layer does. Back to the [README](../README.md).
 
+- **One address for the whole app** (2026-10-29). The app, the API and the live gateway share
+  one address behind an edge proxy: one web image runs anywhere, a
+  production build pointing at localhost is refused, and no other site is
+  allowed to read the API. See [DEPLOY.md](DEPLOY.md).
 - **A live river of your team’s two weeks** (2026-10-23). Two weeks of activity as a river, one band per workspace in
   its colour; hover a day for counts, and each live change ripples from today.
 - **A live home after you sign in** (2026-10-23). The first page after

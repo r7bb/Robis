@@ -39,6 +39,15 @@ export type Entry = {
 
 export const CHANGELOG: readonly Entry[] = [
   {
+    date: '2026-10-29',
+    area: 'Security',
+    title: 'One address for the whole app',
+    summary:
+      'The web app, the API and the live gateway now sit behind one address: an edge proxy serves the app at /, the API at /api and the gateway at /ws. The web app holds no addresses of its own, so one built image runs anywhere, and a production build that points at localhost is refused. With one origin the API no longer tells any other site it may read its answers, and only the proxy is reachable from outside; the API, gateway and everything behind them are on the private network. A new deployment guide sets out the layout and how many database connections each service needs.',
+    checked:
+      'Tests prove a production build refuses a localhost API or gateway address and accepts relative or real ones, and that no API response or preflight grants another site access. The stack smoke test signed up, joined the live socket over /ws, created an issue and uploaded an image, all through the proxy, and the browser smoke test loaded every page under the security policy through it.',
+  },
+  {
     date: '2026-10-23',
     area: 'Product',
     title: 'A live river of your team’s two weeks',
