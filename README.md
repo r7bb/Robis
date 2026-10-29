@@ -146,14 +146,14 @@ with Postgres on the same machine. Method and percentiles in
 
 ## Latest
 
-- **The ML service can read one view, and nothing else.** The duplicate and priority service
-  has its own database account, which can read one view of issue fields.
+- **A database account per service.** The gateway, the worker and the ML service
+  each connect as their own database account, with only the grants their
+  code needs.
+- **The ML service can read one view, and nothing else.** The duplicate and
+  priority service reads one view of issue fields.
 - **The whole stack tested as production runs it.** Every push also runs
   the stack in production mode over HTTPS, with mail over TLS and no demo
-  data, and drives it with the same end-to-end and browser tests.
-- **One address for the whole app.** The app, the API and the live gateway
-  behind one edge proxy, so one web image runs anywhere. The layout is in
-  [Deploying](docs/DEPLOY.md).
+  data.
 
 Everything else, newest first, with how each was checked:
 [What's new](docs/WHATS_NEW.md).

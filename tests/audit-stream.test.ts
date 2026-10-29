@@ -111,7 +111,8 @@ async function twoBusyWorkspaces() {
 
 describe('delivery', () => {
   test('every event arrives exactly once by key, despite a forced retry through the queue', async () => {
-    const { db } = await getHarness();
+    // As the worker, whose job this is (stage 1, item 8).
+    const { workerDb: db } = await getHarness();
     const { workspaces, total } = await twoBusyWorkspaces();
 
     // Small batches so the failure lands mid-stream, after some progress.
@@ -157,7 +158,8 @@ describe('delivery', () => {
   });
 
   test('a later run sends only what is new', async () => {
-    const { db } = await getHarness();
+    // As the worker, whose job this is (stage 1, item 8).
+    const { workerDb: db } = await getHarness();
     const { owner, workspaces } = await twoBusyWorkspaces();
     const sink = httpSink(receiver.config);
 
@@ -172,7 +174,8 @@ describe('delivery', () => {
   });
 
   test('events carry the chain, so the receiver can check it independently', async () => {
-    const { db } = await getHarness();
+    // As the worker, whose job this is (stage 1, item 8).
+    const { workerDb: db } = await getHarness();
     await twoBusyWorkspaces();
 
     await streamAuditEvents(db, httpSink(receiver.config));
@@ -190,7 +193,8 @@ describe('delivery', () => {
   });
 
   test('a workspace the receiver rejects does not hold up the others', async () => {
-    const { db } = await getHarness();
+    // As the worker, whose job this is (stage 1, item 8).
+    const { workerDb: db } = await getHarness();
     const { workspaces } = await twoBusyWorkspaces();
     const [refused] = [...workspaces].sort((a, b) => a.id.localeCompare(b.id));
 
@@ -210,7 +214,8 @@ describe('delivery', () => {
   });
 
   test('restarting the worker does not start a second stream', async () => {
-    const { db } = await getHarness();
+    // As the worker, whose job this is (stage 1, item 8).
+    const { workerDb: db } = await getHarness();
 
     expect(await hasPendingJob(db, 'audit.stream')).toBe(false);
     await enqueue(db, 'audit.stream', {});
@@ -218,7 +223,8 @@ describe('delivery', () => {
   });
 
   test('the cursor never moves backwards', async () => {
-    const { db } = await getHarness();
+    // As the worker, whose job this is (stage 1, item 8).
+    const { workerDb: db } = await getHarness();
     const owner = await createActor('Owner');
     const workspace = await createWorkspace(owner);
     // Two events, so there are two positions to deliver up to.
@@ -235,7 +241,8 @@ describe('delivery', () => {
   });
 
   test('a deleted workspace takes its cursor with it', async () => {
-    const { db } = await getHarness();
+    // As the worker, whose job this is (stage 1, item 8).
+    const { workerDb: db } = await getHarness();
     const { owner, workspaces } = await twoBusyWorkspaces();
     await streamAuditEvents(db, httpSink(receiver.config));
 

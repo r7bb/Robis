@@ -181,7 +181,7 @@ describe('unfinished sign-ups', () => {
       .set({ expiresAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000) })
       .where(eq(signups.email, stale));
 
-    await handlers['sessions.cleanup']!({}, { db });
+    await handlers['sessions.cleanup']!({}, { db: (await getHarness()).workerDb });
 
     const left = (await db.select({ email: signups.email }).from(signups)).map((r) => r.email);
     expect(left).toEqual([recent]);

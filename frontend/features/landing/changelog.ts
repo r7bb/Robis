@@ -41,6 +41,15 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-29',
     area: 'Security',
+    title: 'A database account per service',
+    summary:
+      'The live gateway and the background worker no longer share the app’s database account. Each connects as its own, granted only what its code does: the gateway can check a session and a membership and keep documents in step, and the worker can run its jobs, send its mail and notifications, tidy up expired records and stream the audit trail. Neither can change an issue, a person or a membership, and the worker reads the audit trail without being able to alter it. With the duplicate service’s read-only account, every service now has the narrowest access it can work with.',
+    checked:
+      'The gateway’s and the worker’s own test suites now run as their accounts, so a grant either needs and lacks fails a test; finding the gaps that way added exactly what compaction, the nudge scan and the audit stream use. New tests prove the gateway is refused changes to issues, people and memberships and any read of the audit trail or the job queue, and the worker is refused changes to issues, people, memberships and the audit trail and any read of document contents. The full suite passes, and on the rebuilt stack the migrator made all four accounts and both smoke tests passed with the services running as them.',
+  },
+  {
+    date: '2026-10-29',
+    area: 'Security',
     title: 'The ML service can read one view, and nothing else',
     summary:
       'The duplicate and priority service used to connect with the same database account as the rest of the app, which could read and change nearly every table. It now has an account of its own that can read one view, made by the migrations, holding only the issue fields its models use: no other table, and no writing at all. A column added to issues later stays out of its reach until someone adds it to the view on purpose. The service’s own notes no longer claim a setting it chooses for itself is enforced by the database.',

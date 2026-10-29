@@ -92,8 +92,8 @@ operator's session and a deploy that briefly runs old and new side by side.
 | Service | Connections each | Notes |
 | --- | --- | --- |
 | API | `DB_POOL_MAX` (default 10) | every request resolves a session, then its own queries |
-| Gateway | 5 + 1 | the extra one is held open for `LISTEN` |
-| Worker | 5 | jobs, mail and the audit stream share it |
+| Gateway | 5 + 1 | the extra one is held open for `LISTEN`; as `robis_gateway` |
+| Worker | 5 | jobs, mail and the audit stream share it; as `robis_worker` |
 | ML service | 1 per request in flight | opened and closed per request; as `robis_ml`, which reads only the `ml_issues` view |
 | Migrator, roles CLI | 1 | one-shot, before the services start |
 
@@ -114,8 +114,11 @@ point it at Postgres directly.
 
 - The database owner for migrations and roles (`MIGRATION_DATABASE_URL`),
   the runtime role for the services (`DATABASE_URL`, `APP_DB_PASSWORD`), and
-  the ML service's own role (`ML_DB_PASSWORD` when running `db:roles`; the
-  ML service's `DATABASE_URL` names `robis_ml`).
+  a role per service: `ML_DB_PASSWORD`, `GATEWAY_DB_PASSWORD` and
+  `WORKER_DB_PASSWORD` when running `db:roles` make `robis_ml`,
+  `robis_gateway` and `robis_worker`, each granted only what its code needs
+  (`GATEWAY_GRANTS` and `WORKER_GRANTS` in `backend/database/src/roles.ts`),
+  and each service's `DATABASE_URL` names its own.
 - `AUDIT_HMAC_KEYS` on the API and worker, kept outside the database.
 - A mail driver (`SMTP_*`, `MAIL_FROM`): the API and worker refuse to start
   in production without one.

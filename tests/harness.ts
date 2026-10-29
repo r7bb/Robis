@@ -21,7 +21,9 @@ import {
   type Database,
   DEFAULT_RUNTIME_ROLE,
   DEVELOPMENT_RUNTIME_PASSWORD,
+  ensureGatewayRole,
   ensureRuntimeRole,
+  ensureWorkerRole,
   MAIL_JOBS,
   settleDeferredAccountEvents,
   users,
@@ -75,16 +77,32 @@ type App = ReturnType<typeof buildApp>;
  * and the role lacks fails a test rather than a deploy.
  */
 function asRuntimeRole(url: string): string {
+  return asRole(url, DEFAULT_RUNTIME_ROLE, DEVELOPMENT_RUNTIME_PASSWORD);
+}
+
+function asRole(url: string, role: string, password: string): string {
   const parsed = new URL(url);
-  parsed.username = DEFAULT_RUNTIME_ROLE;
-  parsed.password = DEVELOPMENT_RUNTIME_PASSWORD;
+  parsed.username = role;
+  parsed.password = password;
   return parsed.toString();
 }
+
+/**
+ * The gateway's and the worker's own roles (stage 1, item 8). Their tests
+ * run as them, so a grant either lacks fails a test, and anything beyond
+ * their lists is refused.
+ */
+export const GATEWAY_TEST_ROLE = { role: 'robis_gateway', password: 'robis-gateway-test-password' };
+export const WORKER_TEST_ROLE = { role: 'robis_worker', password: 'robis-worker-test-password' };
 
 let handle: {
   app: App;
   /** The runtime role: what the app uses, and what tests should use. */
   db: Database;
+  /** The gateway's role, for its tests. */
+  gatewayDb: Database;
+  /** The worker's role, for anything a worker handler does. */
+  workerDb: Database;
   /**
    * The owner, for what only an owner may do: resetting tables between
    * tests, and the tests that tamper with the audit trail on purpose.
@@ -190,10 +208,23 @@ export async function getHarness() {
     password: DEVELOPMENT_RUNTIME_PASSWORD,
   });
 
+  await ensureGatewayRole(owner.db, GATEWAY_TEST_ROLE);
+  await ensureWorkerRole(owner.db, WORKER_TEST_ROLE);
+
   const runtime = createDatabase(asRuntimeRole(TEST_URL), { max: 5 });
+  const gateway = createDatabase(
+    asRole(TEST_URL, GATEWAY_TEST_ROLE.role, GATEWAY_TEST_ROLE.password),
+    { max: 3 },
+  );
+  const worker = createDatabase(
+    asRole(TEST_URL, WORKER_TEST_ROLE.role, WORKER_TEST_ROLE.password),
+    { max: 3 },
+  );
   const db = runtime.db;
   const close = async () => {
     await runtime.close();
+    await gateway.close();
+    await worker.close();
     await owner.close();
   };
 
@@ -211,7 +242,7 @@ export async function getHarness() {
   // API only queues mail; this is the worker's half, with the memory driver.
   const mailer = new MemoryMailer();
   const mailRunner = new Runner({
-    db,
+    db: worker.db,
     handlers: mailHandlers({ mailer, webOrigin: env.WEB_ORIGIN }),
     kinds: MAIL_JOBS,
   });
@@ -236,7 +267,16 @@ export async function getHarness() {
   });
   await app.ready();
 
-  handle = { app, db, ownerDb: owner.db, mailer, mailRunner, close };
+  handle = {
+    app,
+    db,
+    gatewayDb: gateway.db,
+    workerDb: worker.db,
+    ownerDb: owner.db,
+    mailer,
+    mailRunner,
+    close,
+  };
   return handle;
 }
 

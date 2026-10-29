@@ -87,6 +87,9 @@ services:
       APP_DB_PASSWORD: robis-stack-app-role
       # The ML service's own role: it reads the ml_issues view, nothing else.
       ML_DB_PASSWORD: robis-stack-ml-role
+      # The gateway's and the worker's, each with only the grants it needs.
+      GATEWAY_DB_PASSWORD: robis-stack-gateway-role
+      WORKER_DB_PASSWORD: robis-stack-worker-role
     healthcheck: { disable: true }
     restart: 'no'
     depends_on:
@@ -142,7 +145,9 @@ services:
     <<: *hardened
     build: { <<: *backend-build, target: realtime }
     image: robis-realtime:stack
-    environment: *app-env
+    environment:
+      <<: *app-env
+      DATABASE_URL: postgres://robis_gateway:robis-stack-gateway-role@postgres:5432/robis
     depends_on:
       migrate: { condition: service_completed_successfully }
 
@@ -152,6 +157,7 @@ services:
     image: robis-worker:stack
     environment:
       <<: *app-env
+      DATABASE_URL: postgres://robis_worker:robis-stack-worker-role@postgres:5432/robis
       SMTP_HOST: mail
       SMTP_PORT: '1025'
       # The sink speaks plain SMTP on the stack's private network. Refused

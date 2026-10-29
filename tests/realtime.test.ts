@@ -12,6 +12,7 @@ import {
   createActor,
   createProject,
   createWorkspace,
+  GATEWAY_TEST_ROLE,
   getHarness,
   request,
   resetDatabase,
@@ -32,13 +33,22 @@ let listenClient: postgres.Sql;
 let wsUrl: string;
 
 beforeAll(async () => {
-  const { db } = await getHarness();
-
-  listenClient = postgres(TEST_URL, { max: 1, prepare: false, onnotice: () => {} });
+  // As the gateway's own role (stage 1, item 8), which runs its LISTEN too:
+  // a grant it lacks fails here, not in a deployment.
+  const { gatewayDb } = await getHarness();
+  const gatewayUrl = new URL(TEST_URL);
+  gatewayUrl.username = GATEWAY_TEST_ROLE.role;
+  gatewayUrl.password = GATEWAY_TEST_ROLE.password;
+  listenClient = postgres(gatewayUrl.toString(), { max: 1, prepare: false, onnotice: () => {} });
 
   // Port 0 lets the OS pick a free one, so the suite can't collide with a dev
   // gateway that happens to be running.
-  gateway = await createGateway({ db, listenClient, port: 0, webOrigin: 'http://localhost:3000' });
+  gateway = await createGateway({
+    db: gatewayDb,
+    listenClient,
+    port: 0,
+    webOrigin: 'http://localhost:3000',
+  });
   wsUrl = `ws://127.0.0.1:${gateway.port}/ws`;
 });
 

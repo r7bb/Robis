@@ -183,7 +183,7 @@ describe('a released username', () => {
       .set({ heldUntil: new Date(Date.now() - DAY_MS) })
       .where(eq(usernameHistory.username, 'ada'));
 
-    await handlers['sessions.cleanup']!({}, { db });
+    await handlers['sessions.cleanup']!({}, { db: (await getHarness()).workerDb });
 
     const left = await db.select({ username: usernameHistory.username }).from(usernameHistory);
     const names = left.map((row) => row.username);
@@ -268,8 +268,8 @@ describe('a mention', () => {
 
     // Renamed before the worker gets to it: the notice still reaches Bob.
     await rename(bob, 'robert');
-    const { db } = await getHarness();
-    await handlers['notify.mentions']!({ commentId }, { db });
+    const { workerDb } = await getHarness();
+    await handlers['notify.mentions']!({ commentId }, { db: workerDb });
 
     const inbox = await request('/notifications', { actor: bob });
     expect(inbox.json().notifications).toHaveLength(1);

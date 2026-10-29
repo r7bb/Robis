@@ -40,7 +40,7 @@ afterAll(closeHarness);
 
 describe('claiming', () => {
   test('a claimed job is not handed to a second worker', async () => {
-    const { db } = await getHarness();
+    const { workerDb: db } = await getHarness();
     await enqueue(db, 'test.noop', { n: 1 });
 
     const first = await claimJobs(db, 'worker-a');
@@ -55,7 +55,7 @@ describe('claiming', () => {
    * partition the queue, never overlap it.
    */
   test('concurrent workers take disjoint batches with no duplicates', async () => {
-    const { db } = await getHarness();
+    const { workerDb: db } = await getHarness();
 
     const total = 40;
     for (let i = 0; i < total; i++) await enqueue(db, 'test.noop', { i });
@@ -74,7 +74,7 @@ describe('claiming', () => {
   });
 
   test('a job scheduled for later is not claimed yet', async () => {
-    const { db } = await getHarness();
+    const { workerDb: db } = await getHarness();
     await enqueue(db, 'test.noop', {}, { delayMs: 60_000 });
 
     expect(await claimJobs(db, 'worker-a')).toHaveLength(0);
@@ -85,7 +85,7 @@ describe('claiming', () => {
   });
 
   test('jobs are claimed oldest-due first', async () => {
-    const { db } = await getHarness();
+    const { workerDb: db } = await getHarness();
 
     await enqueue(db, 'test.third', {}, { delayMs: 2 });
     await enqueue(db, 'test.first', {}, { delayMs: -2000 });
@@ -97,7 +97,7 @@ describe('claiming', () => {
 
   /** A worker that dies mid-job must not strand it forever. */
   test('a job held past the visibility timeout is reclaimed', async () => {
-    const { db } = await getHarness();
+    const { workerDb: db } = await getHarness();
     await enqueue(db, 'test.noop', {});
 
     const [claimed] = await claimJobs(db, 'crashed-worker');
@@ -118,7 +118,7 @@ describe('claiming', () => {
 
 describe('completion and failure', () => {
   test('a completed job leaves the queue', async () => {
-    const { db } = await getHarness();
+    const { workerDb: db } = await getHarness();
     await enqueue(db, 'test.noop', {});
 
     const [job] = await claimJobs(db, 'worker-a');
@@ -128,7 +128,7 @@ describe('completion and failure', () => {
   });
 
   test('a failure reschedules with backoff', async () => {
-    const { db } = await getHarness();
+    const { workerDb: db } = await getHarness();
     await enqueue(db, 'test.flaky', {});
 
     const [job] = await claimJobs(db, 'worker-a');
@@ -153,7 +153,7 @@ describe('completion and failure', () => {
   });
 
   test('a job that exhausts its attempts is dead-lettered, not retried forever', async () => {
-    const { db } = await getHarness();
+    const { workerDb: db } = await getHarness();
     await enqueue(db, 'test.doomed', {}, { maxAttempts: 2 });
 
     let outcome: string | undefined;
@@ -180,7 +180,7 @@ describe('the runner', () => {
   };
 
   test('processes a batch and reports what happened', async () => {
-    const { db } = await getHarness();
+    const { workerDb: db } = await getHarness();
     for (let i = 0; i < 3; i++) await enqueue(db, 'test.ok', { i });
     await enqueue(db, 'test.boom', {});
 
@@ -193,7 +193,7 @@ describe('the runner', () => {
   });
 
   test('an empty queue is a no-op', async () => {
-    const { db } = await getHarness();
+    const { workerDb: db } = await getHarness();
     const runner = new Runner({ db, handlers: noopHandlers });
 
     expect(await runner.tick()).toEqual({ claimed: 0, completed: 0, failed: 0, dead: 0 });
@@ -204,7 +204,7 @@ describe('the runner', () => {
    * cannot help, and burning the attempt budget just delays the signal.
    */
   test('a job with no handler is dead-lettered immediately', async () => {
-    const { db } = await getHarness();
+    const { workerDb: db } = await getHarness();
     await enqueue(db, 'test.unknown', {});
 
     const runner = new Runner({ db, handlers: noopHandlers });
@@ -240,7 +240,7 @@ describe('mention notifications end to end', () => {
   const handleOf = (actor: Actor) => actor.username;
 
   test('commenting enqueues a job in the same transaction', async () => {
-    const { db } = await getHarness();
+    const { workerDb: db } = await getHarness();
     const { owner, mentioned, workspace, issue } = await setup();
 
     await request(`/workspaces/${workspace.id}/issues/${issue.id}/comments`, {
@@ -256,7 +256,7 @@ describe('mention notifications end to end', () => {
   });
 
   test('the worker turns the job into a notification', async () => {
-    const { db } = await getHarness();
+    const { workerDb: db } = await getHarness();
     const { owner, mentioned, workspace, issue } = await setup();
 
     await request(`/workspaces/${workspace.id}/issues/${issue.id}/comments`, {
@@ -278,7 +278,7 @@ describe('mention notifications end to end', () => {
 
   /** At-least-once delivery means the handler must tolerate rerunning. */
   test('rerunning the job does not duplicate the notification', async () => {
-    const { db } = await getHarness();
+    const { workerDb: db } = await getHarness();
     const { owner, mentioned, workspace, issue } = await setup();
 
     await request(`/workspaces/${workspace.id}/issues/${issue.id}/comments`, {
@@ -302,7 +302,7 @@ describe('mention notifications end to end', () => {
   });
 
   test('mentioning yourself notifies nobody', async () => {
-    const { db } = await getHarness();
+    const { workerDb: db } = await getHarness();
     const { owner, workspace, issue } = await setup();
 
     await request(`/workspaces/${workspace.id}/issues/${issue.id}/comments`, {
@@ -318,7 +318,7 @@ describe('mention notifications end to end', () => {
 
   /** Mentioning an outsider must not tell them about work they cannot see. */
   test('a non-member cannot be mentioned into a workspace', async () => {
-    const { db } = await getHarness();
+    const { workerDb: db } = await getHarness();
     const { owner, workspace, issue } = await setup();
     const outsider = await createActor('Outsider');
 
@@ -334,7 +334,7 @@ describe('mention notifications end to end', () => {
   });
 
   test('a deleted comment makes the job a no-op rather than a failure', async () => {
-    const { db } = await getHarness();
+    const { workerDb: db } = await getHarness();
     const { owner, mentioned, workspace, issue } = await setup();
 
     const comment = (
@@ -359,7 +359,7 @@ describe('mention notifications end to end', () => {
 
 describe('the inbox', () => {
   test('marking one read leaves the others alone', async () => {
-    const { db } = await getHarness();
+    const { workerDb: db } = await getHarness();
     const owner = await createActor('Owner');
     const reader = await createActor('Reader');
     const workspace = await createWorkspace(owner);
@@ -398,7 +398,7 @@ describe('the inbox', () => {
 
   /** The inbox is scoped by recipient, and that is the whole tenant boundary. */
   test('you cannot read or mark someone else notification', async () => {
-    const { db } = await getHarness();
+    const { workerDb: db } = await getHarness();
     const owner = await createActor('Owner');
     const reader = await createActor('Reader');
     const stranger = await createActor('Stranger');

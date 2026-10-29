@@ -121,7 +121,7 @@ describe('not being spam', () => {
     const actor = await createActor('New');
 
     // This user trips several rules at once; only one should arrive.
-    await scanNudges(db);
+    await scanNudges((await getHarness()).workerDb);
 
     const rows = await db
       .select({ id: notifications.id })
@@ -132,12 +132,13 @@ describe('not being spam', () => {
   });
 
   test('running the scan repeatedly in one week changes nothing', async () => {
-    const { db } = await getHarness();
+    // The scan is the worker's, so it runs as the worker's role.
+    const { workerDb } = await getHarness();
     const actor = await createActor('New');
 
-    const first = await scanNudges(db);
-    const second = await scanNudges(db);
-    const third = await scanNudges(db);
+    const first = await scanNudges(workerDb);
+    const second = await scanNudges(workerDb);
+    const third = await scanNudges(workerDb);
 
     expect(first).toBe(1);
     expect(second).toBe(0);
@@ -147,11 +148,11 @@ describe('not being spam', () => {
 
   /** At-least-once delivery means the scan job itself can be re-run. */
   test('redelivering the scan job does not duplicate a nudge', async () => {
-    const { db } = await getHarness();
+    const { workerDb } = await getHarness();
     const actor = await createActor('New');
 
     for (let i = 0; i < 3; i++) {
-      await handlers['nudges.scan']!({}, { db });
+      await handlers['nudges.scan']!({}, { db: workerDb });
     }
 
     expect((await inboxOf(actor)).notifications).toHaveLength(1);
@@ -162,15 +163,15 @@ describe('not being spam', () => {
    * be able to come back later if the situation has not improved.
    */
   test('the same nudge can recur in a later week', async () => {
-    const { db } = await getHarness();
+    const { workerDb } = await getHarness();
     const actor = await createActor('New');
 
     const thisWeek = new Date('2026-03-02T10:00:00Z');
     const nextWeek = new Date('2026-03-10T10:00:00Z');
 
-    expect(await scanNudges(db, thisWeek)).toBe(1);
-    expect(await scanNudges(db, thisWeek)).toBe(0);
-    expect(await scanNudges(db, nextWeek)).toBe(1);
+    expect(await scanNudges(workerDb, thisWeek)).toBe(1);
+    expect(await scanNudges(workerDb, thisWeek)).toBe(0);
+    expect(await scanNudges(workerDb, nextWeek)).toBe(1);
 
     expect((await inboxOf(actor)).notifications).toHaveLength(2);
   });
@@ -227,7 +228,7 @@ describe('not being spam', () => {
     });
 
     await new Runner({ db, handlers }).tick();
-    await scanNudges(db);
+    await scanNudges((await getHarness()).workerDb);
 
     const kinds = (await inboxOf(member)).notifications.map((n: { kind: string }) => n.kind);
     expect(kinds).toContain('mention');
@@ -253,10 +254,10 @@ describe('delivery through the queue', () => {
 
   /** A global nudge has no workspace, so the inbox must tolerate a null. */
   test('a nudge with no workspace is returned without error', async () => {
-    const { db } = await getHarness();
+    const { workerDb } = await getHarness();
     const actor = await createActor('New');
 
-    await scanNudges(db);
+    await scanNudges(workerDb);
 
     const [item] = (await inboxOf(actor)).notifications;
     expect(item.workspaceId).toBeNull();
@@ -336,7 +337,7 @@ describe('dismissing a notification', () => {
     const actor = await createActor('Dismisser');
     const db = await harnessDb();
 
-    await scanNudges(db);
+    await scanNudges((await getHarness()).workerDb);
     const first = (await inboxOf(actor)).notifications[0];
     expect(first).toBeDefined();
 
@@ -351,7 +352,7 @@ describe('dismissing a notification', () => {
     expect(remaining).toEqual([]);
 
     // So the same scan can raise it again rather than being blocked forever.
-    await scanNudges(db);
+    await scanNudges((await getHarness()).workerDb);
     expect((await inboxOf(actor)).notifications).toHaveLength(1);
   });
 });

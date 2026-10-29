@@ -78,7 +78,8 @@ async function issueSetup() {
 
 /** Run every due storage purge job, the way the worker would. */
 async function runPurges() {
-  const { db } = await getHarness();
+  // As the worker, whose job this is (stage 1, item 8).
+  const { workerDb: db } = await getHarness();
   const runner = new Runner({
     db,
     handlers: { 'storage.purge': storagePurgeHandler(localDiskStorage(MEDIA_ROOT)) },

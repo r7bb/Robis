@@ -181,3 +181,93 @@ export function mlRoleFromEnv(
   if (!password) return null;
   return { role: env.ML_DB_ROLE?.trim() || DEFAULT_ML_ROLE, password };
 }
+
+/** What a service role may do to one table. */
+type TableGrants = Readonly<Record<string, readonly ('select' | 'insert' | 'update' | 'delete')[]>>;
+
+/**
+ * The realtime gateway's grants (stage 1, item 8): it resolves a session
+ * cookie, checks membership, and serves documents. Nothing else.
+ */
+export const GATEWAY_GRANTS: TableGrants = {
+  sessions: ['select', 'update'],
+  users: ['select'],
+  workspaces: ['select'],
+  workspace_members: ['select'],
+  documents: ['select', 'update'],
+  // Delete: compaction folds old updates into the document's snapshot.
+  document_updates: ['select', 'insert', 'delete'],
+};
+
+/**
+ * The worker's grants: its jobs, the mail and notifications it sends, the
+ * housekeeping it does, and what those read.
+ */
+export const WORKER_GRANTS: TableGrants = {
+  jobs: ['select', 'insert', 'update', 'delete'],
+  users: ['select'],
+  workspaces: ['select'],
+  workspace_members: ['select'],
+  workspace_invitations: ['select'],
+  projects: ['select'],
+  issues: ['select'],
+  comments: ['select'],
+  comment_mentions: ['select'],
+  // Read by the nudge scan: who has started a document yet.
+  documents: ['select'],
+  notifications: ['select', 'insert'],
+  sessions: ['select', 'delete'],
+  auth_tokens: ['select', 'insert', 'update', 'delete'],
+  username_history: ['select', 'delete'],
+  signups: ['select', 'update', 'delete'],
+  // The audit stream: it reads the trail, never changes it, and keeps its
+  // own place per workspace.
+  audit_events: ['select'],
+  audit_stream_cursors: ['select', 'insert', 'update'],
+};
+
+export const DEFAULT_GATEWAY_ROLE = 'robis_gateway';
+export const DEFAULT_WORKER_ROLE = 'robis_worker';
+
+/**
+ * A service role with exactly `grants` and nothing else: every table and
+ * sequence privilege is revoked first, then each listed table gets its
+ * listed rights. Sequences can be drawn from (inserts need that), never
+ * reset.
+ */
+async function ensureServiceRole(
+  owner: Executor,
+  options: RuntimeRoleOptions,
+  grants: TableGrants,
+) {
+  await ensureLoginRole(owner, options);
+  const name = sql.identifier(options.role);
+  await owner.execute(sql`revoke all on all tables in schema public from ${name}`);
+  await owner.execute(sql`revoke all on all sequences in schema public from ${name}`);
+  for (const [table, rights] of Object.entries(grants)) {
+    // Rights come from the constant above, never from input.
+    await owner.execute(
+      sql`grant ${sql.raw(rights.join(', '))} on ${sql.identifier(table)} to ${name}`,
+    );
+  }
+  await owner.execute(sql`grant usage on all sequences in schema public to ${name}`);
+}
+
+export function ensureGatewayRole(owner: Executor, options: RuntimeRoleOptions) {
+  return ensureServiceRole(owner, options, GATEWAY_GRANTS);
+}
+
+export function ensureWorkerRole(owner: Executor, options: RuntimeRoleOptions) {
+  return ensureServiceRole(owner, options, WORKER_GRANTS);
+}
+
+/** A service role from the environment, if its password is given. */
+export function serviceRoleFromEnv(
+  env: Readonly<Record<string, string | undefined>>,
+  prefix: 'GATEWAY' | 'WORKER',
+  fallback: string,
+): RuntimeRoleOptions | null {
+  const password = env[`${prefix}_DB_PASSWORD`] ?? '';
+  if (!password) return null;
+  return { role: env[`${prefix}_DB_ROLE`]?.trim() || fallback, password };
+}
