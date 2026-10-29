@@ -16,11 +16,11 @@ import {
   SmtpSendError,
   verifyEmailMail,
 } from '@robis/mailer';
+import { type MailSink, parseMessage, startMailSink } from '@robis/scripts/mail/sink-server.ts';
 import { loadConfig } from '@robis/shared/config';
 import { mailHandlers } from '@robis/worker/mail';
 import { Runner } from '@robis/worker/runner';
 import { eq } from 'drizzle-orm';
-import { type MailSink, parseMessage, startMailSink } from '../scripts/mail/sink-server.ts';
 import { closeHarness, createActor, getHarness, request, resetDatabase } from './harness.ts';
 
 /**

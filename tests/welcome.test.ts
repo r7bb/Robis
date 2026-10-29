@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { safeNext } from '../frontend/lib/safe-next.ts';
+import { safeNext } from '@robis/web/lib/safe-next.ts';
 
 describe('where the welcome step sends you next', () => {
   test('a path on this site is kept', () => {

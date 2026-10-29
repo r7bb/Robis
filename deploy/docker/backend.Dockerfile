@@ -30,6 +30,8 @@ COPY backend ./backend
 COPY shared ./shared
 COPY frontend/package.json ./frontend/package.json
 COPY scripts ./scripts
+# Only its manifest: the lockfile lists every workspace, and nothing here runs the tests.
+COPY tests/package.json ./tests/package.json
 
 # One production install per service (stage 2, item 17), so each image
 # holds only what its own service imports: the gateway and the worker get

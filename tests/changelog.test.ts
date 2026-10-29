@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { CHANGELOG } from '../frontend/features/landing/changelog.ts';
+import { CHANGELOG } from '@robis/web/features/landing/changelog.ts';
 
 /*
  * The landing page, docs/WHATS_NEW.md and the README all list what has

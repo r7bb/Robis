@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { areaPath, paletteFor, stackSeries } from '../frontend/features/home/hero-scene.ts';
+import { areaPath, paletteFor, stackSeries } from '@robis/web/features/home/hero-scene.ts';
 
 /**
  * The signed-in home's hero: the activity river's stacking and shapes, and

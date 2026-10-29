@@ -1,0 +1,21 @@
+{
+  "name": "@robis/scripts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./*"
+  },
+  "devDependencies": {
+    "@robis/auth": "workspace:*",
+    "@robis/database": "workspace:*",
+    "@robis/shared": "workspace:*",
+    "@robis/worker": "workspace:*",
+    "@types/smtp-server": "3.5.13",
+    "drizzle-orm": "^0.38.0",
+    "embedded-postgres": "18.4.0-beta.17",
+    "postgres": "^3.4.9",
+    "sharp": "0.34.5",
+    "smtp-server": "3.19.15"
+  }
+}

@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./*": "./*"
+  },
   "scripts": {
     "dev": "NEXT_DIST_DIR=.next-dev NEXT_PUBLIC_REALTIME_URL=ws://localhost:4001/ws next dev",
     "build": "next build",

@@ -5,7 +5,7 @@ import {
   feedItemFrom,
   greetingFor,
   othersHere,
-} from '../frontend/features/home/describe.ts';
+} from '@robis/web/features/home/describe.ts';
 
 /**
  * The signed-in home's plain logic: what a live event says in the feed,

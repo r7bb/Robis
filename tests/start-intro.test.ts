@@ -6,7 +6,7 @@ import {
   stepForKey,
   swipeStep,
   WheelGesture,
-} from '../frontend/features/start/deck.ts';
+} from '@robis/web/features/start/deck.ts';
 
 /**
  * The "Get started" intro: the pure parts, so the deck's behaviour and the

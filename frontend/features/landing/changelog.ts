@@ -41,6 +41,15 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-29',
     area: 'Site',
+    title: 'Every package lists what it uses',
+    summary:
+      'The repository’s top level used to install the database driver, the web server, the image library and every one of its own packages, so the tests and scripts worked whether or not anything declared what they used. It now installs only the tools that run across everything: the formatter, the type checker and the runtime’s types. The tests and the scripts are packages of their own that list what they import, and nothing reaches into another package by a relative path.',
+    checked:
+      'A new test reads every source file in the repository and fails on an import its package does not declare, or a relative import that leaves its package, and checks that the top level holds only the three tools. It found 11 tests reaching into the web app and 2 into the scripts by path, and 19 packages installed at the top level; all are fixed, and planted examples of each mistake are caught. It runs in CI. The full suite passes, every image builds from the locked dependencies, and on the rebuilt stack the image, stack and browser smoke tests passed.',
+  },
+  {
+    date: '2026-10-29',
+    area: 'Site',
     title: 'Each image carries only its own service',
     summary:
       'The API, the live gateway and the worker used to share one dependency install, so every image carried everything any of them needed. Each now installs only its own service’s packages: the gateway and the worker no longer carry the API’s web server or its native image library, and each is about 70 MB smaller. Fewer packages in an image is less to patch and less for a scanner to find.',

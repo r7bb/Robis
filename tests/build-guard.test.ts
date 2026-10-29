@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { localEndpoints } from '../frontend/lib/build-guard.ts';
+import { localEndpoints } from '@robis/web/lib/build-guard.ts';
 
 /**
  * One web image runs everywhere because it uses relative addresses

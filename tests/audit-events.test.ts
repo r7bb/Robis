@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { describeEvent } from '../frontend/lib/audit-events.ts';
+import { describeEvent } from '@robis/web/lib/audit-events.ts';
 
 /** Every event type the API writes. Kept in step with `tests/audit.test.ts`. */
 const WRITTEN = [

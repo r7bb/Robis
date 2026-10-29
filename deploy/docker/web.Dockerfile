@@ -20,6 +20,8 @@ COPY frontend ./frontend
 COPY shared ./shared
 COPY backend ./backend
 COPY scripts ./scripts
+# Only its manifest: the lockfile lists every workspace, and nothing here runs the tests.
+COPY tests/package.json ./tests/package.json
 # Frozen: see backend.Dockerfile.
 RUN bun install --frozen-lockfile --filter '@robis/web'
 

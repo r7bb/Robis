@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, test } from 'bun:test';
 import { requestIdFrom, trustProxySetting } from '@robis/api/hardening';
+import config from '@robis/web/next.config.ts';
 import Fastify from 'fastify';
-import config from '../frontend/next.config.ts';
 import { closeHarness, request } from './harness.ts';
 
 afterAll(closeHarness);

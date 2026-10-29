@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { SyncPair, shiftCaret } from '../frontend/features/landing/sync-pair.ts';
+import { SyncPair, shiftCaret } from '@robis/web/features/landing/sync-pair.ts';
 
 /*
  * The landing page's live demo claims to show what Robis does: two people

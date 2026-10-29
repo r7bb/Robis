@@ -6,7 +6,7 @@ import {
   INVENTORIES,
   missingQuotedPaths,
   trackedMarkdown,
-} from '../scripts/docs/links.ts';
+} from '@robis/scripts/docs/links.ts';
 
 const ROOT = join(import.meta.dir, '..');
 const FIXTURE = join(import.meta.dir, 'fixtures', 'doc-links');

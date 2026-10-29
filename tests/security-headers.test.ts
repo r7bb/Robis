@@ -3,7 +3,7 @@ import {
   contentSecurityPolicy,
   originOf,
   staticSecurityHeaders,
-} from '../frontend/lib/security-headers.ts';
+} from '@robis/web/lib/security-headers.ts';
 
 /**
  * The web app's security headers (stage 1, item 5). The browser half,

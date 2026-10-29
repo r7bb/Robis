@@ -5,7 +5,9 @@
   "workspaces": [
     "frontend",
     "backend/*",
-    "shared/*"
+    "shared/*",
+    "scripts",
+    "tests"
   ],
   "scripts": {
     "postinstall": "bun run scripts/db/fix-pg-dylibs.ts",
@@ -26,7 +28,7 @@
     "db:push": "bun --filter '@robis/database' push",
     "grant:owner": "bun run scripts/db/grant-owner.ts",
     "test": "bun test",
-    "typecheck": "tsc --noEmit -p shared/contracts && tsc --noEmit -p shared/sync && tsc --noEmit -p backend/metrics && tsc --noEmit -p backend/mailer && tsc --noEmit -p backend/storage && tsc --noEmit -p backend/auth && tsc --noEmit -p backend/database && tsc --noEmit -p backend/api && tsc --noEmit -p backend/realtime && tsc --noEmit -p backend/worker && tsc --noEmit -p scripts && tsc --noEmit -p frontend",
+    "typecheck": "tsc --noEmit -p shared/contracts && tsc --noEmit -p shared/sync && tsc --noEmit -p backend/metrics && tsc --noEmit -p backend/mailer && tsc --noEmit -p backend/storage && tsc --noEmit -p backend/auth && tsc --noEmit -p backend/database && tsc --noEmit -p backend/api && tsc --noEmit -p backend/realtime && tsc --noEmit -p backend/worker && tsc --noEmit -p scripts && tsc --noEmit -p tests && tsc --noEmit -p frontend",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
@@ -41,28 +43,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.12",
-    "@robis/api": "workspace:*",
-    "@robis/auth": "workspace:*",
-    "@robis/database": "workspace:*",
-    "@robis/mailer": "workspace:*",
-    "@robis/metrics": "workspace:*",
-    "@robis/realtime": "workspace:*",
-    "@robis/shared": "workspace:*",
-    "@robis/storage": "workspace:*",
-    "@robis/sync": "workspace:*",
-    "@robis/worker": "workspace:*",
     "@types/bun": "latest",
-    "@types/smtp-server": "3.5.13",
-    "drizzle-orm": "^0.38.0",
-    "embedded-postgres": "18.4.0-beta.17",
-    "fastify": "^5.2.0",
-    "nodemailer": "10.0.12",
-    "postgres": "^3.4.9",
-    "sharp": "0.34.5",
-    "smtp-server": "3.19.15",
     "typescript": "^5.7.0"
-  },
-  "dependencies": {
-    "yjs": "^13.6.32"
   }
 }

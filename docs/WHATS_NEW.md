@@ -4,6 +4,9 @@ Newest first. The same list is the site's What's new page, where each entry
 opens to show how it was checked and, for features, where to find it and
 what each layer does. Back to the [README](../README.md).
 
+- **Every package lists what it uses** (2026-10-29). The top level installs
+  only tooling; the tests and scripts are packages that declare their
+  imports, checked in CI.
 - **Each image carries only its own service** (2026-10-29). The gateway
   and worker images no longer hold the API's web server or image library,
   and CI checks each image after building it.

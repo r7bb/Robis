@@ -7,7 +7,7 @@ import {
   RING_REPEAT_SECONDS,
   ringAge,
   stepSurface,
-} from '../frontend/features/landing/field-modes.ts';
+} from '@robis/web/features/landing/field-modes.ts';
 
 /*
  * Each letter of the name stands for something the product does, and the

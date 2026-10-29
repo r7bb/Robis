@@ -1,0 +1,25 @@
+{
+  "name": "@robis/tests",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@robis/api": "workspace:*",
+    "@robis/auth": "workspace:*",
+    "@robis/database": "workspace:*",
+    "@robis/mailer": "workspace:*",
+    "@robis/metrics": "workspace:*",
+    "@robis/realtime": "workspace:*",
+    "@robis/scripts": "workspace:*",
+    "@robis/shared": "workspace:*",
+    "@robis/storage": "workspace:*",
+    "@robis/sync": "workspace:*",
+    "@robis/web": "workspace:*",
+    "@robis/worker": "workspace:*",
+    "drizzle-orm": "^0.38.0",
+    "fastify": "^5.2.0",
+    "postgres": "^3.4.9",
+    "sharp": "0.34.5",
+    "yjs": "^13.6.32"
+  }
+}
