@@ -9,8 +9,7 @@
     "./hardening": "./src/hardening.ts",
     "./metrics": "./src/metrics.ts",
     "./rate-limit": "./src/plugins/rate-limit.ts",
-    "./suggestions": "./src/suggestions.ts",
-    "./media/storage": "./src/media/storage.ts"
+    "./suggestions": "./src/suggestions.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
@@ -19,6 +18,7 @@
     "@robis/mailer": "workspace:*",
     "@robis/metrics": "workspace:*",
     "@robis/shared": "workspace:*",
+    "@robis/storage": "workspace:*",
     "drizzle-orm": "^0.38.0",
     "fastify": "^5.2.0",
     "sharp": "0.34.5",

@@ -2,10 +2,10 @@ import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
 import { join } from 'node:path';
 import { buildApp } from '@robis/api/app';
 import { loadEnv } from '@robis/api/env';
-import { localDiskStorage } from '@robis/api/media/storage';
 import { serveMetrics } from '@robis/api/metrics';
 import { sessions } from '@robis/database';
 import { TERMS_VERSION } from '@robis/shared';
+import { localDiskStorage } from '@robis/storage';
 import { eq } from 'drizzle-orm';
 import {
   closeHarness,

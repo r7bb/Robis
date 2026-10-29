@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { resolveSession } from '@robis/auth';
 import { type Database, users, workspaceMembers } from '@robis/database';
 import { generatedAvatarSchema, isUuid } from '@robis/shared';
+import type { MediaStorage } from '@robis/storage';
 import { and, eq, sql } from 'drizzle-orm';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { ApiError } from '../errors.ts';
@@ -12,7 +13,6 @@ import {
   toAvatar,
   UnreadableImageError,
 } from '../media/images.ts';
-import type { MediaStorage } from '../media/storage.ts';
 import { currentUser, requireAuth, sessionToken } from '../plugins/authz.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
 import { parse } from '../validate.ts';

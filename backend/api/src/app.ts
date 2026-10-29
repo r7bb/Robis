@@ -1,6 +1,7 @@
 import cookie from '@fastify/cookie';
 import { sessionCookieName } from '@robis/auth';
 import type { Database } from '@robis/database';
+import { type MediaStorage, storageFromEnv } from '@robis/storage';
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
 import type { Env } from './env.ts';
 import { ApiError } from './errors.ts';
@@ -10,7 +11,6 @@ import {
   requestIdFrom,
   trustProxySetting,
 } from './hardening.ts';
-import { type MediaStorage, storageFromEnv } from './media/storage.ts';
 import { createMetrics, registerMetrics } from './metrics.ts';
 import { attachUser } from './plugins/authz.ts';
 import { accountDeletionRoutes } from './routes/account-deletion.ts';

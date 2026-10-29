@@ -13,6 +13,7 @@ import {
   workspaceStorageUsed,
 } from '@robis/database';
 import { can, isUuid } from '@robis/shared';
+import type { MediaStorage } from '@robis/storage';
 import { and, asc, eq } from 'drizzle-orm';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { ApiError } from '../errors.ts';
@@ -22,7 +23,6 @@ import {
   toAttachment,
   UnreadableImageError,
 } from '../media/images.ts';
-import type { MediaStorage } from '../media/storage.ts';
 import {
   auditActor,
   currentMembership,

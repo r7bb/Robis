@@ -40,6 +40,15 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-29',
+    area: 'Site',
+    title: 'No service reaches into another',
+    summary:
+      'Where uploaded files are kept, on disk or in any S3-compatible store, is now a package of its own that the API and the worker both use. Before, the worker borrowed it from inside the API, so the worker depended on the whole API package, its web server and its image library included. Now no service imports another: the API, the live gateway and the worker share code only through packages made for sharing, so each can be built, deployed and scaled on its own.',
+    checked:
+      'A new test reads every source file and package manifest of the three services and fails on any import of another service, by package name or by relative path; it failed on the worker before the move and passes after, and a planted example of each kind of import is caught. It runs in CI with the suite. The full suite passes, and on the rebuilt stack the smoke test stored an image in S3 with the worker running from the new package.',
+  },
+  {
+    date: '2026-10-29',
     area: 'Security',
     title: 'Every workspace has a storage limit',
     summary:

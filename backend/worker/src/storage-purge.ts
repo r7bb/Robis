@@ -1,5 +1,5 @@
-import { type MediaStorage, storageFromEnv } from '@robis/api/media/storage';
 import type { StoragePurgePayload } from '@robis/database';
+import { type MediaStorage, storageFromEnv } from '@robis/storage';
 import type { JobHandler } from './runner.ts';
 
 /**

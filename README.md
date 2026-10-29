@@ -146,13 +146,13 @@ with Postgres on the same machine. Method and percentiles in
 
 ## Latest
 
+- **No service reaches into another.** File storage is its own package,
+  and CI refuses any import from one service into another.
 - **Every workspace has a storage limit.** 1 GB of images each, checked
   before an upload is read; owners see the usage on the home.
 - **Delete your own account.** With your password and a choice for
   each workspace you own; your details go, your work stays under
   "Deleted user".
-- **Erasure has its own key, and leaves a receipt.** Only the erasure
-  tool's own database account can blank the audit trail's personal fields.
 
 Everything else, newest first, with how each was checked:
 [What's new](docs/WHATS_NEW.md).

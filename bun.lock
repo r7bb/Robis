@@ -16,6 +16,7 @@
         "@robis/metrics": "workspace:*",
         "@robis/realtime": "workspace:*",
         "@robis/shared": "workspace:*",
+        "@robis/storage": "workspace:*",
         "@robis/sync": "workspace:*",
         "@robis/worker": "workspace:*",
         "@types/bun": "latest",
@@ -40,6 +41,7 @@
         "@robis/mailer": "workspace:*",
         "@robis/metrics": "workspace:*",
         "@robis/shared": "workspace:*",
+        "@robis/storage": "workspace:*",
         "drizzle-orm": "^0.38.0",
         "fastify": "^5.2.0",
         "sharp": "0.34.5",
@@ -96,15 +98,19 @@
         "yjs": "^13.6.32",
       },
     },
+    "backend/storage": {
+      "name": "@robis/storage",
+      "version": "0.0.0",
+    },
     "backend/worker": {
       "name": "@robis/worker",
       "version": "0.0.0",
       "dependencies": {
-        "@robis/api": "workspace:*",
         "@robis/auth": "workspace:*",
         "@robis/database": "workspace:*",
         "@robis/mailer": "workspace:*",
         "@robis/shared": "workspace:*",
+        "@robis/storage": "workspace:*",
         "drizzle-orm": "^0.38.0",
       },
     },
@@ -378,6 +384,8 @@
     "@robis/realtime": ["@robis/realtime@workspace:backend/realtime"],
 
     "@robis/shared": ["@robis/shared@workspace:shared/contracts"],
+
+    "@robis/storage": ["@robis/storage@workspace:backend/storage"],
 
     "@robis/sync": ["@robis/sync@workspace:shared/sync"],
 

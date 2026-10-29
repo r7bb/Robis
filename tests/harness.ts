@@ -13,7 +13,6 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { buildApp } from '@robis/api/app';
 import { loadEnv } from '@robis/api/env';
-import { localDiskStorage } from '@robis/api/media/storage';
 import { resetRateLimits } from '@robis/api/rate-limit';
 import type { SimilarIssue, TriageSuggestion } from '@robis/api/suggestions';
 import {
@@ -32,6 +31,7 @@ import {
 import { runMigrations } from '@robis/database/migrate';
 import { MemoryMailer } from '@robis/mailer';
 import { TERMS_VERSION } from '@robis/shared';
+import { localDiskStorage } from '@robis/storage';
 import { mailHandlers } from '@robis/worker/mail';
 import { Runner } from '@robis/worker/runner';
 import { and, eq, isNull } from 'drizzle-orm';

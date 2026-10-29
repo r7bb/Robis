@@ -13,11 +13,11 @@
     "./storage-purge": "./src/storage-purge.ts"
   },
   "dependencies": {
-    "@robis/api": "workspace:*",
     "@robis/auth": "workspace:*",
     "@robis/database": "workspace:*",
     "@robis/mailer": "workspace:*",
     "@robis/shared": "workspace:*",
+    "@robis/storage": "workspace:*",
     "drizzle-orm": "^0.38.0"
   }
 }

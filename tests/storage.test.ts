@@ -2,7 +2,7 @@ import { afterAll, describe, expect, test } from 'bun:test';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { localDiskStorage, type MediaStorage, s3Storage } from '@robis/api/media/storage';
+import { localDiskStorage, type MediaStorage, s3Storage } from '@robis/storage';
 
 /**
  * One contract, every driver.

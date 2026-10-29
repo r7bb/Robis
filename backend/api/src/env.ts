@@ -61,7 +61,7 @@ const envSchema = z.object({
   ML_SERVICE_TOKEN: z.string().default(''),
   /**
    * Where uploads are kept: `local` disk under MEDIA_DIR, or `s3` for any
-   * S3-compatible store. See `media/storage.ts`.
+   * S3-compatible store. See `@robis/storage`.
    */
   STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
   MEDIA_DIR: z.string().default('.media'),

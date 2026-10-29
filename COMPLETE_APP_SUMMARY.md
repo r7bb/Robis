@@ -88,7 +88,7 @@ they need rather than in the matrix.
 | Comment threads with `@mentions` | `backend/api/src/routes/comments.ts` |
 | Images on issues and comments: upload, camera, paste, members only | `backend/api/src/routes/attachments.ts`, `frontend/features/issues/attachments.tsx` |
 | Images added offline wait on the device and upload exactly once | `shared/sync/src/engine.ts` |
-| Storage port: local disk or any S3-compatible store, no public URLs | `backend/api/src/media/storage.ts` |
+| Storage port: local disk or any S3-compatible store, no public URLs | `backend/storage/src/index.ts` (`@robis/storage`) |
 | Deleting an issue, comment or workspace queues removal of its files | `backend/database/src/files.ts`, `backend/worker/src/storage-purge.ts` |
 | Offline data is bound to its account and cleared on sign-out | `shared/sync/src/engine.ts` |
 | Keyset pagination | `backend/database/src/pagination.ts` |

@@ -1,8 +1,8 @@
 import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { localDiskStorage } from '@robis/api/media/storage';
 import { auditEvents, enqueue, jobs, verifyAuditChain } from '@robis/database';
+import { localDiskStorage } from '@robis/storage';
 import { Runner } from '@robis/worker/runner';
 import { storagePurgeHandler } from '@robis/worker/storage-purge';
 import { eq } from 'drizzle-orm';
