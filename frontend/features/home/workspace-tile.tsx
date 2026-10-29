@@ -133,6 +133,7 @@ export function WorkspaceTile({
 
       <TileMembers overview={overview} here={here} />
       <TileLatest overview={overview} />
+      {overview?.storage && <TileStorage storage={overview.storage} />}
 
       <div className="relative z-10 mt-3 flex justify-end">
         <DeleteButton
@@ -196,5 +197,43 @@ function TileLatest({ overview }: { overview: WorkspaceOverview | undefined }) {
         'Nothing here yet. Open it to start.'
       ) : null}
     </p>
+  );
+}
+
+const sizeFormat = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 });
+
+/** Bytes as the unit a person would say: KB, MB or GB. */
+function size(bytes: number): string {
+  if (bytes >= 1024 ** 3) return `${sizeFormat.format(bytes / 1024 ** 3)} GB`;
+  if (bytes >= 1024 ** 2) return `${sizeFormat.format(bytes / 1024 ** 2)} MB`;
+  return `${sizeFormat.format(Math.max(bytes, 0) / 1024)} KB`;
+}
+
+/**
+ * How much of its storage the workspace uses: owners only, since they are
+ * the ones who can make room. A thin meter in the workspace's own colour,
+ * on a fainter track of the same colour, with the figures beside it.
+ */
+function TileStorage({ storage }: { storage: { used: number; quota: number } }) {
+  const share = Math.min(1, storage.used / storage.quota);
+  return (
+    <div className="relative z-10 mt-4">
+      <div className="flex justify-between text-[11px] text-faint">
+        <span>Storage</span>
+        <span>
+          {size(storage.used)} of {size(storage.quota)}
+        </span>
+      </div>
+      {/* The figures above say it; the bar only shows it. */}
+      <div
+        aria-hidden="true"
+        className="mt-1 h-1 overflow-hidden rounded-full bg-[rgb(var(--tile-accent)/0.18)]"
+      >
+        <div
+          className="h-full rounded-full bg-[rgb(var(--tile-accent))]"
+          style={{ width: `${Math.max(share * 100, storage.used > 0 ? 2 : 0)}%` }}
+        />
+      </div>
+    </div>
   );
 }

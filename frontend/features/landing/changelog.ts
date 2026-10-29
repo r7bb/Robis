@@ -41,6 +41,15 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-29',
     area: 'Security',
+    title: 'Every workspace has a storage limit',
+    summary:
+      'Each workspace can now store up to 1 GB of images. An upload that would go past it is refused before any of it is read, with a message saying an owner can make room by deleting old images, so one workspace cannot fill the disk for everyone. Owners see how much is used on the workspace’s tile on the home, as a thin bar in the workspace’s colour with the figures beside it; other members are not shown it.',
+    checked:
+      'Tests prove an upload goes through while there is room, is refused with 413 and storage_quota_exceeded once the workspace is within a few bytes of its limit, and that someone outside the workspace still gets the usual not found rather than learning its usage; and that the home overview reports usage to owners and nothing to a member. The full suite passes.',
+  },
+  {
+    date: '2026-10-29',
+    area: 'Security',
     title: 'Delete your own account',
     summary:
       'Account settings now let you delete your account yourself. You confirm with your password, and for each workspace you own you choose: hand it to one of its members, who becomes its owner, or delete it with everything in it. Then every session ends, your name, email, username, picture and password are removed, and your picture’s file is deleted; what you wrote in workspaces that stay is kept under “Deleted user”. Your details in the audit trail are erased by the erasure tool’s own account, which the deletion asks for, since the app itself is not allowed to erase. The erasure design is a draft for legal review.',

@@ -1,4 +1,12 @@
-import { type Database, issues, projects, workspaceMembers, workspaces } from '@robis/database';
+import {
+  attachments,
+  type Database,
+  issues,
+  projects,
+  WORKSPACE_STORAGE_QUOTA_BYTES,
+  workspaceMembers,
+  workspaces,
+} from '@robis/database';
 import { and, desc, eq, inArray, notInArray, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { avatarOf } from '../media/avatars.ts';
@@ -62,7 +70,7 @@ export async function overviewRoutes(app: FastifyInstance, opts: { db: Database 
       const user = currentUser(request);
 
       const mine = await db
-        .select({ id: workspaces.id, name: workspaces.name })
+        .select({ id: workspaces.id, name: workspaces.name, role: workspaceMembers.role })
         .from(workspaceMembers)
         .innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
         .where(eq(workspaceMembers.userId, user.id))
@@ -165,6 +173,27 @@ export async function overviewRoutes(app: FastifyInstance, opts: { db: Database 
       ]);
 
       const openBy = new Map(open.map((row) => [row.workspaceId, row.n]));
+      // How much each owned workspace stores, for its owners only (stage 1,
+      // item 11); nobody else is shown it.
+      const owned = mine.filter((w) => w.role === 'OWNER').map((w) => w.id);
+      const stored =
+        owned.length === 0
+          ? []
+          : await db
+              .select({
+                workspaceId: attachments.workspaceId,
+                used: sql<number>`coalesce(sum(${attachments.bytes}), 0)::bigint`,
+              })
+              .from(attachments)
+              .where(inArray(attachments.workspaceId, owned))
+              .groupBy(attachments.workspaceId);
+      const usedBy = new Map(stored.map((row) => [row.workspaceId, Number(row.used)]));
+      const storageBy = new Map(
+        owned.map((id) => [
+          id,
+          { used: usedBy.get(id) ?? 0, quota: WORKSPACE_STORAGE_QUOTA_BYTES },
+        ]),
+      );
       const latestBy = new Map([...latest].map((row) => [row.workspaceId, row]));
 
       return {
@@ -178,6 +207,7 @@ export async function overviewRoutes(app: FastifyInstance, opts: { db: Database 
           return {
             id,
             openIssues: openBy.get(id) ?? 0,
+            storage: storageBy.get(id) ?? null,
             memberCount: shown[0]?.total ?? 0,
             members: shown.map((m) => ({
               id: m.userId,

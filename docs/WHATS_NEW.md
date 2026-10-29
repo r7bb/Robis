@@ -4,6 +4,9 @@ Newest first. The same list is the site's What's new page, where each entry
 opens to show how it was checked and, for features, where to find it and
 what each layer does. Back to the [README](../README.md).
 
+- **Every workspace has a storage limit** (2026-10-29). Each workspace can
+  store up to 1 GB of images; an upload past it is refused before it is
+  read, and owners see the usage on the home.
 - **Delete your own account** (2026-10-29). Delete your account from Account
   settings, with your password and a choice for each workspace you own;
   your details are removed and your work stays under "Deleted user".

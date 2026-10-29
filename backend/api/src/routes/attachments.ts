@@ -4,10 +4,13 @@ import {
   attachments,
   comments,
   type Database,
+  findMembership,
   issues,
   publishEvent,
   queueAttachmentPurge,
   recordAudit,
+  WORKSPACE_STORAGE_QUOTA_BYTES,
+  workspaceStorageUsed,
 } from '@robis/database';
 import { can, isUuid } from '@robis/shared';
 import { and, asc, eq } from 'drizzle-orm';
@@ -88,6 +91,22 @@ export async function attachmentRoutes(
     const user = token ? await resolveSession(db, token) : null;
     if (!user) throw ApiError.unauthorized();
     request.user = user;
+
+    // The quota (stage 1, item 11), before the body is read, and only for
+    // a member: anyone else falls through to the membership check's 404,
+    // so a full workspace never confirms it exists.
+    const { workspaceId } = request.params as { workspaceId?: string };
+    if (!workspaceId || !isUuid(workspaceId)) return;
+    if (!(await findMembership(db, workspaceId, user.id))) return;
+    const incoming = Number(request.headers['content-length'] ?? 0);
+    const used = await workspaceStorageUsed(db, workspaceId);
+    if (used + incoming > WORKSPACE_STORAGE_QUOTA_BYTES) {
+      throw new ApiError(
+        413,
+        'storage_quota_exceeded',
+        'This workspace is out of storage. An owner can make room by deleting old images.',
+      );
+    }
   }
 
   /** Tell open issue pages to re-read their images. Never fails the request. */

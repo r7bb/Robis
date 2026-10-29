@@ -8,6 +8,8 @@ import { api } from '../../lib/api.ts';
 export type WorkspaceOverview = {
   id: string;
   openIssues: number;
+  /** Bytes stored and allowed, for owners only (stage 1, item 11). */
+  storage: { used: number; quota: number } | null;
   memberCount: number;
   members: { id: string; name: string; avatar: Avatar }[];
   /** Fourteen days, oldest first; the last is today. */

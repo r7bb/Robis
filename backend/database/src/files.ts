@@ -1,4 +1,4 @@
-import type { SQL } from 'drizzle-orm';
+import { eq, type SQL, sql } from 'drizzle-orm';
 import type { Executor } from './index.ts';
 import { enqueue } from './queue.ts';
 import { attachments } from './schema.ts';
@@ -34,4 +34,19 @@ export async function queueAttachmentPurge(tx: Executor, where: SQL): Promise<nu
     await enqueue(tx, STORAGE_PURGE_JOB, payload);
   }
   return keys.length;
+}
+
+/**
+ * How much a workspace may store (stage 1, item 11), in bytes. Checked
+ * before an upload is read; shown to the workspace's owners.
+ */
+export const WORKSPACE_STORAGE_QUOTA_BYTES = 1024 ** 3;
+
+/** Bytes a workspace's files take, as stored. */
+export async function workspaceStorageUsed(db: Executor, workspaceId: string): Promise<number> {
+  const [row] = await db
+    .select({ used: sql<number>`coalesce(sum(${attachments.bytes}), 0)::bigint` })
+    .from(attachments)
+    .where(eq(attachments.workspaceId, workspaceId));
+  return Number(row?.used ?? 0);
 }
