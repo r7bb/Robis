@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useId, useState } from 'react';
 import { ACCOUNT_EVENTS_KEY, AccountActivity } from '../../features/account/account-activity.tsx';
+import { DeleteAccount } from '../../features/account/delete-account.tsx';
 import { UsernameField } from '../../features/account/username-field.tsx';
 import { ApiError, api, type Me, type SessionSummary } from '../../lib/api.ts';
 import { lastTheme, useApplyTheme } from '../../lib/theme.ts';
@@ -54,6 +55,7 @@ export default function AccountPage() {
       <Section title="Sign-in history">
         <AccountActivity />
       </Section>
+      <DeleteAccount me={me.data} />
     </main>
   );
 }

@@ -67,6 +67,7 @@ const TABLES = [
   'sessions',
   'signups',
   'erasures',
+  'erasure_requests',
   'username_history',
   'users',
 ];

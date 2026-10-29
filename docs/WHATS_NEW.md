@@ -4,6 +4,9 @@ Newest first. The same list is the site's What's new page, where each entry
 opens to show how it was checked and, for features, where to find it and
 what each layer does. Back to the [README](../README.md).
 
+- **Delete your own account** (2026-10-29). Delete your account from Account
+  settings, with your password and a choice for each workspace you own;
+  your details are removed and your work stays under "Deleted user".
 - **Erasure has its own key, and leaves a receipt** (2026-10-29). Only `audit:erase`'s own account can
   blank the audit trail's personal fields, and each erasure records counts
   and a commitment, never the person.

@@ -41,6 +41,15 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-29',
     area: 'Security',
+    title: 'Delete your own account',
+    summary:
+      'Account settings now let you delete your account yourself. You confirm with your password, and for each workspace you own you choose: hand it to one of its members, who becomes its owner, or delete it with everything in it. Then every session ends, your name, email, username, picture and password are removed, and your picture’s file is deleted; what you wrote in workspaces that stay is kept under “Deleted user”. Your details in the audit trail are erased by the erasure tool’s own account, which the deletion asks for, since the app itself is not allowed to erase. The erasure design is a draft for legal review.',
+    checked:
+      'Tests prove deletion needs the right password, refuses until every workspace you alone own has a decision, hands a workspace only to a member and makes them owner, deletes a chosen workspace and queues its files for removal, ends every session so the account cannot sign in again, keeps your work under Deleted user, and, once the erasure has run, leaves no column of any table holding your email, name or username. Walked in headless Chrome: a new account signed up, deleted itself from Account, landed on the front page and could not sign in again.',
+  },
+  {
+    date: '2026-10-29',
+    area: 'Security',
     title: 'Erasure has its own key, and leaves a receipt',
     summary:
       'Blanking a person’s details out of the audit trail used to be something the app’s own database account could do. Now only the erasure tool’s own account can, and the app cannot read or write the record of erasures either. Each erasure, done in one step, removes the person’s fields and former usernames and writes a receipt: when it happened, how many records it changed, and a commitment to whom that names nobody on its own. The tool prints a one-time value to keep with the request; with it, the receipt proves which request it answered. The erasure design is a draft for legal review.',

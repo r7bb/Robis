@@ -86,6 +86,12 @@ export const users = pgTable(
     avatarUpdatedAt: timestamp('avatar_updated_at', { withTimezone: true }),
     passwordHash: text('password_hash').notNull(),
     /**
+     * When the account was deleted (stage 1, item 10). The row stays, emptied
+     * of everything personal, because what the person wrote in shared
+     * workspaces still points at it.
+     */
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
+    /**
      * When this address was confirmed, or null if it never was.
      *
      * A timestamp rather than a boolean: "verified" and "verified on the third
@@ -656,6 +662,19 @@ export const accountEvents = pgTable(
  * and without the nonce it names nobody. Written only by `audit:erase`'s
  * own role; the app cannot read or write it.
  */
+/**
+ * Erasures asked for and not yet done (stage 1, item 10). Deleting an
+ * account files one; the app may only add rows, and only `audit:erase`'s
+ * role (`processErasureRequests`) reads them and carries them out, so the
+ * app never holds the right to erase.
+ */
+export const erasureRequests = pgTable('erasure_requests', {
+  id: id(),
+  subjectId: uuid('subject_id').notNull(),
+  requestedAt: timestamp('requested_at', { withTimezone: true }).notNull().defaultNow(),
+  processedAt: timestamp('processed_at', { withTimezone: true }),
+});
+
 export const erasures = pgTable('erasures', {
   id: id(),
   erasedAt: timestamp('erased_at', { withTimezone: true }).notNull().defaultNow(),

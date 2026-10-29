@@ -129,8 +129,11 @@ export async function ensureRuntimeRole(owner: Executor, options: RuntimeRoleOpt
   await owner.execute(
     sql`revoke update (personal, personal_salt, personal_subject_id) on audit_events from ${name}`,
   );
-  // Nor may it see or touch the record of erasures.
+  // Nor may it see or touch the record of erasures. It may file a request
+  // for one (deleting an account does), and nothing more.
   await owner.execute(sql`revoke all on erasures from ${name}`);
+  await owner.execute(sql`revoke all on erasure_requests from ${name}`);
+  await owner.execute(sql`grant insert on erasure_requests to ${name}`);
   for (const table of READ_ONLY_TABLES) {
     await owner.execute(
       sql`revoke insert, update, delete on ${sql.identifier(table)} from ${name}`,
@@ -294,4 +297,6 @@ export async function ensureEraserRole(owner: Executor, options: RuntimeRoleOpti
   );
   await owner.execute(sql`grant select, update on username_history to ${name}`);
   await owner.execute(sql`grant insert on erasures to ${name}`);
+  // The requests deleted accounts filed: read them, mark them done.
+  await owner.execute(sql`grant select, update (processed_at) on erasure_requests to ${name}`);
 }

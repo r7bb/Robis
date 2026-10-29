@@ -402,3 +402,21 @@ export const auditEventsQuerySchema = z
     message: 'Use after or before, not both',
   });
 export type AuditEventsQuery = z.infer<typeof auditEventsQuerySchema>;
+
+/**
+ * Deleting your own account (stage 1, item 10): the password, and for each
+ * workspace you alone own, whether to hand it to a member or delete it.
+ */
+export const deleteAccountSchema = z.object({
+  password: z.string().min(1, 'Enter your password to confirm').max(1024),
+  workspaces: z
+    .array(
+      z.discriminatedUnion('action', [
+        z.object({ id: uuid, action: z.literal('transfer'), to: uuid }),
+        z.object({ id: uuid, action: z.literal('delete') }),
+      ]),
+    )
+    .max(500)
+    .default([]),
+});
+export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;

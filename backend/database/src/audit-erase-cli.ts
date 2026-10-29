@@ -1,5 +1,6 @@
 /**
  * `bun run audit:erase -- <user id> [--confirm]`: erase one person's
+ * (or `-- --pending`: carry out every erasure a deleted account asked for)
  * personal fields from the audit trail, and the usernames they used to
  * have. DRAFT FOR LEGAL REVIEW: see `audit-redaction.ts` for what it does
  * and what it does not claim.
@@ -15,7 +16,7 @@
  */
 import { loadConfig } from '@robis/shared/config';
 import { countAuditPersonalData } from './audit-redaction.ts';
-import { eraseSubject } from './erasure.ts';
+import { eraseSubject, processErasureRequests } from './erasure.ts';
 import { createDatabase } from './index.ts';
 
 // Before anything else, and failing closed: see `loadConfig`.
@@ -34,6 +35,19 @@ if (!ERASER_URL) {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const [subjectId, flag] = process.argv.slice(2);
+
+// The erasures deleted accounts asked for (stage 1, item 10): each is
+// recorded as usual, and marked done.
+if (subjectId === '--pending') {
+  const pending = createDatabase(ERASER_URL, { max: 1 });
+  try {
+    const done = await processErasureRequests(pending.db);
+    console.log(`Carried out ${done} requested erasure(s).`);
+  } finally {
+    await pending.close();
+  }
+  process.exit(0);
+}
 if (!subjectId || !UUID.test(subjectId)) {
   console.error('usage: bun run audit:erase -- <user id> [--confirm]');
   process.exit(2);

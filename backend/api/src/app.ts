@@ -13,6 +13,7 @@ import {
 import { type MediaStorage, storageFromEnv } from './media/storage.ts';
 import { createMetrics, registerMetrics } from './metrics.ts';
 import { attachUser } from './plugins/authz.ts';
+import { accountDeletionRoutes } from './routes/account-deletion.ts';
 import { accountEventRoutes } from './routes/account-events.ts';
 import { attachmentRoutes } from './routes/attachments.ts';
 import { auditRoutes } from './routes/audit.ts';
@@ -195,6 +196,17 @@ export function buildApp({
   app.register(signupRoutes, { db, limits, floorMs: signupFloorMs });
   app.register(workspaceRoutes, { db });
   app.register(overviewRoutes, { db });
+  app.register(accountDeletionRoutes, {
+    db,
+    // The same attributes the cookie was set with, so the browser drops it.
+    clearSession: (reply) =>
+      reply.clearCookie(app.sessionCookieName, {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: env.NODE_ENV === 'production' || env.COOKIE_SECURE,
+        path: '/',
+      }),
+  });
   app.register(memberRoutes, { db });
   app.register(invitationRoutes, { db });
   app.register(consentRoutes, { db });
