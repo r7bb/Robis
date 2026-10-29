@@ -42,12 +42,11 @@ async function one<T>(db: Executor, query: ReturnType<typeof sql>): Promise<T> {
 }
 
 /**
- * Create the role if it does not exist, set its password, and grant it
- * exactly what the application needs. Safe to run after every migration:
- * each statement is idempotent, and it is how a newly added table gets its
- * grants.
+ * A login role that can connect and see the schema, and nothing more yet:
+ * created if missing, its password set, its attributes pinned. Shared by
+ * every service's role; each then gets its own grants.
  */
-export async function ensureRuntimeRole(owner: Executor, options: RuntimeRoleOptions) {
+async function ensureLoginRole(owner: Executor, options: RuntimeRoleOptions) {
   const { role, password } = options;
   if (!ROLE_NAME.test(role)) throw new Error(`Not a usable role name: "${role}"`);
   if (password.length < MIN_PASSWORD_LENGTH) {
@@ -91,6 +90,17 @@ export async function ensureRuntimeRole(owner: Executor, options: RuntimeRoleOpt
   );
   await owner.execute(sql`grant connect on database ${sql.identifier(database)} to ${name}`);
   await owner.execute(sql`grant usage on schema public to ${name}`);
+}
+
+/**
+ * Create the role if it does not exist, set its password, and grant it
+ * exactly what the application needs. Safe to run after every migration:
+ * each statement is idempotent, and it is how a newly added table gets its
+ * grants.
+ */
+export async function ensureRuntimeRole(owner: Executor, options: RuntimeRoleOptions) {
+  await ensureLoginRole(owner, options);
+  const name = sql.identifier(options.role);
 
   // Everything the application reads and writes...
   await owner.execute(
@@ -144,4 +154,30 @@ export function runtimeRoleFromEnv(env: {
     );
   }
   return { role, password: password || DEVELOPMENT_RUNTIME_PASSWORD };
+}
+
+/** The ML service's role (stage 1, item 8). */
+export const DEFAULT_ML_ROLE = 'robis_ml';
+
+/**
+ * The ML service's role: it can read the `ml_issues` view, which the
+ * migrations own, and nothing else. No table, no sequence, no write; the
+ * view reads `issues` with its owner's rights, so the role needs no grant
+ * on the table. Anything it was granted before is taken back first.
+ */
+export async function ensureMlRole(owner: Executor, options: RuntimeRoleOptions) {
+  await ensureLoginRole(owner, options);
+  const name = sql.identifier(options.role);
+  await owner.execute(sql`revoke all on all tables in schema public from ${name}`);
+  await owner.execute(sql`revoke all on all sequences in schema public from ${name}`);
+  await owner.execute(sql`grant select on ml_issues to ${name}`);
+}
+
+/** The ML role from the environment, if one is asked for (`ML_DB_PASSWORD`). */
+export function mlRoleFromEnv(
+  env: Readonly<Record<string, string | undefined>>,
+): RuntimeRoleOptions | null {
+  const password = env.ML_DB_PASSWORD ?? '';
+  if (!password) return null;
+  return { role: env.ML_DB_ROLE?.trim() || DEFAULT_ML_ROLE, password };
 }

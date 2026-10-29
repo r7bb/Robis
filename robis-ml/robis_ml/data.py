@@ -6,8 +6,11 @@ migrations there. Giving the ML service write access would make it a second
 author of the same tables with no migration story of its own, which is how
 two services end up disagreeing about a column.
 
-In a deployment this should be a read-only role. The query below is scoped
-by workspace because every model here is per-tenant: issues from one
+It reads one view, ``ml_issues``, which the migrations own and which holds
+only the issue fields the models use. In a deployment it connects as its
+own role (``robis_ml``, made by ``bun run db:roles``), which may select from
+that view and nothing else: no table and no write, refused by Postgres's
+grants. The queries below are scoped by workspace because every model here is per-tenant: issues from one
 workspace must never inform a suggestion shown in another, and the cleanest
 way to guarantee that is to never load them together.
 """
@@ -33,12 +36,14 @@ def database_url() -> str:
 
 
 def _connect(url: str | None) -> psycopg.Connection:
-    """A read-only connection, enforced by the server rather than by habit.
+    """A connection that starts every transaction read-only.
 
-    `default_transaction_read_only` means a stray INSERT in this package is
-    an error from Postgres, not a silent second writer to tables owned by
-    `backend/database` and its migrations. In a deployment the role should
-    be read-only too; this is the belt to that's braces.
+    ``default_transaction_read_only`` is a session default this client asks
+    for, not something the server imposes: a client could turn it off. What
+    the server does enforce is the role's grants (see the module docstring):
+    the ``robis_ml`` role can select from ``ml_issues`` and nothing else. This
+    setting only makes a stray write in this package fail early and clearly
+    when it runs as a more privileged role, such as in local development.
     """
     return psycopg.connect(
         url or database_url(),
@@ -56,7 +61,7 @@ def load_issues(workspace_id: str, url: str | None = None) -> list[Issue]:
     """
     query = """
         select id::text, title, description, priority::text
-        from issues
+        from ml_issues
         where workspace_id = %s::uuid
         order by created_at
     """
@@ -85,7 +90,7 @@ def corpus_fingerprint(workspace_id: str, url: str | None = None) -> tuple[int, 
     """
     query = """
         select count(*), coalesce(max(updated_at)::text, '')
-        from issues
+        from ml_issues
         where workspace_id = %s::uuid
     """
 
@@ -101,5 +106,5 @@ def workspace_ids(url: str | None = None) -> list[str]:
     """Every workspace that has at least one issue, for warming caches."""
     with _connect(url) as connection:
         with connection.cursor() as cursor:
-            cursor.execute("select distinct workspace_id::text from issues")
+            cursor.execute("select distinct workspace_id::text from ml_issues")
             return [row[0] for row in cursor.fetchall()]

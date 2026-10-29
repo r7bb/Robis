@@ -9,7 +9,7 @@
  */
 import { loadConfig } from '@robis/shared/config';
 import { createDatabase } from './index.ts';
-import { ensureRuntimeRole, runtimeRoleFromEnv } from './roles.ts';
+import { ensureMlRole, ensureRuntimeRole, mlRoleFromEnv, runtimeRoleFromEnv } from './roles.ts';
 
 // Before anything else, and failing closed: see `loadConfig`.
 const { migrationDatabaseUrl: OWNER_URL } = loadConfig(process.env, { asOwner: true });
@@ -20,6 +20,12 @@ const { db, close } = createDatabase(OWNER_URL, { max: 1 });
 try {
   await ensureRuntimeRole(db, role);
   console.log(`Runtime role "${role.role}" is ready.`);
+  // The ML service's own role, when one is asked for: it reads one view.
+  const ml = mlRoleFromEnv(process.env);
+  if (ml) {
+    await ensureMlRole(db, ml);
+    console.log(`ML role "${ml.role}" is ready: it reads ml_issues and nothing else.`);
+  }
 } catch (error) {
   // The message only: the driver's error carries the statement, and one of
   // them holds the password.

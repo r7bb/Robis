@@ -4,6 +4,9 @@ Newest first. The same list is the site's What's new page, where each entry
 opens to show how it was checked and, for features, where to find it and
 what each layer does. Back to the [README](../README.md).
 
+- **The ML service can read one view, and nothing else** (2026-10-29). The duplicate and priority
+  service has a database account that can read one view of issue fields,
+  owned by the migrations, and nothing else.
 - **The whole stack tested as production runs it** (2026-10-29). CI now also runs the stack in
   production mode: HTTPS through the proxy with a throwaway certificate,
   mail over TLS, a fresh audit key and no demo data, driven by the same

@@ -85,6 +85,8 @@ services:
       <<: *app-env
       MIGRATION_DATABASE_URL: postgres://robis:robis@postgres:5432/robis
       APP_DB_PASSWORD: robis-stack-app-role
+      # The ML service's own role: it reads the ml_issues view, nothing else.
+      ML_DB_PASSWORD: robis-stack-ml-role
     healthcheck: { disable: true }
     restart: 'no'
     depends_on:
@@ -167,7 +169,7 @@ services:
       dockerfile: deploy/docker/ml.Dockerfile
     image: robis-ml:stack
     environment:
-      DATABASE_URL: postgres://robis_app:robis-stack-app-role@postgres:5432/robis
+      DATABASE_URL: postgres://robis_ml:robis-stack-ml-role@postgres:5432/robis
       ROBIS_ML_TOKEN: robis-stack-ml-token
     depends_on:
       migrate: { condition: service_completed_successfully }

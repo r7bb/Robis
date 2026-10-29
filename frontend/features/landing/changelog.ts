@@ -41,6 +41,15 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-29',
     area: 'Security',
+    title: 'The ML service can read one view, and nothing else',
+    summary:
+      'The duplicate and priority service used to connect with the same database account as the rest of the app, which could read and change nearly every table. It now has an account of its own that can read one view, made by the migrations, holding only the issue fields its models use: no other table, and no writing at all. A column added to issues later stays out of its reach until someone adds it to the view on purpose. The service’s own notes no longer claim a setting it chooses for itself is enforced by the database.',
+    checked:
+      'Tests prove the view has exactly the columns the service reads, and that its account can read the view but is refused the issues, users and sessions tables and any change to the view. The service’s 96 Python tests pass against the view, and on the rebuilt stack, running as that account, it still found the duplicate of a seeded issue.',
+  },
+  {
+    date: '2026-10-29',
+    area: 'Security',
     title: 'The whole stack tested as production runs it',
     summary:
       'Every push now also runs the whole container stack in production mode: every service told it is production, the edge proxy serving HTTPS with a throwaway certificate made for that run, mail sent over TLS because plain mail is refused, a fresh signing key for the audit trail, and no demo data. The same end-to-end and browser tests then drive it, so a rule that only applies in production (a Secure host-only cookie, HSTS, an https web address, encrypted mail) is exercised before anything is deployed, not first discovered after.',

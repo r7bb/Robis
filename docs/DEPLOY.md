@@ -94,7 +94,7 @@ operator's session and a deploy that briefly runs old and new side by side.
 | API | `DB_POOL_MAX` (default 10) | every request resolves a session, then its own queries |
 | Gateway | 5 + 1 | the extra one is held open for `LISTEN` |
 | Worker | 5 | jobs, mail and the audit stream share it |
-| ML service | 1 per request in flight | opened and closed per request; read-only view |
+| ML service | 1 per request in flight | opened and closed per request; as `robis_ml`, which reads only the `ml_issues` view |
 | Migrator, roles CLI | 1 | one-shot, before the services start |
 
 One of each at the defaults is **22**. A budget for N replicas of the API,
@@ -113,7 +113,9 @@ point it at Postgres directly.
 ## What else a deployment needs
 
 - The database owner for migrations and roles (`MIGRATION_DATABASE_URL`),
-  and the runtime role for the services (`DATABASE_URL`, `APP_DB_PASSWORD`).
+  the runtime role for the services (`DATABASE_URL`, `APP_DB_PASSWORD`), and
+  the ML service's own role (`ML_DB_PASSWORD` when running `db:roles`; the
+  ML service's `DATABASE_URL` names `robis_ml`).
 - `AUDIT_HMAC_KEYS` on the API and worker, kept outside the database.
 - A mail driver (`SMTP_*`, `MAIL_FROM`): the API and worker refuse to start
   in production without one.
