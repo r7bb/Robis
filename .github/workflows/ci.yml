@@ -169,12 +169,13 @@ jobs:
         env:
           COMPOSE_FILE: deploy/compose.yaml:deploy/compose.production.yaml
         run: |
+          # A fresh signing key per run; the stack's own key id is refused here.
+          # First: the production overlay needs it for every compose command.
+          export CI_AUDIT_HMAC_KEYS="ci:$(openssl rand -base64 32)"
+          echo "CI_AUDIT_HMAC_KEYS=$CI_AUDIT_HMAC_KEYS" >> "$GITHUB_ENV"
           docker compose down
           bun run scripts/smoke/throwaway-tls.ts
-          # A fresh signing key per run; the stack's own key id is refused here.
-          key="ci:$(openssl rand -base64 32)"
-          echo "CI_AUDIT_HMAC_KEYS=$key" >> "$GITHUB_ENV"
-          CI_AUDIT_HMAC_KEYS="$key" docker compose up --detach --wait --wait-timeout 300
+          docker compose up --detach --wait --wait-timeout 300
 
       - name: Smoke test in production mode, over HTTPS
         env:
