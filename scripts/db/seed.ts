@@ -60,6 +60,7 @@ if (nodeEnv === 'production') {
 const PASSWORD = process.env.SEED_PASSWORD ?? DEMO_PASSWORD;
 
 const WITH_TEAM = process.argv.includes('--team');
+const DAY_MS = 24 * 60 * 60 * 1000;
 const IF_MISSING = process.argv.includes('--if-missing');
 
 type Person = { email: string; name: string; role: Role };
@@ -360,18 +361,26 @@ try {
     const createdIssues = await db
       .insert(issues)
       .values(
-        spec.issues.map((issue, index) => ({
-          workspaceId: workspace!.id,
-          projectId: project!.id,
-          number: index + 1,
-          title: issue.title,
-          status: issue.status,
-          priority: issue.priority,
-          // Falls back to unassigned when seeding solo and the named teammate
-          // does not exist.
-          assigneeId: (issue.assignee && userIdByEmail.get(issue.assignee)) ?? null,
-          createdBy: ownerId,
-        })),
+        spec.issues.map((issue, index) => {
+          // Spread over the last two weeks, so the home's activity river has
+          // a shape rather than one spike today. Deterministic, so every
+          // seed draws the same river.
+          const at = new Date(Date.now() - (((issueCount + index) * 5) % 13) * DAY_MS);
+          return {
+            workspaceId: workspace!.id,
+            projectId: project!.id,
+            number: index + 1,
+            title: issue.title,
+            status: issue.status,
+            priority: issue.priority,
+            // Falls back to unassigned when seeding solo and the named
+            // teammate does not exist.
+            assigneeId: (issue.assignee && userIdByEmail.get(issue.assignee)) ?? null,
+            createdBy: ownerId,
+            createdAt: at,
+            updatedAt: at,
+          };
+        }),
       )
       .returning({ id: issues.id, number: issues.number, title: issues.title });
 

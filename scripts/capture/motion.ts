@@ -8,6 +8,7 @@
  * API already depends on. Two clips:
  *
  *   imgs/motion-landing.webp   the landing page's hero
+ *   imgs/02-workspaces.png      the signed-in home, still
  *   imgs/motion-home.webp      the signed-in home while a teammate opens an
  *                              issue in another session: the spark flies
  *                              to its workspace, the feed and tile update
@@ -147,6 +148,19 @@ async function main() {
       }
     });
     await save('motion-home.webp', frames);
+
+    // And the home's still, at the size `screenshots.ts` takes every other
+    // still, so it can be refreshed without the development servers.
+    await page.send('Emulation.setDeviceMetricsOverride', {
+      width: 1440,
+      height: 900,
+      deviceScaleFactor: 2,
+      mobile: false,
+    });
+    await page.goto(`${WEB}/workspaces`);
+    await page.waitFor('document.body.textContent.includes("Connected")', 20_000);
+    await Bun.sleep(1800);
+    await page.shot('02-workspaces.png');
     page.close();
   } finally {
     chrome.kill();

@@ -242,14 +242,14 @@
   }
 }
 
+/* A ring that widens and fades, like a drop landing in the river. */
 @keyframes home-ripple {
   0% {
-    opacity: 0.9;
-    scale: 0.6;
-    box-shadow: 0 0 0 0 currentColor;
+    opacity: 1;
+    scale: 0.5;
   }
   100% {
     opacity: 0;
-    scale: 5;
+    scale: 4.5;
   }
 }

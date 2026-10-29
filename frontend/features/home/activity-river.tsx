@@ -135,8 +135,8 @@ export function ActivityRiver({
           <span
             key={ripple.seq}
             aria-hidden="true"
-            className="home-ripple pointer-events-none absolute right-0 h-3 w-3 -translate-y-1/2 translate-x-1/2 rounded-full"
-            style={{ top: `${ripple.top * 100}%`, backgroundColor: `rgb(${ripple.accent})` }}
+            className="home-ripple pointer-events-none absolute right-0 h-4 w-4 -translate-y-1/2 translate-x-1/2 rounded-full border-2"
+            style={{ top: `${ripple.top * 100}%`, borderColor: `rgb(${ripple.accent})` }}
           />
         )}
 
