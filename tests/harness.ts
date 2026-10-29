@@ -21,6 +21,7 @@ import {
   type Database,
   DEFAULT_RUNTIME_ROLE,
   DEVELOPMENT_RUNTIME_PASSWORD,
+  ensureEraserRole,
   ensureGatewayRole,
   ensureRuntimeRole,
   ensureWorkerRole,
@@ -65,6 +66,7 @@ const TABLES = [
   'workspaces',
   'sessions',
   'signups',
+  'erasures',
   'username_history',
   'users',
 ];
@@ -94,6 +96,8 @@ function asRole(url: string, role: string, password: string): string {
  */
 export const GATEWAY_TEST_ROLE = { role: 'robis_gateway', password: 'robis-gateway-test-password' };
 export const WORKER_TEST_ROLE = { role: 'robis_worker', password: 'robis-worker-test-password' };
+/** `audit:erase`'s own role (stage 1, item 9). */
+export const ERASER_TEST_ROLE = { role: 'robis_eraser', password: 'robis-eraser-test-password' };
 
 let handle: {
   app: App;
@@ -103,6 +107,8 @@ let handle: {
   gatewayDb: Database;
   /** The worker's role, for anything a worker handler does. */
   workerDb: Database;
+  /** The only role that may erase. */
+  eraserDb: Database;
   /**
    * The owner, for what only an owner may do: resetting tables between
    * tests, and the tests that tamper with the audit trail on purpose.
@@ -210,6 +216,7 @@ export async function getHarness() {
 
   await ensureGatewayRole(owner.db, GATEWAY_TEST_ROLE);
   await ensureWorkerRole(owner.db, WORKER_TEST_ROLE);
+  await ensureEraserRole(owner.db, ERASER_TEST_ROLE);
 
   const runtime = createDatabase(asRuntimeRole(TEST_URL), { max: 5 });
   const gateway = createDatabase(
@@ -220,11 +227,16 @@ export async function getHarness() {
     asRole(TEST_URL, WORKER_TEST_ROLE.role, WORKER_TEST_ROLE.password),
     { max: 3 },
   );
+  const eraser = createDatabase(
+    asRole(TEST_URL, ERASER_TEST_ROLE.role, ERASER_TEST_ROLE.password),
+    { max: 1 },
+  );
   const db = runtime.db;
   const close = async () => {
     await runtime.close();
     await gateway.close();
     await worker.close();
+    await eraser.close();
     await owner.close();
   };
 
@@ -272,6 +284,7 @@ export async function getHarness() {
     db,
     gatewayDb: gateway.db,
     workerDb: worker.db,
+    eraserDb: eraser.db,
     ownerDb: owner.db,
     mailer,
     mailRunner,

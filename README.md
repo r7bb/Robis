@@ -146,14 +146,13 @@ with Postgres on the same machine. Method and percentiles in
 
 ## Latest
 
-- **A database account per service.** The gateway, the worker and the ML service
-  each connect as their own database account, with only the grants their
-  code needs.
+- **Erasure has its own key, and leaves a receipt.** Only the erasure tool's own database
+  account can blank the audit trail's personal fields, and each erasure
+  leaves a receipt that names nobody on its own.
+- **A database account per service.** The gateway, the worker and the ML
+  service each connect with only the grants their code needs.
 - **The ML service can read one view, and nothing else.** The duplicate and
   priority service reads one view of issue fields.
-- **The whole stack tested as production runs it.** Every push also runs
-  the stack in production mode over HTTPS, with mail over TLS and no demo
-  data.
 
 Everything else, newest first, with how each was checked:
 [What's new](docs/WHATS_NEW.md).

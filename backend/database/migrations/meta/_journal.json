@@ -211,6 +211,13 @@
       "when": 1793297286160,
       "tag": "0029_ml_issues_view",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1793299777856,
+      "tag": "0030_erasures",
+      "breakpoints": true
     }
   ]
 }

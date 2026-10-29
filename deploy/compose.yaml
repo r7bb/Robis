@@ -90,6 +90,8 @@ services:
       # The gateway's and the worker's, each with only the grants it needs.
       GATEWAY_DB_PASSWORD: robis-stack-gateway-role
       WORKER_DB_PASSWORD: robis-stack-worker-role
+      # audit:erase's own role, the only one that may erase.
+      ERASER_DB_PASSWORD: robis-stack-eraser-role
     healthcheck: { disable: true }
     restart: 'no'
     depends_on:

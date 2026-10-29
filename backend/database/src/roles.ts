@@ -123,11 +123,14 @@ export async function ensureRuntimeRole(owner: Executor, options: RuntimeRoleOpt
   for (const table of APPEND_ONLY_TABLES) {
     await owner.execute(sql`revoke update, delete on ${sql.identifier(table)} from ${name}`);
   }
-  // The one change the audit trail allows: erasing an event's personal
-  // fields (`audit-redaction.ts`). The trigger refuses anything else.
+  // Erasing an event's personal fields is not the app's to do: only
+  // `audit:erase`'s own role may (`ensureEraserRole`). Taken back from
+  // databases where an earlier version granted it.
   await owner.execute(
-    sql`grant update (personal, personal_salt, personal_subject_id) on audit_events to ${name}`,
+    sql`revoke update (personal, personal_salt, personal_subject_id) on audit_events from ${name}`,
   );
+  // Nor may it see or touch the record of erasures.
+  await owner.execute(sql`revoke all on erasures from ${name}`);
   for (const table of READ_ONLY_TABLES) {
     await owner.execute(
       sql`revoke insert, update, delete on ${sql.identifier(table)} from ${name}`,
@@ -264,10 +267,31 @@ export function ensureWorkerRole(owner: Executor, options: RuntimeRoleOptions) {
 /** A service role from the environment, if its password is given. */
 export function serviceRoleFromEnv(
   env: Readonly<Record<string, string | undefined>>,
-  prefix: 'GATEWAY' | 'WORKER',
+  prefix: 'GATEWAY' | 'WORKER' | 'ERASER',
   fallback: string,
 ): RuntimeRoleOptions | null {
   const password = env[`${prefix}_DB_PASSWORD`] ?? '';
   if (!password) return null;
   return { role: env[`${prefix}_DB_ROLE`]?.trim() || fallback, password };
+}
+
+/** `audit:erase`'s own role (stage 1, item 9). */
+export const DEFAULT_ERASER_ROLE = 'robis_eraser';
+
+/**
+ * The only role that may erase: blank the audit trail's personal fields,
+ * forget former usernames, and record that it did. Nothing else; the
+ * trigger on `audit_events` still refuses any other change.
+ */
+export async function ensureEraserRole(owner: Executor, options: RuntimeRoleOptions) {
+  await ensureLoginRole(owner, options);
+  const name = sql.identifier(options.role);
+  await owner.execute(sql`revoke all on all tables in schema public from ${name}`);
+  await owner.execute(sql`revoke all on all sequences in schema public from ${name}`);
+  await owner.execute(sql`grant select (id, personal_subject_id) on audit_events to ${name}`);
+  await owner.execute(
+    sql`grant update (personal, personal_salt, personal_subject_id) on audit_events to ${name}`,
+  );
+  await owner.execute(sql`grant select, update on username_history to ${name}`);
+  await owner.execute(sql`grant insert on erasures to ${name}`);
 }

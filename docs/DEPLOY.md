@@ -118,7 +118,9 @@ point it at Postgres directly.
   `WORKER_DB_PASSWORD` when running `db:roles` make `robis_ml`,
   `robis_gateway` and `robis_worker`, each granted only what its code needs
   (`GATEWAY_GRANTS` and `WORKER_GRANTS` in `backend/database/src/roles.ts`),
-  and each service's `DATABASE_URL` names its own.
+  and each service's `DATABASE_URL` names its own. `ERASER_DB_PASSWORD`
+  makes `robis_eraser`, the only role that may erase; `audit:erase`
+  connects as it through `ERASER_DATABASE_URL`.
 - `AUDIT_HMAC_KEYS` on the API and worker, kept outside the database.
 - A mail driver (`SMTP_*`, `MAIL_FROM`): the API and worker refuse to start
   in production without one.

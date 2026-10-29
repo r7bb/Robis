@@ -648,6 +648,22 @@ export const accountEvents = pgTable(
   ],
 );
 
+/**
+ * A record of each erasure (stage 1, item 9): when, how much it removed,
+ * and a commitment to whom, never the person. The commitment is a SHA-256
+ * of the person's id and a random nonce that only the operator keeps, with
+ * the request; with both, it proves which erasure answered which request,
+ * and without the nonce it names nobody. Written only by `audit:erase`'s
+ * own role; the app cannot read or write it.
+ */
+export const erasures = pgTable('erasures', {
+  id: id(),
+  erasedAt: timestamp('erased_at', { withTimezone: true }).notNull().defaultNow(),
+  commitment: text('commitment').notNull(),
+  auditEventsErased: integer('audit_events_erased').notNull(),
+  usernamesForgotten: integer('usernames_forgotten').notNull(),
+});
+
 export const auditTombstones = pgTable('audit_tombstones', {
   id: id(),
   workspaceId: uuid('workspace_id').notNull(),

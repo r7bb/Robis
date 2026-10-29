@@ -1180,7 +1180,8 @@ describe('erasing a person (a design, for legal review)', () => {
     const { owner, workspace, member } = await memberChurn();
 
     // Invited, joined, removed.
-    expect(await eraseAuditPersonalData(db, member.id)).toBe(3);
+    // As `audit:erase`'s own role, the only one that may (stage 1, item 9).
+    expect(await eraseAuditPersonalData((await getHarness()).eraserDb, member.id)).toBe(3);
 
     for (const event of await trail(workspace.id)) {
       expect(event.personal).toBeNull();
@@ -1206,20 +1207,37 @@ describe('erasing a person (a design, for legal review)', () => {
     expect((await verifyAuditChain(db, workspace.id)).broken?.reason).toBe('altered');
   });
 
-  test('the runtime role can erase, and do nothing else with that right', async () => {
-    const { db } = await getHarness();
-    const { workspace } = await memberChurn();
-    const run = async (statement: ReturnType<typeof sql>) => db.execute(statement);
+  test('only the eraser role can erase, and it can do nothing else with that right', async () => {
+    const { db, eraserDb } = await getHarness();
+    await memberChurn();
+    const as = (who: typeof db) => async (statement: ReturnType<typeof sql>) => {
+      try {
+        await who.execute(statement);
+        return '';
+      } catch (error) {
+        return String(error);
+      }
+    };
 
-    // Rewriting the fields rather than erasing them is refused by the trigger...
-    await expect(
-      run(sql`update audit_events set personal = '{"username":"x"}'
-              where workspace_id = ${workspace.id} and personal is not null`),
-    ).rejects.toThrow(/append-only/);
-    // ...and every other column is out of the role's reach entirely.
-    await expect(
-      run(sql`update audit_events set payload = '{}' where workspace_id = ${workspace.id}`),
-    ).rejects.toThrow(/permission denied/);
+    // The app's own role cannot erase at all (stage 1, item 9).
+    expect(
+      await as(db)(
+        sql`update audit_events set personal = null where personal_subject_id is not null`,
+      ),
+    ).toMatch(/permission denied/);
+    // The eraser rewriting the fields rather than erasing them is refused by
+    // the trigger...
+    expect(
+      await as(eraserDb)(
+        sql`update audit_events set personal = '{"username":"x"}' where personal_subject_id is not null`,
+      ),
+    ).toMatch(/append-only/);
+    // ...and every other column is out of its reach entirely.
+    expect(
+      await as(eraserDb)(
+        sql`update audit_events set payload = '{}' where personal_subject_id is not null`,
+      ),
+    ).toMatch(/permission denied/);
   });
 });
 

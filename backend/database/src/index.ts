@@ -9,6 +9,7 @@ export * from './audit-keys.ts';
 export * from './audit-redaction.ts';
 export * from './audit-seal.ts';
 export * from './documents.ts';
+export * from './erasure.ts';
 export * from './events.ts';
 export * from './files.ts';
 export * from './mail-jobs.ts';

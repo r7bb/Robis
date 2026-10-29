@@ -10,8 +10,10 @@
 import { loadConfig } from '@robis/shared/config';
 import { createDatabase } from './index.ts';
 import {
+  DEFAULT_ERASER_ROLE,
   DEFAULT_GATEWAY_ROLE,
   DEFAULT_WORKER_ROLE,
+  ensureEraserRole,
   ensureGatewayRole,
   ensureMlRole,
   ensureRuntimeRole,
@@ -47,6 +49,12 @@ try {
   if (worker) {
     await ensureWorkerRole(db, worker);
     console.log(`Worker role "${worker.role}" is ready.`);
+  }
+  // audit:erase's own role: the only one that may blank personal fields.
+  const eraser = serviceRoleFromEnv(process.env, 'ERASER', DEFAULT_ERASER_ROLE);
+  if (eraser) {
+    await ensureEraserRole(db, eraser);
+    console.log(`Eraser role "${eraser.role}" is ready: only audit:erase uses it.`);
   }
 } catch (error) {
   // The message only: the driver's error carries the statement, and one of

@@ -41,6 +41,15 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-29',
     area: 'Security',
+    title: 'Erasure has its own key, and leaves a receipt',
+    summary:
+      'Blanking a person’s details out of the audit trail used to be something the app’s own database account could do. Now only the erasure tool’s own account can, and the app cannot read or write the record of erasures either. Each erasure, done in one step, removes the person’s fields and former usernames and writes a receipt: when it happened, how many records it changed, and a commitment to whom that names nobody on its own. The tool prints a one-time value to keep with the request; with it, the receipt proves which request it answered. The erasure design is a draft for legal review.',
+    checked:
+      'Tests prove the app’s account is refused any change to the personal fields and any read or write of the erasure record; that the erasure account can erase but its attempt to rewrite rather than blank is refused by the trail’s own trigger, and every other column is out of its reach; and that an erasure blanks every field, records the counts, and stores a commitment that matches the person and the printed value while the record itself contains neither.',
+  },
+  {
+    date: '2026-10-29',
+    area: 'Security',
     title: 'A database account per service',
     summary:
       'The live gateway and the background worker no longer share the app’s database account. Each connects as its own, granted only what its code does: the gateway can check a session and a membership and keep documents in step, and the worker can run its jobs, send its mail and notifications, tidy up expired records and stream the audit trail. Neither can change an issue, a person or a membership, and the worker reads the audit trail without being able to alter it. With the duplicate service’s read-only account, every service now has the narrowest access it can work with.',

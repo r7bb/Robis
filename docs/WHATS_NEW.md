@@ -4,6 +4,9 @@ Newest first. The same list is the site's What's new page, where each entry
 opens to show how it was checked and, for features, where to find it and
 what each layer does. Back to the [README](../README.md).
 
+- **Erasure has its own key, and leaves a receipt** (2026-10-29). Only `audit:erase`'s own account can
+  blank the audit trail's personal fields, and each erasure records counts
+  and a commitment, never the person.
 - **A database account per service** (2026-10-29). The gateway and the worker each connect
   as their own database account, granted only what their code does.
 - **The ML service can read one view, and nothing else** (2026-10-29). The duplicate and priority
