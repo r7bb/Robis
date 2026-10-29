@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-10-29): **895 TypeScript tests, 96 Python tests, lint and
+Status (2026-10-29): **896 TypeScript tests, 96 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -16,7 +16,8 @@ each choice is in [ARCHITECTURE.md](ARCHITECTURE.md).
 ## Shipped
 
 **Foundation.** Bun monorepo, Fastify API, Drizzle and Postgres, Next.js web
-app, CI running lint, typecheck, tests and a production build.
+app, CI running lint, typecheck, tests, the Python suite from its lock and a
+production build, installing exactly what the lockfiles record.
 
 **Tenancy and authorisation.** Workspaces, four roles, one declarative
 permission matrix, 404-not-403 for non-members.

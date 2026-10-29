@@ -146,12 +146,12 @@ with Postgres on the same machine. Method and percentiles in
 
 ## Latest
 
+- **CI installs exactly what is locked, and runs the Python tests.**
+  Frozen installs, Python 3.11 from a hashed lock, cached builds.
 - **One image library, and none in the web app.** One sharp across the
   repository; the landing's screenshots are WebP made at build.
 - **Every package lists what it uses.** The top level installs only
   tooling, and CI refuses an undeclared import.
-- **Each image carries only its own service.** The gateway and worker
-  images hold none of the API's packages, checked in CI.
 
 Everything else, newest first, with how each was checked:
 [What's new](docs/WHATS_NEW.md).

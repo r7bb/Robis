@@ -41,6 +41,15 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-29',
     area: 'Site',
+    title: 'CI installs exactly what is locked, and runs the Python tests',
+    summary:
+      'Continuous integration now refuses an out-of-date lockfile instead of quietly resolving new versions, and the duplicate and priority service’s Python tests run on every push, on the Python version it ships with, from a locked set where every package is checked against its hash. Downloads and image layers are cached between runs, so an unchanged dependency or build step is restored rather than fetched or rebuilt again.',
+    checked:
+      'The locked Python test set was installed into a clean Python 3.11 environment with every hash required. The cached image build was tried locally on a fresh builder: the layers were exported, the builder emptied, and the rebuild restored its steps from the exported cache; with no cache present yet, the build still succeeds. The lockfile already records every platform’s native packages, which was the old reason CI could not install frozen. The new jobs’ first run on GitHub is the remaining check.',
+  },
+  {
+    date: '2026-10-29',
+    area: 'Site',
     title: 'One image library, and none in the web app',
     summary:
       'The API resizes uploads with sharp, and the web app used to carry a second copy that Next.js loads to resize pictures on each request. Now there is one version of sharp, the current one, across the repository. The landing’s screenshots are converted to WebP at the size the page shows them, once, before each build, and the web app serves them as they are, so its image no longer holds an image library at all. Each screenshot is about a quarter of the size of the picture it replaces.',

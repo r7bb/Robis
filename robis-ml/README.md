@@ -13,6 +13,14 @@ uv venv --python 3.11 .venv
 uv pip install --python .venv/bin/python -e ".[dev]"
 
 .venv/bin/python -m pytest                    # the Python suite; counts in docs/ROADMAP.md
+```
+
+CI runs the same suite on Python 3.11 from `requirements-dev.lock`: the runtime
+pins of `requirements.lock` plus the test tools, every package checked against
+its hash. To reproduce that environment exactly:
+
+```bash
+uv pip install --python .venv/bin/python --require-hashes -r requirements-dev.lock
 
 # local only; anywhere else, set ROBIS_ML_TOKEN instead
 ROBIS_ML_ALLOW_ANONYMOUS=1 .venv/bin/python -m uvicorn robis_ml.service:app --port 8000

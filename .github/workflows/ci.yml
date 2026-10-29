@@ -59,11 +59,18 @@ jobs:
         with:
           bun-version: 1.4.2
 
-      # Not --frozen-lockfile: the lockfile is resolved on macOS, so it records
-      # only the darwin variants of platform-specific optional dependencies
-      # (argon2, the Postgres binaries). A Linux runner legitimately needs to
-      # add its own, which a frozen install refuses to do.
-      - run: bun install
+      # Bun's download cache, keyed on the lockfile: an unchanged lockfile
+      # installs from the runner's cache rather than the registry.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+
+      # Frozen: CI installs exactly what bun.lock records, which lists every
+      # platform's variant of the native packages (argon2, sharp, the
+      # Postgres binaries), and fails if the lockfile is out of date.
+      - run: bun install --frozen-lockfile
 
       - name: Lint and format check
         run: bun run lint
@@ -104,6 +111,33 @@ jobs:
       - name: Build web
         run: bun --filter '@robis/web' build
 
+  # The duplicate and priority service's own tests, on the Python it ships
+  # with, from the locked set: the runtime pins of requirements.lock plus the
+  # test tools, every package checked against its hash.
+  ml:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: robis-ml
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: robis-ml/requirements-dev.lock
+
+      - name: Install the locked test environment
+        run: python -m pip install --require-hashes --no-deps -r requirements-dev.lock
+
+      # From this folder, so the package is imported from the source here.
+      - name: Test
+        run: python -m pytest -q
+
   # Every service built as its container image, started together, and driven
   # end to end. This is where the container build is verified: here, on a
   # Linux runner, as well as on the development machine.
@@ -126,8 +160,34 @@ jobs:
         with:
           bun-version: 1.4.2
 
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      # Each image's layers from the last run, one folder per image so they
+      # never overwrite each other; a step whose inputs did not change is
+      # restored rather than rebuilt. Saved under this commit, restored from
+      # the newest earlier one.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: /tmp/buildx-cache
+          key: buildx-${{ runner.os }}-${{ github.sha }}
+          restore-keys: buildx-${{ runner.os }}-
+
+      # Bake from the compose file, run from deploy/ because it resolves the
+      # build contexts from where it runs. Read access to the repository and
+      # read and write access to the cache are granted explicitly. The one-shot
+      # migrate and seed services share the API image, which `migrate` builds.
       - name: Build every image
-        run: docker compose build
+        working-directory: deploy
+        run: |
+          set -- mail migrate realtime worker ml web
+          args=""
+          for image in "$@"; do
+            args="$args --set $image.cache-from=type=local,src=/tmp/buildx-cache/$image"
+            args="$args --set $image.cache-to=type=local,dest=/tmp/buildx-cache-new/$image,mode=max"
+          done
+          # shellcheck disable=SC2086
+          docker buildx bake --allow=fs.read=.. --allow=fs=/tmp -f compose.yaml --load $args "$@"
+          rm -rf /tmp/buildx-cache && mv /tmp/buildx-cache-new /tmp/buildx-cache
 
       # Each service installs only its own dependencies: the gateway and
       # the worker images must hold no sharp and no Fastify, and the API's

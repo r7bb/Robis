@@ -4,6 +4,9 @@ Newest first. The same list is the site's What's new page, where each entry
 opens to show how it was checked and, for features, where to find it and
 what each layer does. Back to the [README](../README.md).
 
+- **CI installs exactly what is locked, and runs the Python tests**
+  (2026-10-29). Frozen installs, a Python 3.11 job from a hashed lock, and
+  caching for downloads and image layers.
 - **One image library, and none in the web app** (2026-10-29). One sharp
   version across the repository; the landing's screenshots are WebP made at
   build, and the web image carries no image library.
