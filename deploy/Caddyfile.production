@@ -1,0 +1,16 @@
+# The edge proxy as production runs it (stage 1, item 7): HTTPS on 8443
+# with the certificate given in /tls. In CI that is the throwaway one from
+# scripts/smoke/throwaway-tls.ts; a deployment names its own hostname and
+# either its own certificate or Caddy's automatic one.
+{
+	admin off
+	auto_https disable_redirects
+	# A client that dials 127.0.0.1 sends no server name; answer it with the
+	# localhost certificate rather than fail the handshake.
+	default_sni localhost
+}
+
+localhost:8443, 127.0.0.1:8443 {
+	tls /tls/cert.pem /tls/key.pem
+	import /etc/caddy/routes
+}

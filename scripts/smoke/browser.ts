@@ -208,6 +208,8 @@ async function main() {
       // WebGL in a headless runner with no GPU.
       '--enable-unsafe-swiftshader',
       ...(process.env.CI ? ['--no-sandbox'] : []),
+      // The production-mode CI stack serves a throwaway certificate.
+      ...(process.env.SMOKE_IGNORE_CERT_ERRORS === '1' ? ['--ignore-certificate-errors'] : []),
       'about:blank',
     ],
     { stdout: 'ignore', stderr: 'pipe' },

@@ -1,0 +1,62 @@
+# The stack as production runs it (stage 1, item 7), layered on compose.yaml:
+#
+#   bun run scripts/smoke/throwaway-tls.ts
+#   CI_AUDIT_HMAC_KEYS="ci:$(openssl rand -base64 32)" \
+#     docker compose -f deploy/compose.yaml -f deploy/compose.production.yaml up -d --wait
+#
+# NODE_ENV=production everywhere, so every production rule applies: an
+# https web origin, Secure __Host- cookies, HSTS, a real audit key (the
+# stack's is refused), mail over TLS (plain SMTP is refused) and no demo
+# data. The edge proxy serves HTTPS on 127.0.0.1:8443 with the throwaway
+# certificate in deploy/.tls, which the worker trusts for the mail sink's
+# STARTTLS. CI drives it with the same smoke tests as the development stack.
+
+x-production: &production
+  NODE_ENV: production
+  WEB_ORIGIN: https://localhost:8443
+
+services:
+  migrate:
+    environment: *production
+
+  # The seed refuses production, rightly: there is no demo data here.
+  seed:
+    environment: *production
+    command: [bun, -e, "console.log('No demo data in production.')"]
+
+  api:
+    environment:
+      <<: *production
+      # Made per run by CI; the stack's own key id is refused in production.
+      AUDIT_HMAC_KEYS: ${CI_AUDIT_HMAC_KEYS:?set CI_AUDIT_HMAC_KEYS, see the comment at the top}
+      # The API checks a production mail driver is configured at start-up.
+      SMTP_HOST: mail
+      SMTP_PORT: '1025'
+      MAIL_FROM: Robis <no-reply@robis.test>
+
+  realtime:
+    environment: *production
+
+  worker:
+    environment:
+      <<: *production
+      # Not '0': mail must cross TLS. The sink offers STARTTLS with the
+      # throwaway certificate, whose CA the worker trusts.
+      SMTP_REQUIRE_TLS: ''
+      NODE_EXTRA_CA_CERTS: /tls/ca.pem
+    volumes: ['./.tls:/tls:ro']
+
+  mail:
+    environment:
+      MAIL_SINK_TLS_KEY: /tls/key.pem
+      MAIL_SINK_TLS_CERT: /tls/cert.pem
+    volumes: ['./.tls:/tls:ro']
+
+  edge:
+    volumes:
+      - './Caddyfile.production:/etc/caddy/Caddyfile:ro'
+      - './caddy-routes:/etc/caddy/routes:ro'
+      - './.tls:/tls:ro'
+    ports: ['127.0.0.1:8443:8443']
+    healthcheck:
+      test: ['CMD-SHELL', 'nc -z 127.0.0.1 8443']

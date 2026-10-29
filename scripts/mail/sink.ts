@@ -69,7 +69,16 @@ function renderInbox(messages: SunkMessage[]) {
 </html>`;
 }
 
-const sink = await startMailSink({ port: SMTP_PORT, host: LISTEN_HOST });
+// A certificate to offer STARTTLS with, as files: the production-mode CI
+// stack gives it one, so the worker's mail crosses TLS as production needs.
+const TLS_KEY = process.env.MAIL_SINK_TLS_KEY;
+const TLS_CERT = process.env.MAIL_SINK_TLS_CERT;
+const tls =
+  TLS_KEY && TLS_CERT
+    ? { key: await Bun.file(TLS_KEY).text(), cert: await Bun.file(TLS_CERT).text() }
+    : undefined;
+
+const sink = await startMailSink({ port: SMTP_PORT, host: LISTEN_HOST, tls });
 
 Bun.serve({
   hostname: LISTEN_HOST,

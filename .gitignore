@@ -34,3 +34,6 @@ __pycache__/
 
 # Image scan cache and tarballs (CI containers job)
 .trivy/
+
+# The production-mode CI stack's throwaway certificate (scripts/smoke/throwaway-tls.ts).
+deploy/.tls/

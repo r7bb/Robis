@@ -4,6 +4,10 @@ Newest first. The same list is the site's What's new page, where each entry
 opens to show how it was checked and, for features, where to find it and
 what each layer does. Back to the [README](../README.md).
 
+- **The whole stack tested as production runs it** (2026-10-29). CI now also runs the stack in
+  production mode: HTTPS through the proxy with a throwaway certificate,
+  mail over TLS, a fresh audit key and no demo data, driven by the same
+  end-to-end and browser tests.
 - **One address for the whole app** (2026-10-29). The app, the API and the live gateway share
   one address behind an edge proxy: one web image runs anywhere, a
   production build pointing at localhost is refused, and no other site is

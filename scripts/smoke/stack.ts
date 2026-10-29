@@ -152,6 +152,10 @@ async function main() {
     });
     await expectStatus('sign up', response, 201);
     if (!cookie) fail('sign up', 'no session cookie');
+    // Over HTTPS this is production: the cookie must be the host-only, Secure one.
+    if (WEB.startsWith('https:') && !cookie.startsWith('__Host-')) {
+      fail('sign up', `expected a __Host- session cookie over HTTPS, got ${cookie.split('=')[0]}`);
+    }
     const me = (await (await api('GET', '/auth/me')).json()) as {
       user: { emailVerified: boolean };
     };

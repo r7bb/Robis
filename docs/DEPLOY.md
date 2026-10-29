@@ -64,6 +64,25 @@ Everything is served from one address, through an edge proxy
 Metrics are on internal ports (API 9464, gateway 9465) for a scraper on the
 private network, never through the proxy.
 
+## Tested as production runs it
+
+[deploy/compose.production.yaml](../deploy/compose.production.yaml) layers
+production onto the stack: `NODE_ENV=production` everywhere, the proxy
+serving HTTPS ([deploy/Caddyfile.production](../deploy/Caddyfile.production))
+with a throwaway certificate from `scripts/smoke/throwaway-tls.ts`, mail
+over STARTTLS to the sink (which the worker trusts through
+`NODE_EXTRA_CA_CERTS`), a fresh audit key and no demo data. CI brings it up
+after the development stack and runs the same smoke tests over HTTPS. To
+run it locally:
+
+```bash
+bun run scripts/smoke/throwaway-tls.ts
+CI_AUDIT_HMAC_KEYS="ci:$(openssl rand -base64 32)" \
+  docker compose -f deploy/compose.yaml -f deploy/compose.production.yaml up -d --wait
+NODE_EXTRA_CA_CERTS=deploy/.tls/ca.pem SMOKE_WEB_URL=https://127.0.0.1:8443 \
+  SMOKE_WEB_ORIGIN=https://localhost:8443 bun run smoke:stack
+```
+
 ## Database connections
 
 Each service keeps its own pool; together they must fit under Postgres's

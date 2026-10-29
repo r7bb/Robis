@@ -41,6 +41,15 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-29',
     area: 'Security',
+    title: 'The whole stack tested as production runs it',
+    summary:
+      'Every push now also runs the whole container stack in production mode: every service told it is production, the edge proxy serving HTTPS with a throwaway certificate made for that run, mail sent over TLS because plain mail is refused, a fresh signing key for the audit trail, and no demo data. The same end-to-end and browser tests then drive it, so a rule that only applies in production (a Secure host-only cookie, HSTS, an https web address, encrypted mail) is exercised before anything is deployed, not first discovered after.',
+    checked:
+      'Run locally and added to CI: the stack came up healthy in production mode behind HTTPS; the end-to-end test signed up from the emailed link (which the worker could only send over TLS), checked the session cookie is the __Host- one, joined the live socket, created an issue and uploaded an image; and the browser test loaded every page with no security policy violation. The development stack is unchanged and still tested first.',
+  },
+  {
+    date: '2026-10-29',
+    area: 'Security',
     title: 'One address for the whole app',
     summary:
       'The web app, the API and the live gateway now sit behind one address: an edge proxy serves the app at /, the API at /api and the gateway at /ws. The web app holds no addresses of its own, so one built image runs anywhere, and a production build that points at localhost is refused. With one origin the API no longer tells any other site it may read its answers, and only the proxy is reachable from outside; the API, gateway and everything behind them are on the private network. A new deployment guide sets out the layout and how many database connections each service needs.',

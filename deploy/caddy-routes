@@ -1,0 +1,20 @@
+# The edge proxy's routes, imported by both Caddyfiles: one origin for the
+# whole app (stage 1, item 3).
+#
+#   /api/*   the API, with the /api prefix taken off
+#   /ws      the realtime gateway, WebSocket upgrade included
+#   /        the web app
+
+handle_path /api/* {
+	reverse_proxy api:4000
+}
+
+# Exactly /ws: nothing else on the gateway (its health or metrics) is
+# reachable through the proxy.
+handle /ws {
+	reverse_proxy realtime:4001
+}
+
+handle {
+	reverse_proxy web:3000
+}

@@ -146,13 +146,14 @@ with Postgres on the same machine. Method and percentiles in
 
 ## Latest
 
-- **One address for the whole app.** The app, the API and the live gateway behind
-  one edge proxy, so one web image runs anywhere and no other site may read
-  the API. The layout is in [Deploying](docs/DEPLOY.md).
+- **The whole stack tested as production runs it.** Every push also runs the stack in
+  production mode over HTTPS, with mail over TLS and no demo data, and
+  drives it with the same end-to-end and browser tests.
+- **One address for the whole app.** The app, the API and the live gateway
+  behind one edge proxy, so one web image runs anywhere. The layout is in
+  [Deploying](docs/DEPLOY.md).
 - **A live river of your team’s two weeks.** Your workspaces' activity as
   stacked bands in their own colours, with a ripple for every live change.
-- **A live home after you sign in.** What is assigned to you, a live feed,
-  and a tile per workspace with its activity and who is here now.
 
 Everything else, newest first, with how each was checked:
 [What's new](docs/WHATS_NEW.md).

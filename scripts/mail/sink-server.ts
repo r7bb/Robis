@@ -95,14 +95,25 @@ export function parseMessage(raw: string) {
 }
 
 export async function startMailSink(
-  options: { port?: number; host?: string } = {},
+  options: {
+    port?: number;
+    host?: string;
+    /**
+     * A certificate to offer STARTTLS with. Without one the sink speaks
+     * plain SMTP, which only development and tests accept; with one, a
+     * production-mode worker can send to it over TLS, as it must.
+     */
+    tls?: { key: string; cert: string };
+  } = {},
 ): Promise<MailSink> {
   const messages: SunkMessage[] = [];
   let nextId = 1;
 
   const server = new SMTPServer({
     authOptional: true,
-    disabledCommands: ['STARTTLS'],
+    ...(options.tls
+      ? { key: options.tls.key, cert: options.tls.cert }
+      : { disabledCommands: ['STARTTLS'] }),
     size: MAX_MESSAGE_BYTES,
     logger: false,
     onData(stream, session, callback) {
