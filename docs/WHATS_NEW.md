@@ -4,6 +4,9 @@ Newest first. The same list is the site's What's new page, where each entry
 opens to show how it was checked and, for features, where to find it and
 what each layer does. Back to the [README](../README.md).
 
+- **Each image carries only its own service** (2026-10-29). The gateway
+  and worker images no longer hold the API's web server or image library,
+  and CI checks each image after building it.
 - **No service reaches into another** (2026-10-29). File storage is a
   package of its own, the worker no longer depends on the API, and a test
   in CI refuses any import from one service into another.

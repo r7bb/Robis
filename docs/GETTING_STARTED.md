@@ -59,6 +59,7 @@ Sign in as `rohit@robis.test` with `robis-demo-password`.
 | `bun run mail:start`     | local mail inbox, SMTP on port 1025                 |
 | `bun run smoke:stack`    | drive a running container stack                     |
 | `bun run smoke:browser`  | load the stack in Chrome under its security policy  |
+| `bun run smoke:images`   | check each built image holds only its own packages  |
 
 Every picture in the README comes from those two capture scripts driving a
 real Chrome against the running app. None of them is a mockup.

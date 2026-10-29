@@ -129,6 +129,12 @@ jobs:
       - name: Build every image
         run: docker compose build
 
+      # Each service installs only its own dependencies: the gateway and
+      # the worker images must hold no sharp and no Fastify, and the API's
+      # must hold both, which shows the search would find them.
+      - name: Each image holds only its own service's dependencies
+        run: bun run scripts/smoke/image-contents.ts
+
       # `--wait` returns non-zero if any service exits or fails its health
       # check, so an image that builds but does not run fails the job here.
       - name: Start the stack and wait for every health check

@@ -146,13 +146,12 @@ with Postgres on the same machine. Method and percentiles in
 
 ## Latest
 
+- **Each image carries only its own service.** The gateway and worker
+  images hold none of the API's packages, checked in CI.
 - **No service reaches into another.** File storage is its own package,
   and CI refuses any import from one service into another.
 - **Every workspace has a storage limit.** 1 GB of images each, checked
   before an upload is read; owners see the usage on the home.
-- **Delete your own account.** With your password and a choice for
-  each workspace you own; your details go, your work stays under
-  "Deleted user".
 
 Everything else, newest first, with how each was checked:
 [What's new](docs/WHATS_NEW.md).

@@ -41,6 +41,15 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-29',
     area: 'Site',
+    title: 'Each image carries only its own service',
+    summary:
+      'The API, the live gateway and the worker used to share one dependency install, so every image carried everything any of them needed. Each now installs only its own service’s packages: the gateway and the worker no longer carry the API’s web server or its native image library, and each is about 70 MB smaller. Fewer packages in an image is less to patch and less for a scanner to find.',
+    checked:
+      'A new check, run in CI right after the images are built, looks inside each image: the gateway and worker images must hold no sharp and no Fastify, and the API image must hold both, which shows the search would find them. It failed on the old images, which carried both, and passes on the new ones. On the rebuilt stack the migrator and seed exited cleanly, every service came up healthy, and the stack and browser smoke tests passed.',
+  },
+  {
+    date: '2026-10-29',
+    area: 'Site',
     title: 'No service reaches into another',
     summary:
       'Where uploaded files are kept, on disk or in any S3-compatible store, is now a package of its own that the API and the worker both use. Before, the worker borrowed it from inside the API, so the worker depended on the whole API package, its web server and its image library included. Now no service imports another: the API, the live gateway and the worker share code only through packages made for sharing, so each can be built, deployed and scaled on its own.',
