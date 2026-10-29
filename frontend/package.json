@@ -7,8 +7,8 @@
     "./*": "./*"
   },
   "scripts": {
-    "dev": "bun build/landing-images.ts && NEXT_DIST_DIR=.next-dev NEXT_PUBLIC_REALTIME_URL=ws://localhost:4001/ws next dev",
-    "build": "bun build/landing-images.ts && next build",
+    "dev": "bun tools/landing-images.ts && NEXT_DIST_DIR=.next-dev NEXT_PUBLIC_REALTIME_URL=ws://localhost:4001/ws next dev",
+    "build": "bun tools/landing-images.ts && next build",
     "start": "next start"
   },
   "dependencies": {

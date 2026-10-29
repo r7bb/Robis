@@ -53,7 +53,7 @@ const config: NextConfig = {
   reactStrictMode: true,
   /*
    * Images are served as they are: the landing's screenshots are prerendered
-   * to WebP at their display size before every build (build/landing-images.ts),
+   * to WebP at their display size before every build (tools/landing-images.ts),
    * so Next never loads an image library and the web image carries none.
    */
   images: { unoptimized: true },
