@@ -31,9 +31,6 @@ const runner = new Runner({
   onPoll: heartbeat(process.env.WORKER_HEARTBEAT_FILE ?? DEFAULT_HEARTBEAT_FILE),
 });
 
-// Woken as each job is queued, rather than polling every second.
-const jobsListener = await listenForJobs(DATABASE_URL, () => runner.wake());
-
 /**
  * Recurring maintenance.
  *
@@ -122,6 +119,11 @@ if (auditStream) {
   }
   console.log(`Audit stream on, to ${auditStream.url.origin}`);
 }
+
+// Woken as each job is queued, rather than polling every second. Opened
+// last, after every configuration check, so a misconfigured worker refuses
+// with its reason rather than failing to reach the database first.
+const jobsListener = await listenForJobs(DATABASE_URL, () => runner.wake());
 
 console.log(`Worker ${runner.id} waiting for jobs (woken on each, polling every 30 s)`);
 
