@@ -25,6 +25,7 @@ import {
   ensureRuntimeRole,
   ensureWorkerRole,
   MAIL_JOBS,
+  pgErrorCode,
   settleDeferredAccountEvents,
   users,
 } from '@robis/database';
@@ -34,7 +35,7 @@ import { TERMS_VERSION } from '@robis/shared';
 import { localDiskStorage } from '@robis/storage';
 import { mailHandlers } from '@robis/worker/mail';
 import { Runner } from '@robis/worker/runner';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import postgres from 'postgres';
 
@@ -335,7 +336,24 @@ export async function getMailer(): Promise<MemoryMailer> {
   return mailer;
 }
 
-export async function resetDatabase() {
+/**
+ * How long the reset waits for the tables. Long enough for a slow machine,
+ * short of the fifteen minutes a test hook would otherwise hang for.
+ */
+const RESET_LOCK_TIMEOUT = '20s';
+const LOCK_NOT_AVAILABLE = '55P03';
+
+export function resetDatabase(): Promise<void> {
+  return resetDatabaseWithin(RESET_LOCK_TIMEOUT);
+}
+
+/**
+ * The reset, giving up after `lockTimeout` (as Postgres spells it: `500ms`,
+ * `20s`) if another session holds a table, and naming every session with a
+ * transaction open: one of them is in the way.
+ */
+export async function resetDatabaseWithin(lockTimeout: string): Promise<void> {
+  if (!/^\d+(?:ms|s)$/.test(lockTimeout)) throw new Error(`not a lock timeout: ${lockTimeout}`);
   const { ownerDb: db, mailer } = await getHarness();
   // A failed sign-in is recorded after its reply; let the last test's land
   // before the tables are emptied under it.
@@ -348,7 +366,29 @@ export async function resetDatabase() {
   // trail refuses TRUNCATE by trigger -- that is the point of it -- so the
   // guard is lifted for this one statement, inside the same transaction, and
   // is back in place before anything else can see the table.
+  try {
+    await emptyTables(db, lockTimeout);
+  } catch (error) {
+    if (pgErrorCode(error) !== LOCK_NOT_AVAILABLE) throw error;
+    const open = (await db.execute(sql`
+      select pid, usename, state, now() - xact_start as open_for, left(query, 160) as query
+      from pg_stat_activity
+      where datname = current_database() and pid <> pg_backend_pid() and xact_start is not null`)) as unknown as Record<
+      string,
+      unknown
+    >[];
+    throw new Error(
+      `resetDatabase waited ${lockTimeout} for the tables; sessions with a transaction open:\n${open
+        .map((row) => `  ${row.pid} ${row.usename} ${row.state} for ${row.open_for}: ${row.query}`)
+        .join('\n')}`,
+      { cause: error },
+    );
+  }
+}
+
+async function emptyTables(db: Database, lockTimeout: string): Promise<void> {
   await db.transaction(async (tx) => {
+    await tx.execute(`SET LOCAL lock_timeout = '${lockTimeout}'`);
     await tx.execute('ALTER TABLE "audit_events" DISABLE TRIGGER "audit_events_no_truncate"');
     await tx.execute(
       'ALTER TABLE "audit_tombstones" DISABLE TRIGGER "audit_tombstones_no_truncate"',
