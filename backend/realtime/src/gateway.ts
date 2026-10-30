@@ -11,10 +11,13 @@ import { Registry } from '@robis/metrics';
 import {
   type ClientMessage,
   type DocumentAwareness,
+  hears,
   isUuid,
   type PresenceMessage,
   type ServerEvent,
   type ServerMessage,
+  scopeKey,
+  scopesSchema,
   TERMS_VERSION,
 } from '@robis/shared';
 import { eq } from 'drizzle-orm';
@@ -42,6 +45,7 @@ import { PresenceRegistry } from './presence.ts';
  */
 const CLIENT_MESSAGE_TYPES: ReadonlySet<string> = new Set<ClientMessage['type']>([
   'subscribe',
+  'scopes',
   'location',
   'ping',
   'doc.open',
@@ -78,6 +82,11 @@ type SocketData = {
   /** Null until the client sends `subscribe` and passes the membership check. */
   workspaceId: string | null;
   location: string | null;
+  /**
+   * What this connection shows, as scope keys, or null for everything in its
+   * workspace (stage 3, item 24). Cleared on each subscribe.
+   */
+  scopes: Set<string> | null;
   /** Documents this connection has open, so close can release all of them. */
   openDocuments: Set<string>;
 };
@@ -181,8 +190,9 @@ export async function createGateway(options: GatewayOptions) {
     let delivered = 0;
     for (const socket of sockets) {
       // Membership was verified at subscribe time, and revocation closes the
-      // socket, so workspace id is sufficient to scope the fan-out here.
-      if (socket.data.workspaceId === event.workspaceId) {
+      // socket, so workspace id is sufficient for access; scopes then narrow
+      // it to what the client shows.
+      if (socket.data.workspaceId === event.workspaceId && hears(socket.data.scopes, event)) {
         socket.send(message);
         delivered++;
       }
@@ -265,6 +275,7 @@ export async function createGateway(options: GatewayOptions) {
           name: user.name,
           workspaceId: null,
           location: null,
+          scopes: null,
           openDocuments: new Set<string>(),
         } satisfies SocketData,
       });
@@ -344,6 +355,8 @@ export async function createGateway(options: GatewayOptions) {
     switch (message.type) {
       case 'subscribe':
         return handleSubscribe(socket, message.workspaceId);
+      case 'scopes':
+        return handleScopes(socket, message.scopes);
       case 'location':
         return handleLocation(socket, message.location);
       case 'ping':
@@ -383,6 +396,8 @@ export async function createGateway(options: GatewayOptions) {
     const previous = socket.data.workspaceId;
     socket.data.workspaceId = workspaceId;
     socket.data.location = null;
+    // A new workspace starts with everything; the client narrows it again.
+    socket.data.scopes = null;
 
     await announce(socket);
     send(socket, { type: 'ready', userId: socket.data.userId, workspaceId });
@@ -390,6 +405,20 @@ export async function createGateway(options: GatewayOptions) {
     broadcastPresence(workspaceId);
     // Leaving one workspace for another changes both rosters.
     if (previous && previous !== workspaceId) broadcastPresence(previous);
+  }
+
+  /**
+   * Narrow the events this connection hears to what it shows. Scopes are
+   * filters within the workspace already joined, never access: an id from
+   * another workspace simply matches nothing.
+   */
+  function handleScopes(socket: Bun.ServerWebSocket<SocketData>, scopes: unknown) {
+    if (!socket.data.workspaceId) {
+      return send(socket, { type: 'error', message: 'Subscribe to a workspace first' });
+    }
+    const parsed = scopesSchema.safeParse(scopes);
+    if (!parsed.success) return send(socket, { type: 'error', message: 'Not a list of scopes' });
+    socket.data.scopes = new Set(parsed.data.map(scopeKey));
   }
 
   async function handleLocation(socket: Bun.ServerWebSocket<SocketData>, location: string | null) {

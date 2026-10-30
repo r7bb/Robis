@@ -41,6 +41,15 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-30',
     area: 'Product',
+    title: 'The live connection sends only what a page shows',
+    summary:
+      'Every open page used to receive every live event in its workspace, then throw most of them away. Now a page tells the gateway what it shows: a board names its project, an issue page its issue, the workspace view the workspace and the open channel. The gateway then sends only the events about those, so a board never hears a chat message and a channel never hears another project’s board. Scopes only narrow what a member already receives; they never widen access. A page that names nothing, like the home, still hears everything in the workspace.',
+    checked:
+      'Tests prove a socket scoped to a project hears that project’s issues and nothing of chat or other projects, a socket scoped to a channel hears its messages and nothing of boards, a socket that names nothing hears everything, and a malformed list of scopes is refused while the earlier scopes stay. In headless Chrome on the rebuilt stack, an open board’s socket received only the new issue in its own project, while a chat message and an issue in the workspace’s other project never reached it. The full suite and the browser smoke test pass.',
+  },
+  {
+    date: '2026-10-30',
+    area: 'Product',
     title: 'A board reads only when its issues change',
     summary:
       'An open board used to read its whole issue list again on every live event in the workspace, a chat message included, and every five seconds besides. Now it reads only when an issue in its own project is filed, changed or deleted, or when the live connection comes back after a gap; the five-second timer only retries changes made offline, and only when there are some. An issue page refreshes only for its own issue, comments and images. Events that arrive within 150 ms of each other are handled once, so a teammate moving five cards is one read rather than five. A new issue now also refreshes the project list, which it did not before.',

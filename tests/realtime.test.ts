@@ -693,3 +693,108 @@ describe('document collaboration', () => {
     rogue.close();
   });
 });
+
+/**
+ * Scopes (stage 3, item 24): a client says what it is showing, and the
+ * gateway sends it only the events about that. A board hears nothing of
+ * chat; a channel hears nothing of a board. A client that never says gets
+ * everything, which is what the home needs.
+ */
+describe('scopes', () => {
+  async function setUp() {
+    const owner = await createActor('Owner');
+    const workspace = await createWorkspace(owner);
+    const shown = await createProject(owner, workspace.id, 'Shown');
+    const other = await createProject(owner, workspace.id, 'Other');
+    const channels = await request(`/workspaces/${workspace.id}/channels`, { actor: owner });
+    const channelId = channels.json().channels[0].id as string;
+    return { owner, workspace, shown, other, channelId };
+  }
+
+  const post = (owner: Actor, workspaceId: string, channelId: string, body: string) =>
+    request(`/workspaces/${workspaceId}/channels/${channelId}/messages`, {
+      method: 'POST',
+      actor: owner,
+      payload: { body },
+    });
+  const file = (owner: Actor, workspaceId: string, projectId: string, title: string) =>
+    request(`/workspaces/${workspaceId}/projects/${projectId}/issues`, {
+      method: 'POST',
+      actor: owner,
+      payload: { title },
+    });
+
+  const eventTypes = (client: TestClient) =>
+    client.messages.flatMap((m) => (m.type === 'event' ? [m.event.type] : []));
+
+  test("a board hears its own project's issues, and nothing of chat or other projects", async () => {
+    const { owner, workspace, shown, other, channelId } = await setUp();
+    const board = await TestClient.connect(owner);
+    await board.subscribe(workspace.id);
+    board.send({ type: 'scopes', scopes: [{ kind: 'project', projectId: shown.id }] });
+    const everything = await TestClient.connect(owner);
+    await everything.subscribe(workspace.id);
+    await Bun.sleep(100);
+
+    // Unwanted first; the wanted event after them arrives last, so by then
+    // anything unwanted would have arrived too.
+    await post(owner, workspace.id, channelId, 'not for the board');
+    await file(owner, workspace.id, other.id, 'another board');
+    await file(owner, workspace.id, shown.id, 'this board');
+
+    const mine = await board.waitFor(isEvent('issue.created'));
+    expect(mine.type === 'event' && 'projectId' in mine.event && mine.event.projectId).toBe(
+      shown.id,
+    );
+    await everything.waitFor(isEvent('message.created'));
+    expect(eventTypes(board)).toEqual(['issue.created']);
+
+    board.close();
+    everything.close();
+  });
+
+  test('a channel hears its own messages, and nothing of the board', async () => {
+    const { owner, workspace, shown, channelId } = await setUp();
+    const chat = await TestClient.connect(owner);
+    await chat.subscribe(workspace.id);
+    chat.send({ type: 'scopes', scopes: [{ kind: 'channel', channelId }] });
+    await Bun.sleep(100);
+
+    await file(owner, workspace.id, shown.id, 'not for the channel');
+    await post(owner, workspace.id, channelId, 'for the channel');
+
+    await chat.waitFor(isEvent('message.created'));
+    expect(eventTypes(chat)).toEqual(['message.created']);
+    chat.close();
+  });
+
+  test('a client that never names scopes hears everything in the workspace', async () => {
+    const { owner, workspace, shown, channelId } = await setUp();
+    const home = await TestClient.connect(owner);
+    await home.subscribe(workspace.id);
+
+    await file(owner, workspace.id, shown.id, 'an issue');
+    await post(owner, workspace.id, channelId, 'a message');
+
+    await home.waitFor(isEvent('message.created'));
+    expect(eventTypes(home)).toEqual(['issue.created', 'message.created']);
+    home.close();
+  });
+
+  test('refuses scopes that are not scopes, and keeps the ones it had', async () => {
+    const { owner, workspace, shown, channelId } = await setUp();
+    const client = await TestClient.connect(owner);
+    await client.subscribe(workspace.id);
+    client.send({ type: 'scopes', scopes: [{ kind: 'channel', channelId }] });
+    client.send({ type: 'scopes', scopes: [{ kind: 'everything' }] });
+    client.send({ type: 'scopes', scopes: 'all' });
+    await client.waitFor(isError);
+    await Bun.sleep(100);
+
+    await file(owner, workspace.id, shown.id, 'not for the channel');
+    await post(owner, workspace.id, channelId, 'still the channel');
+    await client.waitFor(isEvent('message.created'));
+    expect(eventTypes(client)).toEqual(['message.created']);
+    client.close();
+  });
+});

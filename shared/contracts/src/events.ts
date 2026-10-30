@@ -1,3 +1,4 @@
+import type { Scope } from './scopes.ts';
 /**
  * Wire format for realtime messages.
  *
@@ -125,6 +126,8 @@ export type ServerMessage =
 /** Messages the client sends up the socket. */
 export type ClientMessage =
   | { type: 'subscribe'; workspaceId: string }
+  /** What this client shows, so it hears only that (see `scopes.ts`). */
+  | { type: 'scopes'; scopes: Scope[] }
   | { type: 'location'; location: string | null }
   | { type: 'ping' }
   | DocumentClientMessage;

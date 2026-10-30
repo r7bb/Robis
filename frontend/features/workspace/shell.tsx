@@ -1,6 +1,13 @@
 'use client';
 
-import { can, contracts, type PresenceUser, type Role, resolveTheme } from '@robis/shared';
+import {
+  can,
+  contracts,
+  type PresenceUser,
+  type Role,
+  resolveTheme,
+  type Scope,
+} from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -188,6 +195,13 @@ function RoomStrip({
   );
 }
 
+/** What the workspace view shows: the workspace, and the open channel if any. */
+function shellScopes(channelId: string | null): Scope[] {
+  return channelId
+    ? [{ kind: 'workspace' }, { kind: 'channel', channelId }]
+    : [{ kind: 'workspace' }];
+}
+
 /**
  * The workspace.
  *
@@ -226,7 +240,11 @@ export function WorkspaceShell({ workspaceId }: { workspaceId: string }) {
 
   // No location: on the workspace shell you are "in the workspace", not in a
   // particular project.
-  const { presence, state: realtimeState } = useRealtime(workspaceId, null);
+  // The workspace's own events, and the open channel's messages: another
+  // project's board or another channel's chat never reaches this socket.
+  const { presence, state: realtimeState } = useRealtime(workspaceId, null, undefined, {
+    scopes: shellScopes(channelId),
+  });
 
   const rooms = channels.data?.channels ?? [];
 

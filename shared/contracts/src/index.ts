@@ -15,6 +15,7 @@ export * from './nudges.ts';
 export * from './origin.ts';
 export * from './rbac.ts';
 export * from './schemas.ts';
+export * from './scopes.ts';
 export * from './slug.ts';
 export * from './stats.ts';
 export * from './text.ts';

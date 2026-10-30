@@ -56,9 +56,15 @@ export default function BoardPage() {
   // message, another project's issue) does not touch the board, and a burst
   // is one pull.
   const pullBoard = useCoalesced(board.refresh);
-  const { presence, state: realtimeState } = useRealtime(workspaceId, projectId, (event) => {
-    if (concernsBoard(event, projectId)) pullBoard();
-  });
+  const { presence, state: realtimeState } = useRealtime(
+    workspaceId,
+    projectId,
+    (event) => {
+      if (concernsBoard(event, projectId)) pullBoard();
+    },
+    // Only this project's issues reach the socket at all (stage 3, item 24).
+    { scopes: [{ kind: 'project', projectId }] },
+  );
   // Events sent while the connection was down are not replayed, so the board
   // is read again whenever it comes back.
   useEffect(() => {

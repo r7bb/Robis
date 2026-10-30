@@ -1,6 +1,6 @@
 'use client';
 
-import type { ClientMessage, PresenceUser, ServerEvent, ServerMessage } from '@robis/shared';
+import type { ClientMessage, PresenceUser, Scope, ServerEvent, ServerMessage } from '@robis/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { realtimeUrl } from './endpoints.ts';
@@ -37,8 +37,12 @@ export function useRealtime(
    * Refetch every query when the subscription is (re)established. On for a
    * workspace page, which shows everything that could have changed; the
    * home keeps several sockets and refreshes only its own overview.
+   *
+   * `scopes`: what the page shows, so the gateway sends only events about
+   * that (stage 3, item 24). Left out, the socket hears everything in the
+   * workspace, which is what the home's tiles want.
    */
-  { refetchOnReady = true }: { refetchOnReady?: boolean } = {},
+  { refetchOnReady = true, scopes }: { refetchOnReady?: boolean; scopes?: Scope[] } = {},
 ) {
   const queryClient = useQueryClient();
   const [presence, setPresence] = useState<PresenceUser[]>([]);
@@ -150,6 +154,19 @@ export function useRealtime(
       socketRef.current = null;
     };
   }, [workspaceId, queryClient]);
+
+  // Scopes go once the subscription is live, and again whenever they change
+  // or the connection comes back; compared by value, so a page passing a
+  // fresh array each render sends nothing new.
+  const scopesKey = scopes ? JSON.stringify(scopes) : null;
+  useEffect(() => {
+    if (scopesKey === null || state !== 'live') return;
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(
+        JSON.stringify({ type: 'scopes', scopes: JSON.parse(scopesKey) } satisfies ClientMessage),
+      );
+    }
+  }, [scopesKey, state]);
 
   // Location changes are sent on the existing socket rather than reconnecting.
   useEffect(() => {

@@ -46,9 +46,15 @@ export default function IssuePage() {
     queryClient.invalidateQueries({ queryKey: issueKey });
     queryClient.invalidateQueries({ queryKey: ['comments', workspaceId, issueId] });
   });
-  const { presence, state: realtimeState } = useRealtime(workspaceId, issueId, (event) => {
-    if (concernsIssue(event, issueId)) refreshIssue();
-  });
+  const { presence, state: realtimeState } = useRealtime(
+    workspaceId,
+    issueId,
+    (event) => {
+      if (concernsIssue(event, issueId)) refreshIssue();
+    },
+    // Only this issue's events reach the socket at all (stage 3, item 24).
+    { scopes: [{ kind: 'issue', issueId }] },
+  );
 
   const workspace = useQuery({
     queryKey: ['workspace', workspaceId],
