@@ -41,6 +41,15 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-30',
     area: 'Product',
+    title: 'Mail goes out the moment it is queued',
+    summary:
+      'The background worker used to look for work once a second, so a sign-up link or a password reset waited up to a second before it was even started, and an idle worker asked the database every second for nothing. Now queueing a job wakes the worker straight away, through a database notification sent in the same transaction: it arrives when the job can be seen, and never for a job that was rolled back. The worker still looks every 30 seconds, for anything due later or a notification it missed. While it waits, it keeps telling the health check it is alive, but only while its database was reachable at its last look.',
+    checked:
+      'Tests prove a queued job starts within 100 ms, a job queued in a transaction does not start before the commit and starts within 100 ms after it, mail jobs (which are queued their own way) wake the worker too, an idle worker keeps its heartbeat without asking the database for work, one whose database is gone stops beating, and no code inserts a job without waking the worker. On the rebuilt stack the smoke test’s emailed sign-up link arrived in 53 ms, where it took about a second before, and the idle worker stayed healthy past its 30-second check.',
+  },
+  {
+    date: '2026-10-30',
+    area: 'Product',
     title: 'Editing together works across gateways',
     summary:
       'Two people writing in the same document only saw each other’s words live if their browsers happened to be connected to the same live gateway. With more than one gateway running, one could type and the other see nothing until a reload. Now each gateway stores what its own editors write, as it always has, and tells the other gateways which stored update to read; a gateway with the document open reads it and passes it to its editors. The notice carries only ids, because an edit can be far larger than a database notification may be, and an edit already folded into the document’s snapshot is read from the snapshot instead.',

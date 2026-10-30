@@ -1,4 +1,5 @@
 import type { Executor } from './index.ts';
+import { wakeWorkers } from './queue.ts';
 import { jobs } from './schema.ts';
 
 /**
@@ -58,6 +59,7 @@ async function queueAccountMail(db: Executor, kind: string, userId: string) {
       maxAttempts: MAIL_ATTEMPTS,
     })
     .onConflictDoNothing();
+  await wakeWorkers(db, kind);
 }
 
 export function queuePasswordResetMail(db: Executor, userId: string) {
@@ -84,6 +86,7 @@ export async function queueInvitationMail(db: Executor, invitationId: string) {
       maxAttempts: MAIL_ATTEMPTS,
     })
     .onConflictDoNothing();
+  await wakeWorkers(db, MAIL_WORKSPACE_INVITATION_JOB);
 }
 
 /** Mail a link that finishes this sign-up. */
@@ -98,6 +101,7 @@ export async function queueSignupMail(db: Executor, signupId: string) {
       maxAttempts: MAIL_ATTEMPTS,
     })
     .onConflictDoNothing();
+  await wakeWorkers(db, MAIL_SIGNUP_JOB);
 }
 
 /** Tell an account holder someone tried to sign up with their address. */

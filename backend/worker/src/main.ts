@@ -3,6 +3,7 @@ import {
   type EnqueueOptions,
   enqueue,
   hasPendingJob,
+  listenForJobs,
   STORAGE_PURGE_JOB,
 } from '@robis/database';
 import { mailerFromEnv } from '@robis/mailer';
@@ -20,11 +21,18 @@ const { databaseUrl: DATABASE_URL, webOrigin } = loadConfig(process.env, { webOr
 
 const { db, close } = createDatabase(DATABASE_URL, { max: 5 });
 
+/** How long the worker waits, idle, when nothing wakes it (stage 3, item 26). */
+const FALLBACK_POLL_MS = 30_000;
+
 const runner = new Runner({
   db,
   handlers,
+  idleDelayMs: FALLBACK_POLL_MS,
   onPoll: heartbeat(process.env.WORKER_HEARTBEAT_FILE ?? DEFAULT_HEARTBEAT_FILE),
 });
+
+// Woken as each job is queued, rather than polling every second.
+const jobsListener = await listenForJobs(DATABASE_URL, () => runner.wake());
 
 /**
  * Recurring maintenance.
@@ -115,7 +123,7 @@ if (auditStream) {
   console.log(`Audit stream on, to ${auditStream.url.origin}`);
 }
 
-console.log(`Worker ${runner.id} polling for jobs`);
+console.log(`Worker ${runner.id} waiting for jobs (woken on each, polling every 30 s)`);
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.once(signal, async () => {
@@ -123,6 +131,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     // Anything still claimed is reclaimed by another worker after the
     // visibility timeout.
     runner.stop();
+    await jobsListener.close();
     await close();
     process.exit(0);
   });

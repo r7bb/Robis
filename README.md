@@ -146,12 +146,12 @@ with Postgres on the same machine. Method and percentiles in
 
 ## Latest
 
+- **Mail goes out the moment it is queued.** The worker wakes on each new
+  job instead of polling every second.
 - **Editing together works across gateways.** Editors connected to
   different gateways see each other live.
 - **The live connection sends only what a page shows.** A board never
   hears chat; each page gets only its own events.
-- **A board reads only when its issues change.** Not on chat messages or a
-  timer; bursts of events are handled once.
 
 Everything else, newest first, with how each was checked:
 [What's new](docs/WHATS_NEW.md).

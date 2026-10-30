@@ -1,4 +1,5 @@
 import { and, eq, lt, lte, or, sql } from 'drizzle-orm';
+import postgres from 'postgres';
 import type { Database, Executor } from './index.ts';
 import { jobs } from './schema.ts';
 
@@ -56,7 +57,42 @@ export async function enqueue(
     })
     .returning({ id: jobs.id });
 
+  // A delayed job is not due yet; the worker's fallback poll finds it.
+  if (!options.delayMs) await wakeWorkers(db, kind);
+
   return job!.id;
+}
+
+/** The channel workers are woken on; the payload is the job's kind. */
+export const JOBS_CHANNEL = 'robis_jobs';
+
+/**
+ * Wake an idle worker for a job queued for now (stage 3, item 26). Every
+ * insert into the jobs table calls this. NOTIFY is transactional: in a
+ * transaction it is delivered at commit, when the job can be seen, and not
+ * at all if it rolls back.
+ */
+export async function wakeWorkers(db: Executor, kind: string): Promise<void> {
+  await db.execute(sql`select pg_notify(${JOBS_CHANNEL}, ${kind})`);
+}
+
+/**
+ * Call `onJob` whenever a job is queued for now, on a connection of its own:
+ * LISTEN holds it for as long as it listens. For the worker, to wake from
+ * its fallback sleep.
+ */
+export async function listenForJobs(
+  url: string,
+  onJob: (kind: string) => void,
+): Promise<{ close: () => Promise<void> }> {
+  const client = postgres(url, { max: 1, prepare: false, onnotice: () => {} });
+  const subscription = await client.listen(JOBS_CHANNEL, (kind) => onJob(kind));
+  return {
+    async close() {
+      await subscription.unlisten().catch(() => {});
+      await client.end({ timeout: 5 });
+    },
+  };
 }
 
 export type ClaimedJob = {

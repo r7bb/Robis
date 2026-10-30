@@ -3,7 +3,8 @@ import { type ClaimedJob, claimJobs, completeJob, type Database, failJob } from 
 /**
  * The worker loop.
  *
- * Polls for due jobs, runs them, and records the outcome. Kept separate from
+ * Looks for due jobs when woken (or on a fallback poll), runs them, and
+ * records the outcome. Kept separate from
  * `main.ts` so tests can drive it a tick at a time instead of racing a timer.
  */
 
@@ -18,16 +19,26 @@ export type RunnerOptions = {
   batchSize?: number;
   /** Claim only these kinds. Defaults to every kind. */
   kinds?: readonly string[];
-  /** Gap between polls when the queue is empty. */
+  /**
+   * How long to wait, idle, before looking again without being woken: the
+   * fallback poll. The worker sets 30 seconds and is woken by `wake()` as
+   * each job is queued (stage 3, item 26).
+   */
   idleDelayMs?: number;
+  /** While idle after a poll that reached the queue, `onPoll` is called this often. */
+  beatMs?: number;
   /**
    * Called after every poll that reached the queue, whether or not it found
-   * work, and after every job. The container health check hangs off this: a
-   * worker whose loop has stalled, or whose database is gone, stops calling
-   * it, while one working through a slow batch keeps calling it.
+   * work, after every job, and every `beatMs` while idle after such a poll.
+   * The container health check hangs off this: a worker whose loop has
+   * stalled, or whose database was gone at its last poll, stops calling it,
+   * while one working through a slow batch keeps calling it.
    */
   onPoll?: () => void;
 };
+
+/** The heartbeat's limit is 30 s; a beat every 10 s leaves room for a slow one. */
+const BEAT_MS = 10_000;
 
 export type TickResult = { claimed: number; completed: number; failed: number; dead: number };
 
@@ -39,8 +50,12 @@ export class Runner {
   private readonly idleDelayMs: number;
   private readonly kinds: readonly string[] | undefined;
   private readonly onPoll: (() => void) | undefined;
+  private readonly beatMs: number;
 
   private running = false;
+  /** Set by `wake()`; the next idle wait returns at once. */
+  private woken = false;
+  private interrupt: (() => void) | null = null;
 
   constructor(options: RunnerOptions) {
     this.db = options.db;
@@ -50,6 +65,36 @@ export class Runner {
     this.idleDelayMs = options.idleDelayMs ?? 1000;
     this.kinds = options.kinds;
     this.onPoll = options.onPoll;
+    this.beatMs = Math.min(options.beatMs ?? BEAT_MS, this.idleDelayMs);
+  }
+
+  /** Look for work now: a job was queued. Harmless while already working. */
+  wake(): void {
+    this.woken = true;
+    this.interrupt?.();
+  }
+
+  /**
+   * Wait until woken or `idleDelayMs` passes. With `beat`, the last poll
+   * reached the queue, and the loop says it is alive every `beatMs` on the
+   * way without asking the database again; after a failed poll it stays
+   * quiet, so the health check sees the database is gone.
+   */
+  private async idle(beat: boolean): Promise<void> {
+    const deadline = Date.now() + this.idleDelayMs;
+    while (this.running && !this.woken && Date.now() < deadline) {
+      const wait = Math.min(this.beatMs, deadline - Date.now());
+      await new Promise<void>((resolve) => {
+        const timer = setTimeout(resolve, wait);
+        this.interrupt = () => {
+          clearTimeout(timer);
+          resolve();
+        };
+      });
+      this.interrupt = null;
+      if (beat && this.running && !this.woken) this.onPoll?.();
+    }
+    this.woken = false;
   }
 
   get id(): string {
@@ -111,16 +156,18 @@ export class Runner {
         // A failure here is the queue itself being unreachable, not a job
         // failing. Back off rather than spinning against a dead database.
         console.error('worker: tick failed', error);
-        await Bun.sleep(this.idleDelayMs);
+        await this.idle(false);
+        continue;
       }
 
       // Only pause when there was nothing to do; a full batch probably means
       // more is waiting.
-      if (worked === 0) await Bun.sleep(this.idleDelayMs);
+      if (worked === 0) await this.idle(true);
     }
   }
 
   stop(): void {
     this.running = false;
+    this.interrupt?.();
   }
 }
