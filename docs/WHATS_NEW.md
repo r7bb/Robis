@@ -6,8 +6,8 @@ what each layer does. Back to the [README](../README.md).
 
 - **Routes described once, a group at a time** (2026-10-29). One
   definition per route types the API, the web app and a generated
-  [OpenAPI document](openapi.json); workspaces, projects, members and
-  invitations first, 62 routes still to move.
+  [OpenAPI document](openapi.json); workspaces, projects, members,
+  invitations, issues and comments first, 52 routes still to move.
 - **The database library is current** (2026-10-29). Drizzle 0.38 to 0.45,
   with error codes read through its new error wrapping.
 - **CI installs exactly what is locked, and runs the Python tests**

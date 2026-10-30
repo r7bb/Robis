@@ -3,8 +3,6 @@ import {
   type CallInput,
   type Contract,
   type contracts,
-  type IssuePriority,
-  type IssueStatus,
   pathFor,
   type ResponseOf,
 } from '@robis/shared';
@@ -58,8 +56,11 @@ export async function api<T>(
   return payload as T;
 }
 
+/** A call's input, plus any headers it needs (an idempotency key, say). */
+type CallOptions<C extends Contract> = CallInput<C> & { headers?: Record<string, string> };
+
 type CallArgs<C extends Contract> =
-  Record<string, never> extends CallInput<C> ? [input?: CallInput<C>] : [input: CallInput<C>];
+  Record<string, never> extends CallInput<C> ? [input?: CallOptions<C>] : [input: CallOptions<C>];
 
 /**
  * Call a route through its contract (stage 2, item 20): the path, method and
@@ -70,10 +71,11 @@ export function call<C extends Contract>(
   route: C,
   ...[input]: CallArgs<C>
 ): Promise<ResponseOf<C>> {
-  const { params, query, body } = (input ?? {}) as {
+  const { params, query, body, headers } = (input ?? {}) as {
     params?: Record<string, unknown>;
     query?: Record<string, unknown>;
     body?: unknown;
+    headers?: Record<string, string>;
   };
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(query ?? {})) {
@@ -83,6 +85,7 @@ export function call<C extends Contract>(
   return api<ResponseOf<C>>(`${pathFor(route.path, params)}${suffix}`, {
     method: route.method,
     body,
+    headers,
   });
 }
 
@@ -145,31 +148,13 @@ export type DocumentSummary = {
   updatedAt: string;
 };
 
-export type IssueDetail = {
-  id: string;
-  key: string;
-  number: number;
-  projectId: string;
-  title: string;
-  description: string | null;
-  status: IssueStatus;
-  priority: IssuePriority;
-  assigneeId: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
+/** One issue, as the contract describes it. */
+export type IssueDetail = ResponseOf<(typeof contracts)['issues.get']>['issue'];
 
-export type Comment = {
-  id: string;
-  body: string;
-  createdAt: string;
-  authorId: string;
-  authorName: string;
-  /** Who each `@handle` meant when it was written, with today's username. */
-  mentions: CommentMention[];
-};
+/** One comment, as the contract describes it. */
+export type Comment = ResponseOf<(typeof contracts)['comments.list']>['comments'][number];
 
-export type CommentMention = { handle: string; userId: string; username: string };
+export type CommentMention = Comment['mentions'][number];
 
 export type NotificationItem = {
   id: string;

@@ -1,8 +1,9 @@
 'use client';
 
+import { contracts } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { api } from '../../lib/api.ts';
+import { call } from '../../lib/api.ts';
 import { useDebounced } from '../../lib/use-debounced.ts';
 
 /**
@@ -26,8 +27,6 @@ const MIN_LENGTH = 12;
 /** Long enough that a typist is not firing a request per keystroke. */
 const DEBOUNCE_MS = 400;
 
-type SimilarIssue = { id: string; title: string; score: number };
-
 export function DuplicateHints({ workspaceId, title }: { workspaceId: string; title: string }) {
   const settled = useDebounced(title.trim(), DEBOUNCE_MS);
   const longEnough = settled.length >= MIN_LENGTH;
@@ -36,9 +35,7 @@ export function DuplicateHints({ workspaceId, title }: { workspaceId: string; ti
     queryKey: ['similar', workspaceId, settled],
     enabled: longEnough,
     queryFn: () =>
-      api<{ similar: SimilarIssue[] }>(
-        `/workspaces/${workspaceId}/issues/similar?title=${encodeURIComponent(settled)}`,
-      ),
+      call(contracts['issues.similar'], { params: { workspaceId }, query: { title: settled } }),
     // A hint is not worth retrying for, and a stale answer for a title the
     // writer has moved past is worse than none.
     retry: false,

@@ -8,6 +8,7 @@ import { z } from 'zod';
 import {
   closeHarness,
   createActor,
+  createProject,
   createWorkspace,
   getHarness,
   request,
@@ -35,9 +36,7 @@ const PENDING: readonly string[] = [
   'DELETE /notifications/:notificationId',
   'DELETE /workspaces/:workspaceId/attachments/:attachmentId',
   'DELETE /workspaces/:workspaceId/channels/:channelId',
-  'DELETE /workspaces/:workspaceId/comments/:commentId',
   'DELETE /workspaces/:workspaceId/documents/:documentId',
-  'DELETE /workspaces/:workspaceId/issues/:issueId',
   'DELETE /workspaces/:workspaceId/meetings/:meetingId',
   'DELETE /workspaces/:workspaceId/messages/:messageId',
   'GET /auth/me',
@@ -53,19 +52,13 @@ const PENDING: readonly string[] = [
   'GET /workspaces/:workspaceId/channels/:channelId/messages',
   'GET /workspaces/:workspaceId/documents',
   'GET /workspaces/:workspaceId/documents/:documentId',
-  'GET /workspaces/:workspaceId/issues/:issueId',
   'GET /workspaces/:workspaceId/issues/:issueId/attachments',
-  'GET /workspaces/:workspaceId/issues/:issueId/comments',
-  'GET /workspaces/:workspaceId/issues/similar',
-  'GET /workspaces/:workspaceId/issues/triage',
   'GET /workspaces/:workspaceId/meetings',
-  'GET /workspaces/:workspaceId/projects/:projectId/issues',
   'GET /workspaces/:workspaceId/search',
   'GET /workspaces/overview',
   'PATCH /auth/me',
   'PATCH /workspaces/:workspaceId/channels/:channelId',
   'PATCH /workspaces/:workspaceId/documents/:documentId',
-  'PATCH /workspaces/:workspaceId/issues/:issueId',
   'PATCH /workspaces/:workspaceId/meetings/:meetingId',
   'POST /auth/email/resend',
   'POST /auth/email/verify',
@@ -86,10 +79,8 @@ const PENDING: readonly string[] = [
   'POST /workspaces/:workspaceId/channels/:channelId/messages',
   'POST /workspaces/:workspaceId/documents',
   'POST /workspaces/:workspaceId/issues/:issueId/attachments',
-  'POST /workspaces/:workspaceId/issues/:issueId/comments',
   'POST /workspaces/:workspaceId/meetings',
   'POST /workspaces/:workspaceId/meetings/:meetingId/response',
-  'POST /workspaces/:workspaceId/projects/:projectId/issues',
   'PUT /auth/me/avatar',
   'PUT /auth/me/avatar/generated',
 ];
@@ -120,6 +111,27 @@ describe('route contracts', () => {
     expect(Object.keys(response.json().workspace).sort()).toEqual(
       Object.keys(contracts['workspaces.get'].response.shape.workspace.shape).sort(),
     );
+  });
+
+  test('an updated issue answers with its key, as every other issue answer does', async () => {
+    // The update used to answer without it, while the web app's type said it was there.
+    const actor = await createActor('Owner');
+    const workspace = await createWorkspace(actor, 'Keys');
+    const project = await createProject(actor, workspace.id);
+    const created = await request(`/workspaces/${workspace.id}/projects/${project.id}/issues`, {
+      method: 'POST',
+      actor,
+      payload: { title: 'Has a key' },
+    });
+    const { key } = created.json().issue;
+    const updated = await request(`/workspaces/${workspace.id}/issues/${created.json().issue.id}`, {
+      method: 'PATCH',
+      actor,
+      payload: { title: 'Still has a key' },
+    });
+    expect(updated.statusCode).toBe(200);
+    expect(updated.json().issue).toMatchObject({ key, title: 'Still has a key' });
+    expect(updated.json().issue).not.toHaveProperty('searchVector');
   });
 
   test('a handler that answers outside its contract is a server error, not a reply', async () => {

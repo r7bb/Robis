@@ -12,9 +12,10 @@ import {
   users,
   workspaceMembers,
 } from '@robis/database';
-import { can, createCommentSchema, isUuid, parseMentions, resolveMentions } from '@robis/shared';
+import { can, contracts, isUuid, parseMentions, resolveMentions } from '@robis/shared';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
+import { serve } from '../contract.ts';
 import { ApiError } from '../errors.ts';
 import {
   auditActor,
@@ -23,7 +24,6 @@ import {
   requireAuth,
   requireMembership,
 } from '../plugins/authz.ts';
-import { parse } from '../validate.ts';
 
 /** A mention as the client shows it: what was written, and who it meant. */
 export type CommentMention = { handle: string; userId: string; username: string };
@@ -98,12 +98,12 @@ async function mentionsFor(db: Database, workspaceId: string, commentIds: string
 export async function commentRoutes(app: FastifyInstance, opts: { db: Database }) {
   const { db } = opts;
 
-  app.get(
-    '/workspaces/:workspaceId/issues/:issueId/comments',
+  serve(
+    app,
+    contracts['comments.list'],
     { preHandler: [requireAuth, requireMembership(db, 'comment:read')] },
-    async (request) => {
+    async (request, { params: { issueId } }) => {
       const { workspaceId } = currentMembership(request);
-      const { issueId } = request.params as { issueId: string };
 
       if (!isUuid(issueId)) throw ApiError.notFound('Issue not found');
 
@@ -131,14 +131,13 @@ export async function commentRoutes(app: FastifyInstance, opts: { db: Database }
     },
   );
 
-  app.post(
-    '/workspaces/:workspaceId/issues/:issueId/comments',
+  serve(
+    app,
+    contracts['comments.create'],
     { preHandler: [requireAuth, requireMembership(db, 'comment:create')] },
-    async (request, reply) => {
+    async (request, { params: { issueId }, body: input }) => {
       const user = currentUser(request);
       const { workspaceId } = currentMembership(request);
-      const { issueId } = request.params as { issueId: string };
-      const input = parse(createCommentSchema, request.body);
 
       if (!isUuid(issueId)) throw ApiError.notFound('Issue not found');
 
@@ -184,7 +183,7 @@ export async function commentRoutes(app: FastifyInstance, opts: { db: Database }
         actorId: user.id,
       });
 
-      return reply.status(201).send({ comment: { ...created, authorName: user.name } });
+      return { comment: { ...created, authorName: user.name } };
     },
   );
 
@@ -193,13 +192,13 @@ export async function commentRoutes(app: FastifyInstance, opts: { db: Database }
    * permissions, so the check depends on the row -- guests and members can
    * retract what they wrote, only admins can moderate others.
    */
-  app.delete(
-    '/workspaces/:workspaceId/comments/:commentId',
+  serve(
+    app,
+    contracts['comments.delete'],
     { preHandler: [requireAuth, requireMembership(db, 'comment:read')] },
-    async (request, reply) => {
+    async (request, { params: { commentId } }) => {
       const user = currentUser(request);
       const { workspaceId, role } = currentMembership(request);
-      const { commentId } = request.params as { commentId: string };
 
       if (!isUuid(commentId)) throw ApiError.notFound('Comment not found');
 
@@ -237,7 +236,7 @@ export async function commentRoutes(app: FastifyInstance, opts: { db: Database }
         });
       });
 
-      return reply.status(204).send();
+      return undefined;
     },
   );
 }

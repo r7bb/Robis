@@ -2,6 +2,7 @@
 
 import {
   BOARD_COLUMNS,
+  type BodyOf,
   can,
   contracts,
   ISSUE_PRIORITIES,
@@ -17,7 +18,7 @@ import { DeleteButton } from '../../../../../components/delete-button.tsx';
 import { PresenceBar } from '../../../../../components/presence.tsx';
 import { ErrorState } from '../../../../../components/ui/primitives.tsx';
 import { IssueAttachments } from '../../../../../features/issues/attachments.tsx';
-import { api, call, type IssueDetail } from '../../../../../lib/api.ts';
+import { call } from '../../../../../lib/api.ts';
 import { useRealtime } from '../../../../../lib/realtime.ts';
 import { lastTheme, useApplyTheme } from '../../../../../lib/theme.ts';
 
@@ -53,7 +54,7 @@ export default function IssuePage() {
 
   const issue = useQuery({
     queryKey: issueKey,
-    queryFn: () => api<{ issue: IssueDetail }>(`/workspaces/${workspaceId}/issues/${issueId}`),
+    queryFn: () => call(contracts['issues.get'], { params: { workspaceId, issueId } }),
   });
 
   const members = useQuery({
@@ -62,17 +63,13 @@ export default function IssuePage() {
   });
 
   const update = useMutation({
-    mutationFn: (patch: Partial<IssueDetail>) =>
-      api<{ issue: IssueDetail }>(`/workspaces/${workspaceId}/issues/${issueId}`, {
-        method: 'PATCH',
-        body: patch,
-      }),
+    mutationFn: (patch: BodyOf<(typeof contracts)['issues.update']>) =>
+      call(contracts['issues.update'], { params: { workspaceId, issueId }, body: patch }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: issueKey }),
   });
 
   const remove = useMutation({
-    mutationFn: () =>
-      api<void>(`/workspaces/${workspaceId}/issues/${issueId}`, { method: 'DELETE' }),
+    mutationFn: () => call(contracts['issues.delete'], { params: { workspaceId, issueId } }),
     onSuccess: () => {
       // This page is about to 404, so leave before invalidating.
       const projectId = issue.data?.issue.projectId;

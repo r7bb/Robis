@@ -1,9 +1,10 @@
 'use client';
 
 import type { IssuePriority } from '@robis/shared';
+import { contracts } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import { PriorityBadge } from '../../components/ui/badges.tsx';
-import { api } from '../../lib/api.ts';
+import { call } from '../../lib/api.ts';
 import { useDebounced } from '../../lib/use-debounced.ts';
 
 /**
@@ -27,10 +28,6 @@ const MIN_LENGTH = 12;
 
 const DEBOUNCE_MS = 400;
 
-type Suggestion =
-  | { priority: Exclude<IssuePriority, 'NONE'>; score: number }
-  | { priority: null; trainedOn: number; needed: number };
-
 export function PriorityHint({
   workspaceId,
   title,
@@ -50,9 +47,7 @@ export function PriorityHint({
     queryKey: ['triage', workspaceId, settled],
     enabled: longEnough && chosen === null,
     queryFn: () =>
-      api<{ suggestion: Suggestion | null }>(
-        `/workspaces/${workspaceId}/issues/triage?title=${encodeURIComponent(settled)}`,
-      ),
+      call(contracts['issues.triage'], { params: { workspaceId }, query: { title: settled } }),
     retry: false,
     staleTime: 60_000,
   });

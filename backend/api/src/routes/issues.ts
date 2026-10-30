@@ -12,15 +12,10 @@ import {
   users,
   workspaceMembers,
 } from '@robis/database';
-import {
-  createIssueSchema,
-  isUuid,
-  listIssuesQuerySchema,
-  similarIssuesQuerySchema,
-  updateIssueSchema,
-} from '@robis/shared';
+import { contracts, isUuid } from '@robis/shared';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
+import { serve, shape } from '../contract.ts';
 import { ApiError } from '../errors.ts';
 import {
   auditActor,
@@ -31,7 +26,6 @@ import {
 } from '../plugins/authz.ts';
 import { withIdempotency } from '../plugins/idempotency.ts';
 import type { SuggestionClient } from '../suggestions.ts';
-import { parse } from '../validate.ts';
 import { loadProject } from './projects.ts';
 
 /** Tenant-scoped issue lookup. See the note on `loadProject`. */
@@ -82,12 +76,12 @@ export async function issueRoutes(
    * other route. The ML service trusts whatever workspace id it is handed,
    * so this is the only place that decides whether the caller may ask.
    */
-  app.get(
-    '/workspaces/:workspaceId/issues/similar',
+  serve(
+    app,
+    contracts['issues.similar'],
     { preHandler: [requireAuth, requireMembership(db, 'issue:read')] },
-    async (request) => {
+    async (request, { query }) => {
       const { workspaceId } = currentMembership(request);
-      const query = parse(similarIssuesQuerySchema, request.query);
 
       /*
        * Caught here as well as inside the client. The client swallows its
@@ -117,12 +111,12 @@ export async function issueRoutes(
    * `suggestion: null` means "nothing to say"; a refusal for lack of
    * training data comes through as its own answer with the counts.
    */
-  app.get(
-    '/workspaces/:workspaceId/issues/triage',
+  serve(
+    app,
+    contracts['issues.triage'],
     { preHandler: [requireAuth, requireMembership(db, 'issue:read')] },
-    async (request) => {
+    async (request, { query }) => {
       const { workspaceId } = currentMembership(request);
-      const query = parse(similarIssuesQuerySchema, request.query);
 
       try {
         return {
@@ -137,13 +131,12 @@ export async function issueRoutes(
     },
   );
 
-  app.get(
-    '/workspaces/:workspaceId/projects/:projectId/issues',
+  serve(
+    app,
+    contracts['issues.list'],
     { preHandler: [requireAuth, requireMembership(db, 'issue:read')] },
-    async (request) => {
+    async (request, { params: { projectId }, query }) => {
       const { workspaceId } = currentMembership(request);
-      const { projectId } = request.params as { projectId: string };
-      const query = parse(listIssuesQuerySchema, request.query);
 
       const project = await loadProject(db, workspaceId, projectId);
 
@@ -200,14 +193,13 @@ export async function issueRoutes(
     },
   );
 
-  app.post(
-    '/workspaces/:workspaceId/projects/:projectId/issues',
+  serve(
+    app,
+    contracts['issues.create'],
     { preHandler: [requireAuth, requireMembership(db, 'issue:create')] },
-    async (request, reply) => {
+    async (request, { params: { projectId }, body: input }, reply) => {
       const user = currentUser(request);
       const { workspaceId } = currentMembership(request);
-      const { projectId } = request.params as { projectId: string };
-      const input = parse(createIssueSchema, request.body);
 
       await loadProject(db, workspaceId, projectId);
       if (input.assigneeId) await assertAssignable(db, workspaceId, input.assigneeId);
@@ -265,17 +257,17 @@ export async function issueRoutes(
           actorId: user.id,
         });
 
-        return { issue };
+        return shape(contracts['issues.create'], { issue });
       });
     },
   );
 
-  app.get(
-    '/workspaces/:workspaceId/issues/:issueId',
+  serve(
+    app,
+    contracts['issues.get'],
     { preHandler: [requireAuth, requireMembership(db, 'issue:read')] },
-    async (request) => {
+    async (request, { params: { issueId } }) => {
       const { workspaceId } = currentMembership(request);
-      const { issueId } = request.params as { issueId: string };
 
       const issue = await loadIssue(db, workspaceId, issueId);
       const project = await loadProject(db, workspaceId, issue.projectId);
@@ -284,14 +276,13 @@ export async function issueRoutes(
     },
   );
 
-  app.patch(
-    '/workspaces/:workspaceId/issues/:issueId',
+  serve(
+    app,
+    contracts['issues.update'],
     { preHandler: [requireAuth, requireMembership(db, 'issue:update')] },
-    async (request) => {
+    async (request, { params: { issueId }, body: input }) => {
       const user = currentUser(request);
       const { workspaceId } = currentMembership(request);
-      const { issueId } = request.params as { issueId: string };
-      const input = parse(updateIssueSchema, request.body);
 
       const before = await loadIssue(db, workspaceId, issueId);
 
@@ -342,6 +333,7 @@ export async function issueRoutes(
           },
         });
 
+        if (!row) throw ApiError.notFound('Issue not found');
         return row;
       });
 
@@ -353,16 +345,17 @@ export async function issueRoutes(
         actorId: user.id,
       });
 
-      return { issue: updated };
+      // With its key, as the other issue answers have it.
+      return { issue: { ...updated, key: `${project.key}-${updated.number}` } };
     },
   );
 
-  app.delete(
-    '/workspaces/:workspaceId/issues/:issueId',
+  serve(
+    app,
+    contracts['issues.delete'],
     { preHandler: [requireAuth, requireMembership(db, 'issue:delete')] },
-    async (request, reply) => {
+    async (request, { params: { issueId } }) => {
       const { workspaceId } = currentMembership(request);
-      const { issueId } = request.params as { issueId: string };
 
       const issue = await loadIssue(db, workspaceId, issueId);
       const project = await loadProject(db, workspaceId, issue.projectId);
@@ -396,7 +389,7 @@ export async function issueRoutes(
         actorId: currentUser(request).id,
       });
 
-      return reply.status(204).send();
+      return undefined;
     },
   );
 }

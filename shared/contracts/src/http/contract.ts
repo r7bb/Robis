@@ -59,6 +59,9 @@ export type HandlerResult<C extends Contract> = C['response'] extends z.ZodType
   ? z.input<C['response']>
   : undefined;
 
+/** What a caller sends as the route's body. */
+export type BodyOf<C extends Contract> = C['body'] extends z.ZodType ? z.input<C['body']> : never;
+
 /** What the web app receives from the route. */
 export type ResponseOf<C extends Contract> = C['response'] extends z.ZodType
   ? Wire<z.output<C['response']>>

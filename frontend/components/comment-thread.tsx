@@ -1,10 +1,10 @@
 'use client';
 
-import { splitMentions } from '@robis/shared';
+import { contracts, splitMentions } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type ClipboardEvent, type FormEvent, useEffect, useState } from 'react';
 import { type Attachment, uploadable } from '../features/issues/attachments.tsx';
-import { api, BASE_URL, type Comment, type CommentMention, type Me } from '../lib/api.ts';
+import { api, BASE_URL, type CommentMention, call, type Me } from '../lib/api.ts';
 import { useMemberAvatars } from '../lib/use-member-avatars.ts';
 import { DeleteButton } from './delete-button.tsx';
 import { Avatar } from './ui/avatar.tsx';
@@ -46,7 +46,7 @@ export function CommentThread({
 
   const comments = useQuery({
     queryKey: key,
-    queryFn: () => api<{ comments: Comment[] }>(path),
+    queryFn: () => call(contracts['comments.list'], { params: { workspaceId, issueId } }),
   });
 
   const attachmentsKey = ['attachments', workspaceId, issueId] as const;
@@ -67,8 +67,8 @@ export function CommentThread({
     mutationFn: async (text: string) => {
       let commentId = posted;
       if (!commentId) {
-        const created = await api<{ comment: Comment }>(path, {
-          method: 'POST',
+        const created = await call(contracts['comments.create'], {
+          params: { workspaceId, issueId },
           body: { body: text },
         });
         commentId = created.comment.id;
@@ -118,7 +118,7 @@ export function CommentThread({
 
   const remove = useMutation({
     mutationFn: (commentId: string) =>
-      api<void>(`/workspaces/${workspaceId}/comments/${commentId}`, { method: 'DELETE' }),
+      call(contracts['comments.delete'], { params: { workspaceId, commentId } }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: key }),
   });
 
