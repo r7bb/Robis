@@ -214,7 +214,7 @@ export function WorkspaceShell({ workspaceId }: { workspaceId: string }) {
 
   const members = useQuery({
     queryKey: ['members', workspaceId],
-    queryFn: () => api<{ members: Member[] }>(`/workspaces/${workspaceId}/members`),
+    queryFn: () => call(contracts['members.list'], { params: { workspaceId } }),
   });
 
   const channels = useChannels(workspaceId);

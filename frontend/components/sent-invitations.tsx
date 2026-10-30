@@ -1,8 +1,9 @@
 'use client';
 
+import { contracts } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { api, invitedLabel, type SentInvitation } from '../lib/api.ts';
+import { call, invitedLabel, type SentInvitation } from '../lib/api.ts';
 import { RoleBadge } from './ui/primitives.tsx';
 
 /**
@@ -26,12 +27,14 @@ export function SentInvitations({
 
   const invitations = useQuery({
     queryKey: key,
-    queryFn: () => api<{ invitations: SentInvitation[] }>(`/workspaces/${workspaceId}/invitations`),
+    queryFn: () => call(contracts['invitations.sent'], { params: { workspaceId } }),
   });
 
   const withdraw = useMutation({
     mutationFn: (invitation: SentInvitation) =>
-      api<void>(`/workspaces/${workspaceId}/invitations/${invitation.id}`, { method: 'DELETE' }),
+      call(contracts['invitations.withdraw'], {
+        params: { workspaceId, invitationId: invitation.id },
+      }),
     onSuccess: (_, invitation) => {
       setSaid(`Withdrew the invitation to ${invitedLabel(invitation)}.`);
       document.getElementById(focusAfter)?.focus();

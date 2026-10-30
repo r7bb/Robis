@@ -6,9 +6,10 @@ import {
   users,
   workspaceMembers,
 } from '@robis/database';
-import { can, outranks, type Role, rankOf, setMemberRoleSchema } from '@robis/shared';
+import { can, contracts, outranks, type Role, rankOf } from '@robis/shared';
 import { and, count, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
+import { serve } from '../contract.ts';
 import { ApiError } from '../errors.ts';
 import { avatarOf } from '../media/avatars.ts';
 import {
@@ -18,7 +19,6 @@ import {
   requireAuth,
   requireMembership,
 } from '../plugins/authz.ts';
-import { parse } from '../validate.ts';
 
 async function ownerCount(db: Executor, workspaceId: string): Promise<number> {
   const [row] = await db
@@ -74,8 +74,9 @@ function assertCanManage(actor: Role, target: Role) {
 export async function memberRoutes(app: FastifyInstance, opts: { db: Database }) {
   const { db } = opts;
 
-  app.get(
-    '/workspaces/:workspaceId/members',
+  serve(
+    app,
+    contracts['members.list'],
     { preHandler: [requireAuth, requireMembership(db, 'member:read')] },
     async (request) => {
       const { workspaceId, role } = currentMembership(request);
@@ -113,14 +114,13 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
     },
   );
 
-  app.patch(
-    '/workspaces/:workspaceId/members/:userId',
+  serve(
+    app,
+    contracts['members.setRole'],
     { preHandler: [requireAuth, requireMembership(db, 'member:set_role')] },
-    async (request) => {
+    async (request, { params: { userId }, body: input }) => {
       const actor = currentUser(request);
       const { workspaceId, role: actorRole } = currentMembership(request);
-      const { userId } = request.params as { userId: string };
-      const input = parse(setMemberRoleSchema, request.body);
 
       // Self-service role changes are always an escalation or an accident.
       if (userId === actor.id) {
@@ -172,13 +172,13 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
     },
   );
 
-  app.delete(
-    '/workspaces/:workspaceId/members/:userId',
+  serve(
+    app,
+    contracts['members.remove'],
     { preHandler: [requireAuth, requireMembership(db, 'member:remove')] },
-    async (request, reply) => {
+    async (request, { params: { userId } }) => {
       const actor = currentUser(request);
       const { workspaceId, role: actorRole } = currentMembership(request);
-      const { userId } = request.params as { userId: string };
 
       if (userId === actor.id) {
         throw ApiError.badRequest('Use DELETE /members/me to leave a workspace', 'use_leave');
@@ -215,7 +215,7 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
         });
       });
 
-      return reply.status(204).send();
+      return undefined;
     },
   );
 
@@ -224,12 +224,13 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
    * guest can walk out. The last owner still cannot, since that would strand
    * the workspace.
    */
-  app.delete(
-    '/workspaces/:workspaceId/members/me',
+  serve(
+    app,
+    contracts['members.leave'],
     {
       preHandler: [requireAuth, requireMembership(db, 'workspace:read', { allowUnsettled: true })],
     },
-    async (request, reply) => {
+    async (request) => {
       const actor = currentUser(request);
       const { workspaceId, role } = currentMembership(request);
 
@@ -264,7 +265,7 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
         });
       });
 
-      return reply.status(204).send();
+      return undefined;
     },
   );
 }

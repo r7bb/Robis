@@ -20,8 +20,12 @@ export type Contract = {
   params?: z.ZodType;
   query?: z.ZodType;
   body?: z.ZodType;
-  /** 200 unless said otherwise; 204 when there is no response body. */
-  status?: number;
+  /**
+   * 200 unless said otherwise; 204 when there is no response body. A route
+   * that answers with more than one success code lists them, first the one
+   * it uses unless the handler says otherwise.
+   */
+  status?: number | readonly number[];
   /** What the route sends back, or null for an empty 204. */
   response: z.ZodType | null;
 };
@@ -73,6 +77,12 @@ export type CallInput<C extends Contract> = (C['params'] extends z.ZodType
   : { params?: never }) &
   (C['query'] extends z.ZodType ? { query?: z.input<Schema<C, 'query'>> } : { query?: never }) &
   (C['body'] extends z.ZodType ? { body: z.input<Schema<C, 'body'>> } : { body?: never });
+
+/** The success codes a route answers with. */
+export function statusesOf(route: Contract): readonly number[] {
+  if (route.status === undefined) return [route.response ? 200 : 204];
+  return typeof route.status === 'number' ? [route.status] : route.status;
+}
 
 /** The path with its `:name` segments filled in, each one encoded. */
 export function pathFor(path: string, params: Record<string, unknown> = {}): string {

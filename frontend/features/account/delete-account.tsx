@@ -7,7 +7,6 @@ import { type FormEvent, useState } from 'react';
 import { ApiError, api, call, type Me } from '../../lib/api.ts';
 import { getSyncEngine } from '../../lib/sync.ts';
 
-type Member = { userId: string; name: string; role: string };
 type Choice = { action: 'transfer'; to: string } | { action: 'delete' };
 
 /**
@@ -34,7 +33,7 @@ export function DeleteAccount({ me }: { me: Me }) {
   const members = useQueries({
     queries: owned.map((w) => ({
       queryKey: ['members', w.id],
-      queryFn: () => api<{ members: Member[] }>(`/workspaces/${w.id}/members`),
+      queryFn: () => call(contracts['members.list'], { params: { workspaceId: w.id } }),
     })),
   });
 

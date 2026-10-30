@@ -1,8 +1,9 @@
 'use client';
 
+import { contracts } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { api, type Me, type MyInvitation } from '../lib/api.ts';
+import { api, call, type Me, type MyInvitation } from '../lib/api.ts';
 import { RoleBadge } from './ui/primitives.tsx';
 
 /** Invitations arrive from other people, with no event to key off. */
@@ -26,14 +27,16 @@ export function MyInvitations({ me, focusAfter }: { me: Me | undefined; focusAft
 
   const invitations = useQuery({
     queryKey: key,
-    queryFn: () => api<{ invitations: MyInvitation[] }>('/invitations'),
+    queryFn: () => call(contracts['invitations.mine']),
     enabled: Boolean(me),
     refetchInterval: POLL_MS,
   });
 
   const answer = useMutation({
     mutationFn: ({ invitation, verb }: { invitation: MyInvitation; verb: 'accept' | 'decline' }) =>
-      api<unknown>(`/invitations/${invitation.id}/${verb}`, { method: 'POST' }),
+      call(contracts[verb === 'accept' ? 'invitations.accept' : 'invitations.decline'], {
+        params: { invitationId: invitation.id },
+      }),
     onSuccess: (_, { invitation, verb }) => {
       setSaid(
         verb === 'accept'

@@ -1,4 +1,4 @@
-import type { Contract, HandlerResult, InputOf } from '@robis/shared';
+import { type Contract, type HandlerResult, type InputOf, statusesOf } from '@robis/shared';
 import type {
   FastifyInstance,
   FastifyReply,
@@ -16,7 +16,7 @@ type Handler<C extends Contract> = (
   request: FastifyRequest,
   input: InputOf<C>,
   reply: FastifyReply,
-) => Promise<HandlerResult<C>>;
+) => Promise<HandlerResult<C> | FastifyReply>;
 
 /**
  * Register a route from its contract (stage 2, item 20).
@@ -44,9 +44,20 @@ export function serve<C extends Contract>(
         body: route.body ? parse(route.body, request.body ?? {}) : undefined,
       } as InputOf<C>;
       const result = await handler(request, input, reply);
+      // Answered already: by the idempotency ledger, through `shape`.
       if (reply.sent) return reply;
-      if (route.response === null) return reply.status(route.status ?? 204).send();
-      return reply.status(route.status ?? 200).send(route.response.parse(result));
+      const [status] = statusesOf(route);
+      if (route.response === null) return reply.status(status ?? 204).send();
+      return reply.status(status ?? 200).send(route.response.parse(result));
     },
   });
+}
+
+/**
+ * A value put through the route's response schema, for a handler that sends
+ * its own reply (the idempotency ledger stores and replays what it is
+ * given): what it stores is then exactly what the contract allows.
+ */
+export function shape<C extends Contract>(route: C, value: HandlerResult<C>): unknown {
+  return route.response ? route.response.parse(value) : value;
 }

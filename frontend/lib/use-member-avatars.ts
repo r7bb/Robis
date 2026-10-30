@@ -1,10 +1,11 @@
 'use client';
 
 import type { Avatar } from '@robis/shared';
+import { contracts } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import { useMemo } from 'react';
-import { api, type Member } from './api.ts';
+import { call } from './api.ts';
 
 const NO_AVATARS: ReadonlyMap<string, Avatar> = new Map();
 
@@ -20,7 +21,9 @@ export function useMemberAvatars(): ReadonlyMap<string, Avatar> {
 
   const members = useQuery({
     queryKey: ['members', workspaceId],
-    queryFn: () => api<{ members: Member[] }>(`/workspaces/${workspaceId}/members`),
+    // Only runs once there is a workspace on the route (`enabled` below).
+    queryFn: () =>
+      call(contracts['members.list'], { params: { workspaceId: workspaceId as string } }),
     enabled: Boolean(workspaceId),
   });
 

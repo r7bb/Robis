@@ -7,7 +7,6 @@ import {
   type IssueStatus,
   pathFor,
   type ResponseOf,
-  type Role,
 } from '@robis/shared';
 
 import { API_URL } from './endpoints.ts';
@@ -117,40 +116,22 @@ export type WorkspaceSummary = ResponseOf<
 /** A project in a workspace's list, as the contract describes it. */
 export type ProjectSummary = ResponseOf<(typeof contracts)['projects.list']>['projects'][number];
 
-export type Member = {
-  userId: string;
-  /** Only admins and owners are sent addresses; everyone else gets null. */
-  email: string | null;
-  name: string;
-  username: string;
-  role: Role;
-  avatar: AvatarRef;
-};
+/** Someone in a workspace, as the contract describes them. */
+export type Member = ResponseOf<(typeof contracts)['members.list']>['members'][number];
 
 /** An invitation waiting for you to answer. */
-export type MyInvitation = {
-  id: string;
-  role: Role;
-  createdAt: string;
-  workspace: { id: string; name: string };
-  /** The inviter's username, or null if their account is gone. */
-  invitedBy: string | null;
-};
+export type MyInvitation = ResponseOf<
+  (typeof contracts)['invitations.mine']
+>['invitations'][number];
 
 /** An invitation a workspace has sent, as its admins see it. */
 /**
  * An invitation a workspace has sent: to a person (username set) or to an
  * address (email set, as it was typed; never shown as who it turned out to be).
  */
-export type SentInvitation = {
-  id: string;
-  userId: string | null;
-  email: string | null;
-  name: string | null;
-  username: string | null;
-  role: Role;
-  createdAt: string;
-};
+export type SentInvitation = ResponseOf<
+  (typeof contracts)['invitations.sent']
+>['invitations'][number];
 
 /** Who an invitation is for, as the people who sent it may see it. */
 export function invitedLabel(invitation: SentInvitation): string {

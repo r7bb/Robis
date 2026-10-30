@@ -1,9 +1,9 @@
 'use client';
 
-import { ROLES, type Role, rankOf } from '@robis/shared';
+import { contracts, ROLES, type Role, rankOf } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
-import { api, type Me, type Member } from '../lib/api.ts';
+import { api, call, type Me, type Member } from '../lib/api.ts';
 import { DeleteButton } from './delete-button.tsx';
 import { SentInvitations } from './sent-invitations.tsx';
 import { Avatar } from './ui/avatar.tsx';
@@ -36,37 +36,28 @@ export function MemberList({
 
   const members = useQuery({
     queryKey: key,
-    queryFn: () => api<{ members: Member[] }>(`/workspaces/${workspaceId}/members`),
+    queryFn: () => call(contracts['members.list'], { params: { workspaceId } }),
   });
 
   const invite = useMutation({
     mutationFn: (body: { email?: string; username?: string; role: Role }) =>
-      api<{ invitation: { username?: string | null; email?: string | null } }>(
-        `/workspaces/${workspaceId}/members`,
-        {
-          method: 'POST',
-          body,
-        },
-      ),
+      call(contracts['members.invite'], { params: { workspaceId }, body }),
     onSuccess: ({ invitation }) => {
       setEmail('');
-      setInvited(invitation.username ? `@${invitation.username}` : (invitation.email ?? null));
+      setInvited('username' in invitation ? `@${invitation.username}` : invitation.email);
       queryClient.invalidateQueries({ queryKey: ['invitations', workspaceId] });
     },
   });
 
   const setMemberRole = useMutation({
     mutationFn: ({ userId, next }: { userId: string; next: Role }) =>
-      api(`/workspaces/${workspaceId}/members/${userId}`, {
-        method: 'PATCH',
-        body: { role: next },
-      }),
+      call(contracts['members.setRole'], { params: { workspaceId, userId }, body: { role: next } }),
     onSuccess: invalidate,
   });
 
   const remove = useMutation({
     mutationFn: (userId: string) =>
-      api<void>(`/workspaces/${workspaceId}/members/${userId}`, { method: 'DELETE' }),
+      call(contracts['members.remove'], { params: { workspaceId, userId } }),
     onSuccess: invalidate,
   });
 

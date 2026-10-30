@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import type { Contract } from './contract.ts';
+import { type Contract, statusesOf } from './contract.ts';
+import { memberContracts } from './members.ts';
 import { projectContracts } from './projects.ts';
 import { workspaceContracts } from './workspaces.ts';
 
@@ -9,6 +10,7 @@ export * from './contract.ts';
 export const contracts = {
   ...workspaceContracts,
   ...projectContracts,
+  ...memberContracts,
 } as const satisfies Record<string, Contract>;
 
 export type ContractName = keyof typeof contracts;
@@ -54,7 +56,6 @@ function parameters(schema: z.ZodType | undefined, where: 'path' | 'query') {
 export function openApiDocument(table: Record<string, Contract> = contracts) {
   const paths: Record<string, Record<string, unknown>> = {};
   for (const [name, route] of Object.entries(table)) {
-    const status = String(route.status ?? (route.response ? 200 : 204));
     const operation = {
       operationId: name,
       summary: route.summary,
@@ -67,14 +68,17 @@ export function openApiDocument(table: Record<string, Contract> = contracts) {
             },
           }
         : {}),
-      responses: {
-        [status]: route.response
-          ? {
-              description: 'OK',
-              content: { 'application/json': { schema: jsonSchema(route.response, 'output') } },
-            }
-          : { description: 'No content' },
-      },
+      responses: Object.fromEntries(
+        statusesOf(route).map((status) => [
+          String(status),
+          route.response
+            ? {
+                description: 'OK',
+                content: { 'application/json': { schema: jsonSchema(route.response, 'output') } },
+              }
+            : { description: 'No content' },
+        ]),
+      ),
     };
     const key = openApiPath(route.path);
     paths[key] = { ...paths[key], [route.method.toLowerCase()]: operation };

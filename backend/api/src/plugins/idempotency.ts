@@ -71,7 +71,7 @@ async function replayExistingClaim(
   db: Database,
   reply: FastifyReply,
   claim: { key: string; userId: string; fingerprint: string },
-): Promise<unknown> {
+): Promise<FastifyReply> {
   const [existing] = await db
     .select({
       userId: mutations.userId,
@@ -126,7 +126,7 @@ export async function withIdempotency<T>(
   reply: FastifyReply,
   status: number,
   handler: () => Promise<T>,
-): Promise<unknown> {
+): Promise<FastifyReply> {
   const key = request.headers[IDEMPOTENCY_HEADER];
 
   if (typeof key !== 'string' || key.length === 0) {

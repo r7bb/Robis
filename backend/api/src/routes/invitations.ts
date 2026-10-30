@@ -10,9 +10,10 @@ import {
   workspaceMembers,
   workspaces,
 } from '@robis/database';
-import { type InviteMemberInput, inviteMemberSchema, MAX_PENDING_INVITATIONS } from '@robis/shared';
+import { contracts, type InviteMemberInput, MAX_PENDING_INVITATIONS } from '@robis/shared';
 import { and, asc, count, eq } from 'drizzle-orm';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { serve, shape } from '../contract.ts';
 import { ApiError } from '../errors.ts';
 import {
   assertHasAgreed,
@@ -24,7 +25,6 @@ import {
 } from '../plugins/authz.ts';
 import { withIdempotency } from '../plugins/idempotency.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
-import { parse } from '../validate.ts';
 import {
   addressedTo,
   addresseeOf,
@@ -231,8 +231,9 @@ export async function invitationRoutes(app: FastifyInstance, opts: { db: Databas
     return { invitation: { email, role: input.role, status: 'sent' as const } };
   }
 
-  app.post(
-    '/workspaces/:workspaceId/members',
+  serve(
+    app,
+    contracts['members.invite'],
     {
       preHandler: [
         requireAuth,
@@ -242,20 +243,20 @@ export async function invitationRoutes(app: FastifyInstance, opts: { db: Databas
         rateLimit({ name: 'member-invite', limit: INVITES_PER_MINUTE, windowMs: 60_000 }),
       ],
     },
-    async (request, reply) => {
+    async (request, { body: input }, reply) => {
+      const route = contracts['members.invite'];
       const { workspaceId, role: actorRole } = currentMembership(request);
-      const input = parse(inviteMemberSchema, request.body);
       assertCanGrant(actorRole, input.role);
 
       if (input.email) {
         const email = input.email;
-        return withIdempotency(db, request, reply, 202, () =>
-          inviteByEmail(request, workspaceId, { ...input, email }),
+        return withIdempotency(db, request, reply, 202, async () =>
+          shape(route, await inviteByEmail(request, workspaceId, { ...input, email })),
         );
       }
       const username = input.username as string;
-      return withIdempotency(db, request, reply, 201, () =>
-        inviteByUsername(request, workspaceId, { ...input, username }),
+      return withIdempotency(db, request, reply, 201, async () =>
+        shape(route, await inviteByUsername(request, workspaceId, { ...input, username })),
       );
     },
   );
@@ -265,8 +266,9 @@ export async function invitationRoutes(app: FastifyInstance, opts: { db: Databas
    * username, or the address as typed. An address is never shown as the
    * account it turned out to be.
    */
-  app.get(
-    '/workspaces/:workspaceId/invitations',
+  serve(
+    app,
+    contracts['invitations.sent'],
     { preHandler: [requireAuth, requireMembership(db, 'member:invite')] },
     async (request) => {
       const { workspaceId } = currentMembership(request);
@@ -289,13 +291,13 @@ export async function invitationRoutes(app: FastifyInstance, opts: { db: Databas
   );
 
   /** Withdraw an invitation that has not been answered. */
-  app.delete(
-    '/workspaces/:workspaceId/invitations/:invitationId',
+  serve(
+    app,
+    contracts['invitations.withdraw'],
     { preHandler: [requireAuth, requireMembership(db, 'member:invite')] },
-    async (request, reply) => {
+    async (request, { params: { invitationId } }, reply) => {
       const actor = currentUser(request);
       const { workspaceId, role: actorRole } = currentMembership(request);
-      const { invitationId } = request.params as { invitationId: string };
 
       return withIdempotency(db, request, reply, 204, async () => {
         await db.transaction(async (tx) => {
@@ -335,7 +337,7 @@ export async function invitationRoutes(app: FastifyInstance, opts: { db: Databas
   );
 
   /** The invitations waiting for you, from any workspace. */
-  app.get('/invitations', { preHandler: requireAuth }, async (request) => {
+  serve(app, contracts['invitations.mine'], { preHandler: requireAuth }, async (request) => {
     const addressee = await addresseeOf(db, currentUser(request).id);
     const rows = await db
       .select({
@@ -360,12 +362,12 @@ export async function invitationRoutes(app: FastifyInstance, opts: { db: Databas
     };
   });
 
-  app.post(
-    '/invitations/:invitationId/accept',
+  serve(
+    app,
+    contracts['invitations.accept'],
     { preHandler: requireAuth },
-    async (request, reply) => {
+    async (request, { params: { invitationId } }, reply) => {
       const user = currentUser(request);
-      const { invitationId } = request.params as { invitationId: string };
 
       return withIdempotency(db, request, reply, 200, async () => {
         const addressee = await addresseeOf(db, user.id);
@@ -447,17 +449,17 @@ export async function invitationRoutes(app: FastifyInstance, opts: { db: Databas
           workspaceId: joined.workspace.id,
           actorId: user.id,
         });
-        return joined;
+        return shape(contracts['invitations.accept'], joined);
       });
     },
   );
 
-  app.post(
-    '/invitations/:invitationId/decline',
+  serve(
+    app,
+    contracts['invitations.decline'],
     { preHandler: requireAuth },
-    async (request, reply) => {
+    async (request, { params: { invitationId } }, reply) => {
       const user = currentUser(request);
-      const { invitationId } = request.params as { invitationId: string };
 
       return withIdempotency(db, request, reply, 204, async () => {
         const addressee = await addresseeOf(db, user.id);

@@ -17,7 +17,7 @@ import { DeleteButton } from '../../../../../components/delete-button.tsx';
 import { PresenceBar } from '../../../../../components/presence.tsx';
 import { ErrorState } from '../../../../../components/ui/primitives.tsx';
 import { IssueAttachments } from '../../../../../features/issues/attachments.tsx';
-import { api, call, type IssueDetail, type Member } from '../../../../../lib/api.ts';
+import { api, call, type IssueDetail } from '../../../../../lib/api.ts';
 import { useRealtime } from '../../../../../lib/realtime.ts';
 import { lastTheme, useApplyTheme } from '../../../../../lib/theme.ts';
 
@@ -58,7 +58,7 @@ export default function IssuePage() {
 
   const members = useQuery({
     queryKey: ['members', workspaceId],
-    queryFn: () => api<{ members: Member[] }>(`/workspaces/${workspaceId}/members`),
+    queryFn: () => call(contracts['members.list'], { params: { workspaceId } }),
   });
 
   const update = useMutation({
