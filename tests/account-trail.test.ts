@@ -7,6 +7,7 @@ import {
   createActor,
   getHarness,
   getMailer,
+  refusal,
   request,
   resetDatabase,
 } from './harness.ts';
@@ -193,10 +194,10 @@ describe('the chain', () => {
     await login(actor.email, PASSWORD);
     const run = async (statement: ReturnType<typeof sql>) => db.execute(statement);
 
-    await expect(
-      run(sql`update account_events set payload = '{}' where user_id = ${actor.id}`),
-    ).rejects.toThrow(/permission denied/);
-    await expect(run(sql`delete from account_events where user_id = ${actor.id}`)).rejects.toThrow(
+    expect(
+      await refusal(run(sql`update account_events set payload = '{}' where user_id = ${actor.id}`)),
+    ).toMatch(/permission denied/);
+    expect(await refusal(run(sql`delete from account_events where user_id = ${actor.id}`))).toMatch(
       /permission denied/,
     );
   });

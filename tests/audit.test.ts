@@ -21,7 +21,9 @@ import {
   createActor,
   createProject,
   createWorkspace,
+  databaseMessage,
   getHarness,
+  refusal,
   request,
   resetDatabase,
 } from './harness.ts';
@@ -394,12 +396,14 @@ describe('tampering', () => {
     // Drizzle builders are lazy thenables; `rejects` needs a real promise.
     const run = async (statement: ReturnType<typeof sql>) => ownerDb.execute(statement);
 
-    await expect(
-      run(sql`update audit_events set payload = '{}' where workspace_id = ${workspace.id}`),
-    ).rejects.toThrow(/append-only/);
-    await expect(
-      run(sql`delete from audit_events where workspace_id = ${workspace.id}`),
-    ).rejects.toThrow(/append-only/);
+    expect(
+      await refusal(
+        run(sql`update audit_events set payload = '{}' where workspace_id = ${workspace.id}`),
+      ),
+    ).toMatch(/append-only/);
+    expect(
+      await refusal(run(sql`delete from audit_events where workspace_id = ${workspace.id}`)),
+    ).toMatch(/append-only/);
   });
 
   /**
@@ -414,19 +418,21 @@ describe('tampering', () => {
     const before = (await trail(workspace.id)).length;
     const run = async (statement: ReturnType<typeof sql>) => db.execute(statement);
 
-    await expect(
-      run(sql`alter table audit_events disable trigger audit_events_append_only`),
-    ).rejects.toThrow(/must be owner/);
+    expect(
+      await refusal(run(sql`alter table audit_events disable trigger audit_events_append_only`)),
+    ).toMatch(/must be owner/);
 
     await ownerDb.execute(sql`alter table audit_events disable trigger audit_events_append_only`);
     try {
-      await expect(
-        run(sql`update audit_events set payload = '{}' where workspace_id = ${workspace.id}`),
-      ).rejects.toThrow(/permission denied/);
-      await expect(
-        run(sql`delete from audit_events where workspace_id = ${workspace.id}`),
-      ).rejects.toThrow(/permission denied/);
-      await expect(run(sql`truncate audit_events`)).rejects.toThrow(/permission denied/);
+      expect(
+        await refusal(
+          run(sql`update audit_events set payload = '{}' where workspace_id = ${workspace.id}`),
+        ),
+      ).toMatch(/permission denied/);
+      expect(
+        await refusal(run(sql`delete from audit_events where workspace_id = ${workspace.id}`)),
+      ).toMatch(/permission denied/);
+      expect(await refusal(run(sql`truncate audit_events`))).toMatch(/permission denied/);
     } finally {
       await ownerDb.execute(sql`alter table audit_events enable trigger audit_events_append_only`);
     }
@@ -490,12 +496,12 @@ describe('tampering', () => {
 
     // The owner is stopped by the trigger...
     const asOwner = async (statement: ReturnType<typeof sql>) => ownerDb.execute(statement);
-    await expect(asOwner(sql`truncate audit_events`)).rejects.toThrow(/cannot be truncated/);
-    await expect(asOwner(sql`truncate workspaces cascade`)).rejects.toThrow(/cannot be truncated/);
+    expect(await refusal(asOwner(sql`truncate audit_events`))).toMatch(/cannot be truncated/);
+    expect(await refusal(asOwner(sql`truncate workspaces cascade`))).toMatch(/cannot be truncated/);
 
     // ...and the runtime role holds no TRUNCATE right on any table at all.
     const asApp = async (statement: ReturnType<typeof sql>) => db.execute(statement);
-    await expect(asApp(sql`truncate workspaces cascade`)).rejects.toThrow(/permission denied/);
+    expect(await refusal(asApp(sql`truncate workspaces cascade`))).toMatch(/permission denied/);
   });
 
   test('the SQL copy of the unsigned hash agrees with the application, unicode and all', async () => {
@@ -615,7 +621,7 @@ describe('signing', () => {
     const { workspace } = await workspaceWithEvents(1);
     const run = async () =>
       tamper(sql`update audit_events set key_id = '' where workspace_id = ${workspace.id}`);
-    await expect(run()).rejects.toThrow(/audit_events_key_id_format/);
+    expect(await refusal(run())).toMatch(/audit_events_key_id_format/);
   });
 
   test('a key id that could never be issued reads as an edit, not a missing key', async () => {
@@ -634,8 +640,8 @@ describe('signing', () => {
         // Undone with the transaction, constraint and all.
         await tx.execute(sql`select 1/0`);
       })
-      .catch((error: Error) => {
-        if (!/division by zero/.test(error.message)) throw error;
+      .catch((error: unknown) => {
+        if (!/division by zero/.test(databaseMessage(error))) throw error;
       });
     expect((await verifyAuditChain(db, workspace.id)).ok).toBe(true);
   });
@@ -699,13 +705,17 @@ describe('deleting a workspace leaves a trace', () => {
     await send(owner, 'DELETE', `/workspaces/${workspace.id}`, { password: ACTOR_PASSWORD });
     const run = async (statement: ReturnType<typeof sql>) => db.execute(statement);
 
-    await expect(
-      run(sql`insert into audit_tombstones (workspace_id, head_seq, deleted_by)
+    expect(
+      await refusal(
+        run(sql`insert into audit_tombstones (workspace_id, head_seq, deleted_by)
               values (${workspace.id}, 0, 'forged')`),
-    ).rejects.toThrow(/permission denied/);
-    await expect(
-      run(sql`update audit_tombstones set head_seq = 0 where workspace_id = ${workspace.id}`),
-    ).rejects.toThrow(/permission denied/);
+      ),
+    ).toMatch(/permission denied/);
+    expect(
+      await refusal(
+        run(sql`update audit_tombstones set head_seq = 0 where workspace_id = ${workspace.id}`),
+      ),
+    ).toMatch(/permission denied/);
   });
 });
 
@@ -716,19 +726,25 @@ describe('the stream cursor', () => {
     await advanceStreamCursor(db, workspace.id, 3);
     const run = async (statement: ReturnType<typeof sql>) => db.execute(statement);
 
-    await expect(
-      run(
-        sql`update audit_stream_cursors set delivered_seq = 1 where workspace_id = ${workspace.id}`,
+    expect(
+      await refusal(
+        run(
+          sql`update audit_stream_cursors set delivered_seq = 1 where workspace_id = ${workspace.id}`,
+        ),
       ),
-    ).rejects.toThrow(/only move forward/);
-    await expect(
-      run(
-        sql`update audit_stream_cursors set delivered_seq = 999 where workspace_id = ${workspace.id}`,
+    ).toMatch(/only move forward/);
+    expect(
+      await refusal(
+        run(
+          sql`update audit_stream_cursors set delivered_seq = 999 where workspace_id = ${workspace.id}`,
+        ),
       ),
-    ).rejects.toThrow(/cannot pass the newest event/);
-    await expect(
-      run(sql`delete from audit_stream_cursors where workspace_id = ${workspace.id}`),
-    ).rejects.toThrow(/go only with their workspace/);
+    ).toMatch(/cannot pass the newest event/);
+    expect(
+      await refusal(
+        run(sql`delete from audit_stream_cursors where workspace_id = ${workspace.id}`),
+      ),
+    ).toMatch(/go only with their workspace/);
   });
 });
 
@@ -1128,12 +1144,14 @@ describe('the checkpoint itself', () => {
     await send(owner, 'POST', `/workspaces/${workspace.id}/audit/verify`);
     const run = async (statement: ReturnType<typeof sql>) => ownerDb.execute(statement);
 
-    await expect(
-      run(sql`update audit_checkpoints set seq = 1 where workspace_id = ${workspace.id}`),
-    ).rejects.toThrow(/only move forward/);
-    await expect(
-      run(sql`delete from audit_checkpoints where workspace_id = ${workspace.id}`),
-    ).rejects.toThrow(/go only with their workspace/);
+    expect(
+      await refusal(
+        run(sql`update audit_checkpoints set seq = 1 where workspace_id = ${workspace.id}`),
+      ),
+    ).toMatch(/only move forward/);
+    expect(
+      await refusal(run(sql`delete from audit_checkpoints where workspace_id = ${workspace.id}`)),
+    ).toMatch(/go only with their workspace/);
   });
 
   test('an event changed under the checkpoint makes it stale, and the check walks it all', async () => {
@@ -1215,7 +1233,7 @@ describe('erasing a person (a design, for legal review)', () => {
         await who.execute(statement);
         return '';
       } catch (error) {
-        return String(error);
+        return databaseMessage(error);
       }
     };
 

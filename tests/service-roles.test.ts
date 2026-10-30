@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, test } from 'bun:test';
 import type { Database } from '@robis/database';
 import { type SQL, sql } from 'drizzle-orm';
-import { closeHarness, getHarness } from './harness.ts';
+import { closeHarness, databaseMessage, getHarness } from './harness.ts';
 
 /**
  * The gateway and the worker each connect as a role of their own (stage 1,
@@ -17,7 +17,7 @@ async function refused(db: Database, query: SQL): Promise<boolean> {
     await db.execute(query);
     return false;
   } catch (error) {
-    return /permission denied/.test(String(error));
+    return /permission denied/.test(databaseMessage(error));
   }
 }
 

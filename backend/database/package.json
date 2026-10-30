@@ -17,11 +17,11 @@
   },
   "dependencies": {
     "@robis/shared": "workspace:*",
-    "drizzle-orm": "^0.38.0",
+    "drizzle-orm": "^0.45.4",
     "postgres": "^3.4.5",
     "yjs": "^13.6.32"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.30.0"
+    "drizzle-kit": "^0.31.11"
   }
 }

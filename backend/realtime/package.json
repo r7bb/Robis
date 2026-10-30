@@ -12,7 +12,7 @@
     "@robis/database": "workspace:*",
     "@robis/metrics": "workspace:*",
     "@robis/shared": "workspace:*",
-    "drizzle-orm": "^0.38.0",
+    "drizzle-orm": "^0.45.4",
     "postgres": "^3.4.5",
     "yjs": "^13.6.32"
   }

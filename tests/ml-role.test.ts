@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { createDatabase, ensureMlRole } from '@robis/database';
 import { sql } from 'drizzle-orm';
-import { closeHarness, getHarness, TEST_URL } from './harness.ts';
+import { closeHarness, databaseMessage, getHarness, TEST_URL } from './harness.ts';
 
 /**
  * The ML service's database access (stage 1, item 8): one view, owned by
@@ -70,7 +70,7 @@ describe('the ML role', () => {
         try {
           await db.execute(query);
         } catch (caught) {
-          error = String(caught);
+          error = databaseMessage(caught);
         }
         expect(error).toMatch(/permission denied/);
       }

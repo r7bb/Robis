@@ -203,6 +203,32 @@ export function breakTriage() {
 }
 
 /** Built once and shared; each test isolates itself with `resetDatabase`. */
+/**
+ * What the database said when it refused: every message in the error's
+ * cause chain, outermost first. Drizzle (from 0.44) wraps a failed query as
+ * "Failed query: ..." with the database's own error as its cause, so a
+ * test that checks why a query was refused has to read past the wrapper.
+ */
+export function databaseMessage(error: unknown): string {
+  const messages: string[] = [];
+  let current = error;
+  while (current instanceof Error && messages.length < 5) {
+    messages.push(current.message);
+    current = current.cause;
+  }
+  return messages.length > 0 ? messages.join('\n') : String(error);
+}
+
+/** The database's message for a query expected to be refused. */
+export async function refusal(attempt: Promise<unknown>): Promise<string> {
+  try {
+    await attempt;
+  } catch (error) {
+    return databaseMessage(error);
+  }
+  throw new Error('expected the database to refuse this, and it did not');
+}
+
 export async function getHarness() {
   if (handle) return handle;
 

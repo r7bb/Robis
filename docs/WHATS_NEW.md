@@ -4,6 +4,8 @@ Newest first. The same list is the site's What's new page, where each entry
 opens to show how it was checked and, for features, where to find it and
 what each layer does. Back to the [README](../README.md).
 
+- **The database library is current** (2026-10-29). Drizzle 0.38 to 0.45,
+  with error codes read through its new error wrapping.
 - **CI installs exactly what is locked, and runs the Python tests**
   (2026-10-29). Frozen installs, a Python 3.11 job from a hashed lock, and
   caching for downloads and image layers.

@@ -7,6 +7,7 @@ import {
   closeHarness,
   createActor,
   createWorkspace,
+  databaseMessage,
   getHarness,
   resetDatabase,
 } from './harness.ts';
@@ -42,7 +43,7 @@ describe('the app role', () => {
       try {
         await db.execute(query);
       } catch (caught) {
-        error = String(caught);
+        error = databaseMessage(caught);
       }
       expect(error).toMatch(/permission denied/);
     }

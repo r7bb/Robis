@@ -41,6 +41,15 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-29',
     area: 'Site',
+    title: 'The database library is current',
+    summary:
+      'Drizzle, the library every service uses to talk to Postgres, moves from 0.38 to 0.45, with its migration tool from 0.30 to 0.31. The one change that could have hurt quietly is that Drizzle now wraps a failed query in an error of its own, with the database’s error inside it: code that looked for the database’s error code on the outside would have stopped noticing, for example, that a username had just been taken by someone else. That code now looks through the wrapping, and was changed and released first, on the old version, so the upgrade itself changes nothing else.',
+    checked:
+      'A new test proves a unique violation and a missing reference are still recognised by their database codes through the wrapping, and that an unrelated error has none. The migration tool reads all 32 existing migrations and their history without complaint. Tests that check why the database refused something (permission denied, the audit trail’s append-only rule, its truncation guard and its key format) now read the database’s own message from inside the wrapping, and all pass. The full suite passes on the new version.',
+  },
+  {
+    date: '2026-10-29',
+    area: 'Site',
     title: 'CI installs exactly what is locked, and runs the Python tests',
     summary:
       'Continuous integration now refuses an out-of-date lockfile instead of quietly resolving new versions, and the duplicate and priority service’s Python tests run on every push, on the Python version it ships with, from a locked set where every package is checked against its hash. Downloads and image layers are cached between runs, so an unchanged dependency or build step is restored rather than fetched or rebuilt again.',
