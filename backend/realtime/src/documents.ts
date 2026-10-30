@@ -1,4 +1,11 @@
-import { type Database, documents, loadDocument, recordUpdate } from '@robis/database';
+import {
+  type Database,
+  documents,
+  FOREIGN_KEY_VIOLATION,
+  loadDocument,
+  pgErrorCode,
+  recordUpdate,
+} from '@robis/database';
 import type { DocumentAwareness } from '@robis/shared';
 import { and, eq } from 'drizzle-orm';
 import * as Y from 'yjs';
@@ -25,15 +32,9 @@ export type Participant = {
 /** Debounce window for persistence. Batches a burst of typing into one write. */
 const PERSIST_DEBOUNCE_MS = 500;
 
-/** Postgres `foreign_key_violation` -- here, the document row is gone. */
-const FOREIGN_KEY_VIOLATION = '23503';
-
+/** A foreign key violation: here, the document row is gone. */
 function isMissingDocument(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    (error as { code?: string }).code === FOREIGN_KEY_VIOLATION
-  );
+  return pgErrorCode(error) === FOREIGN_KEY_VIOLATION;
 }
 
 export class DocumentRoom {

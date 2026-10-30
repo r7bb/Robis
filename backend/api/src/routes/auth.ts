@@ -18,11 +18,13 @@ import {
   type Database,
   deferAccountEvent,
   lockUsername,
+  pgErrorCode,
   recordAccountEvent,
   recordAccountEventNow,
   releaseUsername,
   signups,
   type Tx,
+  UNIQUE_VIOLATION,
   usernameClaim,
   users,
 } from '@robis/database';
@@ -432,7 +434,7 @@ export async function authRoutes(
     } catch (error) {
       // Someone took the name between the check and the write; the unique
       // index decided, and the answer is the same as the checked case.
-      if ((error as { code?: string }).code === '23505') {
+      if (pgErrorCode(error) === UNIQUE_VIOLATION) {
         throw ApiError.conflict('That username is taken', 'username_taken');
       }
       throw error;
