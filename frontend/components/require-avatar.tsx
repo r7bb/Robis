@@ -1,8 +1,9 @@
 'use client';
 
+import { contracts } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { api, type Me } from '../lib/api.ts';
+import { call } from '../lib/api.ts';
 import { useRequireAvatar } from '../lib/use-require-avatar.ts';
 
 /**
@@ -11,7 +12,11 @@ import { useRequireAvatar } from '../lib/use-require-avatar.ts';
  * an unexplained 403 from the API.
  */
 export function RequireAvatar({ children }: { children: ReactNode }) {
-  const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/auth/me'), retry: false });
+  const me = useQuery({
+    queryKey: ['me'],
+    queryFn: () => call(contracts['auth.me']),
+    retry: false,
+  });
   useRequireAvatar(me.data);
   return children;
 }

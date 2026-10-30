@@ -1,12 +1,12 @@
 'use client';
 
-import { MINIMUM_AGE, TERMS_VERSION } from '@robis/shared';
+import { contracts, MINIMUM_AGE, TERMS_VERSION } from '@robis/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 import { UsernameField } from '../../features/account/username-field.tsx';
-import { ApiError, api, type Me } from '../../lib/api.ts';
+import { ApiError, call } from '../../lib/api.ts';
 import { getSyncEngine } from '../../lib/sync.ts';
 import { Field } from '../login/login-form.tsx';
 
@@ -28,18 +28,18 @@ export function SignupForm({ token }: { token: string | null }) {
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!token) return;
+    // The age box is required, so the browser will not submit without it.
+    if (!token || !ageConfirmed) return;
     setError(null);
     setSubmitting(true);
     try {
-      const signedIn = await api<Me>('/auth/register', {
-        method: 'POST',
+      const signedIn = await call(contracts['auth.register'], {
         body: {
           token,
           name,
           username: username.trim().toLowerCase(),
           password,
-          ageConfirmed,
+          ageConfirmed: true,
           // The terms this page showed, so a stale page cannot agree to
           // something that has since changed.
           termsVersion: TERMS_VERSION,

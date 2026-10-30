@@ -10,7 +10,7 @@ import { SearchBox } from '../../components/search-box.tsx';
 import { ThemePicker } from '../../components/theme-picker.tsx';
 import { Avatar } from '../../components/ui/avatar.tsx';
 import { ErrorState, RoleBadge, SectionLabel } from '../../components/ui/primitives.tsx';
-import { ApiError, api, call, type Me, type Member } from '../../lib/api.ts';
+import { ApiError, call, type Me, type Member } from '../../lib/api.ts';
 import { type ConnectionState, useRealtime } from '../../lib/realtime.ts';
 import { lastTheme, rememberTheme, useApplyTheme } from '../../lib/theme.ts';
 import { useRequireAvatar } from '../../lib/use-require-avatar.ts';
@@ -209,7 +209,11 @@ export function WorkspaceShell({ workspaceId }: { workspaceId: string }) {
     queryFn: () => call(contracts['workspaces.get'], { params: { workspaceId } }),
   });
 
-  const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/auth/me'), retry: false });
+  const me = useQuery({
+    queryKey: ['me'],
+    queryFn: () => call(contracts['auth.me']),
+    retry: false,
+  });
   useRequireAvatar(me.data);
 
   const members = useQuery({

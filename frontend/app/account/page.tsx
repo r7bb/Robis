@@ -1,5 +1,6 @@
 'use client';
 
+import { contracts } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -7,7 +8,7 @@ import { type FormEvent, useEffect, useId, useState } from 'react';
 import { ACCOUNT_EVENTS_KEY, AccountActivity } from '../../features/account/account-activity.tsx';
 import { DeleteAccount } from '../../features/account/delete-account.tsx';
 import { UsernameField } from '../../features/account/username-field.tsx';
-import { ApiError, api, type Me, type SessionSummary } from '../../lib/api.ts';
+import { ApiError, api, call, type Me } from '../../lib/api.ts';
 import { lastTheme, useApplyTheme } from '../../lib/theme.ts';
 
 /**
@@ -28,7 +29,11 @@ export default function AccountPage() {
 
   useApplyTheme(lastTheme());
 
-  const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/auth/me'), retry: false });
+  const me = useQuery({
+    queryKey: ['me'],
+    queryFn: () => call(contracts['auth.me']),
+    retry: false,
+  });
 
   // Signed out, so there is no account to show.
   useEffect(() => {
@@ -69,8 +74,7 @@ function ProfileSection({ user, onSaved }: { user: Me['user']; onSaved: () => vo
 
   const save = useMutation({
     mutationFn: () =>
-      api<Me>('/auth/me', {
-        method: 'PATCH',
+      call(contracts['auth.updateMe'], {
         body: {
           ...(name.trim() !== user.name ? { name: name.trim() } : {}),
           ...(nextUsername !== user.username ? { username: nextUsername } : {}),
@@ -206,8 +210,7 @@ function PasswordSection() {
 
   const change = useMutation({
     mutationFn: () =>
-      api<{ ok: true }>('/auth/password', {
-        method: 'POST',
+      call(contracts['auth.changePassword'], {
         body: { currentPassword: current, newPassword: next },
       }),
     onSuccess: () => {
@@ -290,11 +293,11 @@ function SessionsSection() {
 
   const sessions = useQuery({
     queryKey: ['sessions'],
-    queryFn: () => api<{ sessions: SessionSummary[] }>('/auth/sessions'),
+    queryFn: () => call(contracts['auth.sessions']),
   });
 
   const revoke = useMutation({
-    mutationFn: () => api<{ revoked: number }>('/auth/sessions', { method: 'DELETE' }),
+    mutationFn: () => call(contracts['auth.revokeSessions']),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
       queryClient.invalidateQueries({ queryKey: ACCOUNT_EVENTS_KEY });

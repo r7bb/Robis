@@ -15,7 +15,7 @@ import { NewWorkspace } from '../../features/home/new-workspace.tsx';
 import { useHomeLive } from '../../features/home/use-home-live.ts';
 import { OVERVIEW_KEY, useOverview } from '../../features/home/use-overview.ts';
 import { WorkspaceGrid } from '../../features/home/workspace-grid.tsx';
-import { api, call, type Me, type WorkspaceSummary } from '../../lib/api.ts';
+import { call, type WorkspaceSummary } from '../../lib/api.ts';
 import { getSyncEngine } from '../../lib/sync.ts';
 import { useRequireAvatar } from '../../lib/use-require-avatar.ts';
 import './home.css';
@@ -37,7 +37,11 @@ export default function WorkspacesPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/auth/me'), retry: false });
+  const me = useQuery({
+    queryKey: ['me'],
+    queryFn: () => call(contracts['auth.me']),
+    retry: false,
+  });
   useRequireAvatar(me.data);
 
   const workspaces = useQuery({
@@ -66,7 +70,7 @@ export default function WorkspacesPage() {
 
   const signOut = useMutation({
     mutationFn: async () => {
-      await api<void>('/auth/logout', { method: 'POST' });
+      await call(contracts['auth.logout']);
       // A shared or borrowed computer must not keep this account's cached
       // issues, queued edits or waiting images for the next person.
       await getSyncEngine().clearLocal();

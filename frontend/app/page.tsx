@@ -1,5 +1,6 @@
 'use client';
 
+import { contracts } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import { GeistSans } from 'geist/font/sans';
 import Link from 'next/link';
@@ -18,7 +19,7 @@ import {
   Stack,
 } from '../features/landing/sections.tsx';
 import { useScrolled } from '../features/landing/use-scroll.ts';
-import { api, type Me } from '../lib/api.ts';
+import { call } from '../lib/api.ts';
 
 /**
  * The landing page.
@@ -37,7 +38,7 @@ export default function Home() {
   // failure worth retrying. The page renders either way.
   const { data } = useQuery({
     queryKey: ['me'],
-    queryFn: () => api<Me>('/auth/me'),
+    queryFn: () => call(contracts['auth.me']),
     retry: false,
   });
 

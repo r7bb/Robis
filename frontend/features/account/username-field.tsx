@@ -1,15 +1,21 @@
 'use client';
 
-import { USERNAME_HINT, USERNAME_MAX_LENGTH, usernameProblem } from '@robis/shared';
+import {
+  contracts,
+  type ResponseOf,
+  USERNAME_HINT,
+  USERNAME_MAX_LENGTH,
+  usernameProblem,
+} from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import { useId } from 'react';
-import { api } from '../../lib/api.ts';
+import { call } from '../../lib/api.ts';
 import { useDebounced } from '../../lib/use-debounced.ts';
 
 /** Long enough that a typist is not checked mid-word. */
 const CHECK_DELAY_MS = 350;
 
-type Availability = { username: string; available: boolean; reason: string | null };
+type Availability = ResponseOf<(typeof contracts)['auth.usernameAvailable']>;
 
 const REASONS: Record<string, string> = {
   length: 'Use 3 to 30 characters.',
@@ -64,8 +70,7 @@ export function UsernameField({
 
   const check = useQuery({
     queryKey: ['username-available', settled],
-    queryFn: () =>
-      api<Availability>(`/auth/username-available?username=${encodeURIComponent(settled)}`),
+    queryFn: () => call(contracts['auth.usernameAvailable'], { query: { username: settled } }),
     enabled: settled.length > 0 && usernameProblem(settled) === null && settled !== current,
     staleTime: 30_000,
     retry: false,

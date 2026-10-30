@@ -1,6 +1,7 @@
 'use client';
 
 import type { Avatar as AvatarRef } from '@robis/shared';
+import { contracts } from '@robis/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import {
@@ -13,7 +14,7 @@ import {
   useState,
 } from 'react';
 import { Avatar, orbStyle } from '../../components/ui/avatar.tsx';
-import { ApiError, api, BASE_URL, type Me } from '../../lib/api.ts';
+import { ApiError, api, BASE_URL, call, type Me } from '../../lib/api.ts';
 import { CameraCapture } from './camera-capture.tsx';
 import { preparePhoto } from './prepare-photo.ts';
 
@@ -72,7 +73,11 @@ export function WelcomeFlow({ next }: { next: string }) {
   const fileInput = useRef<HTMLInputElement>(null);
   const tabsId = useId();
 
-  const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/auth/me'), retry: false });
+  const me = useQuery({
+    queryKey: ['me'],
+    queryFn: () => call(contracts['auth.me']),
+    retry: false,
+  });
   const [mode, setMode] = useState<Mode>('upload');
   const [seeds, setSeeds] = useState<string[] | null>(null);
   const [busy, setBusy] = useState(false);

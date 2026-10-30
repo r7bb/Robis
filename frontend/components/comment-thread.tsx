@@ -4,7 +4,7 @@ import { contracts, splitMentions } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type ClipboardEvent, type FormEvent, useEffect, useState } from 'react';
 import { type Attachment, uploadable } from '../features/issues/attachments.tsx';
-import { api, BASE_URL, type CommentMention, call, type Me } from '../lib/api.ts';
+import { BASE_URL, type CommentMention, call } from '../lib/api.ts';
 import { useMemberAvatars } from '../lib/use-member-avatars.ts';
 import { DeleteButton } from './delete-button.tsx';
 import { Avatar } from './ui/avatar.tsx';
@@ -42,7 +42,11 @@ export function CommentThread({
   const key = ['comments', workspaceId, issueId] as const;
   const path = `/workspaces/${workspaceId}/issues/${issueId}/comments`;
 
-  const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/auth/me'), retry: false });
+  const me = useQuery({
+    queryKey: ['me'],
+    queryFn: () => call(contracts['auth.me']),
+    retry: false,
+  });
 
   const comments = useQuery({
     queryKey: key,

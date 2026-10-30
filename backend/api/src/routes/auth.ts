@@ -28,25 +28,17 @@ import {
   usernameClaim,
   users,
 } from '@robis/database';
-import {
-  changePasswordSchema,
-  loginSchema,
-  MAX_USERNAME_HOLDS,
-  registerSchema,
-  TERMS_VERSION,
-  updateProfileSchema,
-  usernameProblem,
-} from '@robis/shared';
+import { contracts, MAX_USERNAME_HOLDS, TERMS_VERSION, usernameProblem } from '@robis/shared';
 import { and, eq, gt, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import type { RateLimits } from '../app.ts';
+import { serve } from '../contract.ts';
 import { assertPasswordAllowed, isRefusedDemoPassword } from '../demo-password.ts';
 import type { Env } from '../env.ts';
 import { ApiError } from '../errors.ts';
 import { avatarOf } from '../media/avatars.ts';
 import { currentUser, requireAuth, sessionToken } from '../plugins/authz.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
-import { parse } from '../validate.ts';
 
 /** Failed sign-ins for one account within this window are one history entry. */
 const FAILED_SIGN_IN_WINDOW_MS = 5 * 60_000;
@@ -197,130 +189,137 @@ export async function authRoutes(
     windowMs: 60_000,
   });
 
-  app.post('/auth/register', { preHandler: credentialLimit }, async (request, reply) => {
-    const input = parse(registerSchema, request.body);
-    // The form showed terms that have since changed: agreeing to those is
-    // not agreeing to these, so the page is asked to reload first.
-    if (input.termsVersion !== undefined && input.termsVersion !== TERMS_VERSION) {
-      throw termsChanged();
-    }
-    const agreed = input.termsVersion === TERMS_VERSION;
-    assertPasswordAllowed(env, input.password);
+  serve(
+    app,
+    contracts['auth.register'],
+    { preHandler: credentialLimit },
+    async (request, { body: input }, reply) => {
+      // The form showed terms that have since changed: agreeing to those is
+      // not agreeing to these, so the page is asked to reload first.
+      if (input.termsVersion !== undefined && input.termsVersion !== TERMS_VERSION) {
+        throw termsChanged();
+      }
+      const agreed = input.termsVersion === TERMS_VERSION;
+      assertPasswordAllowed(env, input.password);
 
-    // The link stands for the address: whoever opened it can read that
-    // inbox, so the account starts with the address confirmed. Looked up
-    // here only to refuse a dead link before hashing a password; the claim
-    // that counts is made inside the transaction.
-    const tokenHash = hashSessionToken(input.token);
-    const [signup] = await db
-      .select({ id: signups.id })
-      .from(signups)
-      .where(and(eq(signups.tokenHash, tokenHash), gt(signups.expiresAt, sql`now()`)))
-      .limit(1);
-    if (!signup) throw signupLinkInvalid();
-    const passwordHash = await hashPassword(input.password);
+      // The link stands for the address: whoever opened it can read that
+      // inbox, so the account starts with the address confirmed. Looked up
+      // here only to refuse a dead link before hashing a password; the claim
+      // that counts is made inside the transaction.
+      const tokenHash = hashSessionToken(input.token);
+      const [signup] = await db
+        .select({ id: signups.id })
+        .from(signups)
+        .where(and(eq(signups.tokenHash, tokenHash), gt(signups.expiresAt, sql`now()`)))
+        .limit(1);
+      if (!signup) throw signupLinkInvalid();
+      const passwordHash = await hashPassword(input.password);
 
-    const outcome = await db
-      .transaction(async (tx) => {
-        // First, so a second finish with the same link waits here and then
-        // finds it used. Thrown refusals below roll the claim back.
-        const email = await claimSignup(tx, tokenHash);
-        if (!email) throw signupLinkInvalid();
+      const outcome = await db
+        .transaction(async (tx) => {
+          // First, so a second finish with the same link waits here and then
+          // finds it used. Thrown refusals below roll the claim back.
+          const email = await claimSignup(tx, tokenHash);
+          if (!email) throw signupLinkInvalid();
 
-        // A held name is refused here; a taken one (or a lookalike of one)
-        // is left to the unique indexes below, which cannot lose a race.
-        await lockUsername(tx, input.username);
-        if ((await usernameClaim(tx, input.username, null)) === 'held') {
-          throw new RegistrationRefused('held', email);
-        }
+          // A held name is refused here; a taken one (or a lookalike of one)
+          // is left to the unique indexes below, which cannot lose a race.
+          await lockUsername(tx, input.username);
+          if ((await usernameClaim(tx, input.username, null)) === 'held') {
+            throw new RegistrationRefused('held', email);
+          }
 
-        const [row] = await tx
-          .insert(users)
-          .values({
-            email,
-            name: input.name,
-            username: input.username,
-            passwordHash,
-            emailVerifiedAt: sql`now()`,
-            // The name was chosen on this form.
-            usernameConfirmedAt: sql`now()`,
-            // Agreed just now, but only if the form said which terms it
-            // showed; a client that did not is asked on its first visit.
-            ...(agreed
-              ? {
-                  ageConfirmedAt: sql`now()`,
-                  termsVersion: TERMS_VERSION,
-                  termsAcceptedAt: sql`now()`,
-                }
-              : {}),
-          })
-          // Losing the race on any unique index returns no row, which we
-          // translate into the same 409 as the checked case. Doing this
-          // instead of a SELECT-then-INSERT removes the race entirely.
-          .onConflictDoNothing()
-          .returning(PUBLIC_USER);
-        if (!row) throw new RegistrationRefused('taken', email);
-        if (agreed) {
-          await recordAccountEvent(tx, row.id, 'auth.terms_accepted', {
-            payload: { termsVersion: TERMS_VERSION },
-            requestId: request.id,
-          });
-        }
-        return row;
-      })
-      .catch((error: unknown) => {
-        if (error instanceof RegistrationRefused) return error;
-        throw error;
-      });
+          const [row] = await tx
+            .insert(users)
+            .values({
+              email,
+              name: input.name,
+              username: input.username,
+              passwordHash,
+              emailVerifiedAt: sql`now()`,
+              // The name was chosen on this form.
+              usernameConfirmedAt: sql`now()`,
+              // Agreed just now, but only if the form said which terms it
+              // showed; a client that did not is asked on its first visit.
+              ...(agreed
+                ? {
+                    ageConfirmedAt: sql`now()`,
+                    termsVersion: TERMS_VERSION,
+                    termsAcceptedAt: sql`now()`,
+                  }
+                : {}),
+            })
+            // Losing the race on any unique index returns no row, which we
+            // translate into the same 409 as the checked case. Doing this
+            // instead of a SELECT-then-INSERT removes the race entirely.
+            .onConflictDoNothing()
+            .returning(PUBLIC_USER);
+          if (!row) throw new RegistrationRefused('taken', email);
+          if (agreed) {
+            await recordAccountEvent(tx, row.id, 'auth.terms_accepted', {
+              payload: { termsVersion: TERMS_VERSION },
+              requestId: request.id,
+            });
+          }
+          return row;
+        })
+        .catch((error: unknown) => {
+          if (error instanceof RegistrationRefused) return error;
+          throw error;
+        });
 
-    if (outcome instanceof RegistrationRefused) {
-      // Only the holder of the link sees email_taken, and they own the
-      // inbox it names, so this tells nobody else anything. The address is
-      // still said first when it is taken too.
-      const conflict = await registrationConflict(outcome.email);
-      throw outcome.reason === 'held' && conflict.code !== 'email_taken'
-        ? usernameHeld()
-        : conflict;
-    }
-    const user = outcome;
+      if (outcome instanceof RegistrationRefused) {
+        // Only the holder of the link sees email_taken, and they own the
+        // inbox it names, so this tells nobody else anything. The address is
+        // still said first when it is taken too.
+        const conflict = await registrationConflict(outcome.email);
+        throw outcome.reason === 'held' && conflict.code !== 'email_taken'
+          ? usernameHeld()
+          : conflict;
+      }
+      const user = outcome;
 
-    const { token, expiresAt } = await createSession(db, user.id, request.headers['user-agent']);
-    reply.setCookie(app.sessionCookieName, token, { ...cookieOptions, expires: expiresAt });
+      const { token, expiresAt } = await createSession(db, user.id, request.headers['user-agent']);
+      reply.setCookie(app.sessionCookieName, token, { ...cookieOptions, expires: expiresAt });
 
-    return reply.status(201).send({ user });
-  });
+      return { user };
+    },
+  );
 
-  app.post('/auth/login', { preHandler: credentialLimit }, async (request, reply) => {
-    const input = parse(loginSchema, request.body);
+  serve(
+    app,
+    contracts['auth.login'],
+    { preHandler: credentialLimit },
+    async (request, { body: input }, reply) => {
+      const [user] = await db
+        .select({ ...PUBLIC_USER, passwordHash: users.passwordHash })
+        .from(users)
+        .where(eq(users.email, input.email))
+        .limit(1);
 
-    const [user] = await db
-      .select({ ...PUBLIC_USER, passwordHash: users.passwordHash })
-      .from(users)
-      .where(eq(users.email, input.email))
-      .limit(1);
+      // Verified first either way, so a refused demo password costs the same
+      // time as a wrong one and the answer reveals nothing.
+      const matches = await verifyPassword(user?.passwordHash ?? dummyDigest, input.password);
+      const ok = matches && !isRefusedDemoPassword(env, input.password);
 
-    // Verified first either way, so a refused demo password costs the same
-    // time as a wrong one and the answer reveals nothing.
-    const matches = await verifyPassword(user?.passwordHash ?? dummyDigest, input.password);
-    const ok = matches && !isRefusedDemoPassword(env, input.password);
+      // One message for both failure modes: a distinct "no such account" reply
+      // would let anyone test whether an address is registered.
+      if (!ok || !user) {
+        if (user) recordFailedSignInLater(user.id, request.id);
+        throw ApiError.unauthorized('Invalid email or password');
+      }
 
-    // One message for both failure modes: a distinct "no such account" reply
-    // would let anyone test whether an address is registered.
-    if (!ok || !user) {
-      if (user) recordFailedSignInLater(user.id, request.id);
-      throw ApiError.unauthorized('Invalid email or password');
-    }
+      const { token, expiresAt } = await createSession(db, user.id, request.headers['user-agent']);
+      reply.setCookie(app.sessionCookieName, token, { ...cookieOptions, expires: expiresAt });
+      await recordAccountEventSafely(user.id, 'auth.signed_in', { requestId: request.id });
 
-    const { token, expiresAt } = await createSession(db, user.id, request.headers['user-agent']);
-    reply.setCookie(app.sessionCookieName, token, { ...cookieOptions, expires: expiresAt });
-    await recordAccountEventSafely(user.id, 'auth.signed_in', { requestId: request.id });
+      return {
+        user: { id: user.id, email: user.email, name: user.name, username: user.username },
+      };
+    },
+  );
 
-    return {
-      user: { id: user.id, email: user.email, name: user.name, username: user.username },
-    };
-  });
-
-  app.post('/auth/logout', async (request, reply) => {
+  serve(app, contracts['auth.logout'], {}, async (request, _input, reply) => {
     const token = sessionToken(request);
     if (token) await revokeSession(db, token);
     if (request.user) {
@@ -330,7 +329,7 @@ export async function authRoutes(
     }
 
     reply.clearCookie(app.sessionCookieName, cookieOptions);
-    return { ok: true };
+    return { ok: true as const };
   });
 
   /**
@@ -342,7 +341,7 @@ export async function authRoutes(
    * one rarely-hit endpoint is the wrong trade. This is one indexed lookup by
    * primary key.
    */
-  app.get('/auth/me', { preHandler: requireAuth }, async (request) => {
+  serve(app, contracts['auth.me'], { preHandler: requireAuth }, async (request) => {
     const user = currentUser(request);
 
     const [row] = await db
@@ -389,57 +388,63 @@ export async function authRoutes(
     windowMs: 60_000,
   });
 
-  app.patch('/auth/me', { preHandler: [requireAuth, profileLimit] }, async (request) => {
-    const user = currentUser(request);
-    const input = parse(updateProfileSchema, request.body);
+  serve(
+    app,
+    contracts['auth.updateMe'],
+    { preHandler: [requireAuth, profileLimit] },
+    async (request, { body: input }) => {
+      const user = currentUser(request);
 
-    try {
-      const updated = await db.transaction(async (tx) => {
-        // The current name, read under a row lock: two renames at once must
-        // not both release the same old name.
-        const [current] = await tx
-          .select({ username: users.username })
-          .from(users)
-          .where(eq(users.id, user.id))
-          .for('update');
-        const previous = current?.username ?? user.username;
-        const next = input.username;
-        const renaming = next !== undefined && next !== previous;
+      try {
+        const updated = await db.transaction(async (tx) => {
+          // The current name, read under a row lock: two renames at once must
+          // not both release the same old name.
+          const [current] = await tx
+            .select({ username: users.username })
+            .from(users)
+            .where(eq(users.id, user.id))
+            .for('update');
+          const previous = current?.username ?? user.username;
+          const next = input.username;
+          const renaming = next !== undefined && next !== previous;
 
-        if (renaming) await assertCanRename(tx, user.id, previous, next!);
+          if (renaming) await assertCanRename(tx, user.id, previous, next!);
 
-        const [row] = await tx
-          .update(users)
-          // Choosing a new name is confirming one.
-          .set({
-            ...input,
-            ...(renaming ? { usernameConfirmedAt: new Date() } : {}),
-            updatedAt: new Date(),
-          })
-          .where(eq(users.id, user.id))
-          .returning(PUBLIC_USER);
+          const [row] = await tx
+            .update(users)
+            // Choosing a new name is confirming one.
+            .set({
+              ...input,
+              ...(renaming ? { usernameConfirmedAt: new Date() } : {}),
+              updatedAt: new Date(),
+            })
+            .where(eq(users.id, user.id))
+            .returning(PUBLIC_USER);
+          // Gone mid-request (deleted from another session): nothing to answer with.
+          if (!row) throw ApiError.notFound('Account not found');
 
-        if (renaming) {
-          await releaseUsername(tx, user.id, previous, next!);
-          // That it happened, not the names: the history table holds those,
-          // for as long as the hold lasts.
-          await recordAccountEvent(tx, user.id, 'auth.username_changed', {
-            requestId: request.id,
-          });
+          if (renaming) {
+            await releaseUsername(tx, user.id, previous, next!);
+            // That it happened, not the names: the history table holds those,
+            // for as long as the hold lasts.
+            await recordAccountEvent(tx, user.id, 'auth.username_changed', {
+              requestId: request.id,
+            });
+          }
+          return row;
+        });
+
+        return { user: updated };
+      } catch (error) {
+        // Someone took the name between the check and the write; the unique
+        // index decided, and the answer is the same as the checked case.
+        if (pgErrorCode(error) === UNIQUE_VIOLATION) {
+          throw ApiError.conflict('That username is taken', 'username_taken');
         }
-        return row;
-      });
-
-      return { user: updated };
-    } catch (error) {
-      // Someone took the name between the check and the write; the unique
-      // index decided, and the answer is the same as the checked case.
-      if (pgErrorCode(error) === UNIQUE_VIOLATION) {
-        throw ApiError.conflict('That username is taken', 'username_taken');
+        throw error;
       }
-      throw error;
-    }
-  });
+    },
+  );
 
   /**
    * Whether a username can be had, for the sign-up and settings forms.
@@ -456,24 +461,28 @@ export async function authRoutes(
     key: (request) => request.ip,
   });
 
-  app.get('/auth/username-available', { preHandler: availabilityLimit }, async (request) => {
-    const { username } = request.query as { username?: unknown };
-    // A repeated parameter arrives as an array; anything but one string is
-    // simply not a username.
-    const candidate = typeof username === 'string' ? username.trim().toLowerCase() : '';
+  serve(
+    app,
+    contracts['auth.usernameAvailable'],
+    { preHandler: availabilityLimit },
+    async (request, { query: { username } }) => {
+      // A repeated parameter arrives as an array; anything but one string is
+      // simply not a username.
+      const candidate = typeof username === 'string' ? username.trim().toLowerCase() : '';
 
-    const problem = usernameProblem(candidate);
-    if (problem) return { username: candidate, available: false, reason: problem };
+      const problem = usernameProblem(candidate);
+      if (problem) return { username: candidate, available: false, reason: problem };
 
-    // Your own current name, in any spelling, counts as available to you,
-    // and so does a name of yours that is being held.
-    const claim = await usernameClaim(db, candidate, request.user?.id ?? null);
-    return {
-      username: candidate,
-      available: claim === 'free',
-      reason: claim === 'free' ? null : claim,
-    };
-  });
+      // Your own current name, in any spelling, counts as available to you,
+      // and so does a name of yours that is being held.
+      const claim = await usernameClaim(db, candidate, request.user?.id ?? null);
+      return {
+        username: candidate,
+        available: claim === 'free',
+        reason: claim === 'free' ? null : claim,
+      };
+    },
+  );
 
   /**
    * Change password.
@@ -486,12 +495,12 @@ export async function authRoutes(
    * because a device was stolen expects that device to be signed out -- and if
    * the current token is the leaked one, sparing it defeats the exercise.
    */
-  app.post(
-    '/auth/password',
+  serve(
+    app,
+    contracts['auth.changePassword'],
     { preHandler: [requireAuth, credentialLimit] },
-    async (request, reply) => {
+    async (request, { body: input }, reply) => {
       const user = currentUser(request);
-      const input = parse(changePasswordSchema, request.body);
 
       const [row] = await db
         .select({ passwordHash: users.passwordHash })
@@ -531,11 +540,11 @@ export async function authRoutes(
         requestId: request.id,
       });
 
-      return { ok: true };
+      return { ok: true as const };
     },
   );
 
-  app.get('/auth/sessions', { preHandler: requireAuth }, async (request) => {
+  serve(app, contracts['auth.sessions'], { preHandler: requireAuth }, async (request) => {
     const user = currentUser(request);
     // `requireAuth` passed, so a cookie is present.
     const token = sessionToken(request)!;
@@ -543,18 +552,23 @@ export async function authRoutes(
     return { sessions: await listSessions(db, user.id, token) };
   });
 
-  app.delete('/auth/sessions', { preHandler: [requireAuth, profileLimit] }, async (request) => {
-    const user = currentUser(request);
-    const token = sessionToken(request)!;
+  serve(
+    app,
+    contracts['auth.revokeSessions'],
+    { preHandler: [requireAuth, profileLimit] },
+    async (request) => {
+      const user = currentUser(request);
+      const token = sessionToken(request)!;
 
-    const revoked = await revokeOtherSessions(db, user.id, token);
-    // Nothing signed out, nothing to record.
-    if (revoked > 0) {
-      await recordAccountEventSafely(user.id, 'auth.sessions_revoked', {
-        requestId: request.id,
-        payload: { count: revoked },
-      });
-    }
-    return { revoked };
-  });
+      const revoked = await revokeOtherSessions(db, user.id, token);
+      // Nothing signed out, nothing to record.
+      if (revoked > 0) {
+        await recordAccountEventSafely(user.id, 'auth.sessions_revoked', {
+          requestId: request.id,
+          payload: { count: revoked },
+        });
+      }
+      return { revoked };
+    },
+  );
 }

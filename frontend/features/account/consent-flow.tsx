@@ -1,12 +1,12 @@
 'use client';
 
-import { MINIMUM_AGE } from '@robis/shared';
+import { contracts, MINIMUM_AGE } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useState } from 'react';
 import { AuthButton, AuthError, AuthNotice, AuthShell } from '../../components/auth-shell.tsx';
-import { ApiError, api, type Me } from '../../lib/api.ts';
+import { ApiError, api, call, type Me } from '../../lib/api.ts';
 import { UsernameField } from './username-field.tsx';
 
 /**
@@ -81,7 +81,7 @@ function UsernameStep({ me, onDone }: { me: Me; onDone: () => void }) {
   });
   const change = useMutation({
     mutationFn: () =>
-      api('/auth/me', { method: 'PATCH', body: { username: username.trim().toLowerCase() } }),
+      call(contracts['auth.updateMe'], { body: { username: username.trim().toLowerCase() } }),
     onSuccess: onDone,
   });
   const error = keep.error ?? change.error;
@@ -123,7 +123,11 @@ function messageOf(error: unknown): string {
 export function ConsentFlow({ next }: { next: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/auth/me'), retry: false });
+  const me = useQuery({
+    queryKey: ['me'],
+    queryFn: () => call(contracts['auth.me']),
+    retry: false,
+  });
 
   const unauthenticated = me.isError;
   const settled = me.data && !me.data.user.consent.needed && me.data.user.usernameConfirmed;

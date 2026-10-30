@@ -1,10 +1,11 @@
 'use client';
 
+import { contracts } from '@robis/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
-import { ApiError, api, type Me } from '../../lib/api.ts';
+import { ApiError, api, call } from '../../lib/api.ts';
 import { getSyncEngine } from '../../lib/sync.ts';
 
 export type Mode = 'login' | 'register';
@@ -43,7 +44,7 @@ export function LoginForm({ initialMode }: { initialMode: Mode }) {
         setSentTo(email.trim());
         return;
       }
-      const signedIn = await api<Me>('/auth/login', { method: 'POST', body: { email, password } });
+      const signedIn = await call(contracts['auth.login'], { body: { email, password } });
 
       // Offline data left by a different account on this browser must not be
       // shown to this person, or sent under their session.

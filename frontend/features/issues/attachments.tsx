@@ -3,7 +3,7 @@
 import { can, contracts, type ResponseOf, type Role, sniffImage } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { api, BASE_URL, call, type Me } from '../../lib/api.ts';
+import { api, BASE_URL, call } from '../../lib/api.ts';
 import { getSyncEngine } from '../../lib/sync.ts';
 
 /** An image on an issue or comment, as the contract describes it. */
@@ -113,7 +113,11 @@ export function IssueAttachments({
     queryKey: key,
     queryFn: () => call(contracts['attachments.list'], { params: { workspaceId, issueId } }),
   });
-  const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/auth/me'), retry: false });
+  const me = useQuery({
+    queryKey: ['me'],
+    queryFn: () => call(contracts['auth.me']),
+    retry: false,
+  });
   const pending = usePendingPreviews(issueId, revision);
 
   const canAdd = role !== undefined && can(role, 'attachment:create');

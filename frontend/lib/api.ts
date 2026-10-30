@@ -1,5 +1,4 @@
 import {
-  type Avatar as AvatarRef,
   type CallInput,
   type Contract,
   type contracts,
@@ -89,27 +88,8 @@ export function call<C extends Contract>(
   });
 }
 
-export type Me = {
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    /** The app-specific `@handle`. */
-    username: string;
-    /** Null until a picture is chosen; the welcome step asks for one. */
-    avatar: AvatarRef;
-    /**
-     * Whether the current terms are agreed to. When `needed`, the app asks
-     * before anything else and the server refuses workspace use.
-     */
-    consent: { needed: boolean; termsVersion: string | null; current: string };
-    /** False for an account whose username was given to it; asked once. */
-    usernameConfirmed: boolean;
-    /** Whether the address has been confirmed. Joining a workspace needs it. */
-    emailVerified: boolean;
-    emailVerifiedAt: string | null;
-  };
-};
+/** Your own account, as the contract describes it. */
+export type Me = ResponseOf<(typeof contracts)['auth.me']>;
 
 /** A workspace in your list, as the API's contract describes it. */
 export type WorkspaceSummary = ResponseOf<
@@ -183,10 +163,4 @@ export type AuditActorSummary = ResponseOf<(typeof contracts)['audit.actors']>['
 export type ChainReport = ResponseOf<(typeof contracts)['audit.verify']>;
 
 /** One active browser session. Token hashes never reach the client. */
-export type SessionSummary = {
-  id: string;
-  createdAt: string;
-  lastUsedAt: string;
-  userAgent: string | null;
-  current: boolean;
-};
+export type SessionSummary = ResponseOf<(typeof contracts)['auth.sessions']>['sessions'][number];

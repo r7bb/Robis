@@ -3,7 +3,7 @@
 import { contracts, ROLES, type Role, rankOf } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
-import { api, call, type Me, type Member } from '../lib/api.ts';
+import { call, type Member } from '../lib/api.ts';
 import { DeleteButton } from './delete-button.tsx';
 import { SentInvitations } from './sent-invitations.tsx';
 import { Avatar } from './ui/avatar.tsx';
@@ -32,7 +32,11 @@ export function MemberList({
   const key = ['members', workspaceId] as const;
   const invalidate = () => queryClient.invalidateQueries({ queryKey: key });
 
-  const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/auth/me'), retry: false });
+  const me = useQuery({
+    queryKey: ['me'],
+    queryFn: () => call(contracts['auth.me']),
+    retry: false,
+  });
 
   const members = useQuery({
     queryKey: key,
