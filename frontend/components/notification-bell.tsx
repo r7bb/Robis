@@ -1,9 +1,10 @@
 'use client';
 
+import { contracts } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { api, type NotificationItem } from '../lib/api.ts';
+import { call, type NotificationItem } from '../lib/api.ts';
 
 /**
  * Where a notification takes you.
@@ -73,24 +74,25 @@ export function NotificationBell() {
 
   const inbox = useQuery({
     queryKey: ['notifications'],
-    queryFn: () =>
-      api<{ notifications: NotificationItem[]; unreadCount: number }>('/notifications'),
+    queryFn: () => call(contracts['notifications.list']),
     refetchInterval: POLL_MS,
     retry: false,
   });
 
   const markRead = useMutation({
-    mutationFn: (id: string) => api<void>(`/notifications/${id}/read`, { method: 'POST' }),
+    mutationFn: (id: string) =>
+      call(contracts['notifications.read'], { params: { notificationId: id } }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
   });
 
   const dismiss = useMutation({
-    mutationFn: (id: string) => api<void>(`/notifications/${id}`, { method: 'DELETE' }),
+    mutationFn: (id: string) =>
+      call(contracts['notifications.delete'], { params: { notificationId: id } }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
   });
 
   const markAllRead = useMutation({
-    mutationFn: () => api<void>('/notifications/read-all', { method: 'POST' }),
+    mutationFn: () => call(contracts['notifications.readAll']),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
   });
 

@@ -1,5 +1,8 @@
+import type { BodyOf, contracts, ResponseOf } from '@robis/shared';
+
 /**
- * Wire shapes for meetings, mirroring what `routes/meetings.ts` returns.
+ * Meetings as the API's contracts describe them
+ * (`shared/contracts/src/http/meetings.ts`).
  *
  * Timestamps are ISO 8601 strings in UTC, which is how `timestamptz` arrives
  * over JSON -- they are parsed into a `Date` only at the point of display, by
@@ -8,37 +11,14 @@
  * objects never are.
  */
 
-export type MeetingResponse = 'pending' | 'yes' | 'no' | 'maybe';
+export type Meeting = ResponseOf<(typeof contracts)['meetings.list']>['meetings'][number];
 
-export type MeetingAttendee = {
-  userId: string;
-  name: string;
-  response: MeetingResponse;
-};
+export type MeetingAttendee = Meeting['attendees'][number];
 
-export type Meeting = {
-  id: string;
-  title: string;
-  agenda: string | null;
-  /** e.g. "2026-10-09T14:30:00.000Z" */
-  startsAt: string;
-  durationMinutes: number;
-  /** An organiser-supplied https link, or null when the meeting has no room. */
-  joinUrl: string | null;
-  /** Non-null once called off. The row is kept so the past view can say so. */
-  canceledAt: string | null;
-  /** Null when the organiser's account has since been deleted. */
-  organizerId: string | null;
-  organizerName: string | null;
-  attendees: MeetingAttendee[];
-};
+/** Where an attendee stands: `pending` until they answer. */
+export type MeetingResponse = MeetingAttendee['response'];
 
-export type NewMeeting = {
-  title: string;
-  agenda: string | null;
-  /** ISO 8601, converted from the local-time value the organiser picked. */
-  startsAt: string;
-  durationMinutes: number;
-  joinUrl: string | null;
-  attendeeIds: string[];
-};
+/** What an attendee can answer with. */
+export type MeetingAnswer = BodyOf<(typeof contracts)['meetings.respond']>['response'];
+
+export type NewMeeting = BodyOf<(typeof contracts)['meetings.create']>;

@@ -7,15 +7,10 @@ import {
   users,
   workspaceMembers,
 } from '@robis/database';
-import {
-  can,
-  createMeetingSchema,
-  isUuid,
-  respondToMeetingSchema,
-  updateMeetingSchema,
-} from '@robis/shared';
+import { can, contracts, isUuid } from '@robis/shared';
 import { and, asc, eq, gte, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
+import { serve } from '../contract.ts';
 import { ApiError } from '../errors.ts';
 import {
   auditActor,
@@ -24,7 +19,6 @@ import {
   requireAuth,
   requireMembership,
 } from '../plugins/authz.ts';
-import { parse } from '../validate.ts';
 
 /**
  * Scheduled meetings.
@@ -120,14 +114,18 @@ export async function meetingRoutes(app: FastifyInstance, opts: { db: Database }
     return byMeeting;
   }
 
-  type AttendeeRow = { userId: string; name: string; response: string };
+  type AttendeeRow = {
+    userId: string;
+    name: string;
+    response: (typeof meetingAttendees.$inferSelect)['response'];
+  };
 
-  app.get(
-    '/workspaces/:workspaceId/meetings',
+  serve(
+    app,
+    contracts['meetings.list'],
     { preHandler: [requireAuth, requireMembership(db, 'meeting:read')] },
-    async (request) => {
+    async (request, { query: { scope } }) => {
       const { workspaceId } = currentMembership(request);
-      const { scope } = request.query as { scope?: string };
 
       /*
        * "Upcoming" includes a meeting that started a little while ago.
@@ -170,13 +168,13 @@ export async function meetingRoutes(app: FastifyInstance, opts: { db: Database }
     },
   );
 
-  app.post(
-    '/workspaces/:workspaceId/meetings',
+  serve(
+    app,
+    contracts['meetings.create'],
     { preHandler: [requireAuth, requireMembership(db, 'meeting:create')] },
-    async (request, reply) => {
+    async (request, { body: input }) => {
       const user = currentUser(request);
       const { workspaceId } = currentMembership(request);
-      const input = parse(createMeetingSchema, request.body);
 
       /*
        * Invitees are intersected with the workspace roster.
@@ -249,18 +247,17 @@ export async function meetingRoutes(app: FastifyInstance, opts: { db: Database }
         actorId: user.id,
       });
 
-      return reply.status(201).send({ meeting: created });
+      return { meeting: created };
     },
   );
 
-  app.patch(
-    '/workspaces/:workspaceId/meetings/:meetingId',
+  serve(
+    app,
+    contracts['meetings.update'],
     { preHandler: [requireAuth, requireMembership(db, 'meeting:read')] },
-    async (request) => {
+    async (request, { params: { meetingId }, body: input }) => {
       const user = currentUser(request);
       const { workspaceId, role } = currentMembership(request);
-      const { meetingId } = request.params as { meetingId: string };
-      const input = parse(updateMeetingSchema, request.body);
 
       const meeting = await loadMeeting(db, workspaceId, meetingId);
       assertCanManage(meeting, user.id, role);
@@ -332,13 +329,13 @@ export async function meetingRoutes(app: FastifyInstance, opts: { db: Database }
    * around it nothing. The row stays, marked, so the past view can show that
    * it was called off and by implication that it is not merely forgotten.
    */
-  app.delete(
-    '/workspaces/:workspaceId/meetings/:meetingId',
+  serve(
+    app,
+    contracts['meetings.delete'],
     { preHandler: [requireAuth, requireMembership(db, 'meeting:read')] },
-    async (request, reply) => {
+    async (request, { params: { meetingId } }) => {
       const user = currentUser(request);
       const { workspaceId, role } = currentMembership(request);
-      const { meetingId } = request.params as { meetingId: string };
 
       const meeting = await loadMeeting(db, workspaceId, meetingId);
       assertCanManage(meeting, user.id, role);
@@ -376,7 +373,7 @@ export async function meetingRoutes(app: FastifyInstance, opts: { db: Database }
         actorId: user.id,
       });
 
-      return reply.status(204).send();
+      return undefined;
     },
   );
 
@@ -388,14 +385,13 @@ export async function meetingRoutes(app: FastifyInstance, opts: { db: Database }
    * the meeting may reply to it, including a member who was never explicitly
    * invited -- a workspace-wide meeting has no invite list to be on.
    */
-  app.post(
-    '/workspaces/:workspaceId/meetings/:meetingId/response',
+  serve(
+    app,
+    contracts['meetings.respond'],
     { preHandler: [requireAuth, requireMembership(db, 'meeting:read')] },
-    async (request) => {
+    async (request, { params: { meetingId }, body: input }) => {
       const user = currentUser(request);
       const { workspaceId } = currentMembership(request);
-      const { meetingId } = request.params as { meetingId: string };
-      const input = parse(respondToMeetingSchema, request.body);
 
       const meeting = await loadMeeting(db, workspaceId, meetingId);
 
@@ -426,7 +422,7 @@ export async function meetingRoutes(app: FastifyInstance, opts: { db: Database }
         });
       });
 
-      return { ok: true, response: input.response };
+      return { ok: true as const, response: input.response };
     },
   );
 }

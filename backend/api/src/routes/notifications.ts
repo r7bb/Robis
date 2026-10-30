@@ -1,7 +1,8 @@
 import { type Database, notifications, users } from '@robis/database';
-import { isUuid } from '@robis/shared';
+import { contracts, isUuid } from '@robis/shared';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
+import { serve } from '../contract.ts';
 import { ApiError } from '../errors.ts';
 import { currentUser, requireAuth, requirePicture } from '../plugins/authz.ts';
 
@@ -16,46 +17,50 @@ import { currentUser, requireAuth, requirePicture } from '../plugins/authz.ts';
 export async function notificationRoutes(app: FastifyInstance, opts: { db: Database }) {
   const { db } = opts;
 
-  app.get('/notifications', { preHandler: [requireAuth, requirePicture] }, async (request) => {
-    const user = currentUser(request);
-    const { unread } = request.query as { unread?: string };
-
-    const filters = [eq(notifications.userId, user.id)];
-    if (unread === '1' || unread === 'true') filters.push(isNull(notifications.readAt));
-
-    const rows = await db
-      .select({
-        id: notifications.id,
-        kind: notifications.kind,
-        workspaceId: notifications.workspaceId,
-        entityType: notifications.entityType,
-        entityId: notifications.entityId,
-        payload: notifications.payload,
-        readAt: notifications.readAt,
-        createdAt: notifications.createdAt,
-        actorId: notifications.actorId,
-        actorName: users.name,
-      })
-      .from(notifications)
-      .leftJoin(users, eq(users.id, notifications.actorId))
-      .where(and(...filters))
-      .orderBy(desc(notifications.createdAt))
-      .limit(100);
-
-    const items = rows.map((row) => ({ ...row, payload: JSON.parse(row.payload) }));
-
-    return {
-      notifications: items,
-      unreadCount: items.filter((item) => item.readAt === null).length,
-    };
-  });
-
-  app.post(
-    '/notifications/:notificationId/read',
+  serve(
+    app,
+    contracts['notifications.list'],
     { preHandler: [requireAuth, requirePicture] },
-    async (request) => {
+    async (request, { query: { unread } }) => {
       const user = currentUser(request);
-      const { notificationId } = request.params as { notificationId: string };
+
+      const filters = [eq(notifications.userId, user.id)];
+      if (unread === '1' || unread === 'true') filters.push(isNull(notifications.readAt));
+
+      const rows = await db
+        .select({
+          id: notifications.id,
+          kind: notifications.kind,
+          workspaceId: notifications.workspaceId,
+          entityType: notifications.entityType,
+          entityId: notifications.entityId,
+          payload: notifications.payload,
+          readAt: notifications.readAt,
+          createdAt: notifications.createdAt,
+          actorId: notifications.actorId,
+          actorName: users.name,
+        })
+        .from(notifications)
+        .leftJoin(users, eq(users.id, notifications.actorId))
+        .where(and(...filters))
+        .orderBy(desc(notifications.createdAt))
+        .limit(100);
+
+      const items = rows.map((row) => ({ ...row, payload: JSON.parse(row.payload) }));
+
+      return {
+        notifications: items,
+        unreadCount: items.filter((item) => item.readAt === null).length,
+      };
+    },
+  );
+
+  serve(
+    app,
+    contracts['notifications.read'],
+    { preHandler: [requireAuth, requirePicture] },
+    async (request, { params: { notificationId } }) => {
+      const user = currentUser(request);
 
       if (!isUuid(notificationId)) throw ApiError.notFound('Notification not found');
 
@@ -75,12 +80,12 @@ export async function notificationRoutes(app: FastifyInstance, opts: { db: Datab
     },
   );
 
-  app.delete(
-    '/notifications/:notificationId',
+  serve(
+    app,
+    contracts['notifications.delete'],
     { preHandler: [requireAuth, requirePicture] },
-    async (request, reply) => {
+    async (request, { params: { notificationId } }) => {
       const user = currentUser(request);
-      const { notificationId } = request.params as { notificationId: string };
 
       if (!isUuid(notificationId)) throw ApiError.notFound('Notification not found');
 
@@ -100,12 +105,13 @@ export async function notificationRoutes(app: FastifyInstance, opts: { db: Datab
 
       if (!deleted) throw ApiError.notFound('Notification not found');
 
-      return reply.status(204).send();
+      return undefined;
     },
   );
 
-  app.post(
-    '/notifications/read-all',
+  serve(
+    app,
+    contracts['notifications.readAll'],
     { preHandler: [requireAuth, requirePicture] },
     async (request) => {
       const user = currentUser(request);

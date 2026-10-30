@@ -6,7 +6,7 @@ import { Button, EmptyState, InlineError, Pill } from '../../components/ui/primi
 import { ApiError, type Member } from '../../lib/api.ts';
 import { formatDay, formatTime, formatUntil } from '../../lib/time.ts';
 import { ScheduleDialog } from './schedule-dialog.tsx';
-import type { Meeting, MeetingResponse } from './types.ts';
+import type { Meeting, MeetingAnswer } from './types.ts';
 import {
   countAccepted,
   responseOf,
@@ -16,7 +16,7 @@ import {
   useScheduleMeeting,
 } from './use-meetings.ts';
 
-const RESPONSES: { value: MeetingResponse; label: string }[] = [
+const RESPONSES: { value: MeetingAnswer; label: string }[] = [
   { value: 'yes', label: 'Yes' },
   { value: 'maybe', label: 'Maybe' },
   { value: 'no', label: 'No' },
@@ -32,7 +32,7 @@ function MeetingCard({
   meeting: Meeting;
   currentUserId: string | null;
   canCancel: boolean;
-  onRespond: (response: MeetingResponse) => void;
+  onRespond: (response: MeetingAnswer) => void;
   onCancel: () => void;
 }) {
   const mine = responseOf(meeting, currentUserId);

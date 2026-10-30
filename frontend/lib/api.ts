@@ -152,31 +152,10 @@ export type Comment = ResponseOf<(typeof contracts)['comments.list']>['comments'
 
 export type CommentMention = Comment['mentions'][number];
 
-export type NotificationItem = {
-  id: string;
-  kind: string;
-  entityType: string;
-  entityId: string;
-  payload: {
-    /** Mentions. */
-    issueId?: string;
-    issueKey?: string | null;
-    issueTitle?: string | null;
-    excerpt?: string;
-    /** Invitations. */
-    workspaceName?: string | null;
-    role?: string;
-    /** Nudges. */
-    title?: string;
-    body?: string;
-    nudge?: string;
-  };
-  workspaceId: string | null;
-  readAt: string | null;
-  createdAt: string;
-  actorId: string | null;
-  actorName: string | null;
-};
+/** One notification, as the contract describes it. */
+export type NotificationItem = ResponseOf<
+  (typeof contracts)['notifications.list']
+>['notifications'][number];
 
 export type SearchHit = {
   kind: 'issue' | 'document' | 'comment';

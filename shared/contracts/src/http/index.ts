@@ -3,7 +3,9 @@ import { channelContracts } from './channels.ts';
 import { type Contract, statusesOf } from './contract.ts';
 import { documentContracts } from './documents.ts';
 import { issueContracts } from './issues.ts';
+import { meetingContracts } from './meetings.ts';
 import { memberContracts } from './members.ts';
+import { notificationContracts } from './notifications.ts';
 import { projectContracts } from './projects.ts';
 import { workspaceContracts } from './workspaces.ts';
 
@@ -17,6 +19,8 @@ export const contracts = {
   ...issueContracts,
   ...documentContracts,
   ...channelContracts,
+  ...meetingContracts,
+  ...notificationContracts,
 } as const satisfies Record<string, Contract>;
 
 export type ContractName = keyof typeof contracts;

@@ -1,8 +1,9 @@
 'use client';
 
+import { contracts } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../lib/api.ts';
-import type { Meeting, MeetingResponse, NewMeeting } from './types.ts';
+import { call } from '../../lib/api.ts';
+import type { Meeting, MeetingAnswer, MeetingResponse, NewMeeting } from './types.ts';
 
 /**
  * Data access for meetings.
@@ -21,8 +22,7 @@ export type MeetingScope = 'upcoming' | 'past';
 export function useMeetings(workspaceId: string, scope: MeetingScope = 'upcoming') {
   return useQuery({
     queryKey: meetingsKey(workspaceId, scope),
-    queryFn: () =>
-      api<{ meetings: Meeting[] }>(`/workspaces/${workspaceId}/meetings?scope=${scope}`),
+    queryFn: () => call(contracts['meetings.list'], { params: { workspaceId }, query: { scope } }),
     /*
      * "in 20 minutes" goes stale on its own, with no server change to notice.
      * A slow poll keeps the countdown honest without a socket event for the
@@ -42,10 +42,7 @@ export function useScheduleMeeting(workspaceId: string) {
 
   return useMutation({
     mutationFn: (meeting: NewMeeting) =>
-      api<{ meeting: Meeting }>(`/workspaces/${workspaceId}/meetings`, {
-        method: 'POST',
-        body: meeting,
-      }),
+      call(contracts['meetings.create'], { params: { workspaceId }, body: meeting }),
     onSuccess: () => queryClient.invalidateQueries(invalidateAll(workspaceId)),
   });
 }
@@ -54,9 +51,9 @@ export function useRespondToMeeting(workspaceId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ meetingId, response }: { meetingId: string; response: MeetingResponse }) =>
-      api<{ ok: true }>(`/workspaces/${workspaceId}/meetings/${meetingId}/response`, {
-        method: 'POST',
+    mutationFn: ({ meetingId, response }: { meetingId: string; response: MeetingAnswer }) =>
+      call(contracts['meetings.respond'], {
+        params: { workspaceId, meetingId },
         body: { response },
       }),
     onSuccess: () => queryClient.invalidateQueries(invalidateAll(workspaceId)),
@@ -68,7 +65,7 @@ export function useCancelMeeting(workspaceId: string) {
 
   return useMutation({
     mutationFn: (meetingId: string) =>
-      api<void>(`/workspaces/${workspaceId}/meetings/${meetingId}`, { method: 'DELETE' }),
+      call(contracts['meetings.delete'], { params: { workspaceId, meetingId } }),
     onSuccess: () => queryClient.invalidateQueries(invalidateAll(workspaceId)),
   });
 }
