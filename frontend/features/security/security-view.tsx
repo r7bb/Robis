@@ -1,10 +1,11 @@
 'use client';
 
+import { contracts } from '@robis/shared';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ago } from '../../components/activity-feed.tsx';
 import { Button, InlineError } from '../../components/ui/primitives.tsx';
-import { type AuditActorSummary, type AuditEvent, type AuditPage, api } from '../../lib/api.ts';
+import { type AuditEvent, call } from '../../lib/api.ts';
 import { describeEvent } from '../../lib/audit-events.ts';
 import { ChainStatus } from './chain-status.tsx';
 
@@ -31,12 +32,24 @@ const ENTITY_TYPES = [
 
 type Filters = { actorId: string; entityType: string };
 
-function query(filters: Filters, cursor: Record<string, number>, limit: number): string {
-  const params = new URLSearchParams({ limit: String(limit) });
-  for (const [key, value] of Object.entries(cursor)) params.set(key, String(value));
-  if (filters.actorId) params.set('actorId', filters.actorId);
-  if (filters.entityType) params.set('entityType', filters.entityType);
-  return params.toString();
+function query(filters: Filters, cursor: { after?: number; before?: number }, limit: number) {
+  return {
+    limit,
+    ...cursor,
+    ...(filters.actorId ? { actorId: filters.actorId } : {}),
+    ...(filters.entityType ? { entityType: filters.entityType } : {}),
+  };
+}
+
+/**
+ * An event's payload as fields to describe it with. The trail keeps what
+ * older code wrote: anything but an object (raw text that could not be
+ * read, say) has no fields to offer, rather than one per character.
+ */
+function recordedFields(payload: unknown): Record<string, unknown> {
+  return typeof payload === 'object' && payload !== null && !Array.isArray(payload)
+    ? (payload as Record<string, unknown>)
+    : {};
 }
 
 /**
@@ -48,9 +61,10 @@ async function exportTrail(workspaceId: string, filters: Filters) {
   let after = 0;
 
   for (;;) {
-    const page = await api<AuditPage>(
-      `/workspaces/${workspaceId}/audit/events?${query(filters, { after }, EXPORT_PAGE_SIZE)}`,
-    );
+    const page = await call(contracts['audit.events'], {
+      params: { workspaceId },
+      query: query(filters, { after }, EXPORT_PAGE_SIZE),
+    });
     // Display-only fields stay behind: the export carries what the trail
     // signs, and personal fields are left where an erasure can reach them.
     for (const { actorName: _name, personal: _personal, ...event } of page.events) {
@@ -86,7 +100,10 @@ function EventRow({ event }: { event: AuditEvent }) {
           </span>
         ) : null}{' '}
         <span className="text-muted">
-          {describeEvent(event.type, { ...event.payload, ...(event.personal ?? {}) })}
+          {describeEvent(event.type, {
+            ...recordedFields(event.payload),
+            ...(event.personal ?? {}),
+          })}
         </span>
         <span className="mt-0.5 block font-mono text-[11px] text-faint">
           {event.type}
@@ -115,7 +132,7 @@ export function SecurityView({ workspaceId }: { workspaceId: string }) {
   // the ones being looked for.
   const actors = useQuery({
     queryKey: ['audit-actors', workspaceId],
-    queryFn: () => api<{ actors: AuditActorSummary[] }>(`/workspaces/${workspaceId}/audit/actors`),
+    queryFn: () => call(contracts['audit.actors'], { params: { workspaceId } }),
     staleTime: Number.POSITIVE_INFINITY,
     refetchOnWindowFocus: false,
   });
@@ -124,13 +141,10 @@ export function SecurityView({ workspaceId }: { workspaceId: string }) {
     queryKey: ['audit-events', workspaceId, filters],
     initialPageParam: null as number | null,
     queryFn: ({ pageParam }) =>
-      api<AuditPage>(
-        `/workspaces/${workspaceId}/audit/events?${query(
-          filters,
-          pageParam === null ? {} : { before: pageParam },
-          PAGE_SIZE,
-        )}`,
-      ),
+      call(contracts['audit.events'], {
+        params: { workspaceId },
+        query: query(filters, pageParam === null ? {} : { before: pageParam }, PAGE_SIZE),
+      }),
     getNextPageParam: (last) => last.nextCursor,
     // Every page read is recorded in the trail, so a page is fetched when
     // someone asks for it, not again on every return to the tab.

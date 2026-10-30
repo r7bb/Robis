@@ -1,9 +1,10 @@
 'use client';
 
+import { contracts } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Button } from '../../components/ui/primitives.tsx';
-import { api, type ChainReport } from '../../lib/api.ts';
+import { type ChainReport, call } from '../../lib/api.ts';
 
 /** Enough of a hash to compare by eye; the full value is one click away. */
 const SHORT_HASH = 12;
@@ -55,8 +56,9 @@ export function ChainStatus({ workspaceId }: { workspaceId: string }) {
   const queryClient = useQueryClient();
   const key = ['audit-verify', workspaceId];
   const check = (full: boolean) =>
-    api<ChainReport>(`/workspaces/${workspaceId}/audit/verify${full ? '?full=1' : ''}`, {
-      method: 'POST',
+    call(contracts['audit.verify'], {
+      params: { workspaceId },
+      query: full ? { full: '1' } : {},
     });
 
   // One result on screen, whichever kind of check produced it: a full check

@@ -9,14 +9,14 @@ import {
   verifyAuditTrail,
   workspaceMembers,
 } from '@robis/database';
-import { auditEventsQuerySchema } from '@robis/shared';
+import { contracts } from '@robis/shared';
 import { and, eq, gt, inArray, isNotNull, sql } from 'drizzle-orm';
 import type { FastifyInstance, FastifyRequest, preHandlerHookHandler } from 'fastify';
 import type { RateLimits } from '../app.ts';
+import { serve } from '../contract.ts';
 import { ApiError } from '../errors.ts';
 import { auditActor, currentMembership, requireAuth, requireMembership } from '../plugins/authz.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
-import { parse } from '../validate.ts';
 
 /** Reads by one person within this window are recorded once. */
 const READ_COALESCE_MS = 60_000;
@@ -114,9 +114,8 @@ export async function auditRoutes(
     readLimit,
   ];
 
-  app.get('/workspaces/:workspaceId/audit/events', { preHandler: reader }, async (request) => {
+  serve(app, contracts['audit.events'], { preHandler: reader }, async (request, { query }) => {
     const { workspaceId } = currentMembership(request);
-    const query = parse(auditEventsQuerySchema, request.query);
     const exporting = query.after !== undefined;
 
     if (exporting && query.limit < MIN_EXPORT_PAGE) {
@@ -169,7 +168,7 @@ export async function auditRoutes(
    * been removed can still be picked: their events are still there, and are
    * often the ones being looked for. Named by username. Counts as a read.
    */
-  app.get('/workspaces/:workspaceId/audit/actors', { preHandler: reader }, async (request) => {
+  serve(app, contracts['audit.actors'], { preHandler: reader }, async (request) => {
     const { workspaceId } = currentMembership(request);
 
     const rows = await db
@@ -226,8 +225,9 @@ export async function auditRoutes(
    * checkpoint and is itself recorded, and a cross-site form cannot send the
    * session cookie with one.
    */
-  app.post(
-    '/workspaces/:workspaceId/audit/verify',
+  serve(
+    app,
+    contracts['audit.verify'],
     {
       preHandler: [
         requireAuth,
@@ -241,9 +241,8 @@ export async function auditRoutes(
         },
       ],
     },
-    async (request) => {
+    async (request, { query: { full } }) => {
       const { workspaceId } = currentMembership(request);
-      const { full } = request.query as { full?: string };
 
       const report = await verifyAuditTrail(db, workspaceId, { full: full === '1' });
       await recordAccess(request, 'audit.verified', {

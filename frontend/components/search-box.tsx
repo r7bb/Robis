@@ -1,9 +1,10 @@
 'use client';
 
+import { contracts } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { api, type SearchHit } from '../lib/api.ts';
+import { call, type SearchHit } from '../lib/api.ts';
 
 /** Wait this long after typing stops before querying. */
 const DEBOUNCE_MS = 200;
@@ -47,9 +48,7 @@ export function SearchBox({ workspaceId }: { workspaceId: string }) {
   const results = useQuery({
     queryKey: ['search', workspaceId, query],
     queryFn: () =>
-      api<{ results: SearchHit[] }>(
-        `/workspaces/${workspaceId}/search?q=${encodeURIComponent(query)}`,
-      ),
+      call(contracts['search.workspace'], { params: { workspaceId }, query: { q: query } }),
     enabled: query.length > 0,
     // Results for a given query do not change often, and re-running a
     // full-text search on every focus is wasteful.

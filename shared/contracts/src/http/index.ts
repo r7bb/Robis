@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { auditContracts } from './audit.ts';
 import { channelContracts } from './channels.ts';
 import { type Contract, statusesOf } from './contract.ts';
 import { documentContracts } from './documents.ts';
@@ -21,6 +22,7 @@ export const contracts = {
   ...channelContracts,
   ...meetingContracts,
   ...notificationContracts,
+  ...auditContracts,
 } as const satisfies Record<string, Contract>;
 
 export type ContractName = keyof typeof contracts;

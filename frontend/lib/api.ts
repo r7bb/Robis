@@ -157,16 +157,8 @@ export type NotificationItem = ResponseOf<
   (typeof contracts)['notifications.list']
 >['notifications'][number];
 
-export type SearchHit = {
-  kind: 'issue' | 'document' | 'comment';
-  id: string;
-  title: string;
-  /** Excerpt with matched terms wrapped in `<mark>`; rendered as text, not HTML. */
-  snippet: string;
-  rank: number;
-  issueId: string | null;
-  projectId: string | null;
-};
+/** One search result, as the contract describes it. */
+export type SearchHit = ResponseOf<(typeof contracts)['search.workspace']>['results'][number];
 
 /**
  * One entry in the workspace audit trail.
@@ -177,65 +169,18 @@ export type SearchHit = {
  * trail is append-only and holds rows written by older code, so the renderer
  * has to tolerate payloads it does not recognise either way.
  */
-/** One entry of a workspace's activity feed, as the contract describes it. */
 export type ActivityEvent = ResponseOf<(typeof contracts)['workspaces.activity']>['events'][number];
 
 /** One audit event, in the shape the export API and the SIEM stream share. */
-export type AuditEvent = {
-  key: string;
-  workspaceId: string;
-  seq: number;
-  occurredAt: string;
-  actor: { id: string | null; kind: 'human' | 'agent' | 'system' };
-  actorName: string | null;
-  requestId: string | null;
-  entity: { type: string; id: string };
-  type: string;
-  payload: Record<string, unknown>;
-  prevHash: string | null;
-  hash: string;
-  /** The key that signed it; null for an event from before signing. */
-  keyId: string | null;
-  /** Personal fields kept outside the hash; null once erased. */
-  personal: Record<string, unknown> | null;
-  personalCommitment: string | null;
-};
+export type AuditEvent = AuditPage['events'][number];
 
-export type AuditPage = { events: AuditEvent[]; nextCursor: number | null };
+export type AuditPage = ResponseOf<(typeof contracts)['audit.events']>;
 
 /** What `/audit/verify` found. `broken` names the first bad link, if any. */
 /** Someone who appears in a workspace's audit trail, member or not. */
-export type AuditActorSummary = {
-  id: string;
-  username: string | null;
-  name: string | null;
-  /** No longer a member: still listed, because their events still are. */
-  former: boolean;
-};
+export type AuditActorSummary = ResponseOf<(typeof contracts)['audit.actors']>['actors'][number];
 
-export type ChainReport = {
-  ok: boolean;
-  /** Events walked: all of them, or those after `fromSeq`. */
-  checked: number;
-  /** 0 for a full walk, or the checkpoint this check started from. */
-  fromSeq: number;
-  /** Whether a stored checkpoint was used, or rejected as not genuine. */
-  checkpoint: 'none' | 'used' | 'rejected' | 'stale';
-  head: { seq: number; hash: string } | null;
-  broken: {
-    seq: number;
-    eventId: string | null;
-    reason:
-      | 'missing'
-      | 'altered'
-      | 'relinked'
-      | 'truncated'
-      | 'downgraded'
-      | 'unverifiable'
-      | 'unsigned';
-    detail: string;
-  } | null;
-};
+export type ChainReport = ResponseOf<(typeof contracts)['audit.verify']>;
 
 /** One active browser session. Token hashes never reach the client. */
 export type SessionSummary = {

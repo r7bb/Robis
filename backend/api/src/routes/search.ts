@@ -1,6 +1,8 @@
 import { type Database, searchWorkspace } from '@robis/database';
+import { contracts } from '@robis/shared';
 import type { FastifyInstance } from 'fastify';
 import type { RateLimits } from '../app.ts';
+import { serve } from '../contract.ts';
 import { currentMembership, requireAuth, requireMembership } from '../plugins/authz.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
 
@@ -17,8 +19,9 @@ export async function searchRoutes(
 ) {
   const { db, limits } = opts;
 
-  app.get(
-    '/workspaces/:workspaceId/search',
+  serve(
+    app,
+    contracts['search.workspace'],
     {
       preHandler: [
         requireAuth,
@@ -28,9 +31,8 @@ export async function searchRoutes(
         rateLimit({ name: 'search', limit: limits.searchPerMinute, windowMs: 60_000 }),
       ],
     },
-    async (request) => {
+    async (request, { query: { q } }) => {
       const { workspaceId } = currentMembership(request);
-      const { q } = request.query as { q?: string };
 
       const results = await searchWorkspace(db, workspaceId, (q ?? '').slice(0, 200));
 
