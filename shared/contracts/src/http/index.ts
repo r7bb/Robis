@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { attachmentContracts } from './attachments.ts';
 import { auditContracts } from './audit.ts';
 import { channelContracts } from './channels.ts';
 import { type Contract, statusesOf } from './contract.ts';
@@ -7,6 +8,7 @@ import { issueContracts } from './issues.ts';
 import { meetingContracts } from './meetings.ts';
 import { memberContracts } from './members.ts';
 import { notificationContracts } from './notifications.ts';
+import { overviewContracts } from './overview.ts';
 import { projectContracts } from './projects.ts';
 import { workspaceContracts } from './workspaces.ts';
 
@@ -23,6 +25,8 @@ export const contracts = {
   ...meetingContracts,
   ...notificationContracts,
   ...auditContracts,
+  ...overviewContracts,
+  ...attachmentContracts,
 } as const satisfies Record<string, Contract>;
 
 export type ContractName = keyof typeof contracts;
@@ -79,7 +83,14 @@ export function openApiDocument(table: Record<string, Contract> = contracts) {
               content: { 'application/json': { schema: jsonSchema(route.body, 'input') } },
             },
           }
-        : {}),
+        : route.rawBody
+          ? {
+              requestBody: {
+                required: true,
+                content: { [route.rawBody]: { schema: { type: 'string', format: 'binary' } } },
+              },
+            }
+          : {}),
       responses: Object.fromEntries(
         statusesOf(route).map((status) => [
           String(status),

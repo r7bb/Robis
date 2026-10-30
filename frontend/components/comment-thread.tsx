@@ -52,8 +52,7 @@ export function CommentThread({
   const attachmentsKey = ['attachments', workspaceId, issueId] as const;
   const attachments = useQuery({
     queryKey: attachmentsKey,
-    queryFn: () =>
-      api<{ attachments: Attachment[] }>(`${path.replace(/\/comments$/, '')}/attachments`),
+    queryFn: () => call(contracts['attachments.list'], { params: { workspaceId, issueId } }),
   });
 
   /*

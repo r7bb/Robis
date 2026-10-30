@@ -21,6 +21,11 @@ export type Contract = {
   query?: z.ZodType;
   body?: z.ZodType;
   /**
+   * For a route whose body is not JSON (image bytes, say): its content type.
+   * The handler reads the body itself; the OpenAPI document shows it as binary.
+   */
+  rawBody?: string;
+  /**
    * 200 unless said otherwise; 204 when there is no response body. A route
    * that answers with more than one success code lists them, first the one
    * it uses unless the handler says otherwise.

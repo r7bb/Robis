@@ -12,10 +12,11 @@ import {
   WORKSPACE_STORAGE_QUOTA_BYTES,
   workspaceStorageUsed,
 } from '@robis/database';
-import { can, isUuid } from '@robis/shared';
+import { can, contracts, isUuid } from '@robis/shared';
 import type { MediaStorage } from '@robis/storage';
 import { and, asc, eq } from 'drizzle-orm';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { serve, shape } from '../contract.ts';
 import { ApiError } from '../errors.ts';
 import {
   ACCEPTED_TYPES,
@@ -141,17 +142,17 @@ export async function attachmentRoutes(
     return row;
   }
 
-  app.post(
-    '/workspaces/:workspaceId/issues/:issueId/attachments',
+  serve(
+    app,
+    contracts['attachments.upload'],
     {
       onRequest: admitUpload,
       preHandler: [requireAuth, requireMembership(db, 'attachment:create'), uploadLimit],
     },
-    async (request, reply) => {
+    async (request, { params: { issueId }, query: { commentId } }, reply) => {
       const user = currentUser(request);
       const { workspaceId } = currentMembership(request);
-      const { issueId } = request.params as { issueId: string };
-      const { commentId } = request.query as { commentId?: string };
+      // Image bytes, not JSON: the route's own parser hands them over as they came.
       const body = request.body;
 
       const issue = await issueIn(workspaceId, issueId);
@@ -230,17 +231,17 @@ export async function attachmentRoutes(
         // failed notification must not undo it or turn it into an error.
         await notifyChanged(workspaceId, issue.id, user.id);
 
-        return { attachment: toWire(row) };
+        return shape(contracts['attachments.upload'], { attachment: toWire(row) });
       });
     },
   );
 
-  app.get(
-    '/workspaces/:workspaceId/issues/:issueId/attachments',
+  serve(
+    app,
+    contracts['attachments.list'],
     { preHandler: [requireAuth, requireMembership(db, 'issue:read')] },
-    async (request) => {
+    async (request, { params: { issueId } }) => {
       const { workspaceId } = currentMembership(request);
-      const { issueId } = request.params as { issueId: string };
       await issueIn(workspaceId, issueId);
 
       const rows = await db
@@ -283,13 +284,13 @@ export async function attachmentRoutes(
     },
   );
 
-  app.delete(
-    '/workspaces/:workspaceId/attachments/:attachmentId',
+  serve(
+    app,
+    contracts['attachments.delete'],
     { preHandler: [requireAuth, requireMembership(db, 'issue:read')] },
-    async (request, reply) => {
+    async (request, { params: { attachmentId } }) => {
       const user = currentUser(request);
       const { workspaceId, role } = currentMembership(request);
-      const { attachmentId } = request.params as { attachmentId: string };
       const row = await attachmentIn(workspaceId, attachmentId);
 
       const own = row.uploaderId === user.id;
@@ -318,7 +319,7 @@ export async function attachmentRoutes(
 
       await notifyChanged(workspaceId, row.issueId, user.id);
 
-      return reply.status(204).send();
+      return undefined;
     },
   );
 }

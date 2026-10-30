@@ -7,8 +7,10 @@ import {
   workspaceMembers,
   workspaces,
 } from '@robis/database';
+import { contracts } from '@robis/shared';
 import { and, desc, eq, inArray, notInArray, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
+import { serve } from '../contract.ts';
 import { avatarOf } from '../media/avatars.ts';
 import { currentUser, requireAuth, requirePicture } from '../plugins/authz.ts';
 
@@ -63,8 +65,9 @@ function uuidArray(ids: readonly string[]) {
 export async function overviewRoutes(app: FastifyInstance, opts: { db: Database }) {
   const { db } = opts;
 
-  app.get(
-    '/workspaces/overview',
+  serve(
+    app,
+    contracts['workspaces.overview'],
     { preHandler: [requireAuth, requirePicture] },
     async (request) => {
       const user = currentUser(request);

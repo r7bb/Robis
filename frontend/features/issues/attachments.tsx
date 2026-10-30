@@ -1,20 +1,13 @@
 'use client';
 
-import { can, type Role, sniffImage } from '@robis/shared';
+import { can, contracts, type ResponseOf, type Role, sniffImage } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { api, BASE_URL, type Me } from '../../lib/api.ts';
+import { api, BASE_URL, call, type Me } from '../../lib/api.ts';
 import { getSyncEngine } from '../../lib/sync.ts';
 
-export type Attachment = {
-  id: string;
-  commentId: string | null;
-  uploaderId: string | null;
-  contentType: string;
-  width: number;
-  height: number;
-  url: string;
-};
+/** An image on an issue or comment, as the contract describes it. */
+export type Attachment = ResponseOf<(typeof contracts)['attachments.list']>['attachments'][number];
 
 const MAX_BYTES = 8 * 1024 * 1024;
 
@@ -118,10 +111,7 @@ export function IssueAttachments({
   const key = useMemo(() => ['attachments', workspaceId, issueId] as const, [workspaceId, issueId]);
   const list = useQuery({
     queryKey: key,
-    queryFn: () =>
-      api<{ attachments: Attachment[] }>(
-        `/workspaces/${workspaceId}/issues/${issueId}/attachments`,
-      ),
+    queryFn: () => call(contracts['attachments.list'], { params: { workspaceId, issueId } }),
   });
   const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/auth/me'), retry: false });
   const pending = usePendingPreviews(issueId, revision);

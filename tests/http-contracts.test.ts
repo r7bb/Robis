@@ -33,15 +33,10 @@ const ROOT = resolve(import.meta.dir, '..');
 const PENDING: readonly string[] = [
   'DELETE /auth/me',
   'DELETE /auth/sessions',
-  'DELETE /workspaces/:workspaceId/attachments/:attachmentId',
   'GET /auth/me',
   'GET /auth/me/events',
   'GET /auth/sessions',
   'GET /auth/username-available',
-  'GET /users/:userId/avatar',
-  'GET /workspaces/:workspaceId/attachments/:attachmentId',
-  'GET /workspaces/:workspaceId/issues/:issueId/attachments',
-  'GET /workspaces/overview',
   'PATCH /auth/me',
   'POST /auth/email/resend',
   'POST /auth/email/verify',
@@ -55,13 +50,17 @@ const PENDING: readonly string[] = [
   'POST /auth/password/reset',
   'POST /auth/register',
   'POST /auth/signup',
-  'POST /workspaces/:workspaceId/issues/:issueId/attachments',
   'PUT /auth/me/avatar',
   'PUT /auth/me/avatar/generated',
 ];
 
 /** Served outside the API's contract: health and the like. */
-const OUTSIDE: readonly string[] = ['GET /health'];
+const OUTSIDE: readonly string[] = [
+  'GET /health',
+  // These answer with image bytes, streamed from storage, not JSON.
+  'GET /workspaces/:workspaceId/attachments/:attachmentId',
+  'GET /users/:userId/avatar',
+];
 
 describe('route contracts', () => {
   test('every contract is served, and every served route has one', async () => {
