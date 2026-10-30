@@ -63,7 +63,7 @@ class TestAuthentication:
         # open for whatever is watching the process.
         assert client.get("/health").status_code == 200
 
-    @pytest.mark.parametrize("path", ["similar", "triage"])
+    @pytest.mark.parametrize("path", ["similar", "triage", "suggestions"])
     def test_tenant_endpoints_refuse_without_a_token(
         self, client: TestClient, path: str
     ) -> None:
@@ -287,3 +287,51 @@ class TestCacheInvalidation:
 
         assert response.status_code == 200
         assert response.json()["corpus_size"] == 2
+
+
+class TestSuggestions:
+    """One call for both hints (stage 3, item 27): the duplicates and the
+    priority for a draft, from one fit of the workspace's models."""
+
+    def test_answers_with_both_the_same_as_the_separate_endpoints(
+        self, client: TestClient
+    ) -> None:
+        body = {"title": "Offline queue drops writes"}
+        both = client.post(f"/workspaces/{ALPHA}/suggestions", json=body, headers=auth_header())
+        similar = client.post(f"/workspaces/{ALPHA}/similar", json=body, headers=auth_header())
+        triage = client.post(f"/workspaces/{ALPHA}/triage", json=body, headers=auth_header())
+
+        assert both.status_code == 200
+        answer = both.json()
+        assert answer["similar"] == similar.json()["similar"]
+        assert answer["triage"]["priority"] == triage.json()["priority"]
+        assert answer["triage"]["trained_on"] == triage.json()["trained_on"]
+
+    def test_fits_the_workspace_once_for_both(
+        self, client: TestClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        service = importlib.import_module("robis_ml.service")
+        calls: list[str] = []
+        original = service._models_for
+
+        def counting(workspace_id: str) -> object:
+            calls.append(workspace_id)
+            return original(workspace_id)
+
+        monkeypatch.setattr(service, "_models_for", counting)
+        response = client.post(
+            f"/workspaces/{ALPHA}/suggestions", json={"title": "anything"}, headers=auth_header()
+        )
+
+        assert response.status_code == 200
+        assert calls == [ALPHA]
+
+    def test_keeps_to_the_workspace_asked_about(self, client: TestClient) -> None:
+        response = client.post(
+            f"/workspaces/{BETA}/suggestions",
+            json={"title": "Alpha only secret"},
+            headers=auth_header(),
+        )
+
+        assert all(row["id"].startswith("b") for row in response.json()["similar"])
+

@@ -271,7 +271,10 @@ def similar(
     if not 0.0 <= threshold <= 1.0:
         raise HTTPException(status_code=400, detail="threshold must be between 0 and 1")
 
-    models = _models_for(_valid_workspace(workspace_id))
+    return _similar(_models_for(_valid_workspace(workspace_id)), request, limit, threshold)
+
+
+def _similar(models: Fitted, request: TextRequest, limit: int, threshold: float) -> SimilarResponse:
     matches = models.duplicates.query(
         request.text,
         limit=max(1, min(limit, 25)),
@@ -298,7 +301,10 @@ def triage(workspace_id: str, request: TextRequest) -> TriageResponse:
     still return a label and a confident-looking probability, and that
     number is worse than no answer because it invites someone to trust it.
     """
-    models = _models_for(_valid_workspace(workspace_id))
+    return _triage(_models_for(_valid_workspace(workspace_id)), request)
+
+
+def _triage(models: Fitted, request: TextRequest) -> TriageResponse:
     age = int(monotonic() - models.fitted_at)
 
     if not models.triage.ready:
@@ -331,4 +337,34 @@ def triage(workspace_id: str, request: TextRequest) -> TriageResponse:
         score=round(score, 4),
         trained_on=models.triage.trained_on,
         model_age_seconds=age,
+    )
+
+
+class SuggestionsResponse(BaseModel):
+    """Both hints for a draft, from one fit (stage 3, item 27)."""
+
+    similar: list[SimilarIssue]
+    corpus_size: int
+    triage: TriageResponse
+    model_age_seconds: int
+
+
+@app.post(
+    "/workspaces/{workspace_id}/suggestions",
+    response_model=SuggestionsResponse,
+    dependencies=[Depends(require_service_token)],
+)
+def suggestions(workspace_id: str, request: TextRequest) -> SuggestionsResponse:
+    """Duplicates and a suggested priority for one draft, in one call.
+
+    The composer asks for both as the title settles. One call fits (or
+    fetches from cache) the workspace's models once, rather than twice.
+    """
+    models = _models_for(_valid_workspace(workspace_id))
+    found = _similar(models, request, DEFAULT_SIMILAR_LIMIT, DEFAULT_DUPLICATE_THRESHOLD)
+    return SuggestionsResponse(
+        similar=found.similar,
+        corpus_size=found.corpus_size,
+        triage=_triage(models, request),
+        model_age_seconds=found.model_age_seconds,
     )
