@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { type FormEvent, useState } from 'react';
 import { DeleteButton } from '../../components/delete-button.tsx';
 import { Button, EmptyState, InlineError } from '../../components/ui/primitives.tsx';
-import { api, call, type DocumentSummary } from '../../lib/api.ts';
+import { call } from '../../lib/api.ts';
 import { formatRelative } from '../../lib/time.ts';
 
 /**
@@ -150,21 +150,18 @@ export function DocumentsPanel({ workspaceId, role }: { workspaceId: string; rol
 
   const documents = useQuery({
     queryKey: ['documents', workspaceId],
-    queryFn: () => api<{ documents: DocumentSummary[] }>(`/workspaces/${workspaceId}/documents`),
+    queryFn: () => call(contracts['documents.list'], { params: { workspaceId } }),
   });
 
   const create = useMutation({
     mutationFn: (title: string) =>
-      api<{ document: DocumentSummary }>(`/workspaces/${workspaceId}/documents`, {
-        method: 'POST',
-        body: { title },
-      }),
+      call(contracts['documents.create'], { params: { workspaceId }, body: { title } }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['documents', workspaceId] }),
   });
 
   const remove = useMutation({
     mutationFn: (documentId: string) =>
-      api<void>(`/workspaces/${workspaceId}/documents/${documentId}`, { method: 'DELETE' }),
+      call(contracts['documents.delete'], { params: { workspaceId, documentId } }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['documents', workspaceId] }),
   });
 

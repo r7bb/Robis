@@ -141,12 +141,8 @@ export function invitedLabel(invitation: SentInvitation): string {
   return invitation.username ? `@${invitation.username}` : (invitation.email ?? 'someone');
 }
 
-export type DocumentSummary = {
-  id: string;
-  title: string;
-  projectId: string | null;
-  updatedAt: string;
-};
+/** A document in a workspace's list, as the contract describes it. */
+export type DocumentSummary = ResponseOf<(typeof contracts)['documents.list']>['documents'][number];
 
 /** One issue, as the contract describes it. */
 export type IssueDetail = ResponseOf<(typeof contracts)['issues.get']>['issue'];

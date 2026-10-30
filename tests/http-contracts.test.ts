@@ -36,7 +36,6 @@ const PENDING: readonly string[] = [
   'DELETE /notifications/:notificationId',
   'DELETE /workspaces/:workspaceId/attachments/:attachmentId',
   'DELETE /workspaces/:workspaceId/channels/:channelId',
-  'DELETE /workspaces/:workspaceId/documents/:documentId',
   'DELETE /workspaces/:workspaceId/meetings/:meetingId',
   'DELETE /workspaces/:workspaceId/messages/:messageId',
   'GET /auth/me',
@@ -50,15 +49,12 @@ const PENDING: readonly string[] = [
   'GET /workspaces/:workspaceId/audit/events',
   'GET /workspaces/:workspaceId/channels',
   'GET /workspaces/:workspaceId/channels/:channelId/messages',
-  'GET /workspaces/:workspaceId/documents',
-  'GET /workspaces/:workspaceId/documents/:documentId',
   'GET /workspaces/:workspaceId/issues/:issueId/attachments',
   'GET /workspaces/:workspaceId/meetings',
   'GET /workspaces/:workspaceId/search',
   'GET /workspaces/overview',
   'PATCH /auth/me',
   'PATCH /workspaces/:workspaceId/channels/:channelId',
-  'PATCH /workspaces/:workspaceId/documents/:documentId',
   'PATCH /workspaces/:workspaceId/meetings/:meetingId',
   'POST /auth/email/resend',
   'POST /auth/email/verify',
@@ -77,7 +73,6 @@ const PENDING: readonly string[] = [
   'POST /workspaces/:workspaceId/audit/verify',
   'POST /workspaces/:workspaceId/channels',
   'POST /workspaces/:workspaceId/channels/:channelId/messages',
-  'POST /workspaces/:workspaceId/documents',
   'POST /workspaces/:workspaceId/issues/:issueId/attachments',
   'POST /workspaces/:workspaceId/meetings',
   'POST /workspaces/:workspaceId/meetings/:meetingId/response',
@@ -132,6 +127,28 @@ describe('route contracts', () => {
     expect(updated.statusCode).toBe(200);
     expect(updated.json().issue).toMatchObject({ key, title: 'Still has a key' });
     expect(updated.json().issue).not.toHaveProperty('searchVector');
+  });
+
+  test('a document answer carries its title and dates, never its stored state', async () => {
+    // Created and renamed documents used to answer with the whole row: the
+    // editing state's bytes and the plain-text copy kept for search.
+    const actor = await createActor('Owner');
+    const workspace = await createWorkspace(actor, 'Docs');
+    const created = await request(`/workspaces/${workspace.id}/documents`, {
+      method: 'POST',
+      actor,
+      payload: { title: 'Plan' },
+    });
+    expect(created.statusCode).toBe(201);
+    const renamed = await request(
+      `/workspaces/${workspace.id}/documents/${created.json().document.id}`,
+      { method: 'PATCH', actor, payload: { title: 'The plan' } },
+    );
+    for (const answer of [created.json().document, renamed.json().document]) {
+      expect(Object.keys(answer).sort()).toEqual(
+        ['createdAt', 'id', 'projectId', 'title', 'updatedAt'].sort(),
+      );
+    }
   });
 
   test('a handler that answers outside its contract is a server error, not a reply', async () => {

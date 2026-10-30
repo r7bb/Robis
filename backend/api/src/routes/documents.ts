@@ -6,9 +6,10 @@ import {
   publishEvent,
   recordAudit,
 } from '@robis/database';
-import { createDocumentSchema, isUuid, updateDocumentSchema } from '@robis/shared';
+import { contracts, isUuid } from '@robis/shared';
 import { and, desc, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
+import { serve } from '../contract.ts';
 import { ApiError } from '../errors.ts';
 import {
   auditActor,
@@ -17,7 +18,6 @@ import {
   requireAuth,
   requireMembership,
 } from '../plugins/authz.ts';
-import { parse } from '../validate.ts';
 
 /**
  * REST surface for documents: create, list, rename, delete, and a read-only
@@ -32,8 +32,9 @@ import { parse } from '../validate.ts';
 export async function documentRoutes(app: FastifyInstance, opts: { db: Database }) {
   const { db } = opts;
 
-  app.get(
-    '/workspaces/:workspaceId/documents',
+  serve(
+    app,
+    contracts['documents.list'],
     { preHandler: [requireAuth, requireMembership(db, 'project:read')] },
     async (request) => {
       const { workspaceId } = currentMembership(request);
@@ -54,13 +55,13 @@ export async function documentRoutes(app: FastifyInstance, opts: { db: Database 
     },
   );
 
-  app.post(
-    '/workspaces/:workspaceId/documents',
+  serve(
+    app,
+    contracts['documents.create'],
     { preHandler: [requireAuth, requireMembership(db, 'project:create')] },
-    async (request, reply) => {
+    async (request, { body: input }) => {
       const user = currentUser(request);
       const { workspaceId } = currentMembership(request);
-      const input = parse(createDocumentSchema, request.body);
 
       const document = await db.transaction(async (tx) => {
         const [row] = await tx
@@ -91,16 +92,16 @@ export async function documentRoutes(app: FastifyInstance, opts: { db: Database 
         actorId: user.id,
       });
 
-      return reply.status(201).send({ document });
+      return { document: document! };
     },
   );
 
-  app.get(
-    '/workspaces/:workspaceId/documents/:documentId',
+  serve(
+    app,
+    contracts['documents.get'],
     { preHandler: [requireAuth, requireMembership(db, 'project:read')] },
-    async (request) => {
+    async (request, { params: { documentId } }) => {
       const { workspaceId } = currentMembership(request);
-      const { documentId } = request.params as { documentId: string };
 
       const document = await loadMeta(workspaceId, documentId);
 
@@ -112,13 +113,12 @@ export async function documentRoutes(app: FastifyInstance, opts: { db: Database 
     },
   );
 
-  app.patch(
-    '/workspaces/:workspaceId/documents/:documentId',
+  serve(
+    app,
+    contracts['documents.update'],
     { preHandler: [requireAuth, requireMembership(db, 'project:update')] },
-    async (request) => {
+    async (request, { params: { documentId }, body: input }) => {
       const { workspaceId } = currentMembership(request);
-      const { documentId } = request.params as { documentId: string };
-      const input = parse(updateDocumentSchema, request.body);
 
       const before = await loadMeta(workspaceId, documentId);
 
@@ -151,12 +151,12 @@ export async function documentRoutes(app: FastifyInstance, opts: { db: Database 
     },
   );
 
-  app.delete(
-    '/workspaces/:workspaceId/documents/:documentId',
+  serve(
+    app,
+    contracts['documents.delete'],
     { preHandler: [requireAuth, requireMembership(db, 'project:delete')] },
-    async (request, reply) => {
+    async (request, { params: { documentId } }) => {
       const { workspaceId } = currentMembership(request);
-      const { documentId } = request.params as { documentId: string };
 
       const document = await loadMeta(workspaceId, documentId);
 
@@ -178,7 +178,7 @@ export async function documentRoutes(app: FastifyInstance, opts: { db: Database 
         });
       });
 
-      return reply.status(204).send();
+      return undefined;
     },
   );
 

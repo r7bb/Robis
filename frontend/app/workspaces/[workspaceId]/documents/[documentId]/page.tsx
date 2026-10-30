@@ -7,11 +7,9 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef } from 'react';
 import { DeleteButton } from '../../../../../components/delete-button.tsx';
 import { ErrorState } from '../../../../../components/ui/primitives.tsx';
-import { api, call } from '../../../../../lib/api.ts';
+import { call } from '../../../../../lib/api.ts';
 import { lastTheme, useApplyTheme } from '../../../../../lib/theme.ts';
 import { useDocument } from '../../../../../lib/use-document.ts';
-
-type DocumentMeta = { id: string; title: string };
 
 function DocumentView() {
   const { workspaceId, documentId } = useParams<{ workspaceId: string; documentId: string }>();
@@ -20,8 +18,7 @@ function DocumentView() {
 
   const meta = useQuery({
     queryKey: ['document', workspaceId, documentId],
-    queryFn: () =>
-      api<{ document: DocumentMeta }>(`/workspaces/${workspaceId}/documents/${documentId}`),
+    queryFn: () => call(contracts['documents.get'], { params: { workspaceId, documentId } }),
   });
 
   const workspace = useQuery({
@@ -57,8 +54,7 @@ function DocumentView() {
   }, [seed, doc.connected, doc.text, doc.edit]);
 
   const remove = useMutation({
-    mutationFn: () =>
-      api<void>(`/workspaces/${workspaceId}/documents/${documentId}`, { method: 'DELETE' }),
+    mutationFn: () => call(contracts['documents.delete'], { params: { workspaceId, documentId } }),
     onSuccess: () => router.replace(`/workspaces/${workspaceId}`),
   });
 
