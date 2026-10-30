@@ -8,16 +8,10 @@ import {
   recordAudit,
   users,
 } from '@robis/database';
-import {
-  can,
-  createChannelSchema,
-  createMessageSchema,
-  isUuid,
-  listMessagesQuerySchema,
-  updateChannelSchema,
-} from '@robis/shared';
+import { can, contracts, isUuid } from '@robis/shared';
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
+import { serve } from '../contract.ts';
 import { ApiError } from '../errors.ts';
 import {
   auditActor,
@@ -26,7 +20,6 @@ import {
   requireAuth,
   requireMembership,
 } from '../plugins/authz.ts';
-import { parse } from '../validate.ts';
 
 /**
  * Workspace chat.
@@ -61,8 +54,9 @@ async function loadChannel(db: Database, workspaceId: string, channelId: string)
 export async function channelRoutes(app: FastifyInstance, opts: { db: Database }) {
   const { db } = opts;
 
-  app.get(
-    '/workspaces/:workspaceId/channels',
+  serve(
+    app,
+    contracts['channels.list'],
     { preHandler: [requireAuth, requireMembership(db, 'channel:read')] },
     async (request) => {
       const { workspaceId } = currentMembership(request);
@@ -82,13 +76,13 @@ export async function channelRoutes(app: FastifyInstance, opts: { db: Database }
     },
   );
 
-  app.post(
-    '/workspaces/:workspaceId/channels',
+  serve(
+    app,
+    contracts['channels.create'],
     { preHandler: [requireAuth, requireMembership(db, 'channel:create')] },
-    async (request, reply) => {
+    async (request, { body: input }) => {
       const user = currentUser(request);
       const { workspaceId } = currentMembership(request);
-      const input = parse(createChannelSchema, request.body);
 
       /*
        * The unique index decides, not a prior SELECT.
@@ -131,17 +125,16 @@ export async function channelRoutes(app: FastifyInstance, opts: { db: Database }
         actorId: user.id,
       });
 
-      return reply.status(201).send({ channel: created });
+      return { channel: created };
     },
   );
 
-  app.patch(
-    '/workspaces/:workspaceId/channels/:channelId',
+  serve(
+    app,
+    contracts['channels.update'],
     { preHandler: [requireAuth, requireMembership(db, 'channel:update')] },
-    async (request) => {
+    async (request, { params: { channelId }, body: input }) => {
       const { workspaceId } = currentMembership(request);
-      const { channelId } = request.params as { channelId: string };
-      const input = parse(updateChannelSchema, request.body);
 
       const before = await loadChannel(db, workspaceId, channelId);
 
@@ -169,13 +162,13 @@ export async function channelRoutes(app: FastifyInstance, opts: { db: Database }
     },
   );
 
-  app.delete(
-    '/workspaces/:workspaceId/channels/:channelId',
+  serve(
+    app,
+    contracts['channels.delete'],
     { preHandler: [requireAuth, requireMembership(db, 'channel:delete')] },
-    async (request, reply) => {
+    async (request, { params: { channelId } }) => {
       const user = currentUser(request);
       const { workspaceId } = currentMembership(request);
-      const { channelId } = request.params as { channelId: string };
 
       const channel = await loadChannel(db, workspaceId, channelId);
 
@@ -207,7 +200,7 @@ export async function channelRoutes(app: FastifyInstance, opts: { db: Database }
         actorId: user.id,
       });
 
-      return reply.status(204).send();
+      return undefined;
     },
   );
 
@@ -219,13 +212,12 @@ export async function channelRoutes(app: FastifyInstance, opts: { db: Database }
    * page for display; the alternative -- oldest-first with an offset to the
    * end -- cannot answer "the latest 50" without counting the whole channel.
    */
-  app.get(
-    '/workspaces/:workspaceId/channels/:channelId/messages',
+  serve(
+    app,
+    contracts['messages.list'],
     { preHandler: [requireAuth, requireMembership(db, 'channel:read')] },
-    async (request) => {
+    async (request, { params: { channelId }, query }) => {
       const { workspaceId } = currentMembership(request);
-      const { channelId } = request.params as { channelId: string };
-      const query = parse(listMessagesQuerySchema, request.query);
 
       await loadChannel(db, workspaceId, channelId);
 
@@ -267,14 +259,13 @@ export async function channelRoutes(app: FastifyInstance, opts: { db: Database }
     },
   );
 
-  app.post(
-    '/workspaces/:workspaceId/channels/:channelId/messages',
+  serve(
+    app,
+    contracts['messages.create'],
     { preHandler: [requireAuth, requireMembership(db, 'message:create')] },
-    async (request, reply) => {
+    async (request, { params: { channelId }, body: input }) => {
       const user = currentUser(request);
       const { workspaceId } = currentMembership(request);
-      const { channelId } = request.params as { channelId: string };
-      const input = parse(createMessageSchema, request.body);
 
       await loadChannel(db, workspaceId, channelId);
 
@@ -293,19 +284,17 @@ export async function channelRoutes(app: FastifyInstance, opts: { db: Database }
         actorId: user.id,
       });
 
-      return reply.status(201).send({
-        message: { ...created!, authorName: user.name },
-      });
+      return { message: { ...created!, authorName: user.name } };
     },
   );
 
-  app.delete(
-    '/workspaces/:workspaceId/messages/:messageId',
+  serve(
+    app,
+    contracts['messages.delete'],
     { preHandler: [requireAuth, requireMembership(db, 'channel:read')] },
-    async (request, reply) => {
+    async (request, { params: { messageId } }) => {
       const user = currentUser(request);
       const { workspaceId, role } = currentMembership(request);
-      const { messageId } = request.params as { messageId: string };
 
       if (!isUuid(messageId)) throw ApiError.notFound('Message not found');
 
@@ -357,7 +346,7 @@ export async function channelRoutes(app: FastifyInstance, opts: { db: Database }
         actorId: user.id,
       });
 
-      return reply.status(204).send();
+      return undefined;
     },
   );
 }

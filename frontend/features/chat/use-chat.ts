@@ -1,8 +1,9 @@
 'use client';
 
+import { contracts } from '@robis/shared';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../lib/api.ts';
-import type { ChannelSummary, ChatMessage, MessagePage } from './types.ts';
+import { call } from '../../lib/api.ts';
+import type { ChatMessage, MessagePage } from './types.ts';
 
 /**
  * Data access for chat.
@@ -24,7 +25,7 @@ export function messagesKey(workspaceId: string, channelId: string) {
 export function useChannels(workspaceId: string) {
   return useQuery({
     queryKey: channelsKey(workspaceId),
-    queryFn: () => api<{ channels: ChannelSummary[] }>(`/workspaces/${workspaceId}/channels`),
+    queryFn: () => call(contracts['channels.list'], { params: { workspaceId } }),
   });
 }
 
@@ -41,10 +42,12 @@ export function useMessages(workspaceId: string, channelId: string | null) {
     queryKey: messagesKey(workspaceId, channelId ?? 'none'),
     enabled: channelId !== null,
     initialPageParam: undefined as string | undefined,
-    queryFn: ({ pageParam }) => {
-      const query = pageParam ? `?cursor=${encodeURIComponent(pageParam)}` : '';
-      return api<MessagePage>(`/workspaces/${workspaceId}/channels/${channelId}/messages${query}`);
-    },
+    // Only runs once a channel is chosen (`enabled` above).
+    queryFn: ({ pageParam }) =>
+      call(contracts['messages.list'], {
+        params: { workspaceId, channelId: channelId as string },
+        query: { cursor: pageParam },
+      }),
     getNextPageParam: (last) => last.nextCursor ?? undefined,
   });
 }
@@ -61,8 +64,8 @@ export function useSendMessage(workspaceId: string, channelId: string | null) {
 
   return useMutation({
     mutationFn: (body: string) =>
-      api<{ message: ChatMessage }>(`/workspaces/${workspaceId}/channels/${channelId}/messages`, {
-        method: 'POST',
+      call(contracts['messages.create'], {
+        params: { workspaceId, channelId: channelId as string },
         body: { body },
       }),
     /*
@@ -87,10 +90,7 @@ export function useCreateChannel(workspaceId: string) {
 
   return useMutation({
     mutationFn: (name: string) =>
-      api<{ channel: ChannelSummary }>(`/workspaces/${workspaceId}/channels`, {
-        method: 'POST',
-        body: { name },
-      }),
+      call(contracts['channels.create'], { params: { workspaceId }, body: { name } }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: channelsKey(workspaceId) }),
   });
 }
@@ -100,7 +100,7 @@ export function useDeleteMessage(workspaceId: string, channelId: string | null) 
 
   return useMutation({
     mutationFn: (messageId: string) =>
-      api<void>(`/workspaces/${workspaceId}/messages/${messageId}`, { method: 'DELETE' }),
+      call(contracts['messages.delete'], { params: { workspaceId, messageId } }),
     onSuccess: () => {
       if (!channelId) return;
       queryClient.invalidateQueries({ queryKey: messagesKey(workspaceId, channelId) });

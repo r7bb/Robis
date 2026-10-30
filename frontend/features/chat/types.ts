@@ -1,23 +1,9 @@
-/** Wire shapes for chat, mirroring what `routes/channels.ts` returns. */
+import type { contracts, ResponseOf } from '@robis/shared';
 
-export type ChannelSummary = {
-  id: string;
-  name: string;
-  topic: string | null;
-  createdAt: string;
-};
+/** Chat as the API's contracts describe it (`shared/contracts/src/http/channels.ts`). */
 
-export type ChatMessage = {
-  id: string;
-  channelId: string;
-  body: string;
-  createdAt: string;
-  editedAt: string | null;
-  authorId: string;
-  authorName: string;
-};
+export type MessagePage = ResponseOf<(typeof contracts)['messages.list']>;
 
-export type MessagePage = {
-  messages: ChatMessage[];
-  nextCursor: string | null;
-};
+export type ChannelSummary = ResponseOf<(typeof contracts)['channels.list']>['channels'][number];
+
+export type ChatMessage = MessagePage['messages'][number];
