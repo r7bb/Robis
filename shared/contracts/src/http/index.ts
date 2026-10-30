@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { Contract } from './contract.ts';
+import { projectContracts } from './projects.ts';
 import { workspaceContracts } from './workspaces.ts';
 
 export * from './contract.ts';
@@ -7,6 +8,7 @@ export * from './contract.ts';
 /** Every route the API serves through a contract, by name. */
 export const contracts = {
   ...workspaceContracts,
+  ...projectContracts,
 } as const satisfies Record<string, Contract>;
 
 export type ContractName = keyof typeof contracts;

@@ -146,8 +146,8 @@ with Postgres on the same machine. Method and percentiles in
 
 ## Latest
 
-- **Routes described once: the workspace routes first.** One definition
-  types the API, the web app and a generated OpenAPI document.
+- **Routes described once, a group at a time.** One definition types the
+  API, the web app and a generated OpenAPI document.
 - **The database library is current.** Drizzle 0.45, with database
   error codes still recognised through its new error wrapping.
 - **CI installs exactly what is locked, and runs the Python tests.**

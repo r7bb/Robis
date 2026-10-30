@@ -114,14 +114,8 @@ export type WorkspaceSummary = ResponseOf<
   (typeof contracts)['workspaces.list']
 >['workspaces'][number];
 
-export type ProjectSummary = {
-  id: string;
-  key: string;
-  name: string;
-  description: string | null;
-  archived: boolean;
-  openIssues: number;
-};
+/** A project in a workspace's list, as the contract describes it. */
+export type ProjectSummary = ResponseOf<(typeof contracts)['projects.list']>['projects'][number];
 
 export type Member = {
   userId: string;

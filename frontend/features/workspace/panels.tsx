@@ -1,12 +1,12 @@
 'use client';
 
-import { can, type Role } from '@robis/shared';
+import { can, contracts, type Role } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { type FormEvent, useState } from 'react';
 import { DeleteButton } from '../../components/delete-button.tsx';
 import { Button, EmptyState, InlineError } from '../../components/ui/primitives.tsx';
-import { api, type DocumentSummary, type ProjectSummary } from '../../lib/api.ts';
+import { api, call, type DocumentSummary } from '../../lib/api.ts';
 import { formatRelative } from '../../lib/time.ts';
 
 /**
@@ -71,21 +71,18 @@ export function ProjectsPanel({ workspaceId, role }: { workspaceId: string; role
 
   const projects = useQuery({
     queryKey: ['projects', workspaceId],
-    queryFn: () => api<{ projects: ProjectSummary[] }>(`/workspaces/${workspaceId}/projects`),
+    queryFn: () => call(contracts['projects.list'], { params: { workspaceId } }),
   });
 
   const create = useMutation({
     mutationFn: (name: string) =>
-      api<{ project: ProjectSummary }>(`/workspaces/${workspaceId}/projects`, {
-        method: 'POST',
-        body: { name },
-      }),
+      call(contracts['projects.create'], { params: { workspaceId }, body: { name } }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['projects', workspaceId] }),
   });
 
   const remove = useMutation({
     mutationFn: (projectId: string) =>
-      api<void>(`/workspaces/${workspaceId}/projects/${projectId}`, { method: 'DELETE' }),
+      call(contracts['projects.delete'], { params: { workspaceId, projectId } }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['projects', workspaceId] }),
   });
 

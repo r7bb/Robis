@@ -8,9 +8,10 @@ import {
   queueAttachmentPurge,
   recordAudit,
 } from '@robis/database';
-import { createProjectSchema, deriveProjectKey, isUuid, updateProjectSchema } from '@robis/shared';
+import { contracts, deriveProjectKey, isUuid } from '@robis/shared';
 import { and, count, eq, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
+import { serve } from '../contract.ts';
 import { ApiError } from '../errors.ts';
 import {
   auditActor,
@@ -19,7 +20,6 @@ import {
   requireAuth,
   requireMembership,
 } from '../plugins/authz.ts';
-import { parse } from '../validate.ts';
 
 /**
  * Load a project, scoped to the workspace from the path.
@@ -62,8 +62,9 @@ async function availableKey(db: Executor, workspaceId: string, base: string): Pr
 export async function projectRoutes(app: FastifyInstance, opts: { db: Database }) {
   const { db } = opts;
 
-  app.get(
-    '/workspaces/:workspaceId/projects',
+  serve(
+    app,
+    contracts['projects.list'],
     { preHandler: [requireAuth, requireMembership(db, 'project:read')] },
     async (request) => {
       const { workspaceId } = currentMembership(request);
@@ -101,13 +102,13 @@ export async function projectRoutes(app: FastifyInstance, opts: { db: Database }
     },
   );
 
-  app.post(
-    '/workspaces/:workspaceId/projects',
+  serve(
+    app,
+    contracts['projects.create'],
     { preHandler: [requireAuth, requireMembership(db, 'project:create')] },
-    async (request, reply) => {
+    async (request, { body: input }) => {
       const user = currentUser(request);
       const { workspaceId } = currentMembership(request);
-      const input = parse(createProjectSchema, request.body);
 
       const project = await db.transaction(async (tx) => {
         const key =
@@ -147,28 +148,27 @@ export async function projectRoutes(app: FastifyInstance, opts: { db: Database }
         actorId: user.id,
       });
 
-      return reply.status(201).send({ project });
+      return { project };
     },
   );
 
-  app.get(
-    '/workspaces/:workspaceId/projects/:projectId',
+  serve(
+    app,
+    contracts['projects.get'],
     { preHandler: [requireAuth, requireMembership(db, 'project:read')] },
-    async (request) => {
+    async (request, { params: { projectId } }) => {
       const { workspaceId } = currentMembership(request);
-      const { projectId } = request.params as { projectId: string };
 
       return { project: await loadProject(db, workspaceId, projectId) };
     },
   );
 
-  app.patch(
-    '/workspaces/:workspaceId/projects/:projectId',
+  serve(
+    app,
+    contracts['projects.update'],
     { preHandler: [requireAuth, requireMembership(db, 'project:update')] },
-    async (request) => {
+    async (request, { params: { projectId }, body: input }) => {
       const { workspaceId } = currentMembership(request);
-      const { projectId } = request.params as { projectId: string };
-      const input = parse(updateProjectSchema, request.body);
 
       const before = await loadProject(db, workspaceId, projectId);
 
@@ -199,13 +199,13 @@ export async function projectRoutes(app: FastifyInstance, opts: { db: Database }
     },
   );
 
-  app.delete(
-    '/workspaces/:workspaceId/projects/:projectId',
+  serve(
+    app,
+    contracts['projects.delete'],
     { preHandler: [requireAuth, requireMembership(db, 'project:delete')] },
-    async (request, reply) => {
+    async (request, { params: { projectId } }) => {
       const user = currentUser(request);
       const { workspaceId } = currentMembership(request);
-      const { projectId } = request.params as { projectId: string };
 
       const project = await loadProject(db, workspaceId, projectId);
 
@@ -241,7 +241,7 @@ export async function projectRoutes(app: FastifyInstance, opts: { db: Database }
         actorId: user.id,
       });
 
-      return reply.status(204).send();
+      return undefined;
     },
   );
 }
