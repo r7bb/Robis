@@ -1,7 +1,8 @@
 'use client';
 
+import { contracts } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
-import { type ActivityEvent, api } from '../lib/api.ts';
+import { call } from '../lib/api.ts';
 import { describeEvent } from '../lib/audit-events.ts';
 
 /**
@@ -49,7 +50,7 @@ export function ago(iso: string): string {
 export function ActivityFeed({ workspaceId }: { workspaceId: string }) {
   const activity = useQuery({
     queryKey: ['activity', workspaceId],
-    queryFn: () => api<{ events: ActivityEvent[] }>(`/workspaces/${workspaceId}/activity`),
+    queryFn: () => call(contracts['workspaces.activity'], { params: { workspaceId } }),
   });
 
   // Errors stay silent: the feed is supplementary, and a red box here would

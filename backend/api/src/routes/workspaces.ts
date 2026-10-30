@@ -10,12 +10,7 @@ import {
   workspaceMembers,
   workspaces,
 } from '@robis/database';
-import {
-  confirmPasswordSchema,
-  createWorkspaceSchema,
-  slugify,
-  updateWorkspaceSchema,
-} from '@robis/shared';
+import { contracts, slugify } from '@robis/shared';
 
 /** The room every new workspace is born with. */
 const DEFAULT_CHANNEL_NAME = 'general';
@@ -23,6 +18,7 @@ const DEFAULT_CHANNEL_NAME = 'general';
 import { and, desc, eq, notLike } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { confirmPassword } from '../confirm-password.ts';
+import { serve } from '../contract.ts';
 import { ApiError } from '../errors.ts';
 import {
   assertReady,
@@ -34,7 +30,6 @@ import {
   requirePicture,
 } from '../plugins/authz.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
-import { parse } from '../validate.ts';
 
 /**
  * Find a free slug by appending `-2`, `-3`, ... The unique index is still the
@@ -61,81 +56,91 @@ async function availableSlug(db: Executor, base: string): Promise<string> {
 export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database }) {
   const { db } = opts;
 
-  app.get('/workspaces', { preHandler: [requireAuth, requirePicture] }, async (request) => {
-    const user = currentUser(request);
+  serve(
+    app,
+    contracts['workspaces.list'],
+    { preHandler: [requireAuth, requirePicture] },
+    async (request) => {
+      const user = currentUser(request);
 
-    const rows = await db
-      .select({
-        id: workspaces.id,
-        name: workspaces.name,
-        slug: workspaces.slug,
-        theme: workspaces.theme,
-        role: workspaceMembers.role,
-        createdAt: workspaces.createdAt,
-      })
-      .from(workspaceMembers)
-      .innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
-      .where(eq(workspaceMembers.userId, user.id))
-      .orderBy(workspaces.createdAt);
+      const rows = await db
+        .select({
+          id: workspaces.id,
+          name: workspaces.name,
+          slug: workspaces.slug,
+          theme: workspaces.theme,
+          role: workspaceMembers.role,
+          createdAt: workspaces.createdAt,
+        })
+        .from(workspaceMembers)
+        .innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
+        .where(eq(workspaceMembers.userId, user.id))
+        .orderBy(workspaces.createdAt);
 
-    return { workspaces: rows };
-  });
+      return { workspaces: rows };
+    },
+  );
 
-  app.post('/workspaces', { preHandler: requireAuth }, async (request, reply) => {
-    const user = currentUser(request);
-    assertReady(user);
-    const input = parse(createWorkspaceSchema, request.body);
+  serve(
+    app,
+    contracts['workspaces.create'],
+    { preHandler: requireAuth },
+    async (request, { body: input }) => {
+      const user = currentUser(request);
+      assertReady(user);
 
-    const workspace = await db.transaction(async (tx) => {
-      const slug = input.slug ?? (await availableSlug(tx, slugify(input.name)));
+      const workspace = await db.transaction(async (tx) => {
+        const slug = input.slug ?? (await availableSlug(tx, slugify(input.name)));
 
-      const [created] = await tx
-        .insert(workspaces)
-        .values({ name: input.name, slug, createdBy: user.id })
-        .onConflictDoNothing({ target: workspaces.slug })
-        .returning();
+        const [created] = await tx
+          .insert(workspaces)
+          .values({ name: input.name, slug, createdBy: user.id })
+          .onConflictDoNothing({ target: workspaces.slug })
+          .returning();
 
-      if (!created) throw ApiError.conflict('That workspace slug is taken', 'slug_taken');
+        if (!created) throw ApiError.conflict('That workspace slug is taken', 'slug_taken');
 
-      // Creating a workspace you cannot administer would be useless, so the
-      // owner membership is part of the same transaction, not a follow-up call.
-      await tx.insert(workspaceMembers).values({
-        workspaceId: created.id,
-        userId: user.id,
-        role: 'OWNER',
+        // Creating a workspace you cannot administer would be useless, so the
+        // owner membership is part of the same transaction, not a follow-up call.
+        await tx.insert(workspaceMembers).values({
+          workspaceId: created.id,
+          userId: user.id,
+          role: 'OWNER',
+        });
+
+        /*
+         * Every workspace starts with somewhere to talk.
+         *
+         * Without this the shell opens on an empty centre column and the first
+         * thing a new owner has to do is guess that chat needs a room created
+         * first. In the same transaction as the workspace, so there is no state
+         * where one exists without the other.
+         */
+        await tx.insert(channels).values({
+          workspaceId: created.id,
+          name: DEFAULT_CHANNEL_NAME,
+          topic: 'Anything that does not belong anywhere else.',
+          createdById: user.id,
+        });
+
+        await recordAudit(tx, auditActor(request), {
+          workspaceId: created.id,
+          entityType: 'workspace',
+          entityId: created.id,
+          eventType: 'workspace.created',
+          payload: { name: created.name, slug: created.slug },
+        });
+
+        return created;
       });
 
-      /*
-       * Every workspace starts with somewhere to talk.
-       *
-       * Without this the shell opens on an empty centre column and the first
-       * thing a new owner has to do is guess that chat needs a room created
-       * first. In the same transaction as the workspace, so there is no state
-       * where one exists without the other.
-       */
-      await tx.insert(channels).values({
-        workspaceId: created.id,
-        name: DEFAULT_CHANNEL_NAME,
-        topic: 'Anything that does not belong anywhere else.',
-        createdById: user.id,
-      });
+      return { workspace: { ...workspace, role: 'OWNER' as const } };
+    },
+  );
 
-      await recordAudit(tx, auditActor(request), {
-        workspaceId: created.id,
-        entityType: 'workspace',
-        entityId: created.id,
-        eventType: 'workspace.created',
-        payload: { name: created.name, slug: created.slug },
-      });
-
-      return created;
-    });
-
-    return reply.status(201).send({ workspace: { ...workspace, role: 'OWNER' } });
-  });
-
-  app.get(
-    '/workspaces/:workspaceId',
+  serve(
+    app,
+    contracts['workspaces.get'],
     { preHandler: [requireAuth, requireMembership(db, 'workspace:read')] },
     async (request) => {
       const { workspaceId, role } = currentMembership(request);
@@ -152,12 +157,12 @@ export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database
     },
   );
 
-  app.patch(
-    '/workspaces/:workspaceId',
+  serve(
+    app,
+    contracts['workspaces.update'],
     { preHandler: [requireAuth, requireMembership(db, 'workspace:update')] },
-    async (request) => {
+    async (request, { body: input }) => {
       const { workspaceId } = currentMembership(request);
-      const input = parse(updateWorkspaceSchema, request.body);
 
       const updated = await db.transaction(async (tx) => {
         const [row] = await tx
@@ -187,8 +192,9 @@ export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database
     },
   );
 
-  app.delete(
-    '/workspaces/:workspaceId',
+  serve(
+    app,
+    contracts['workspaces.delete'],
     {
       preHandler: [
         requireAuth,
@@ -197,11 +203,10 @@ export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database
         rateLimit({ name: 'workspace-delete', limit: 10, windowMs: 60_000 }),
       ],
     },
-    async (request, reply) => {
+    async (request, { body: { password } }) => {
       const { workspaceId } = currentMembership(request);
       // Everything in it goes, for everyone, at once: a session is not
       // enough for that, the password is asked again.
-      const { password } = parse(confirmPasswordSchema, request.body ?? {});
       await confirmPassword(db, currentUser(request).id, password);
 
       // Projects, issues, comments and memberships go with it via ON DELETE
@@ -214,12 +219,13 @@ export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database
         await tx.delete(workspaces).where(eq(workspaces.id, workspaceId));
       });
 
-      return reply.status(204).send();
+      return undefined;
     },
   );
 
-  app.get(
-    '/workspaces/:workspaceId/activity',
+  serve(
+    app,
+    contracts['workspaces.activity'],
     { preHandler: [requireAuth, requireMembership(db, 'workspace:read')] },
     async (request) => {
       const { workspaceId } = currentMembership(request);

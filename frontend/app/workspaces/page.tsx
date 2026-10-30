@@ -1,6 +1,6 @@
 'use client';
 
-import { resolveTheme } from '@robis/shared';
+import { contracts, resolveTheme } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -15,7 +15,7 @@ import { NewWorkspace } from '../../features/home/new-workspace.tsx';
 import { useHomeLive } from '../../features/home/use-home-live.ts';
 import { OVERVIEW_KEY, useOverview } from '../../features/home/use-overview.ts';
 import { WorkspaceGrid } from '../../features/home/workspace-grid.tsx';
-import { api, type Me, type WorkspaceSummary } from '../../lib/api.ts';
+import { api, call, type Me, type WorkspaceSummary } from '../../lib/api.ts';
 import { getSyncEngine } from '../../lib/sync.ts';
 import { useRequireAvatar } from '../../lib/use-require-avatar.ts';
 import './home.css';
@@ -42,7 +42,7 @@ export default function WorkspacesPage() {
 
   const workspaces = useQuery({
     queryKey: ['workspaces'],
-    queryFn: () => api<{ workspaces: WorkspaceSummary[] }>('/workspaces'),
+    queryFn: () => call(contracts['workspaces.list']),
     enabled: me.isSuccess,
   });
   const overview = useOverview(me.isSuccess);
@@ -54,16 +54,13 @@ export default function WorkspacesPage() {
 
   const createWorkspace = useMutation({
     mutationFn: (workspaceName: string) =>
-      api<{ workspace: WorkspaceSummary }>('/workspaces', {
-        method: 'POST',
-        body: { name: workspaceName },
-      }),
+      call(contracts['workspaces.create'], { body: { name: workspaceName } }),
     onSuccess: refreshAll,
   });
 
   const deleteWorkspace = useMutation({
     mutationFn: ({ workspaceId, password }: { workspaceId: string; password: string }) =>
-      api<void>(`/workspaces/${workspaceId}`, { method: 'DELETE', body: { password } }),
+      call(contracts['workspaces.delete'], { params: { workspaceId }, body: { password } }),
     onSuccess: refreshAll,
   });
 

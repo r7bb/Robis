@@ -41,6 +41,14 @@ import { createSuggestionClient, type SuggestionClient } from './suggestions.ts'
  * with a small number instead of disabling it. Turning rate limiting off in
  * tests would mean the only code path anyone runs is the untested one.
  */
+
+declare module 'fastify' {
+  interface FastifyInstance {
+    /** Method and path of every route the app registered, HEAD aside. */
+    registeredRoutes: readonly { method: string; url: string }[];
+  }
+}
+
 export type RateLimits = {
   /** Register and login, per address. */
   authPerMinute: number;
@@ -188,6 +196,16 @@ export function buildApp({
   app.setNotFoundHandler((_request, reply) =>
     reply.status(404).send({ error: 'not_found', message: 'Not found' }),
   );
+
+  // Every route as registered, so a test can hold each one to a contract
+  // (stage 2, item 20). Fastify adds a HEAD beside every GET; those are its own.
+  const registeredRoutes: { method: string; url: string }[] = [];
+  app.addHook('onRoute', (route) => {
+    for (const method of [route.method].flat()) {
+      if (method !== 'HEAD') registeredRoutes.push({ method, url: route.url });
+    }
+  });
+  app.decorate('registeredRoutes', registeredRoutes);
 
   app.get('/health', async () => ({ status: 'ok' }));
 

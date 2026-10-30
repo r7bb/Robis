@@ -1,13 +1,13 @@
 'use client';
 
-import { can, diffEdit } from '@robis/shared';
+import { can, contracts, diffEdit } from '@robis/shared';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef } from 'react';
 import { DeleteButton } from '../../../../../components/delete-button.tsx';
 import { ErrorState } from '../../../../../components/ui/primitives.tsx';
-import { api, type WorkspaceSummary } from '../../../../../lib/api.ts';
+import { api, call } from '../../../../../lib/api.ts';
 import { lastTheme, useApplyTheme } from '../../../../../lib/theme.ts';
 import { useDocument } from '../../../../../lib/use-document.ts';
 
@@ -26,7 +26,7 @@ function DocumentView() {
 
   const workspace = useQuery({
     queryKey: ['workspace', workspaceId],
-    queryFn: () => api<{ workspace: WorkspaceSummary }>(`/workspaces/${workspaceId}`),
+    queryFn: () => call(contracts['workspaces.get'], { params: { workspaceId } }),
   });
 
   useApplyTheme(workspace.data?.workspace.theme ?? lastTheme());

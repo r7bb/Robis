@@ -1,12 +1,12 @@
 'use client';
 
-import { can } from '@robis/shared';
+import { can, contracts } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ErrorState } from '../../../../components/ui/primitives.tsx';
 import { SecurityView } from '../../../../features/security/security-view.tsx';
-import { api, type WorkspaceSummary } from '../../../../lib/api.ts';
+import { call } from '../../../../lib/api.ts';
 import { lastTheme, useApplyTheme } from '../../../../lib/theme.ts';
 
 export default function SecurityPage() {
@@ -14,7 +14,7 @@ export default function SecurityPage() {
 
   const workspace = useQuery({
     queryKey: ['workspace', workspaceId],
-    queryFn: () => api<{ workspace: WorkspaceSummary }>(`/workspaces/${workspaceId}`),
+    queryFn: () => call(contracts['workspaces.get'], { params: { workspaceId } }),
   });
 
   useApplyTheme(workspace.data?.workspace.theme ?? lastTheme());

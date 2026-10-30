@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     "./app": "./src/app.ts",
+    "./contract": "./src/contract.ts",
     "./env": "./src/env.ts",
     "./hardening": "./src/hardening.ts",
     "./metrics": "./src/metrics.ts",

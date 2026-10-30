@@ -1,9 +1,10 @@
 'use client';
 
+import { contracts } from '@robis/shared';
 import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
-import { ApiError, api, type Me, type WorkspaceSummary } from '../../lib/api.ts';
+import { ApiError, api, call, type Me } from '../../lib/api.ts';
 import { getSyncEngine } from '../../lib/sync.ts';
 
 type Member = { userId: string; name: string; role: string };
@@ -26,7 +27,7 @@ export function DeleteAccount({ me }: { me: Me }) {
 
   const workspaces = useQuery({
     queryKey: ['workspaces'],
-    queryFn: () => api<{ workspaces: WorkspaceSummary[] }>('/workspaces'),
+    queryFn: () => call(contracts['workspaces.list']),
     enabled: open,
   });
   const owned = (workspaces.data?.workspaces ?? []).filter((w) => w.role === 'OWNER');

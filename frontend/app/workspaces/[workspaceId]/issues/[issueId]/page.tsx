@@ -3,6 +3,7 @@
 import {
   BOARD_COLUMNS,
   can,
+  contracts,
   ISSUE_PRIORITIES,
   type IssuePriority,
   type IssueStatus,
@@ -16,12 +17,7 @@ import { DeleteButton } from '../../../../../components/delete-button.tsx';
 import { PresenceBar } from '../../../../../components/presence.tsx';
 import { ErrorState } from '../../../../../components/ui/primitives.tsx';
 import { IssueAttachments } from '../../../../../features/issues/attachments.tsx';
-import {
-  api,
-  type IssueDetail,
-  type Member,
-  type WorkspaceSummary,
-} from '../../../../../lib/api.ts';
+import { api, call, type IssueDetail, type Member } from '../../../../../lib/api.ts';
 import { useRealtime } from '../../../../../lib/realtime.ts';
 import { lastTheme, useApplyTheme } from '../../../../../lib/theme.ts';
 
@@ -50,7 +46,7 @@ export default function IssuePage() {
 
   const workspace = useQuery({
     queryKey: ['workspace', workspaceId],
-    queryFn: () => api<{ workspace: WorkspaceSummary }>(`/workspaces/${workspaceId}`),
+    queryFn: () => call(contracts['workspaces.get'], { params: { workspaceId } }),
   });
 
   useApplyTheme(workspace.data?.workspace.theme ?? lastTheme());

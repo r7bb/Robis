@@ -6,6 +6,7 @@ export * from './consent.ts';
 export * from './demo.ts';
 export * from './domain.ts';
 export * from './events.ts';
+export * from './http/index.ts';
 export * from './images.ts';
 export * from './limits.ts';
 export * from './mentions.ts';

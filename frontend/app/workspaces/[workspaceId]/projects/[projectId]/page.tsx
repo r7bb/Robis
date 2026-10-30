@@ -4,6 +4,7 @@ import {
   type Avatar as AvatarRef,
   BOARD_COLUMNS,
   can,
+  contracts,
   type IssuePriority,
   type IssueStatus,
 } from '@robis/shared';
@@ -19,7 +20,7 @@ import { PriorityBadge, StatusHeading } from '../../../../../components/ui/badge
 import { ErrorState } from '../../../../../components/ui/primitives.tsx';
 import { DuplicateHints } from '../../../../../features/issues/duplicate-hints.tsx';
 import { PriorityHint } from '../../../../../features/issues/priority-hint.tsx';
-import { api, type WorkspaceSummary } from '../../../../../lib/api.ts';
+import { call } from '../../../../../lib/api.ts';
 import { useRealtime } from '../../../../../lib/realtime.ts';
 import { lastTheme, useApplyTheme } from '../../../../../lib/theme.ts';
 import { useMemberAvatars } from '../../../../../lib/use-member-avatars.ts';
@@ -55,7 +56,7 @@ export default function BoardPage() {
 
   const workspace = useQuery({
     queryKey: ['workspace', workspaceId],
-    queryFn: () => api<{ workspace: WorkspaceSummary }>(`/workspaces/${workspaceId}`),
+    queryFn: () => call(contracts['workspaces.get'], { params: { workspaceId } }),
   });
 
   useApplyTheme(workspace.data?.workspace.theme ?? lastTheme());

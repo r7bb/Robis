@@ -1,8 +1,8 @@
 'use client';
 
-import { THEME_LIST, type ThemeId } from '@robis/shared';
+import { contracts, THEME_LIST, type ThemeId } from '@robis/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../lib/api.ts';
+import { call } from '../lib/api.ts';
 import { rememberTheme } from '../lib/theme.ts';
 
 /**
@@ -26,10 +26,7 @@ export function ThemePicker({
 
   const setTheme = useMutation({
     mutationFn: (theme: ThemeId) =>
-      api<{ workspace: { theme: ThemeId } }>(`/workspaces/${workspaceId}`, {
-        method: 'PATCH',
-        body: { theme },
-      }),
+      call(contracts['workspaces.update'], { params: { workspaceId }, body: { theme } }),
     // Paint immediately; the refetch below only confirms it.
     onMutate: (theme) => rememberTheme(theme),
     onSuccess: () => {

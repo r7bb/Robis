@@ -1,6 +1,6 @@
 'use client';
 
-import { can, type PresenceUser, type Role } from '@robis/shared';
+import { can, contracts, type PresenceUser, type Role, resolveTheme } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -10,7 +10,7 @@ import { SearchBox } from '../../components/search-box.tsx';
 import { ThemePicker } from '../../components/theme-picker.tsx';
 import { Avatar } from '../../components/ui/avatar.tsx';
 import { ErrorState, RoleBadge, SectionLabel } from '../../components/ui/primitives.tsx';
-import { ApiError, api, type Me, type Member, type WorkspaceSummary } from '../../lib/api.ts';
+import { ApiError, api, call, type Me, type Member } from '../../lib/api.ts';
 import { type ConnectionState, useRealtime } from '../../lib/realtime.ts';
 import { lastTheme, rememberTheme, useApplyTheme } from '../../lib/theme.ts';
 import { useRequireAvatar } from '../../lib/use-require-avatar.ts';
@@ -206,7 +206,7 @@ export function WorkspaceShell({ workspaceId }: { workspaceId: string }) {
 
   const workspace = useQuery({
     queryKey: ['workspace', workspaceId],
-    queryFn: () => api<{ workspace: WorkspaceSummary }>(`/workspaces/${workspaceId}`),
+    queryFn: () => call(contracts['workspaces.get'], { params: { workspaceId } }),
   });
 
   const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/auth/me'), retry: false });
@@ -247,7 +247,8 @@ export function WorkspaceShell({ workspaceId }: { workspaceId: string }) {
 
   // Fall back to the last theme seen so navigating between workspaces does
   // not flash the default while this one loads.
-  const theme = workspace.data?.workspace.theme ?? lastTheme();
+  // The API keeps a theme as plain text; one this app no longer knows falls back.
+  const theme = resolveTheme(workspace.data?.workspace.theme ?? lastTheme()).id;
   useApplyTheme(theme);
   rememberTheme(workspace.data?.workspace.theme);
   // Above the early return below: a hook must run on every render.

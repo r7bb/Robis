@@ -1,4 +1,14 @@
-import type { Avatar as AvatarRef, IssuePriority, IssueStatus, Role, ThemeId } from '@robis/shared';
+import {
+  type Avatar as AvatarRef,
+  type CallInput,
+  type Contract,
+  type contracts,
+  type IssuePriority,
+  type IssueStatus,
+  pathFor,
+  type ResponseOf,
+  type Role,
+} from '@robis/shared';
 
 import { API_URL } from './endpoints.ts';
 
@@ -49,6 +59,34 @@ export async function api<T>(
   return payload as T;
 }
 
+type CallArgs<C extends Contract> =
+  Record<string, never> extends CallInput<C> ? [input?: CallInput<C>] : [input: CallInput<C>];
+
+/**
+ * Call a route through its contract (stage 2, item 20): the path, method and
+ * body come from the same description the API serves it from, and so does
+ * the type of what comes back.
+ */
+export function call<C extends Contract>(
+  route: C,
+  ...[input]: CallArgs<C>
+): Promise<ResponseOf<C>> {
+  const { params, query, body } = (input ?? {}) as {
+    params?: Record<string, unknown>;
+    query?: Record<string, unknown>;
+    body?: unknown;
+  };
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(query ?? {})) {
+    if (value !== undefined && value !== null) search.set(key, String(value));
+  }
+  const suffix = search.size > 0 ? `?${search}` : '';
+  return api<ResponseOf<C>>(`${pathFor(route.path, params)}${suffix}`, {
+    method: route.method,
+    body,
+  });
+}
+
 export type Me = {
   user: {
     id: string;
@@ -71,13 +109,10 @@ export type Me = {
   };
 };
 
-export type WorkspaceSummary = {
-  id: string;
-  name: string;
-  slug: string;
-  role: Role;
-  theme: ThemeId;
-};
+/** A workspace in your list, as the API's contract describes it. */
+export type WorkspaceSummary = ResponseOf<
+  (typeof contracts)['workspaces.list']
+>['workspaces'][number];
 
 export type ProjectSummary = {
   id: string;
@@ -207,16 +242,8 @@ export type SearchHit = {
  * trail is append-only and holds rows written by older code, so the renderer
  * has to tolerate payloads it does not recognise either way.
  */
-export type ActivityEvent = {
-  id: string;
-  actorId: string | null;
-  actorName: string | null;
-  entityType: string;
-  entityId: string;
-  eventType: string;
-  payload: Record<string, string | undefined>;
-  createdAt: string;
-};
+/** One entry of a workspace's activity feed, as the contract describes it. */
+export type ActivityEvent = ResponseOf<(typeof contracts)['workspaces.activity']>['events'][number];
 
 /** One audit event, in the shape the export API and the SIEM stream share. */
 export type AuditEvent = {

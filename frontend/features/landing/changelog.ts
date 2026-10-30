@@ -41,6 +41,15 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-29',
     area: 'Site',
+    title: 'Routes described once: the workspace routes first',
+    summary:
+      'A route used to be described three times: by the API handler, by a type the web app wrote by hand, and nowhere for anyone else. Now a route is described once, in the shared package, with what it accepts and what it answers. The API serves it from that description, so its input is checked before the handler runs and its answer goes out through the same description, so a field nobody listed is never sent. The web app calls it from the same description, so its types cannot drift from what the API sends. An OpenAPI document is generated from it. The six workspace routes are the first; the other 77 follow a group at a time, and a test lists them until they are done.',
+    checked:
+      'Tests prove every described route is served and every served route is described or on the shrinking pending list; that a workspace answer carries exactly the fields its description names; that a handler answering with the wrong shape is a server error rather than a reply, and is also a type error; that bad input is refused before the handler; that paths are encoded; and that docs/openapi.json is exactly what the descriptions generate. The full suite passes, and the web app builds against the new types.',
+  },
+  {
+    date: '2026-10-29',
+    area: 'Site',
     title: 'The database library is current',
     summary:
       'Drizzle, the library every service uses to talk to Postgres, moves from 0.38 to 0.45, with its migration tool from 0.30 to 0.31. The one change that could have hurt quietly is that Drizzle now wraps a failed query in an error of its own, with the database’s error inside it: code that looked for the database’s error code on the outside would have stopped noticing, for example, that a username had just been taken by someone else. That code now looks through the wrapping, and was changed and released first, on the old version, so the upgrade itself changes nothing else.',

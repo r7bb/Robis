@@ -14,7 +14,7 @@ Written to be checkable. Every row names a file you can open.
 | --- | --- |
 | Services | 4 (web, API, realtime gateway, worker) plus an optional ML service |
 | Database tables | 18 |
-| HTTP endpoints | 60+ |
+| HTTP endpoints | 84 |
 | Tests | Counted in [docs/ROADMAP.md](docs/ROADMAP.md), the one place they are kept |
 | Screenshots | 28, all captured from the running app |
 | Measured throughput | ~4,400 req/s, zero errors |
@@ -92,6 +92,7 @@ they need rather than in the matrix.
 | Deleting an issue, comment or workspace queues removal of its files | `backend/database/src/files.ts`, `backend/worker/src/storage-purge.ts` |
 | Offline data is bound to its account and cleared on sign-out | `shared/sync/src/engine.ts` |
 | Keyset pagination | `backend/database/src/pagination.ts` |
+| Typed route contracts: the API serves, the web app calls and OpenAPI describes each route from one definition | `shared/contracts/src/http/`, `backend/api/src/contract.ts`, `docs/openapi.json` |
 
 ## Chat
 
