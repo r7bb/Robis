@@ -4,6 +4,9 @@ Newest first. The same list is the site's What's new page, where each entry
 opens to show how it was checked and, for features, where to find it and
 what each layer does. Back to the [README](../README.md).
 
+- **A board reads only when its issues change** (2026-10-30). No more
+  reading on every chat message or every five seconds; bursts of events
+  are handled once.
 - **Every route described once** (2026-10-29). One definition per route
   types the API, the web app and a generated
   [OpenAPI document](openapi.json); describing them found and fixed real

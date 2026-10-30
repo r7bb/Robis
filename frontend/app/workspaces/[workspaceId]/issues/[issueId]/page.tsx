@@ -19,7 +19,8 @@ import { PresenceBar } from '../../../../../components/presence.tsx';
 import { ErrorState } from '../../../../../components/ui/primitives.tsx';
 import { IssueAttachments } from '../../../../../features/issues/attachments.tsx';
 import { call } from '../../../../../lib/api.ts';
-import { useRealtime } from '../../../../../lib/realtime.ts';
+import { useCoalesced, useRealtime } from '../../../../../lib/realtime.ts';
+import { concernsIssue } from '../../../../../lib/realtime-events.ts';
 import { lastTheme, useApplyTheme } from '../../../../../lib/theme.ts';
 
 const STATUS_LABELS: Record<IssueStatus, string> = {
@@ -38,11 +39,15 @@ export default function IssuePage() {
 
   const issueKey = ['issue', workspaceId, issueId] as const;
 
-  // Refresh on any realtime event touching this workspace, so a field someone
-  // else changed does not sit stale on screen.
-  const { presence, state: realtimeState } = useRealtime(workspaceId, issueId, () => {
+  // Refresh when something happens to this issue (an edit, a comment, an
+  // image), so a field someone else changed does not sit stale on screen;
+  // other events in the workspace leave it alone, and a burst is one refresh.
+  const refreshIssue = useCoalesced(() => {
     queryClient.invalidateQueries({ queryKey: issueKey });
     queryClient.invalidateQueries({ queryKey: ['comments', workspaceId, issueId] });
+  });
+  const { presence, state: realtimeState } = useRealtime(workspaceId, issueId, (event) => {
+    if (concernsIssue(event, issueId)) refreshIssue();
   });
 
   const workspace = useQuery({

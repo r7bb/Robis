@@ -13,7 +13,7 @@ import { getSyncEngine } from './sync.ts';
  * background concern the caller never awaits.
  */
 
-/** How often to retry the queue while online. */
+/** How often to retry queued changes while online; nothing is read unless something is queued. */
 const FLUSH_INTERVAL_MS = 5_000;
 
 export type BoardState = {
@@ -105,18 +105,23 @@ export function useOfflineBoard(workspaceId: string, projectId: string): BoardSt
   }, [readLocal, sync]);
 
   /*
-   * Keep retrying whenever an interface exists, even after a failure -- the
-   * failure is exactly what needs re-testing, and a captive portal or a
-   * restarted server produces no `online` event to wake us up. With no
-   * interface at all there is nothing to retry against, so the timer stops.
+   * Keep retrying queued changes whenever an interface exists, even after a
+   * failure -- the failure is exactly what needs re-testing, and a captive
+   * portal or a restarted server produces no `online` event to wake us up.
+   * With no interface at all there is nothing to retry against, so the timer
+   * stops. An empty queue costs nothing: the board is read again only when
+   * this project's issues change, or the live connection comes back (stage
+   * 3, item 23), not on a clock.
    */
   useEffect(() => {
     if (!hasInterface) return;
 
     void sync();
-    const timer = setInterval(() => void sync(), FLUSH_INTERVAL_MS);
+    const timer = setInterval(async () => {
+      if ((await engine.queue.size()) > 0) void sync();
+    }, FLUSH_INTERVAL_MS);
     return () => clearInterval(timer);
-  }, [hasInterface, sync]);
+  }, [hasInterface, sync, engine]);
 
   const createIssue = useCallback(
     async (input: { title: string; priority?: IssuePriority }) => {

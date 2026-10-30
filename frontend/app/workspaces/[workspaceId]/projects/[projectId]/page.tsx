@@ -21,7 +21,8 @@ import { ErrorState } from '../../../../../components/ui/primitives.tsx';
 import { DuplicateHints } from '../../../../../features/issues/duplicate-hints.tsx';
 import { PriorityHint } from '../../../../../features/issues/priority-hint.tsx';
 import { call } from '../../../../../lib/api.ts';
-import { useRealtime } from '../../../../../lib/realtime.ts';
+import { useCoalesced, useRealtime } from '../../../../../lib/realtime.ts';
+import { concernsBoard } from '../../../../../lib/realtime-events.ts';
 import { lastTheme, useApplyTheme } from '../../../../../lib/theme.ts';
 import { useMemberAvatars } from '../../../../../lib/use-member-avatars.ts';
 import { useOfflineBoard } from '../../../../../lib/use-offline-board.ts';
@@ -49,10 +50,20 @@ export default function BoardPage() {
   const board = useOfflineBoard(workspaceId, projectId);
 
   // Reporting the project as our location is what lets other people see who
-  // else is looking at this board. Domain events pull straight through to a
-  // reconcile, so someone else's change lands immediately instead of waiting
-  // for the next scheduled sync.
-  const { presence, state: realtimeState } = useRealtime(workspaceId, projectId, board.refresh);
+  // else is looking at this board. An issue event for this project pulls
+  // through to a reconcile, so someone else's change lands immediately
+  // instead of waiting for the next scheduled sync; anything else (a chat
+  // message, another project's issue) does not touch the board, and a burst
+  // is one pull.
+  const pullBoard = useCoalesced(board.refresh);
+  const { presence, state: realtimeState } = useRealtime(workspaceId, projectId, (event) => {
+    if (concernsBoard(event, projectId)) pullBoard();
+  });
+  // Events sent while the connection was down are not replayed, so the board
+  // is read again whenever it comes back.
+  useEffect(() => {
+    if (realtimeState === 'live') pullBoard();
+  }, [realtimeState, pullBoard]);
 
   const workspace = useQuery({
     queryKey: ['workspace', workspaceId],

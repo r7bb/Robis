@@ -39,6 +39,15 @@ export type Entry = {
 
 export const CHANGELOG: readonly Entry[] = [
   {
+    date: '2026-10-30',
+    area: 'Product',
+    title: 'A board reads only when its issues change',
+    summary:
+      'An open board used to read its whole issue list again on every live event in the workspace, a chat message included, and every five seconds besides. Now it reads only when an issue in its own project is filed, changed or deleted, or when the live connection comes back after a gap; the five-second timer only retries changes made offline, and only when there are some. An issue page refreshes only for its own issue, comments and images. Events that arrive within 150 ms of each other are handled once, so a teammate moving five cards is one read rather than five. A new issue now also refreshes the project list, which it did not before.',
+    checked:
+      'Tests prove a chat message causes no board sync and no issue refresh; a board pulls for its own project’s issues only; an issue page for its own issue, comments and images only; a new issue makes its project’s issues and the project list stale; and events within the window flush once, together. In headless Chrome against the running stack, an open board made no reads in seven idle seconds and none in seven seconds after three chat messages, and three issues filed in a burst appeared after a single read. The full suite passes.',
+  },
+  {
     date: '2026-10-29',
     area: 'Site',
     title: 'Every route described once',

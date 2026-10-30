@@ -2,8 +2,9 @@
 
 import type { ClientMessage, PresenceUser, ServerEvent, ServerMessage } from '@robis/shared';
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { realtimeUrl } from './endpoints.ts';
+import { coalescer, staleKeys, uniqueKeys } from './realtime-events.ts';
 
 /** Must stay well under the gateway's presence TTL so a single dropped beat
  * does not evict a live connection. */
@@ -70,63 +71,15 @@ export function useRealtime(
       }
     };
 
+    // Events land in bursts (a teammate moving five cards); each stale key
+    // is refetched once per burst rather than once per event.
+    const stale = coalescer<unknown[]>((keys) => {
+      for (const key of uniqueKeys(keys)) queryClient.invalidateQueries({ queryKey: key });
+    });
+
     function handleEvent(event: ServerEvent) {
       onEventRef.current?.(event);
-
-      const invalidate = (key: unknown[]) => queryClient.invalidateQueries({ queryKey: key });
-
-      switch (event.type) {
-        case 'issue.created':
-        case 'attachment.changed':
-          invalidate(['attachments', event.workspaceId, event.issueId]);
-          return;
-
-        case 'issue.updated':
-        case 'issue.deleted':
-          invalidate(['issues', event.workspaceId, event.projectId]);
-          // Open-issue counts on the project list move too.
-          invalidate(['projects', event.workspaceId]);
-          return;
-
-        case 'project.created':
-        case 'project.deleted':
-          invalidate(['projects', event.workspaceId]);
-          return;
-
-        case 'comment.created':
-          invalidate(['comments', event.workspaceId, event.issueId]);
-          return;
-
-        case 'member.changed':
-          invalidate(['members', event.workspaceId]);
-          invalidate(['invitations', event.workspaceId]);
-          invalidate(['workspace', event.workspaceId]);
-          return;
-
-        /*
-         * Chat invalidates rather than appending the pushed row, for the
-         * reason in this hook's doc comment: the event carries ids only, so
-         * the message is re-read through the authorised endpoint. It costs a
-         * round trip per message and buys one place where access is decided.
-         */
-        case 'message.created':
-        case 'message.deleted':
-          invalidate(['messages', event.workspaceId, event.channelId]);
-          return;
-
-        case 'channel.created':
-        case 'channel.deleted':
-          invalidate(['channels', event.workspaceId]);
-          return;
-
-        case 'meeting.changed':
-          invalidate(['meetings', event.workspaceId]);
-          return;
-
-        case 'document.created':
-          invalidate(['documents', event.workspaceId]);
-          return;
-      }
+      for (const key of staleKeys(event)) stale.push(key);
     }
 
     function handleReady() {
@@ -190,6 +143,7 @@ export function useRealtime(
 
     return () => {
       disposed = true;
+      stale.cancel();
       clearInterval(heartbeat);
       clearTimeout(retry);
       socketRef.current?.close();
@@ -207,4 +161,18 @@ export function useRealtime(
   }, [location]);
 
   return { presence, state };
+}
+
+/**
+ * A function that runs `pull` once per burst: calls within 150 ms of the
+ * first become one (stage 3, item 23). For a page that pulls on events,
+ * so five cards moved at once are one sync rather than five. The function
+ * is the same on every render.
+ */
+export function useCoalesced(pull: () => void): () => void {
+  const pullRef = useRef(pull);
+  pullRef.current = pull;
+  const batch = useMemo(() => coalescer<true>(() => pullRef.current()), []);
+  useEffect(() => () => batch.cancel(), [batch]);
+  return useCallback(() => batch.push(true), [batch]);
 }
