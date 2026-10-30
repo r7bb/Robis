@@ -1,12 +1,12 @@
 import { type Database, recordAccountEvent, users } from '@robis/database';
-import { consentSchema, TERMS_VERSION } from '@robis/shared';
+import { contracts, TERMS_VERSION } from '@robis/shared';
 import { and, eq, isNull, ne, or, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
+import { serve, shape } from '../contract.ts';
 import { ApiError } from '../errors.ts';
 import { currentUser, requireAuth } from '../plugins/authz.ts';
 import { withIdempotency } from '../plugins/idempotency.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
-import { parse } from '../validate.ts';
 
 /**
  * The two questions an account is asked before anything else, and asked
@@ -23,12 +23,12 @@ export async function consentRoutes(app: FastifyInstance, opts: { db: Database }
 
   const answerLimit = rateLimit({ name: 'consent', limit: 30, windowMs: 60_000 });
 
-  app.post(
-    '/auth/me/consent',
+  serve(
+    app,
+    contracts['auth.consent'],
     { preHandler: [requireAuth, answerLimit] },
-    async (request, reply) => {
+    async (request, { body: input }, reply) => {
       const user = currentUser(request);
-      const input = parse(consentSchema, request.body);
 
       // Agreeing to a version the page no longer shows is not agreeing.
       if (input.termsVersion !== TERMS_VERSION) {
@@ -64,16 +64,19 @@ export async function consentRoutes(app: FastifyInstance, opts: { db: Database }
             });
           }
         });
-        return { consent: { needed: false, termsVersion: TERMS_VERSION, current: TERMS_VERSION } };
+        return shape(contracts['auth.consent'], {
+          consent: { needed: false as const, termsVersion: TERMS_VERSION, current: TERMS_VERSION },
+        });
       });
     },
   );
 
   /** Keep the username you were given; changing it confirms it too. */
-  app.post(
-    '/auth/me/username/confirm',
+  serve(
+    app,
+    contracts['auth.confirmUsername'],
     { preHandler: [requireAuth, answerLimit] },
-    async (request, reply) => {
+    async (request, _input, reply) => {
       const user = currentUser(request);
 
       return withIdempotency(db, request, reply, 200, async () => {
@@ -90,7 +93,7 @@ export async function consentRoutes(app: FastifyInstance, opts: { db: Database }
             });
           }
         });
-        return { usernameConfirmed: true };
+        return shape(contracts['auth.confirmUsername'], { usernameConfirmed: true as const });
       });
     },
   );

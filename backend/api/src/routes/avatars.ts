@@ -1,10 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { resolveSession } from '@robis/auth';
 import { type Database, users, workspaceMembers } from '@robis/database';
-import { generatedAvatarSchema, isUuid } from '@robis/shared';
+import { contracts, isUuid } from '@robis/shared';
 import type { MediaStorage } from '@robis/storage';
 import { and, eq, sql } from 'drizzle-orm';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { serve } from '../contract.ts';
 import { ApiError } from '../errors.ts';
 import { avatarOf } from '../media/avatars.ts';
 import {
@@ -15,7 +16,6 @@ import {
 } from '../media/images.ts';
 import { currentUser, requireAuth, sessionToken } from '../plugins/authz.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
-import { parse } from '../validate.ts';
 
 /** Enough to try a few pictures, not enough to use the encoder as a free service. */
 const UPLOADS_PER_MINUTE = 10;
@@ -113,8 +113,9 @@ export async function avatarRoutes(
     return avatarOf(row);
   }
 
-  app.put(
-    '/auth/me/avatar',
+  serve(
+    app,
+    contracts['auth.uploadAvatar'],
     { onRequest: admitUpload, preHandler: [requireAuth, uploadLimit] },
     async (request) => {
       const user = currentUser(request);
@@ -151,12 +152,12 @@ export async function avatarRoutes(
     },
   );
 
-  app.put(
-    '/auth/me/avatar/generated',
+  serve(
+    app,
+    contracts['auth.generatedAvatar'],
     { preHandler: [requireAuth, uploadLimit] },
-    async (request) => {
+    async (request, { body: { seed } }) => {
       const user = currentUser(request);
-      const { seed } = parse(generatedAvatarSchema, request.body);
 
       return { avatar: await replace(user.id, 'generated', seed) };
     },

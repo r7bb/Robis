@@ -26,6 +26,12 @@ export type Contract = {
    */
   rawBody?: string;
   /**
+   * A body that does not parse reaches the handler as null instead of being
+   * refused with a 400: for a route whose answer must not depend on what was
+   * sent (asking for a reset link must not say which addresses exist).
+   */
+  lenientBody?: true;
+  /**
    * 200 unless said otherwise; 204 when there is no response body. A route
    * that answers with more than one success code lists them, first the one
    * it uses unless the handler says otherwise.
@@ -76,7 +82,11 @@ export type ResponseOf<C extends Contract> = C['response'] extends z.ZodType
 export type InputOf<C extends Contract> = {
   params: C['params'] extends z.ZodType ? z.output<Schema<C, 'params'>> : undefined;
   query: C['query'] extends z.ZodType ? z.output<Schema<C, 'query'>> : undefined;
-  body: C['body'] extends z.ZodType ? z.output<Schema<C, 'body'>> : undefined;
+  body: C['body'] extends z.ZodType
+    ? C['lenientBody'] extends true
+      ? z.output<Schema<C, 'body'>> | null
+      : z.output<Schema<C, 'body'>>
+    : undefined;
 };
 
 /** What a caller passes: only the parts the route has. */

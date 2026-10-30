@@ -136,6 +136,13 @@ new account does still works before the address is confirmed.
 
 ## Remaining backlog
 
+**Sync.** The offline engine's transport (`frontend/lib/sync.ts`) still
+types issue answers as its own `LocalIssue`. Creating or editing an issue
+answers without the assignee's name, so a locally edited row shows no
+assignee name until the next full sync; either the issue answers gain
+`assigneeName` or the engine keeps the stored one when the assignee is
+unchanged.
+
 **Operations.** Distributed tracing across API, gateway and worker.
 Request ids now span the API and the ML service; the gateway and worker are
 next. Rate limits key on the full IPv6 address, so a client holding a /64

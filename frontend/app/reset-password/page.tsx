@@ -1,5 +1,6 @@
 'use client';
 
+import { contracts } from '@robis/shared';
 import { PASSWORD_MIN_LENGTH } from '@robis/shared/limits';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -12,7 +13,7 @@ import {
   AuthNotice,
   AuthShell,
 } from '../../components/auth-shell.tsx';
-import { ApiError, api } from '../../lib/api.ts';
+import { ApiError, call } from '../../lib/api.ts';
 
 /**
  * Choose a new password, having arrived from a mailed link.
@@ -70,10 +71,7 @@ function ResetForm() {
     setSubmitting(true);
 
     try {
-      await api<{ ok: true }>('/auth/password/reset', {
-        method: 'POST',
-        body: { token, newPassword: password },
-      });
+      await call(contracts['auth.resetPassword'], { body: { token, newPassword: password } });
       setDone(true);
 
       /*

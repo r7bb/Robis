@@ -1,10 +1,11 @@
 'use client';
 
+import { contracts } from '@robis/shared';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { AuthButton, AuthLink, AuthNotice, AuthShell } from '../../components/auth-shell.tsx';
-import { ApiError, api } from '../../lib/api.ts';
+import { ApiError, call } from '../../lib/api.ts';
 
 /**
  * Confirm an address from a mailed link.
@@ -50,7 +51,7 @@ function Verify() {
     setState('working');
 
     try {
-      await api<{ ok: true }>('/auth/email/verify', { method: 'POST', body: { token } });
+      await call(contracts['auth.verifyEmail'], { body: { token } });
       setState('verified');
     } catch (cause: unknown) {
       setMessage(cause instanceof ApiError ? cause.message : 'Something went wrong');

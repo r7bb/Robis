@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  contracts,
   isNudgeKind,
   NUDGE_GUIDES,
   SAMPLE_DOCUMENT_BODY,
@@ -11,7 +12,7 @@ import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { ErrorState } from '../../../components/ui/primitives.tsx';
-import { api, type DocumentSummary } from '../../../lib/api.ts';
+import { call } from '../../../lib/api.ts';
 import { lastTheme, useApplyTheme } from '../../../lib/theme.ts';
 
 /**
@@ -36,10 +37,10 @@ function Guide() {
     mutationFn: async () => {
       if (!workspaceId) throw new Error('No workspace to create a document in');
 
-      const { document } = await api<{ document: DocumentSummary }>(
-        `/workspaces/${workspaceId}/documents`,
-        { method: 'POST', body: { title: SAMPLE_DOCUMENT_TITLE } },
-      );
+      const { document } = await call(contracts['documents.create'], {
+        params: { workspaceId },
+        body: { title: SAMPLE_DOCUMENT_TITLE },
+      });
 
       return document;
     },

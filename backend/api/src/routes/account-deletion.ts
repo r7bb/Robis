@@ -17,14 +17,14 @@ import {
   workspaceMembers,
   workspaces,
 } from '@robis/database';
-import { deleteAccountSchema } from '@robis/shared';
+import { contracts } from '@robis/shared';
 import { and, eq, ne, sql } from 'drizzle-orm';
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { confirmPassword } from '../confirm-password.ts';
+import { serve } from '../contract.ts';
 import { ApiError } from '../errors.ts';
 import { currentUser, requireAuth } from '../plugins/authz.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
-import { parse } from '../validate.ts';
 
 /** What a deleted account is called wherever its work still shows. */
 export const DELETED_NAME = 'Deleted user';
@@ -131,14 +131,14 @@ export async function accountDeletionRoutes(
   opts: { db: Database; clearSession: (reply: FastifyReply) => void },
 ) {
   const { db } = opts;
-  app.delete(
-    '/auth/me',
+  serve(
+    app,
+    contracts['auth.deleteAccount'],
     {
       preHandler: [requireAuth, rateLimit({ name: 'account-delete', limit: 10, windowMs: 60_000 })],
     },
-    async (request, reply) => {
+    async (request, { body: input }, reply) => {
       const user = currentUser(request);
-      const input = parse(deleteAccountSchema, request.body ?? {});
       await confirmPassword(db, user.id, input.password);
 
       const owned = await soleOwnedWorkspaces(db, user.id);
@@ -159,7 +159,7 @@ export async function accountDeletionRoutes(
         await emptyAccount(tx, user.id);
       });
       opts.clearSession(reply);
-      return reply.status(204).send();
+      return undefined;
     },
   );
 }

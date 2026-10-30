@@ -4,10 +4,10 @@ Newest first. The same list is the site's What's new page, where each entry
 opens to show how it was checked and, for features, where to find it and
 what each layer does. Back to the [README](../README.md).
 
-- **Routes described once, a group at a time** (2026-10-29). One
-  definition per route types the API, the web app and a generated
-  [OpenAPI document](openapi.json); 69 routes so far, 12 account
-  routes to move.
+- **Every route described once** (2026-10-29). One definition per route
+  types the API, the web app and a generated
+  [OpenAPI document](openapi.json); describing them found and fixed real
+  drift between what the API sent and what the web app expected.
 - **The database library is current** (2026-10-29). Drizzle 0.38 to 0.45,
   with error codes read through its new error wrapping.
 - **CI installs exactly what is locked, and runs the Python tests**

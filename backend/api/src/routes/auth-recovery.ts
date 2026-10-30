@@ -1,15 +1,15 @@
 import { consumeAuthToken, hashPassword, revokeAllSessions } from '@robis/auth';
 import { type Database, queuePasswordResetMail, recordAccountEvent, users } from '@robis/database';
-import { forgotPasswordSchema, resetPasswordSchema, verifyEmailSchema } from '@robis/shared';
+import { contracts } from '@robis/shared';
 import { and, eq, isNull } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import type { RateLimits } from '../app.ts';
+import { serve } from '../contract.ts';
 import { assertPasswordAllowed } from '../demo-password.ts';
 import type { Env } from '../env.ts';
 import { ApiError } from '../errors.ts';
 import { currentUser, requireAuth } from '../plugins/authz.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
-import { parse } from '../validate.ts';
 import { createVerificationSender } from '../verification.ts';
 
 /**
@@ -76,7 +76,7 @@ export async function authRecoveryRoutes(app: FastifyInstance, opts: RecoveryDep
     limit: limits.passwordForgotPerHourPerAddress,
     windowMs: 60 * 60_000,
     key: (request) => {
-      const parsed = forgotPasswordSchema.safeParse(request.body);
+      const parsed = contracts['auth.forgotPassword'].body.safeParse(request.body);
       return parsed.success ? `email:${parsed.data.email}` : null;
     },
   });
@@ -90,18 +90,19 @@ export async function authRecoveryRoutes(app: FastifyInstance, opts: RecoveryDep
    * addresses, which is why the schema is parsed permissively rather than
    * being allowed to 400, and why every reply waits out `FORGOT_FLOOR_MS`.
    */
-  app.post(
-    '/auth/password/forgot',
+  serve(
+    app,
+    contracts['auth.forgotPassword'],
     { preHandler: [perCaller('password-forgot'), perAddress] },
-    async (request, reply) => {
+    async (request, { body: asked }) => {
       const startedAt = Date.now();
-      const parsed = forgotPasswordSchema.safeParse(request.body);
 
-      if (parsed.success) {
+      // Null when it did not parse: answered exactly as an unknown address is.
+      if (asked) {
         const [user] = await db
           .select({ id: users.id })
           .from(users)
-          .where(eq(users.email, parsed.data.email))
+          .where(eq(users.email, asked.email))
           .limit(1);
 
         if (user) {
@@ -120,7 +121,7 @@ export async function authRecoveryRoutes(app: FastifyInstance, opts: RecoveryDep
       const remaining = FORGOT_FLOOR_MS - (Date.now() - startedAt);
       if (remaining > 0) await Bun.sleep(remaining);
 
-      return reply.status(202).send({ ok: true });
+      return { ok: true as const };
     },
   );
 
@@ -136,57 +137,65 @@ export async function authRecoveryRoutes(app: FastifyInstance, opts: RecoveryDep
    * between them could spend the link without changing the password, or change
    * the password while leaving an attacker's session alive.
    */
-  app.post('/auth/password/reset', { preHandler: perCaller('password-reset') }, async (request) => {
-    const input = parse(resetPasswordSchema, request.body);
-    assertPasswordAllowed(env, input.newPassword);
+  serve(
+    app,
+    contracts['auth.resetPassword'],
+    { preHandler: perCaller('password-reset') },
+    async (request, { body: input }) => {
+      assertPasswordAllowed(env, input.newPassword);
 
-    // Hashed before the transaction opens. Argon2 is deliberately slow, and
-    // holding a transaction open across it pins a connection for no reason.
-    const passwordHash = await hashPassword(input.newPassword);
+      // Hashed before the transaction opens. Argon2 is deliberately slow, and
+      // holding a transaction open across it pins a connection for no reason.
+      const passwordHash = await hashPassword(input.newPassword);
 
-    const changed = await db.transaction(async (tx) => {
-      const userId = await consumeAuthToken(tx, input.token, 'password_reset');
-      if (!userId) return false;
+      const changed = await db.transaction(async (tx) => {
+        const userId = await consumeAuthToken(tx, input.token, 'password_reset');
+        if (!userId) return false;
 
-      await tx.update(users).set({ passwordHash }).where(eq(users.id, userId));
+        await tx.update(users).set({ passwordHash }).where(eq(users.id, userId));
 
-      // Whoever did this may be recovering from a compromise, so every session
-      // goes, including one an attacker is holding.
-      await revokeAllSessions(tx, userId);
-      await recordAccountEvent(tx, userId, 'auth.password_reset', { requestId: request.id });
-      return true;
-    });
+        // Whoever did this may be recovering from a compromise, so every session
+        // goes, including one an attacker is holding.
+        await revokeAllSessions(tx, userId);
+        await recordAccountEvent(tx, userId, 'auth.password_reset', { requestId: request.id });
+        return true;
+      });
 
-    if (!changed) {
-      throw ApiError.badRequest('That reset link is not valid any more', 'invalid_token');
-    }
+      if (!changed) {
+        throw ApiError.badRequest('That reset link is not valid any more', 'invalid_token');
+      }
 
-    // Deliberately no session cookie: holding a mailed link is not the same
-    // proof of identity as knowing the password, so the next step is signing in
-    // with the new one.
-    return { ok: true };
-  });
+      // Deliberately no session cookie: holding a mailed link is not the same
+      // proof of identity as knowing the password, so the next step is signing in
+      // with the new one.
+      return { ok: true as const };
+    },
+  );
 
-  app.post('/auth/email/verify', { preHandler: perCaller('email-verify') }, async (request) => {
-    const input = parse(verifyEmailSchema, request.body);
+  serve(
+    app,
+    contracts['auth.verifyEmail'],
+    { preHandler: perCaller('email-verify') },
+    async (_request, { body: input }) => {
+      const userId = await consumeAuthToken(db, input.token, 'email_verification');
+      if (!userId) {
+        throw ApiError.badRequest('That verification link is not valid any more', 'invalid_token');
+      }
 
-    const userId = await consumeAuthToken(db, input.token, 'email_verification');
-    if (!userId) {
-      throw ApiError.badRequest('That verification link is not valid any more', 'invalid_token');
-    }
+      await db
+        .update(users)
+        // An already-verified address keeps its original timestamp: the first
+        // confirmation is the one that happened.
+        .set({ emailVerifiedAt: new Date() })
+        .where(and(eq(users.id, userId), isNull(users.emailVerifiedAt)));
 
-    await db
-      .update(users)
-      // An already-verified address keeps its original timestamp: the first
-      // confirmation is the one that happened.
-      .set({ emailVerifiedAt: new Date() })
-      .where(and(eq(users.id, userId), isNull(users.emailVerifiedAt)));
+      return { ok: true as const };
+    },
+  );
 
-    return { ok: true };
-  });
-
-  app.post(
-    '/auth/email/resend',
+  serve(
+    app,
+    contracts['auth.resendVerification'],
     {
       preHandler: [
         requireAuth,
@@ -204,10 +213,10 @@ export async function authRecoveryRoutes(app: FastifyInstance, opts: RecoveryDep
         .limit(1);
 
       // Nothing to do, and saying so is safe: the caller is the account holder.
-      if (row?.emailVerifiedAt) return { ok: true, alreadyVerified: true };
+      if (row?.emailVerifiedAt) return { ok: true as const, alreadyVerified: true };
 
       await sendVerification(user.id);
-      return { ok: true, alreadyVerified: false };
+      return { ok: true as const, alreadyVerified: false };
     },
   );
 }

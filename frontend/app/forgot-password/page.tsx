@@ -1,5 +1,6 @@
 'use client';
 
+import { contracts } from '@robis/shared';
 import { PASSWORD_RESET_TTL_MINUTES } from '@robis/shared/limits';
 import { type FormEvent, useState } from 'react';
 import {
@@ -10,7 +11,7 @@ import {
   AuthNotice,
   AuthShell,
 } from '../../components/auth-shell.tsx';
-import { ApiError, api } from '../../lib/api.ts';
+import { ApiError, call } from '../../lib/api.ts';
 
 /**
  * Ask for a reset link.
@@ -35,7 +36,7 @@ export default function ForgotPasswordPage() {
     setSubmitting(true);
 
     try {
-      await api<{ ok: true }>('/auth/password/forgot', { method: 'POST', body: { email } });
+      await call(contracts['auth.forgotPassword'], { body: { email } });
       setSent(true);
     } catch (cause) {
       // Only a transport or rate-limit failure reaches here; the endpoint

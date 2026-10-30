@@ -1,15 +1,10 @@
 import { type Database, listAccountEvents, verifyAccountChain } from '@robis/database';
+import { contracts } from '@robis/shared';
 import type { FastifyInstance } from 'fastify';
-import { z } from 'zod';
 import type { RateLimits } from '../app.ts';
+import { serve } from '../contract.ts';
 import { currentUser, requireAuth } from '../plugins/authz.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
-import { parse } from '../validate.ts';
-
-const pageSchema = z.object({
-  before: z.coerce.number().int().min(1).max(Number.MAX_SAFE_INTEGER).optional(),
-  limit: z.coerce.number().int().min(1).max(100).default(30),
-});
 
 /**
  * An account's own trail, for the account holder alone: there is no route
@@ -21,9 +16,8 @@ export async function accountEventRoutes(
 ) {
   const { db, limits } = opts;
 
-  app.get('/auth/me/events', { preHandler: requireAuth }, async (request) => {
+  serve(app, contracts['auth.events'], { preHandler: requireAuth }, async (request, { query }) => {
     const user = currentUser(request);
-    const query = parse(pageSchema, request.query);
     const { rows, nextCursor } = await listAccountEvents(db, user.id, query);
 
     return {
@@ -37,8 +31,9 @@ export async function accountEventRoutes(
     };
   });
 
-  app.post(
-    '/auth/me/events/verify',
+  serve(
+    app,
+    contracts['auth.verifyEvents'],
     {
       preHandler: [
         requireAuth,

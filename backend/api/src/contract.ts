@@ -41,16 +41,28 @@ export function serve<C extends Contract>(
       const input = {
         params: route.params ? parse(route.params, request.params) : undefined,
         query: route.query ? parse(route.query, request.query) : undefined,
-        body: route.body ? parse(route.body, request.body ?? {}) : undefined,
+        body: route.body ? parseBody(route, request.body) : undefined,
       } as InputOf<C>;
       const result = await handler(request, input, reply);
-      // Answered already: by the idempotency ledger, through `shape`.
-      if (reply.sent) return reply;
+      // Answered already: by the idempotency ledger (through `shape`), or by
+      // the handler's own refusal. Returning the reply counts even before the
+      // response has finished, so a slow onSend hook cannot cause a second send.
+      if (result === reply || reply.sent) return reply;
       const [status] = statusesOf(route);
       if (route.response === null) return reply.status(status ?? 204).send();
       return reply.status(status ?? 200).send(route.response.parse(result));
     },
   });
+}
+
+/** The body, parsed: refused with a 400, or for a lenient route, null when it does not parse. */
+function parseBody(route: Contract, body: unknown): unknown {
+  if (!route.body) return undefined;
+  if (route.lenientBody) {
+    const result = route.body.safeParse(body ?? {});
+    return result.success ? result.data : null;
+  }
+  return parse(route.body, body ?? {});
 }
 
 /**

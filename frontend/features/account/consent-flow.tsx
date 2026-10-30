@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useState } from 'react';
 import { AuthButton, AuthError, AuthNotice, AuthShell } from '../../components/auth-shell.tsx';
-import { ApiError, api, call, type Me } from '../../lib/api.ts';
+import { ApiError, call, type Me } from '../../lib/api.ts';
 import { UsernameField } from './username-field.tsx';
 
 /**
@@ -25,8 +25,7 @@ function TermsStep({ me, onDone }: { me: Me; onDone: () => void }) {
   const [confirmed, setConfirmed] = useState(false);
   const agree = useMutation({
     mutationFn: () =>
-      api('/auth/me/consent', {
-        method: 'POST',
+      call(contracts['auth.consent'], {
         body: { termsVersion: me.user.consent.current, ageConfirmed: true },
       }),
     onSuccess: onDone,
@@ -76,7 +75,7 @@ function UsernameStep({ me, onDone }: { me: Me; onDone: () => void }) {
   const [username, setUsername] = useState(me.user.username);
 
   const keep = useMutation({
-    mutationFn: () => api('/auth/me/username/confirm', { method: 'POST' }),
+    mutationFn: () => call(contracts['auth.confirmUsername']),
     onSuccess: onDone,
   });
   const change = useMutation({

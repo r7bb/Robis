@@ -14,7 +14,7 @@ import {
   useState,
 } from 'react';
 import { Avatar, orbStyle } from '../../components/ui/avatar.tsx';
-import { ApiError, api, BASE_URL, call, type Me } from '../../lib/api.ts';
+import { ApiError, BASE_URL, call, type Me } from '../../lib/api.ts';
 import { CameraCapture } from './camera-capture.tsx';
 import { preparePhoto } from './prepare-photo.ts';
 
@@ -113,10 +113,7 @@ export function WelcomeFlow({ next }: { next: string }) {
   const choosePhoto = (blob: Blob) => save(() => uploadPhoto(blob));
   const choosePattern = (seed: string) =>
     save(async () => {
-      const response = await api<{ avatar: AvatarRef }>('/auth/me/avatar/generated', {
-        method: 'PUT',
-        body: { seed },
-      });
+      const response = await call(contracts['auth.generatedAvatar'], { body: { seed } });
       return response.avatar;
     });
 

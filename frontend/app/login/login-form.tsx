@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
-import { ApiError, api, call } from '../../lib/api.ts';
+import { ApiError, call } from '../../lib/api.ts';
 import { getSyncEngine } from '../../lib/sync.ts';
 
 export type Mode = 'login' | 'register';
@@ -40,7 +40,7 @@ export function LoginForm({ initialMode }: { initialMode: Mode }) {
 
     try {
       if (mode === 'register') {
-        await api('/auth/signup', { method: 'POST', body: { email } });
+        await call(contracts['auth.signup'], { body: { email } });
         setSentTo(email.trim());
         return;
       }

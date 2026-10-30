@@ -8,7 +8,7 @@ import { type FormEvent, useEffect, useId, useState } from 'react';
 import { ACCOUNT_EVENTS_KEY, AccountActivity } from '../../features/account/account-activity.tsx';
 import { DeleteAccount } from '../../features/account/delete-account.tsx';
 import { UsernameField } from '../../features/account/username-field.tsx';
-import { ApiError, api, call, type Me } from '../../lib/api.ts';
+import { ApiError, call, type Me } from '../../lib/api.ts';
 import { lastTheme, useApplyTheme } from '../../lib/theme.ts';
 
 /**
@@ -170,8 +170,7 @@ function VerificationStatus({ verified }: { verified: boolean }) {
   const [sent, setSent] = useState(false);
 
   const resend = useMutation({
-    mutationFn: () =>
-      api<{ ok: true; alreadyVerified: boolean }>('/auth/email/resend', { method: 'POST' }),
+    mutationFn: () => call(contracts['auth.resendVerification']),
     onSuccess: () => setSent(true),
   });
 

@@ -278,11 +278,14 @@ export async function authRoutes(
           : conflict;
       }
       const user = outcome;
+      // Checked against the contract before any session exists, so an answer
+      // that does not fit is a 500 with no cookie, not a 500 with one.
+      const answer = contracts['auth.register'].response.parse({ user });
 
       const { token, expiresAt } = await createSession(db, user.id, request.headers['user-agent']);
       reply.setCookie(app.sessionCookieName, token, { ...cookieOptions, expires: expiresAt });
 
-      return { user };
+      return answer;
     },
   );
 
@@ -309,13 +312,16 @@ export async function authRoutes(
         throw ApiError.unauthorized('Invalid email or password');
       }
 
+      // Checked before the session exists, as on register.
+      const answer = contracts['auth.login'].response.parse({
+        user: { id: user.id, email: user.email, name: user.name, username: user.username },
+      });
+
       const { token, expiresAt } = await createSession(db, user.id, request.headers['user-agent']);
       reply.setCookie(app.sessionCookieName, token, { ...cookieOptions, expires: expiresAt });
       await recordAccountEventSafely(user.id, 'auth.signed_in', { requestId: request.id });
 
-      return {
-        user: { id: user.id, email: user.email, name: user.name, username: user.username },
-      };
+      return answer;
     },
   );
 

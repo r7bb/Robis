@@ -26,25 +26,6 @@ afterAll(closeHarness);
 
 const ROOT = resolve(import.meta.dir, '..');
 
-/**
- * Routes not yet moved onto a contract. Moved a group at a time; this list
- * only shrinks, and the test fails on an entry that has a contract now.
- */
-const PENDING: readonly string[] = [
-  'DELETE /auth/me',
-  'GET /auth/me/events',
-  'POST /auth/email/resend',
-  'POST /auth/email/verify',
-  'POST /auth/me/consent',
-  'POST /auth/me/events/verify',
-  'POST /auth/me/username/confirm',
-  'POST /auth/password/forgot',
-  'POST /auth/password/reset',
-  'POST /auth/signup',
-  'PUT /auth/me/avatar',
-  'PUT /auth/me/avatar/generated',
-];
-
 /** Served outside the API's contract: health and the like. */
 const OUTSIDE: readonly string[] = [
   'GET /health',
@@ -63,9 +44,9 @@ describe('route contracts', () => {
     const undescribed = [...served].filter(
       (route) => !described.has(route) && !OUTSIDE.includes(route),
     );
-    expect(undescribed.filter((route) => !PENDING.includes(route)).sort()).toEqual([]);
-    // Pending entries that now have a contract come off the list.
-    expect(PENDING.filter((route) => described.has(route))).toEqual([]);
+    expect(undescribed.sort()).toEqual([]);
+    // Nothing listed apart has a contract after all.
+    expect(OUTSIDE.filter((route) => described.has(route))).toEqual([]);
   });
 
   test('a response carries only what its contract names', async () => {

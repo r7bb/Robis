@@ -3,7 +3,7 @@
 import { contracts } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { api, call, type Me, type MyInvitation } from '../lib/api.ts';
+import { call, type Me, type MyInvitation } from '../lib/api.ts';
 import { RoleBadge } from './ui/primitives.tsx';
 
 /** Invitations arrive from other people, with no event to key off. */
@@ -55,7 +55,7 @@ export function MyInvitations({ me, focusAfter }: { me: Me | undefined; focusAft
   });
 
   const resend = useMutation({
-    mutationFn: () => api<{ ok: true }>('/auth/email/resend', { method: 'POST' }),
+    mutationFn: () => call(contracts['auth.resendVerification']),
   });
 
   const pending = invitations.data?.invitations ?? [];

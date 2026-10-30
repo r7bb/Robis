@@ -3,7 +3,7 @@
 import { can, contracts, type ResponseOf, type Role, sniffImage } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { api, BASE_URL, call } from '../../lib/api.ts';
+import { BASE_URL, call } from '../../lib/api.ts';
 import { getSyncEngine } from '../../lib/sync.ts';
 
 /** An image on an issue or comment, as the contract describes it. */
@@ -157,7 +157,10 @@ export function IssueAttachments({
   }
 
   const remove = useMutation({
-    mutationFn: (attachment: Attachment) => api<void>(attachment.url, { method: 'DELETE' }),
+    mutationFn: (attachment: Attachment) =>
+      call(contracts['attachments.delete'], {
+        params: { workspaceId, attachmentId: attachment.id },
+      }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: key }),
   });
 

@@ -4,7 +4,7 @@ import { contracts } from '@robis/shared';
 import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
-import { ApiError, api, call, type Me } from '../../lib/api.ts';
+import { ApiError, call, type Me } from '../../lib/api.ts';
 import { getSyncEngine } from '../../lib/sync.ts';
 
 type Choice = { action: 'transfer'; to: string } | { action: 'delete' };
@@ -47,8 +47,7 @@ export function DeleteAccount({ me }: { me: Me }) {
     }
     setPending(true);
     try {
-      await api<void>('/auth/me', {
-        method: 'DELETE',
+      await call(contracts['auth.deleteAccount'], {
         body: {
           password,
           workspaces: owned.map((w) => ({ id: w.id, ...choices[w.id]! })),

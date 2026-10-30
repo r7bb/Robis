@@ -1,21 +1,11 @@
 'use client';
 
+import { contracts, type ResponseOf } from '@robis/shared';
 import { useInfiniteQuery, useMutation } from '@tanstack/react-query';
 import { ago } from '../../components/activity-feed.tsx';
-import { api } from '../../lib/api.ts';
+import { call } from '../../lib/api.ts';
 
-type AccountEvent = {
-  seq: number;
-  type: string;
-  payload: Record<string, unknown>;
-  occurredAt: string;
-};
-
-type AccountChain = {
-  ok: boolean;
-  checked: number;
-  broken: { seq: number; reason: string } | null;
-};
+type AccountChain = ResponseOf<(typeof contracts)['auth.verifyEvents']>;
 
 type Label = { text: (payload: Record<string, unknown>) => string; flag?: true };
 
@@ -67,14 +57,14 @@ export function AccountActivity() {
     queryKey: ACCOUNT_EVENTS_KEY,
     initialPageParam: null as number | null,
     queryFn: ({ pageParam }) =>
-      api<{ events: AccountEvent[]; nextCursor: number | null }>(
-        `/auth/me/events?limit=${PAGE_SIZE}${pageParam === null ? '' : `&before=${pageParam}`}`,
-      ),
+      call(contracts['auth.events'], {
+        query: { limit: PAGE_SIZE, ...(pageParam === null ? {} : { before: pageParam }) },
+      }),
     getNextPageParam: (last) => last.nextCursor,
   });
 
   const check = useMutation({
-    mutationFn: () => api<AccountChain>('/auth/me/events/verify', { method: 'POST' }),
+    mutationFn: () => call(contracts['auth.verifyEvents']),
   });
 
   const rows = events.data?.pages.flatMap((page) => page.events) ?? [];
