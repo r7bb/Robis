@@ -32,6 +32,9 @@ export type Participant = {
 /** Debounce window for persistence. Batches a burst of typing into one write. */
 const PERSIST_DEBOUNCE_MS = 500;
 
+/** Told when a batch of edits is stored, with its sequence number. */
+export type Stored = (documentId: string, seq: number) => Promise<void> | void;
+
 /** A foreign key violation: here, the document row is gone. */
 function isMissingDocument(error: unknown): boolean {
   return pgErrorCode(error) === FOREIGN_KEY_VIOLATION;
@@ -48,12 +51,13 @@ export class DocumentRoom {
     readonly documentId: string,
     doc: Y.Doc,
     private readonly db: Database,
+    private readonly onStored?: Stored,
   ) {
     this.doc = doc;
   }
 
-  static async open(db: Database, documentId: string): Promise<DocumentRoom> {
-    return new DocumentRoom(documentId, await loadDocument(db, documentId), db);
+  static async open(db: Database, documentId: string, onStored?: Stored): Promise<DocumentRoom> {
+    return new DocumentRoom(documentId, await loadDocument(db, documentId), db, onStored);
   }
 
   /** Everything a joining client needs to catch up, in one message. */
@@ -87,6 +91,17 @@ export class DocumentRoom {
     return changed;
   }
 
+  /**
+   * Apply an edit another gateway already stored (stage 3, item 25): into
+   * this copy, for this gateway's editors, and not stored a second time.
+   */
+  applyStored(update: Uint8Array): boolean {
+    const before = Y.encodeStateVector(this.doc);
+    Y.applyUpdate(this.doc, update);
+    const after = Y.encodeStateVector(this.doc);
+    return Buffer.compare(Buffer.from(before), Buffer.from(after)) !== 0;
+  }
+
   private queuePersist(update: Uint8Array) {
     this.pending.push(update);
     if (this.timer) return;
@@ -113,11 +128,12 @@ export class DocumentRoom {
 
     const batch = this.pending;
     this.pending = [];
+    let seq: number;
 
     try {
       // The room already holds the rendered text; passing it keeps the
       // search index current without rebuilding the document.
-      await recordUpdate(
+      seq = await recordUpdate(
         this.db,
         this.documentId,
         Y.mergeUpdates(batch),
@@ -133,6 +149,14 @@ export class DocumentRoom {
       // flush retries rather than silently losing edits.
       this.pending.unshift(...batch);
       throw error;
+    }
+
+    // Stored: peers with this document open read it from there. Telling them
+    // is best-effort and outside the retry above, since the edit is safe.
+    try {
+      await this.onStored?.(this.documentId, seq);
+    } catch (error) {
+      console.error(`document ${this.documentId}: relay notice failed`, error);
     }
   }
 
@@ -162,7 +186,10 @@ export class DocumentRooms {
   /** In-flight opens, so two simultaneous joins share one load. */
   private readonly opening = new Map<string, Promise<DocumentRoom>>();
 
-  constructor(private readonly db: Database) {}
+  constructor(
+    private readonly db: Database,
+    private readonly onStored?: Stored,
+  ) {}
 
   async join(documentId: string, participant: Participant): Promise<DocumentRoom> {
     const room = await this.acquire(documentId);
@@ -177,7 +204,7 @@ export class DocumentRooms {
     const inFlight = this.opening.get(documentId);
     if (inFlight) return inFlight;
 
-    const promise = DocumentRoom.open(this.db, documentId)
+    const promise = DocumentRoom.open(this.db, documentId, this.onStored)
       .then((room) => {
         this.rooms.set(documentId, room);
         return room;

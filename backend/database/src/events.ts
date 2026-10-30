@@ -68,3 +68,32 @@ export async function subscribeToEvents(
 
   return () => subscription.unlisten();
 }
+
+/** The channel gateways tell each other about stored document edits on. */
+export const DOCUMENT_CHANNEL = 'robis_documents';
+
+/**
+ * A gateway stored an edit to a document: ids only (stage 3, item 25). The
+ * update itself can be far larger than a notification may be, and is read
+ * from the table by whichever gateway has the document open.
+ */
+export type DocumentNotice = { documentId: string; seq: number; instanceId: string };
+
+export async function publishDocumentUpdate(db: Executor, notice: DocumentNotice): Promise<void> {
+  await db.execute(sql`select pg_notify(${DOCUMENT_CHANNEL}, ${JSON.stringify(notice)})`);
+}
+
+export async function subscribeToDocumentUpdates(
+  client: postgres.Sql,
+  onNotice: (notice: DocumentNotice) => void,
+): Promise<Unsubscribe> {
+  const subscription = await client.listen(DOCUMENT_CHANNEL, (payload) => {
+    try {
+      const notice = JSON.parse(payload) as DocumentNotice;
+      if (typeof notice.documentId === 'string' && Number.isInteger(notice.seq)) onNotice(notice);
+    } catch {
+      // A malformed payload is not worth tearing the listener down for.
+    }
+  });
+  return () => subscription.unlisten();
+}

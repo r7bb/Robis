@@ -4,6 +4,9 @@ Newest first. The same list is the site's What's new page, where each entry
 opens to show how it was checked and, for features, where to find it and
 what each layer does. Back to the [README](../README.md).
 
+- **Editing together works across gateways** (2026-10-30). Gateways tell
+  each other which stored edit to read, so editors on different gateways
+  see each other live.
 - **The live connection sends only what a page shows** (2026-10-30). Pages
   name their project, issue or channel, and the gateway sends only those
   events.

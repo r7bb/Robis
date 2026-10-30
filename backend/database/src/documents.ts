@@ -123,13 +123,14 @@ export async function compactDocument(db: Executor, documentId: string): Promise
  * memory. Search cannot read the CRDT encoding, and re-deriving the text here
  * would mean rebuilding the whole document on every keystroke batch.
  */
+/** Returns the stored update's sequence number, for peers to read it by. */
 export async function recordUpdate(
   db: Executor,
   documentId: string,
   update: Uint8Array,
   plainText?: string,
-): Promise<void> {
-  await appendUpdate(db, documentId, update);
+): Promise<number> {
+  const seq = await appendUpdate(db, documentId, update);
 
   if (plainText !== undefined) {
     await db
@@ -141,6 +142,25 @@ export async function recordUpdate(
   if ((await countUpdates(db, documentId)) >= COMPACT_THRESHOLD) {
     await compactDocument(db, documentId);
   }
+  return seq;
+}
+
+/**
+ * One stored update by its sequence number, for a gateway relaying another's
+ * edit (stage 3, item 25). Null when it is gone: folded into the snapshot by
+ * compaction, or its document deleted.
+ */
+export async function loadUpdate(
+  db: Executor,
+  documentId: string,
+  seq: number,
+): Promise<Uint8Array | null> {
+  const [row] = await db
+    .select({ update: documentUpdates.update })
+    .from(documentUpdates)
+    .where(and(eq(documentUpdates.seq, seq), eq(documentUpdates.documentId, documentId)))
+    .limit(1);
+  return row ? new Uint8Array(row.update) : null;
 }
 
 /** Plain-text rendering of the document's shared text, for search and previews. */

@@ -72,8 +72,8 @@ class TestClient {
     });
   }
 
-  static async connect(actor: Actor): Promise<TestClient> {
-    const socket = new WebSocket(wsUrl, { headers: { cookie: actor.cookie } } as never);
+  static async connect(actor: Actor, url = wsUrl): Promise<TestClient> {
+    const socket = new WebSocket(url, { headers: { cookie: actor.cookie } } as never);
 
     await new Promise<void>((resolve, reject) => {
       socket.addEventListener('open', () => resolve(), { once: true });
@@ -796,5 +796,65 @@ describe('scopes', () => {
     await client.waitFor(isEvent('message.created'));
     expect(eventTypes(client)).toEqual(['message.created']);
     client.close();
+  });
+});
+
+/**
+ * Document edits between gateways (stage 3, item 25). Two editors of one
+ * document can be connected to different gateway instances; each gateway
+ * stores what its own editors wrote and tells the others, over NOTIFY,
+ * which stored update to read. The notification carries ids only.
+ */
+describe('documents across gateways', () => {
+  test('two gateways, two clients, one document: an edit on one reaches the other', async () => {
+    const { gatewayDb } = await getHarness();
+    const url = new URL(TEST_URL);
+    url.username = GATEWAY_TEST_ROLE.role;
+    url.password = GATEWAY_TEST_ROLE.password;
+    const secondListen = postgres(url.toString(), { max: 1, prepare: false, onnotice: () => {} });
+    const second = await createGateway({
+      db: gatewayDb,
+      listenClient: secondListen,
+      port: 0,
+      webOrigin: 'http://localhost:3000',
+    });
+    try {
+      const owner = await createActor('Owner');
+      const other = await createActor('Other');
+      const workspace = await createWorkspace(owner);
+      await addMember(owner, workspace.id, other, 'MEMBER');
+      const created = await request(`/workspaces/${workspace.id}/documents`, {
+        method: 'POST',
+        actor: owner,
+        payload: { title: 'Shared' },
+      });
+      const documentId = created.json().document.id as string;
+
+      const here = await TestClient.connect(owner);
+      await here.subscribe(workspace.id);
+      await here.openDocument(documentId);
+      const there = await TestClient.connect(other, `ws://127.0.0.1:${second.port}/ws`);
+      await there.subscribe(workspace.id);
+      await there.openDocument(documentId);
+
+      const doc = new Y.Doc();
+      doc.getText('content').insert(0, 'written on the first gateway');
+      here.sendUpdate(documentId, doc);
+
+      const arrived = await there.waitFor(
+        (m): m is Extract<ServerMessage, { type: 'doc.update' }> =>
+          m.type === 'doc.update' && m.documentId === documentId,
+        5000,
+      );
+      const received = new Y.Doc();
+      Y.applyUpdate(received, new Uint8Array(Buffer.from(arrived.update, 'base64')));
+      expect(received.getText('content').toString()).toBe('written on the first gateway');
+
+      here.close();
+      there.close();
+    } finally {
+      await second.close();
+      await secondListen.end();
+    }
   });
 });

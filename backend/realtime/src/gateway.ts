@@ -1,8 +1,13 @@
 import { type AuthenticatedUser, resolveSession, SESSION_COOKIE } from '@robis/auth';
 import {
   type Database,
+  type DocumentNotice,
   findMembership,
+  loadDocument,
+  loadUpdate,
+  publishDocumentUpdate,
   publishPresence,
+  subscribeToDocumentUpdates,
   subscribeToEvents,
   subscribeToPresence,
   users,
@@ -22,6 +27,7 @@ import {
 } from '@robis/shared';
 import { eq } from 'drizzle-orm';
 import type postgres from 'postgres';
+import * as Y from 'yjs';
 import { DocumentRooms, documentInWorkspace } from './documents.ts';
 import { PresenceRegistry } from './presence.ts';
 
@@ -125,7 +131,11 @@ export async function createGateway(options: GatewayOptions) {
   const instanceId = options.instanceId ?? crypto.randomUUID();
 
   const presence = new PresenceRegistry();
-  const rooms = new DocumentRooms(db);
+  // Each stored batch of edits is announced to the other gateways, by id
+  // (stage 3, item 25); see `relayStoredUpdate`.
+  const rooms = new DocumentRooms(db, (documentId, seq) =>
+    publishDocumentUpdate(db, { documentId, seq, instanceId }),
+  );
   const sockets = new Set<Bun.ServerWebSocket<SocketData>>();
 
   /*
@@ -575,6 +585,33 @@ export async function createGateway(options: GatewayOptions) {
 
   const unsubscribeEvents = await subscribeToEvents(listenClient, broadcastEvent);
 
+  /**
+   * Another gateway stored an edit: if this one has the document open, read
+   * the update and pass it to this gateway's editors. Gone already (folded
+   * into the snapshot), the whole document is read instead, which Yjs
+   * applies just as safely.
+   */
+  async function relayStoredUpdate(notice: DocumentNotice) {
+    if (notice.instanceId === instanceId) return;
+    const room = rooms.get(notice.documentId);
+    if (!room) return;
+    const update =
+      (await loadUpdate(db, notice.documentId, notice.seq)) ??
+      Y.encodeStateAsUpdate(await loadDocument(db, notice.documentId));
+    if (room.applyStored(update)) {
+      broadcastDocUpdate(
+        notice.documentId,
+        Buffer.from(update).toString('base64'),
+        `peer:${notice.instanceId}`,
+      );
+    }
+  }
+  const unsubscribeDocuments = await subscribeToDocumentUpdates(listenClient, (notice) => {
+    void relayStoredUpdate(notice).catch((error) => {
+      console.error(`document ${notice.documentId}: relay failed`, error);
+    });
+  });
+
   /** Apply a peer's presence delta and rebroadcast any roster it changed. */
   function applyPresenceGossip(message: PresenceMessage) {
     // Our own gossip is already applied locally.
@@ -620,6 +657,7 @@ export async function createGateway(options: GatewayOptions) {
       // Tell peers to drop our entries immediately rather than waiting for TTL.
       await publishPresence(db, { kind: 'bye', instanceId }).catch(() => {});
       await unsubscribeEvents().catch(() => {});
+      await unsubscribeDocuments().catch(() => {});
       await unsubscribePresence().catch(() => {});
 
       for (const socket of sockets) socket.close(1001, 'Server shutting down');

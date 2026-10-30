@@ -41,6 +41,15 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-30',
     area: 'Product',
+    title: 'Editing together works across gateways',
+    summary:
+      'Two people writing in the same document only saw each other’s words live if their browsers happened to be connected to the same live gateway. With more than one gateway running, one could type and the other see nothing until a reload. Now each gateway stores what its own editors write, as it always has, and tells the other gateways which stored update to read; a gateway with the document open reads it and passes it to its editors. The notice carries only ids, because an edit can be far larger than a database notification may be, and an edit already folded into the document’s snapshot is read from the snapshot instead.',
+    checked:
+      'A new test starts two gateways, connects one editor to each, opens one document on both, and proves text typed through the first gateway reaches the editor on the second. It runs as the gateway’s own database account, so no new grant was needed. The full suite passes, and on the rebuilt stack the stack and browser smoke tests passed with no relay errors in the gateway’s log.',
+  },
+  {
+    date: '2026-10-30',
+    area: 'Product',
     title: 'The live connection sends only what a page shows',
     summary:
       'Every open page used to receive every live event in its workspace, then throw most of them away. Now a page tells the gateway what it shows: a board names its project, an issue page its issue, the workspace view the workspace and the open channel. The gateway then sends only the events about those, so a board never hears a chat message and a channel never hears another project’s board. Scopes only narrow what a member already receives; they never widen access. A page that names nothing, like the home, still hears everything in the workspace.',
