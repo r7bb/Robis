@@ -11,6 +11,7 @@ import {
   requestIdFrom,
   trustProxySetting,
 } from './hardening.ts';
+import { DECODE_RETRY_AFTER_SECONDS, ImagesBusyError } from './media/images.ts';
 import { createMetrics, registerMetrics } from './metrics.ts';
 import { attachUser } from './plugins/authz.ts';
 import { accountDeletionRoutes } from './routes/account-deletion.ts';
@@ -179,6 +180,13 @@ export function buildApp({
   app.setErrorHandler((error: Error & { statusCode?: number; code?: string }, request, reply) => {
     if (error instanceof ApiError) {
       return reply.status(error.statusCode).send({ error: error.code, message: error.message });
+    }
+
+    // Every decode slot and place in line is taken (stage 3, item 31): a
+    // passing condition, so the client is told when to come back.
+    if (error instanceof ImagesBusyError) {
+      reply.header('retry-after', String(DECODE_RETRY_AFTER_SECONDS));
+      return reply.status(503).send({ error: 'images_busy', message: error.message });
     }
 
     // Fastify's own errors (malformed JSON, payload too large) already carry a

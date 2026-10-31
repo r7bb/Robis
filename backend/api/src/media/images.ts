@@ -28,7 +28,17 @@ const MAX_INPUT_PIXELS = 25_000_000;
  * decode can hold ~100 MB and a core for a while, so without a ceiling a
  * handful of accounts uploading together could starve every other request.
  */
-const MAX_CONCURRENT_DECODES = 2;
+export const MAX_CONCURRENT_DECODES = 2;
+
+/**
+ * How many may wait for a slot (stage 3, item 31). Past this, an upload is
+ * told to come back (503, Retry-After) rather than queued without end, so a
+ * flood holds no more memory than this many bodies.
+ */
+export const MAX_WAITING_DECODES = 8;
+
+/** Seconds a refused upload is told to wait before trying again. */
+export const DECODE_RETRY_AFTER_SECONDS = 2;
 
 // The decoded-image cache only helps when the same input is processed
 // repeatedly, which never happens here; it would just hold memory.
@@ -37,6 +47,9 @@ sharp.cache(false);
 export const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'] as const;
 
 export class UnreadableImageError extends Error {}
+
+/** Every decode slot and every place in line is taken. */
+export class ImagesBusyError extends Error {}
 
 /**
  * The format the bytes actually are, by their signature, or null. Checked
@@ -47,16 +60,27 @@ export const sniff = sniffImage;
 let active = 0;
 const waiting: (() => void)[] = [];
 
-async function withDecodeSlot<T>(work: () => Promise<T>): Promise<T> {
-  if (active >= MAX_CONCURRENT_DECODES) {
+/**
+ * Run `work` holding one of the decode slots. A slot freed with someone in
+ * line is handed straight to them, never counted free in between, so a
+ * newcomer arriving at that moment cannot take it as well and pass the cap.
+ */
+export async function withDecodeSlot<T>(work: () => Promise<T>): Promise<T> {
+  if (active < MAX_CONCURRENT_DECODES) {
+    active++;
+  } else {
+    if (waiting.length >= MAX_WAITING_DECODES) {
+      throw new ImagesBusyError('Too many images are being processed. Try again shortly.');
+    }
+    // Woken holding the slot its releaser handed over: `active` is unchanged.
     await new Promise<void>((resolve) => waiting.push(resolve));
   }
-  active++;
   try {
     return await work();
   } finally {
-    active--;
-    waiting.shift()?.();
+    const next = waiting.shift();
+    if (next) next();
+    else active--;
   }
 }
 

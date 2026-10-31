@@ -41,6 +41,15 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-31',
     area: 'Security',
+    title: 'Image uploads hold their line',
+    summary:
+      'Pictures are decoded two at a time, because a decode can take a lot of memory. Three things are firmer now. A finished decode hands its turn straight to the next upload in line, so a newcomer arriving at that instant can never make it three. The line itself is capped at eight: past that, an upload is told the service is busy and when to try again, instead of being held in memory without end. And the per-minute upload limit is checked with the size, before the image is received, so an upload over the limit is refused without its bytes being read.',
+    checked:
+      'Tests prove that however decodes overlap, and with each finished one asking for another at once, no more than two ever run together; that a full line refuses the next request at once; that an upload while every turn and place in line is taken is answered 503 with Retry-After; and that the upload past the per-minute limit is a 429. The full suite passes, and on the rebuilt stack the smoke test’s picture and image uploads went through.',
+  },
+  {
+    date: '2026-10-31',
+    area: 'Security',
     title: 'Old records are let go on a schedule',
     summary:
       'Two tables only ever grew. The record that lets a retried change be recognised as a repeat, rather than done twice, was kept forever; it now replays for 30 days, which covers a long time offline with room to spare, and is then forgotten. Notifications you have read are removed 90 days after you read them; unread ones stay until you read them. Both are removed by the background worker’s hourly cleanup, which was granted only the two deletions it needs.',

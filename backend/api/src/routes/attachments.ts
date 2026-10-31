@@ -146,8 +146,10 @@ export async function attachmentRoutes(
     app,
     contracts['attachments.upload'],
     {
-      onRequest: admitUpload,
-      preHandler: [requireAuth, requireMembership(db, 'attachment:create'), uploadLimit],
+      // The limit with the other checks made before the body is read (stage
+      // 3, item 31): an upload over it is refused without being received.
+      onRequest: [admitUpload, uploadLimit],
+      preHandler: [requireAuth, requireMembership(db, 'attachment:create')],
     },
     async (request, { params: { issueId }, query: { commentId } }, reply) => {
       const user = currentUser(request);

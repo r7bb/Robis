@@ -6,6 +6,8 @@
   "exports": {
     "./app": "./src/app.ts",
     "./contract": "./src/contract.ts",
+    "./images": "./src/media/images.ts",
+    "./avatars": "./src/routes/avatars.ts",
     "./env": "./src/env.ts",
     "./hardening": "./src/hardening.ts",
     "./metrics": "./src/metrics.ts",

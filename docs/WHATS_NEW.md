@@ -4,6 +4,9 @@ Newest first. The same list is the site's What's new page, where each entry
 opens to show how it was checked and, for features, where to find it and
 what each layer does. Back to the [README](../README.md).
 
+- **Image uploads hold their line** (2026-10-31). A capped line for
+  decoding, a 503 with Retry-After past it, and the upload limit checked
+  before the bytes arrive.
 - **Old records are let go on a schedule** (2026-10-31). Retry records
   replay for 30 days, read notifications go after 90.
 - **Indexes for the work that runs on a clock** (2026-10-31). A small index

@@ -18,7 +18,7 @@ import { currentUser, requireAuth, sessionToken } from '../plugins/authz.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
 
 /** Enough to try a few pictures, not enough to use the encoder as a free service. */
-const UPLOADS_PER_MINUTE = 10;
+export const UPLOADS_PER_MINUTE = 10;
 
 /**
  * Profile pictures.
@@ -116,7 +116,9 @@ export async function avatarRoutes(
   serve(
     app,
     contracts['auth.uploadAvatar'],
-    { onRequest: admitUpload, preHandler: [requireAuth, uploadLimit] },
+    // The limit with the other checks made before the body is read (stage 3,
+    // item 31): an upload over it is refused without being received.
+    { onRequest: [admitUpload, uploadLimit], preHandler: requireAuth },
     async (request) => {
       const user = currentUser(request);
       const body = request.body;
