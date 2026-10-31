@@ -25,9 +25,9 @@ import { SyncDemo } from './sync-demo.tsx';
 
 /** Three measured figures, short enough to read in a glance. */
 const HERO_PROOF = [
-  { value: 6.4, decimals: 1, suffix: 'ms', label: 'to read a board' },
-  { value: 4400, decimals: 0, suffix: '', label: 'requests a second' },
-  { value: 5.8, decimals: 1, suffix: 'ms', label: 'to reach everyone' },
+  { value: 7.0, decimals: 1, suffix: 'ms', label: 'to read a board' },
+  { value: 3600, decimals: 0, suffix: '', label: 'requests a second' },
+  { value: 4.1, decimals: 1, suffix: 'ms', label: 'to reach everyone' },
 ] as const;
 
 export function Hero({

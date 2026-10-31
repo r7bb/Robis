@@ -40,6 +40,15 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-31',
+    area: 'Site',
+    title: 'The benchmark counts what a write costs afterwards',
+    summary:
+      'The load harness measured how fast a write reached every open client, but not what happened next: each open board then reads its issues again. Now each simulated client acts as an open board, scoped to its project and coalescing as the web app does, and the report counts the follow-up reads each write causes and times them. Across 50 open boards a write costs 14 reads, where it would cost 50 without coalescing. The harness had also stopped measuring anything since pictures became required: its test accounts had none, so every request was refused. They have one now, and the published figures are refreshed from three new runs.',
+    checked:
+      'Three default runs: zero errors, 29,500 of 29,500 receipts delivered, 14.0 follow-up reads per write, a follow-up read at 24.4 ms p50, and about 3,600 requests a second, which is slower than the earlier published 4,400; the machine was busy and the difference is recorded rather than explained away. The README, the landing page and the architecture notes now quote these runs.',
+  },
+  {
+    date: '2026-10-31',
     area: 'Security',
     title: 'Image uploads hold their line',
     summary:

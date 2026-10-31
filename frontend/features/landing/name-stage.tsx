@@ -14,7 +14,7 @@ import { Wordmark } from './wordmark.tsx';
  * lights, the word it stands for appears beneath, and the field behind
  * takes that letter's formation (see `field-modes.ts`).
  *
- * Every line is something the product actually does. The 5.8 ms is the
+ * Every line is something the product actually does. The 4.1 ms is the
  * measured p50 from the load harness, not a round number.
  */
 
@@ -22,7 +22,7 @@ export const LETTERS = [
   {
     letter: 'R',
     word: 'Realtime',
-    line: 'A change reaches 50 open boards in 5.8 ms. Measured, not estimated.',
+    line: 'A change reaches 50 open boards in 4.1 ms. Measured, not estimated.',
   },
   {
     letter: 'O',

@@ -10,6 +10,7 @@
     "@robis/auth": "workspace:*",
     "@robis/database": "workspace:*",
     "@robis/shared": "workspace:*",
+    "@robis/web": "workspace:*",
     "@robis/worker": "workspace:*",
     "@types/smtp-server": "3.5.13",
     "drizzle-orm": "^0.45.4",

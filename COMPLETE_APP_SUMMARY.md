@@ -17,7 +17,7 @@ Written to be checkable. Every row names a file you can open.
 | HTTP endpoints | 83 |
 | Tests | Counted in [docs/ROADMAP.md](docs/ROADMAP.md), the one place they are kept |
 | Screenshots | 28, all captured from the running app |
-| Measured throughput | ~4,400 req/s, zero errors |
+| Measured throughput | ~3,600 req/s, zero errors |
 
 ---
 

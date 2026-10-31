@@ -874,28 +874,35 @@ Median of three consecutive runs on an M-series MacBook Pro (14 cores, Bun
 **REST API** — 32 concurrent connections, 4 projects, 20% writes, 10s measured
 after a 3s warmup:
 
-| Operation             | p50    | p95    | p99    |
-| --------------------- | ------ | ------ | ------ |
-| Read (list 25 issues) | 6.4 ms | 8.1 ms | 9.6 ms |
-| Write (create issue)  | 9.8 ms | 11.8 ms| 13.5 ms|
+| Operation             | p50     | p95     | p99     |
+| --------------------- | ------- | ------- | ------- |
+| Read (list 25 issues) | 7.0 ms  | 11.0 ms | 12.2 ms |
+| Write (create issue)  | 14.0 ms | 18.9 ms | 21.1 ms |
 
-**~4,400 req/s**, zero errors. Across the three runs throughput was 3,354 /
-4,386 / 4,424 req/s — the first run of a session is consistently the slowest
-even after the warmup, which is the Postgres page cache filling.
+**~3,600 req/s**, zero errors (3,675 / 3,565 / 3,543 across the three runs).
+These are slower than the 6.4 ms, 9.8 ms and ~4,400 req/s published from
+an earlier session on the same machine; this one ran while the machine was
+busy with other work, and the cause has not been isolated, so both are
+recorded rather than either explained away.
 
 **Realtime fan-out** — 50 subscribed sockets, 20 events/s offered for 10s,
 measured from the moment the write is issued to the moment each subscriber has
-the event:
+the event. Each subscriber now also acts as an open board (stage 3, item 32):
+scoped to its project, it re-reads the issue list on each new issue, after
+the web app's own 150 ms coalescing.
 
-| Stage                     | p50    | p95    | p99     |
-| ------------------------- | ------ | ------ | ------- |
-| Write acknowledged (HTTP) | 5.4 ms | 7.6 ms | 11.5 ms |
-| First subscriber has it   | 5.4 ms | 7.6 ms | 11.4 ms |
-| *All 50* subscribers      | 5.8 ms | 8.0 ms | 11.9 ms |
+| Stage                     | p50     | p95     | p99     |
+| ------------------------- | ------- | ------- | ------- |
+| Write acknowledged (HTTP) | 3.8 ms  | 34.2 ms | 38.0 ms |
+| First subscriber has it   | 3.8 ms  | 34.2 ms | 38.1 ms |
+| *All 50* subscribers      | 4.1 ms  | 34.5 ms | 38.4 ms |
+| Follow-up read            | 24.4 ms | 33.2 ms | 36.0 ms |
 
 **100% delivery** — 29,500 of 29,500 expected receipts across the three runs,
-none dropped. The gap between the first and the last subscriber is ~0.4 ms at
-p50, which is the cost of the fan-out loop itself; the rest is the write.
+none dropped. **14 follow-up reads per write** across the 50 boards: without
+coalescing it would be 50. The tail is longer than before because those
+reads now land on the API alongside the writes, which is the cost the
+measurement exists to show.
 
 ### Reading these honestly
 

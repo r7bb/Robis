@@ -131,10 +131,10 @@ compliance claim: it describes what the code does and what was measured.
 
 <table>
   <tr>
-    <td align="center"><h3>6.4 ms</h3><sub>median read, 25 issues</sub></td>
+    <td align="center"><h3>7.0 ms</h3><sub>median read, 25 issues</sub></td>
     <td align="center"><h3>9.8 ms</h3><sub>median write</sub></td>
-    <td align="center"><h3>~4,400</h3><sub>requests a second, zero errors</sub></td>
-    <td align="center"><h3>5.8 ms</h3><sub>for a write to reach 50 live clients</sub></td>
+    <td align="center"><h3>~3,600</h3><sub>requests a second, zero errors</sub></td>
+    <td align="center"><h3>4.1 ms</h3><sub>for a write to reach 50 live clients</sub></td>
   </tr>
 </table>
 
@@ -146,12 +146,12 @@ with Postgres on the same machine. Method and percentiles in
 
 ## Latest
 
+- **The benchmark counts what a write costs afterwards.** Follow-up reads
+  per write, and refreshed figures.
 - **Image uploads hold their line.** Decoding never passes its cap, and a
   flood is told when to come back.
 - **Old records are let go on a schedule.** Retry records replay for 30
   days; read notifications go after 90.
-- **Indexes for the work that runs on a clock.** Pending jobs and expired
-  sessions are each found through an index of their own.
 
 Everything else, newest first, with how each was checked:
 [What's new](docs/WHATS_NEW.md).

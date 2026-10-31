@@ -72,13 +72,15 @@ same issue twice.
 From the load harness in this repository (`bun run loadtest`), on one laptop
 with Postgres on the same machine.
 
-| Operation             | p50    | p95     | p99     |
-| --------------------- | ------ | ------- | ------- |
-| Read (list 25 issues) | 6.4 ms | 8.1 ms  | 9.6 ms  |
-| Write (create issue)  | 9.8 ms | 11.8 ms | 13.5 ms |
+| Operation             | p50     | p95     | p99     |
+| --------------------- | ------- | ------- | ------- |
+| Read (list 25 issues) | 7.0 ms  | 11.0 ms | 12.2 ms |
+| Write (create issue)  | 14.0 ms | 18.9 ms | 21.1 ms |
 
-**~4,400 requests/second, zero errors.** A write reaches all 50 subscribed
-clients in 5.8 ms at p50.
+**~3,600 requests/second, zero errors.** A write reaches all 50 subscribed
+clients in 4.1 ms at p50, and costs 14 follow-up reads across those 50 open
+boards, each one 24 ms at p50. Details, and how to read them, in
+[ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 

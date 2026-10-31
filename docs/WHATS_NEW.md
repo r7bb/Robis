@@ -4,6 +4,8 @@ Newest first. The same list is the site's What's new page, where each entry
 opens to show how it was checked and, for features, where to find it and
 what each layer does. Back to the [README](../README.md).
 
+- **The benchmark counts what a write costs afterwards** (2026-10-31). 14
+  follow-up reads per write across 50 open boards; figures refreshed.
 - **Image uploads hold their line** (2026-10-31). A capped line for
   decoding, a 503 with Retry-After past it, and the upload limit checked
   before the bytes arrive.

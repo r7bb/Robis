@@ -4,9 +4,12 @@
  *   bun run loadtest
  *   bun run loadtest -- --connections 64 --subscribers 100 --duration 20
  *
- * Measures two things the README makes claims about: what the REST API does
- * under concurrency, and how long a write takes to reach every other client
- * through Postgres `LISTEN/NOTIFY`.
+ * Measures what the README makes claims about: what the REST API does under
+ * concurrency, how long a write takes to reach every other client through
+ * Postgres `LISTEN/NOTIFY`, and what that write then costs (stage 3, item
+ * 32): each subscriber acts as an open board, scoped to its project, and
+ * re-reads the issue list on each new issue after the web app's own 150 ms
+ * coalescing, so the report counts follow-up reads per write and times them.
  *
  * The plan called for k6. k6 is a Go binary and there is no way to install one
  * on this machine, so this is written against the same runtime as the app.
@@ -53,6 +56,7 @@ import {
   summarize,
   TERMS_VERSION,
 } from '@robis/shared';
+import { COALESCE_MS, coalescer } from '@robis/web/lib/realtime-events.ts';
 import { eq, inArray, sql } from 'drizzle-orm';
 
 const FIXTURE_CONSENT = {
@@ -182,6 +186,10 @@ async function setupFixture(db: Database, count: number): Promise<Fixture> {
         // Fixture people, not real ones: marked as having agreed and chosen
         // their names, so a fresh seed does not ask them on every sign-in.
         ...FIXTURE_CONSENT,
+        // And given a picture: workspaces are closed to an account without
+        // one, so a harness without it measures nothing but refusals.
+        avatarKind: 'generated' as const,
+        avatarRef: `load-${runId}-${i}`,
       })),
     )
     .returning({ id: users.id });
@@ -355,12 +363,19 @@ type FanoutResult = {
   failed: number;
   subscribers: number;
   lag: number[];
+  /** The follow-up reads the subscribers made, as an open board would. */
+  reads: number[];
+  readsFailed: number;
 };
 
-/** Open one authenticated socket and resolve once it is subscribed. */
+/**
+ * Open one authenticated socket, scoped to `projectId` as an open board is,
+ * and resolve once it is subscribed.
+ */
 function connectSubscriber(
   actor: Actor,
   workspaceId: string,
+  projectId: string,
   onEvent: (issueId: string) => void,
 ): Promise<WebSocket> {
   return new Promise((resolve, reject) => {
@@ -386,6 +401,7 @@ function connectSubscriber(
 
       if (parsed.type === 'ready') {
         clearTimeout(timer);
+        socket.send(JSON.stringify({ type: 'scopes', scopes: [{ kind: 'project', projectId }] }));
         resolve(socket);
         return;
       }
@@ -402,12 +418,38 @@ async function phaseFanout(fixture: Fixture): Promise<FanoutResult> {
 
   /** Issue id -> when it was offered, and when each subscriber saw it. */
   const inFlight = new Map<string, { startedAt: number; receipts: number[] }>();
+  const projectId = fixture.projectIds[0]!;
+
+  /*
+   * What each event then costs: every subscriber re-reads the issue list as
+   * an open board does, with the web app's own coalescing, so a burst of
+   * writes is one read per subscriber rather than one per write.
+   */
+  const reads: number[] = [];
+  let readsFailed = 0;
+  const pulls = Array.from({ length: subscriberCount }, (_, i) =>
+    coalescer<true>(async () => {
+      const startedAt = performance.now();
+      try {
+        const response = await fetch(
+          `${API_URL}/workspaces/${fixture.workspaceId}/projects/${projectId}/issues?limit=100`,
+          { headers: { cookie: fixture.actors[i]!.cookie } },
+        );
+        await response.text();
+        if (response.ok) reads.push(performance.now() - startedAt);
+        else readsFailed++;
+      } catch {
+        readsFailed++;
+      }
+    }, COALESCE_MS),
+  );
 
   const sockets = await Promise.all(
     Array.from({ length: subscriberCount }, (_, i) =>
-      connectSubscriber(fixture.actors[i]!, fixture.workspaceId, (issueId) => {
+      connectSubscriber(fixture.actors[i]!, fixture.workspaceId, projectId, (issueId) => {
         const record = inFlight.get(issueId);
         if (record) record.receipts.push(performance.now() - record.startedAt);
+        pulls[i]!.push(true);
       }),
     ),
   );
@@ -417,7 +459,6 @@ async function phaseFanout(fixture: Fixture): Promise<FanoutResult> {
   await Bun.sleep(500);
 
   const writer = fixture.actors[0]!;
-  const projectId = fixture.projectIds[0]!;
 
   const ack: number[] = [];
   let published = 0;
@@ -502,6 +543,8 @@ async function phaseFanout(fixture: Fixture): Promise<FanoutResult> {
     failed,
     subscribers: subscriberCount,
     lag: lag.samples,
+    reads,
+    readsFailed,
   };
 }
 
@@ -576,12 +619,20 @@ function reportFanout(result: FanoutResult) {
   row('write ack (HTTP)', 18, summarize(result.ack));
   row('first subscriber', 18, summarize(result.first));
   row('all subscribers', 18, summarize(result.last));
+  row('follow-up read', 18, summarize(result.reads));
 
   console.log('');
   console.log(
     `  delivered   ${result.actualReceipts}/${result.expectedReceipts} ` +
       `(${completeness.toFixed(2)}%) across ${result.published} events`,
   );
+  const perWrite = result.published === 0 ? 0 : result.reads.length / result.published;
+  console.log(
+    `  reads       ${result.reads.length} follow-up reads for ${result.published} writes ` +
+      `(${perWrite.toFixed(2)} per write across ${result.subscribers} boards, ` +
+      `coalesced within ${COALESCE_MS} ms)`,
+  );
+  if (result.readsFailed > 0) console.log(`  read fails  ${result.readsFailed}`);
   if (result.skipped > 0)
     console.log(`  skipped     ${result.skipped} offers (writer at capacity)`);
   if (result.failed > 0) console.log(`  failed      ${result.failed} writes`);
