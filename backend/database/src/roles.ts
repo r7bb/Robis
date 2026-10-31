@@ -221,8 +221,11 @@ export const WORKER_GRANTS: TableGrants = {
   comment_mentions: ['select'],
   // Read by the nudge scan: who has started a document yet.
   documents: ['select'],
-  notifications: ['select', 'insert'],
+  // Delete: read notifications past their retention (stage 3, item 30).
+  notifications: ['select', 'insert', 'delete'],
   sessions: ['select', 'delete'],
+  // Idempotency keys past their replay window (stage 3, item 30).
+  mutations: ['select', 'delete'],
   auth_tokens: ['select', 'insert', 'update', 'delete'],
   username_history: ['select', 'delete'],
   signups: ['select', 'update', 'delete'],

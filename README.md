@@ -146,12 +146,12 @@ with Postgres on the same machine. Method and percentiles in
 
 ## Latest
 
+- **Old records are let go on a schedule.** Retry records replay for 30
+  days; read notifications go after 90.
 - **Indexes for the work that runs on a clock.** Pending jobs and expired
   sessions are each found through an index of their own.
 - **One query to know who you are and where you are.** The session and
   your role in a workspace come from one database query.
-- **One call for both composer hints.** Duplicates and the suggested
-  priority come from one request.
 
 Everything else, newest first, with how each was checked:
 [What's new](docs/WHATS_NEW.md).

@@ -40,6 +40,15 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-31',
+    area: 'Security',
+    title: 'Old records are let go on a schedule',
+    summary:
+      'Two tables only ever grew. The record that lets a retried change be recognised as a repeat, rather than done twice, was kept forever; it now replays for 30 days, which covers a long time offline with room to spare, and is then forgotten. Notifications you have read are removed 90 days after you read them; unread ones stay until you read them. Both are removed by the background worker’s hourly cleanup, which was granted only the two deletions it needs.',
+    checked:
+      'Tests prove the replay window is 30 days, that a retried change inside it still returns the original answer after the cleanup runs, that a key older than the window is forgotten, and that only notifications read more than 90 days ago are removed, unread and recently read ones kept. The cleanup in the tests runs as the worker’s own database account, so a missing grant would fail them. The full suite passes.',
+  },
+  {
+    date: '2026-10-31',
     area: 'Site',
     title: 'Indexes for the work that runs on a clock',
     summary:

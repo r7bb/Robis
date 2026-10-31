@@ -449,7 +449,11 @@ atomic `INSERT ... ON CONFLICT DO NOTHING`, and a replay returns the stored
 response instead of re-running the handler. Reusing a key with a *different*
 body is a 409 rather than a silent replay, because that is a client bug worth
 surfacing. A failed attempt releases its key, so a transient error does not
-poison it permanently.
+poison it permanently. A key replays for 30 days
+([`IDEMPOTENCY_REPLAY_DAYS`](../backend/database/src/retention.ts)), which
+covers a long offline spell with room to spare; the worker's hourly cleanup
+then forgets it, and the same key would count as new. Read notifications go
+after 90 days; unread ones stay.
 
 ### A poison message must not wedge the queue
 

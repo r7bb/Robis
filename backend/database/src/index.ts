@@ -18,6 +18,7 @@ export * from './pagination.ts';
 export * from './presence-bus.ts';
 export * from './queries.ts';
 export * from './queue.ts';
+export * from './retention.ts';
 export * from './roles.ts';
 export * from './schema.ts';
 export * from './search.ts';

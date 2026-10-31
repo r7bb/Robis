@@ -8,6 +8,8 @@ import {
   issues,
   notifications,
   projects,
+  pruneIdempotencyLedger,
+  pruneReadNotifications,
   workspaceMembers,
 } from '@robis/database';
 import { and, eq, ne } from 'drizzle-orm';
@@ -122,6 +124,10 @@ export const cleanupSessions = async (_payload: unknown, { db }: { db: Database 
   await deleteExpiredUsernameHolds(db);
   // And sign-ups nobody finished, which would otherwise name an address forever.
   await deleteStaleSignups(db);
+  // Idempotency keys past their 30-day replay window, and notifications read
+  // more than 90 days ago (stage 3, item 30).
+  await pruneIdempotencyLedger(db);
+  await pruneReadNotifications(db);
 };
 
 /** Periodic scan that decides who could use a prompt. See `nudges.ts`. */
