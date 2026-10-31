@@ -11,7 +11,7 @@
 # ---------------------------------------------------------------------------
 # 3.11, the version the tests run on. Pinned by digest, as a literal FROM
 # line so Dependabot can propose a new one (see backend.Dockerfile).
-FROM python:3.11.16-slim-trixie@sha256:e41613d42d4891e4930f79523f93f81bbc7632584ec65e36ab055f41a800b41e AS build
+FROM python:3.15.0-slim-trixie@sha256:f5b92f2a669a4c347044f29367f31983280b648250ca94dea66f98c53bc87e58 AS build
 ENV PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1
 RUN python -m venv /venv
 COPY robis-ml/requirements.lock /tmp/requirements.lock
@@ -22,7 +22,7 @@ RUN /venv/bin/pip install --require-hashes --only-binary=:all: -r /tmp/requireme
 # package, so no build backend is ever downloaded: everything installed is
 # in the hashed lock. Debian's security updates are applied as in the Bun
 # images, so a fix that exists is in the image.
-FROM python:3.11.16-slim-trixie@sha256:e41613d42d4891e4930f79523f93f81bbc7632584ec65e36ab055f41a800b41e AS ml
+FROM python:3.15.0-slim-trixie@sha256:f5b92f2a669a4c347044f29367f31983280b648250ca94dea66f98c53bc87e58 AS ml
 RUN apt-get update \
   && apt-get -y upgrade --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
