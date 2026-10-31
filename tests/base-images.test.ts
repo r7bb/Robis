@@ -50,6 +50,18 @@ describe('base images', () => {
     expect(config).toMatch(/interval: weekly/);
   });
 
+  test('Dependabot proposes digests only, never a new Bun or Python version', () => {
+    const config = Bun.YAML.parse(readFileSync(join(ROOT, '.github/dependabot.yml'), 'utf8')) as {
+      updates: { ignore?: { 'dependency-name': string; 'update-types': string[] }[] }[];
+    };
+    const ignored = config.updates[0]?.ignore?.find((rule) => rule['dependency-name'] === '*');
+    expect(ignored?.['update-types'].sort()).toEqual([
+      'version-update:semver-major',
+      'version-update:semver-minor',
+      'version-update:semver-patch',
+    ]);
+  });
+
   test('CI rebuilds and scans them on a schedule, not only on a push', () => {
     const workflow = readFileSync(join(ROOT, '.github/workflows/ci.yml'), 'utf8');
     expect(workflow).toMatch(/^ {2}schedule:\n {4}- cron: '[^']+'/m);
