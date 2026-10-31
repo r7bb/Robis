@@ -146,12 +146,12 @@ with Postgres on the same machine. Method and percentiles in
 
 ## Latest
 
+- **One query to know who you are and where you are.** The session and
+  your role in a workspace come from one database query.
 - **One call for both composer hints.** Duplicates and the suggested
   priority come from one request.
 - **Mail goes out the moment it is queued.** The worker wakes on each new
   job instead of polling every second.
-- **Editing together works across gateways.** Editors connected to
-  different gateways see each other live.
 
 Everything else, newest first, with how each was checked:
 [What's new](docs/WHATS_NEW.md).

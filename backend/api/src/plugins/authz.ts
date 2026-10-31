@@ -1,4 +1,4 @@
-import { type AuthenticatedUser, resolveSession } from '@robis/auth';
+import { type AuthenticatedUser, resolveSession, resolveSessionIn } from '@robis/auth';
 import { type AuditActor, type Database, findMembership } from '@robis/database';
 import { can, type Permission, type Role } from '@robis/shared';
 import type { FastifyReply, FastifyRequest, preHandlerHookHandler } from 'fastify';
@@ -11,6 +11,11 @@ declare module 'fastify' {
   }
   interface FastifyRequest {
     user?: AuthenticatedUser;
+    /**
+     * Set by `attachUser` on a workspace route: the role (null for none) that
+     * came with the session, so `requireMembership` need not ask again.
+     */
+    resolvedRole?: { workspaceId: string; role: Role | null };
     /** Set by `requireMembership`; the actor's role in the workspace on the path. */
     membership?: { workspaceId: string; role: Role };
   }
@@ -97,6 +102,17 @@ export function attachUser(db: Database): preHandlerHookHandler {
     const token = sessionToken(request);
     if (!token) return;
 
+    // On a workspace route the membership comes in the same query (stage 3,
+    // item 28), and `requireMembership` uses it rather than asking again.
+    const { workspaceId } = (request.params ?? {}) as { workspaceId?: string };
+    if (workspaceId) {
+      const resolved = await resolveSessionIn(db, token, workspaceId);
+      if (!resolved) return;
+      request.user = resolved.user;
+      request.resolvedRole = { workspaceId, role: resolved.role };
+      return;
+    }
+
     const user = await resolveSession(db, token);
     if (user) request.user = user;
   };
@@ -135,7 +151,13 @@ export function requireMembership(
     // Shared with the WebSocket gateway, so both entry points answer the same
     // question the same way. Returns null for a malformed uuid too, which would
     // otherwise surface as a Postgres cast error and a 500.
-    const member = await findMembership(db, workspaceId, user.id);
+    const resolved = request.resolvedRole;
+    const member =
+      resolved?.workspaceId === workspaceId
+        ? resolved.role
+          ? { role: resolved.role }
+          : null
+        : await findMembership(db, workspaceId, user.id);
 
     if (!member) throw ApiError.notFound('Workspace not found');
     // After the membership check, so a stranger still learns nothing: only a

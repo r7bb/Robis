@@ -209,6 +209,21 @@ export async function refusal(attempt: Promise<unknown>): Promise<string> {
   throw new Error('expected the database to refuse this, and it did not');
 }
 
+let recording: string[] | null = null;
+
+/**
+ * Record the SQL the app runs (its own database account) until the returned
+ * function is called, which hands the statements back.
+ */
+export function recordQueries(): () => string[] {
+  recording = [];
+  return () => {
+    const statements = recording ?? [];
+    recording = null;
+    return statements;
+  };
+}
+
 export async function getHarness() {
   if (handle) return handle;
 
@@ -225,7 +240,12 @@ export async function getHarness() {
   await ensureWorkerRole(owner.db, WORKER_TEST_ROLE);
   await ensureEraserRole(owner.db, ERASER_TEST_ROLE);
 
-  const runtime = createDatabase(asRuntimeRole(TEST_URL), { max: 5 });
+  const runtime = createDatabase(asRuntimeRole(TEST_URL), {
+    max: 5,
+    onQuery: (sql) => {
+      if (recording) recording.push(sql);
+    },
+  });
   const gateway = createDatabase(
     asRole(TEST_URL, GATEWAY_TEST_ROLE.role, GATEWAY_TEST_ROLE.password),
     { max: 3 },

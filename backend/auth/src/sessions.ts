@@ -1,6 +1,6 @@
-import { type Executor, sessions, users } from '@robis/database';
-import { TERMS_VERSION } from '@robis/shared';
-import { and, desc, eq, gt, lt, ne } from 'drizzle-orm';
+import { type Executor, sessions, users, workspaceMembers } from '@robis/database';
+import { isUuid, type Role, TERMS_VERSION } from '@robis/shared';
+import { and, desc, eq, gt, lt, ne, sql } from 'drizzle-orm';
 import {
   generateSessionToken,
   hashSessionToken,
@@ -51,9 +51,30 @@ export async function resolveSession(
   db: Executor,
   token: string,
 ): Promise<AuthenticatedUser | null> {
+  return (await lookUpSession(db, token, null))?.user ?? null;
+}
+
+/**
+ * The session and, in the same query, the user's role in `workspaceId`
+ * (null when not a member): for a request on a workspace route, which
+ * needs both before it can do anything (stage 3, item 28).
+ */
+export async function resolveSessionIn(
+  db: Executor,
+  token: string,
+  workspaceId: string,
+): Promise<{ user: AuthenticatedUser; role: Role | null } | null> {
+  return lookUpSession(db, token, isUuid(workspaceId) ? workspaceId : null);
+}
+
+async function lookUpSession(
+  db: Executor,
+  token: string,
+  workspaceId: string | null,
+): Promise<{ user: AuthenticatedUser; role: Role | null } | null> {
   const tokenHash = hashSessionToken(token);
 
-  const [row] = await db
+  const base = db
     .select({
       sessionId: sessions.id,
       lastUsedAt: sessions.lastUsedAt,
@@ -64,9 +85,18 @@ export async function resolveSession(
       avatarKind: users.avatarKind,
       avatarRef: users.avatarRef,
       termsVersion: users.termsVersion,
+      role: workspaceId ? workspaceMembers.role : sql<null>`null`,
     })
     .from(sessions)
-    .innerJoin(users, eq(users.id, sessions.userId))
+    .innerJoin(users, eq(users.id, sessions.userId));
+  const joined = workspaceId
+    ? base.leftJoin(
+        workspaceMembers,
+        and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, users.id)),
+      )
+    : base;
+
+  const [row] = await joined
     // Expiry is enforced in the query rather than in JS so an expired session
     // can never be treated as valid by a caller that forgets to check. Both
     // limits: 30 days from sign-in, and 7 days since it was last used.
@@ -86,13 +116,16 @@ export async function resolveSession(
   }
 
   return {
-    id: row.id,
-    email: row.email,
-    name: row.name,
-    username: row.username,
-    // Both halves, so a row left half-written can never count as a picture.
-    hasAvatar: row.avatarKind !== null && row.avatarRef !== null,
-    hasAgreed: row.termsVersion === TERMS_VERSION,
+    user: {
+      id: row.id,
+      email: row.email,
+      name: row.name,
+      username: row.username,
+      // Both halves, so a row left half-written can never count as a picture.
+      hasAvatar: row.avatarKind !== null && row.avatarRef !== null,
+      hasAgreed: row.termsVersion === TERMS_VERSION,
+    },
+    role: row.role ?? null,
   };
 }
 

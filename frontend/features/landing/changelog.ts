@@ -40,6 +40,15 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-31',
+    area: 'Security',
+    title: 'One query to know who you are and where you are',
+    summary:
+      'Every request inside a workspace used to ask the database twice before doing anything: once for who the session belongs to, and once for that person’s role in the workspace. Now both come from one query, which joins the membership onto the session lookup for the workspace in the address. The access rules are the same: a stranger still gets not found, a member without the permission still gets forbidden, and an expired or idle session still counts as signed out.',
+    checked:
+      'Tests prove a member reading a workspace costs one query for the session and the membership together, with no second membership lookup; a stranger is still refused with not found from that one query; and a route with no workspace still looks up the session alone. The full suite, which covers every access rule, passes; the change had a security review; and the stack and browser smoke tests passed on the rebuilt stack.',
+  },
+  {
+    date: '2026-10-31',
     area: 'ML',
     title: 'One call for both composer hints',
     summary:

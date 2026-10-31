@@ -32,7 +32,14 @@ export type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
 
 export type Executor = Database | Tx;
 
-export function createDatabase(url: string, options: { max?: number } = {}) {
+export function createDatabase(
+  url: string,
+  options: {
+    max?: number;
+    /** Called with each statement's SQL: for a test that counts round trips. */
+    onQuery?: (sql: string) => void;
+  } = {},
+) {
   const client = postgres(url, {
     max: options.max ?? 10,
     // Prepared statements are per-connection; disabling them keeps behaviour
@@ -43,7 +50,11 @@ export function createDatabase(url: string, options: { max?: number } = {}) {
 
   // Column names are spelled out explicitly in schema.ts, so no casing
   // strategy is configured here -- there is nothing left to infer.
-  const db = drizzle(client, { schema });
+  const { onQuery } = options;
+  const db = drizzle(client, {
+    schema,
+    ...(onQuery ? { logger: { logQuery: (query: string) => onQuery(query) } } : {}),
+  });
 
   return { db, client, close: () => client.end({ timeout: 5 }) };
 }
