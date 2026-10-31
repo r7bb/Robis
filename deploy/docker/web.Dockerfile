@@ -12,7 +12,7 @@
 
 # ---------------------------------------------------------------------------
 # The base is pinned as in backend.Dockerfile, which says why.
-FROM oven/bun:1.4.2-slim@sha256:cb3bbbb08e13a4a2ff400f24c7a2a1d5efa83f6ef8544d52d95a519631e2fc61 AS build
+FROM oven/bun:1.4.4-slim@sha256:1846adf22496bd711036aae8be147e57bdebbaea2e5264e3e0b5af1db187d9a4 AS build
 WORKDIR /app
 COPY package.json bun.lock tsconfig.base.json ./
 COPY frontend ./frontend
@@ -44,7 +44,7 @@ RUN cd frontend/.next/standalone/node_modules/.bun \
 # ---------------------------------------------------------------------------
 # What ships: the pinned image plus Debian's security updates since it was
 # published (see backend.Dockerfile), and the traced server.
-FROM oven/bun:1.4.2-slim@sha256:cb3bbbb08e13a4a2ff400f24c7a2a1d5efa83f6ef8544d52d95a519631e2fc61 AS web
+FROM oven/bun:1.4.4-slim@sha256:1846adf22496bd711036aae8be147e57bdebbaea2e5264e3e0b5af1db187d9a4 AS web
 RUN apt-get update \
   && apt-get -y upgrade --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
