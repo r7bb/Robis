@@ -1,11 +1,8 @@
 'use client';
 
 import type { IssuePriority } from '@robis/shared';
-import { contracts } from '@robis/shared';
-import { useQuery } from '@tanstack/react-query';
 import { PriorityBadge } from '../../components/ui/badges.tsx';
-import { call } from '../../lib/api.ts';
-import { useDebounced } from '../../lib/use-debounced.ts';
+import { useSuggestions } from './use-suggestions.ts';
 
 /**
  * "This reads like a high-priority issue."
@@ -23,11 +20,6 @@ import { useDebounced } from '../../lib/use-debounced.ts';
  *   it did before this existed.
  */
 
-/** Below this, a title is too short to say anything about. */
-const MIN_LENGTH = 12;
-
-const DEBOUNCE_MS = 400;
-
 export function PriorityHint({
   workspaceId,
   title,
@@ -40,17 +32,9 @@ export function PriorityHint({
   chosen: IssuePriority | null;
   onChoose: (priority: IssuePriority | null) => void;
 }) {
-  const settled = useDebounced(title.trim(), DEBOUNCE_MS);
-  const longEnough = settled.length >= MIN_LENGTH;
-
-  const { data } = useQuery({
-    queryKey: ['triage', workspaceId, settled],
-    enabled: longEnough && chosen === null,
-    queryFn: () =>
-      call(contracts['issues.triage'], { params: { workspaceId }, query: { title: settled } }),
-    retry: false,
-    staleTime: 60_000,
-  });
+  // Shared with the duplicate hints: one request for both, which keeps
+  // coming while a priority is chosen because the duplicates still want it.
+  const { suggestion } = useSuggestions(workspaceId, title);
 
   if (chosen !== null) {
     return (
@@ -67,8 +51,7 @@ export function PriorityHint({
     );
   }
 
-  const suggestion = data?.suggestion ?? null;
-  if (!longEnough || suggestion === null) return null;
+  if (suggestion === null) return null;
 
   if (suggestion.priority === null) {
     return (

@@ -39,6 +39,15 @@ export type Entry = {
 
 export const CHANGELOG: readonly Entry[] = [
   {
+    date: '2026-10-31',
+    area: 'ML',
+    title: 'One call for both composer hints',
+    summary:
+      'While you type a new issue’s title, the composer shows issues it may duplicate and suggests a priority. The two hints used to ask separately, and the API asked the suggestion service separately for each, so every settled title cost two round trips and two loads of the workspace’s models. Now one route answers both, the service fits or fetches the workspace’s models once for that answer, and the two hints share it. A malformed half of the answer costs only that hint, and a failing service still means no hints rather than an error.',
+    checked:
+      'Tests prove the route answers both hints from one call to the service, passes a refusal through with its counts, asks only about the caller’s own workspace, refuses non-members and the signed-out without calling the service, rejects a blank or missing title, and degrades to no hints when the service fails; the API’s client makes one request to the combined endpoint and keeps one half when the other is malformed; and the service’s combined answer matches its separate endpoints from one fit. In headless Chrome against the running stack, typing a title into the composer sent one request to the API and one to the service.',
+  },
+  {
     date: '2026-10-30',
     area: 'Product',
     title: 'Mail goes out the moment it is queued',

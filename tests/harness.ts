@@ -14,7 +14,7 @@ import { join } from 'node:path';
 import { buildApp } from '@robis/api/app';
 import { loadEnv } from '@robis/api/env';
 import { resetRateLimits } from '@robis/api/rate-limit';
-import type { SimilarIssue, TriageSuggestion } from '@robis/api/suggestions';
+import type { SimilarIssue, Suggestions, TriageSuggestion } from '@robis/api/suggestions';
 import {
   createDatabase,
   type Database,
@@ -144,63 +144,42 @@ async function ensureTestDatabase() {
  */
 type SuggestionCall = { workspaceId: string; title: string };
 
+/** One entry per call to the service: both hints come from one. */
 export const suggestionCalls: SuggestionCall[] = [];
 
-let suggestionAnswer: SimilarIssue[] = [];
+let similarAnswer: SimilarIssue[] = [];
+let triageAnswer: TriageSuggestion | null = null;
 let suggestionThrows = false;
 
-/** Matches `SuggestionClient['similar']`, description included. */
-async function suggestionStub(
+/** Matches `SuggestionClient['suggest']`, description included. */
+async function suggestStub(
   workspaceId: string,
   title: string,
   _description?: string | null,
-): Promise<SimilarIssue[]> {
+): Promise<Suggestions> {
   suggestionCalls.push({ workspaceId, title });
 
   if (suggestionThrows) throw new Error('connection refused');
-  return suggestionAnswer;
+  return { similar: similarAnswer, triage: triageAnswer };
 }
 
-/** Set what the next calls return, and forget earlier calls. */
+/** Set the duplicates the next calls return, and forget earlier calls. */
 export function setSuggestions(answer: SimilarIssue[]) {
-  suggestionAnswer = answer;
+  similarAnswer = answer;
   suggestionThrows = false;
   suggestionCalls.length = 0;
+}
+
+/** Set the priority the next calls return. */
+export function setTriage(answer: TriageSuggestion | null) {
+  triageAnswer = answer;
+  suggestionThrows = false;
 }
 
 /** Make the client throw, to prove a broken service cannot break the route. */
 export function breakSuggestions() {
   suggestionThrows = true;
   suggestionCalls.length = 0;
-}
-
-/** What the priority model "returns", and what it was asked. */
-export const triageCalls: SuggestionCall[] = [];
-
-let triageAnswer: TriageSuggestion | null = null;
-let triageThrows = false;
-
-/** Matches `SuggestionClient['triage']`. */
-async function triageStub(
-  workspaceId: string,
-  title: string,
-  _description?: string | null,
-): Promise<TriageSuggestion | null> {
-  triageCalls.push({ workspaceId, title });
-
-  if (triageThrows) throw new Error('connection refused');
-  return triageAnswer;
-}
-
-export function setTriage(answer: TriageSuggestion | null) {
-  triageAnswer = answer;
-  triageThrows = false;
-  triageCalls.length = 0;
-}
-
-export function breakTriage() {
-  triageThrows = true;
-  triageCalls.length = 0;
 }
 
 /** Built once and shared; each test isolates itself with `resetDatabase`. */
@@ -291,9 +270,9 @@ export async function getHarness() {
     db,
     env,
     // A stub, never the real client: the suite must not depend on a Python
-    // service being up, and must never reach the network. `suggestionStub`
+    // service being up, and must never reach the network. `suggestStub`
     // below lets one test decide what it answers.
-    suggestions: { similar: suggestionStub, triage: triageStub },
+    suggestions: { suggest: suggestStub },
     // Uploads go to a throwaway directory, never into the repository.
     storage: localDiskStorage(MEDIA_ROOT),
     signupFloorMs: 0,

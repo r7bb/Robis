@@ -3,7 +3,6 @@ import { createSuggestionClient, parseTriage } from '@robis/api/suggestions';
 import {
   addMember,
   breakSuggestions,
-  breakTriage,
   closeHarness,
   createActor,
   createWorkspace,
@@ -12,59 +11,78 @@ import {
   setSuggestions,
   setTriage,
   suggestionCalls,
-  triageCalls,
 } from './harness.ts';
+
+/**
+ * The composer's hints (stage 3, item 27): possible duplicates and a
+ * suggested priority for a draft, from one route making one call to the
+ * suggestion service per settled title.
+ */
 
 beforeEach(async () => {
   await resetDatabase();
   setSuggestions([]);
+  setTriage(null);
 });
 afterAll(closeHarness);
 
-function similarUrl(workspaceId: string, title: string) {
-  return `/workspaces/${workspaceId}/issues/similar?title=${encodeURIComponent(title)}`;
+function suggestionsUrl(workspaceId: string, title: string) {
+  return `/workspaces/${workspaceId}/issues/suggestions?title=${encodeURIComponent(title)}`;
 }
 
-describe('duplicate suggestions', () => {
-  test('returns what the service found', async () => {
+describe('suggestions for a draft', () => {
+  test('answers with both hints from one call to the service', async () => {
     const owner = await createActor('Owner');
     const workspace = await createWorkspace(owner);
-
     setSuggestions([{ id: 'abc', title: 'Rate limit the auth endpoints', score: 0.64 }]);
+    setTriage({ priority: 'HIGH', score: 0.62 });
 
-    const response = await request(similarUrl(workspace.id, 'Throttle the auth endpoints'), {
+    const response = await request(suggestionsUrl(workspace.id, 'Throttle the auth endpoints'), {
       actor: owner,
     });
 
     expect(response.statusCode).toBe(200);
-    expect(response.json().similar).toHaveLength(1);
-    expect(response.json().similar[0].title).toBe('Rate limit the auth endpoints');
+    const answer: unknown = response.json();
+    expect(answer).toEqual({
+      similar: [{ id: 'abc', title: 'Rate limit the auth endpoints', score: 0.64 }],
+      suggestion: { priority: 'HIGH', score: 0.62 },
+    });
+    expect(suggestionCalls).toHaveLength(1);
+  });
+
+  test('passes a refusal through, so the composer can say why there is no priority', async () => {
+    const owner = await createActor('Owner');
+    const workspace = await createWorkspace(owner);
+    setTriage({ priority: null, trainedOn: 9, needed: 40 });
+
+    const response = await request(suggestionsUrl(workspace.id, 'anything at all'), {
+      actor: owner,
+    });
+
+    expect(response.json().suggestion).toEqual({ priority: null, trainedOn: 9, needed: 40 });
   });
 
   test('asks only about the caller’s own workspace', async () => {
     const owner = await createActor('Owner');
     const workspace = await createWorkspace(owner);
 
-    await request(similarUrl(workspace.id, 'anything'), { actor: owner });
+    await request(suggestionsUrl(workspace.id, 'anything'), { actor: owner });
 
     // The ML service trusts whatever workspace id it is handed, so the id
     // crossing that boundary must be the one membership was checked against.
-    expect(suggestionCalls).toHaveLength(1);
-    expect(suggestionCalls[0]!.workspaceId).toBe(workspace.id);
+    expect(suggestionCalls).toEqual([{ workspaceId: workspace.id, title: 'anything' }]);
   });
 
   test('a non-member gets not found and the service is never called', async () => {
     const owner = await createActor('Owner');
     const stranger = await createActor('Stranger');
     const workspace = await createWorkspace(owner);
-
     setSuggestions([{ id: 'secret', title: 'Leaked title', score: 0.9 }]);
 
-    const response = await request(similarUrl(workspace.id, 'x'), { actor: stranger });
+    const response = await request(suggestionsUrl(workspace.id, 'x'), { actor: stranger });
 
     expect(response.statusCode).toBe(404);
-    // Not merely filtered out of the response: never asked for, so a title
-    // cannot escape through a log line or a timing difference either.
+    expect(response.body).not.toContain('Leaked title');
     expect(suggestionCalls).toHaveLength(0);
   });
 
@@ -72,7 +90,7 @@ describe('duplicate suggestions', () => {
     const owner = await createActor('Owner');
     const workspace = await createWorkspace(owner);
 
-    const response = await request(similarUrl(workspace.id, 'x'));
+    const response = await request(suggestionsUrl(workspace.id, 'x'));
 
     expect(response.statusCode).toBe(401);
     expect(suggestionCalls).toHaveLength(0);
@@ -84,112 +102,35 @@ describe('duplicate suggestions', () => {
     const workspace = await createWorkspace(owner);
     await addMember(owner, workspace.id, guest, 'GUEST');
 
-    const response = await request(similarUrl(workspace.id, 'x'), { actor: guest });
+    const response = await request(suggestionsUrl(workspace.id, 'x'), { actor: guest });
 
     expect(response.statusCode).toBe(200);
   });
 
-  test('a blank title is rejected rather than sent on', async () => {
+  test('a blank or missing title is rejected rather than sent on', async () => {
     const owner = await createActor('Owner');
     const workspace = await createWorkspace(owner);
 
-    const response = await request(similarUrl(workspace.id, '   '), { actor: owner });
-
-    expect(response.statusCode).toBe(400);
-    expect(suggestionCalls).toHaveLength(0);
-  });
-
-  /**
-   * The property the whole feature rests on: suggestions are a nicety and
-   * filing an issue is the job, so nothing about a broken ML service may
-   * reach the person writing one.
-   */
-  test('a failing service degrades to no suggestions, not an error', async () => {
-    const owner = await createActor('Owner');
-    const workspace = await createWorkspace(owner);
-
-    breakSuggestions();
-
-    const response = await request(similarUrl(workspace.id, 'anything'), { actor: owner });
-
-    expect(response.statusCode).toBe(200);
-    expect(response.json().similar).toEqual([]);
-  });
-});
-
-function triageUrl(workspaceId: string, title: string) {
-  return `/workspaces/${workspaceId}/issues/triage?title=${encodeURIComponent(title)}`;
-}
-
-describe('priority suggestions', () => {
-  beforeEach(() => setTriage(null));
-
-  test('returns the suggested priority and its score', async () => {
-    const owner = await createActor('Owner');
-    const workspace = await createWorkspace(owner);
-    setTriage({ priority: 'HIGH', score: 0.62 });
-
-    const response = await request(triageUrl(workspace.id, 'Login fails for everyone'), {
+    const blank = await request(suggestionsUrl(workspace.id, '   '), { actor: owner });
+    const missing = await request(`/workspaces/${workspace.id}/issues/suggestions`, {
       actor: owner,
     });
 
-    expect(response.statusCode).toBe(200);
-    expect(response.json().suggestion).toEqual({ priority: 'HIGH', score: 0.62 });
+    expect(blank.statusCode).toBe(400);
+    expect(missing.statusCode).toBe(400);
+    expect(suggestionCalls).toHaveLength(0);
   });
 
-  test('passes a refusal through, so the composer can say why there is none', async () => {
+  test('a failing service degrades to no hints, not an error', async () => {
     const owner = await createActor('Owner');
     const workspace = await createWorkspace(owner);
-    setTriage({ priority: null, trainedOn: 9, needed: 40 });
+    breakSuggestions();
 
-    const response = await request(triageUrl(workspace.id, 'anything at all'), { actor: owner });
-
-    expect(response.json().suggestion).toEqual({ priority: null, trainedOn: 9, needed: 40 });
-  });
-
-  test('asks only about the caller’s own workspace', async () => {
-    const owner = await createActor('Owner');
-    const workspace = await createWorkspace(owner);
-
-    await request(triageUrl(workspace.id, 'anything'), { actor: owner });
-
-    expect(triageCalls).toHaveLength(1);
-    expect(triageCalls[0]!.workspaceId).toBe(workspace.id);
-  });
-
-  test('a non-member gets not found and the service is never called', async () => {
-    const owner = await createActor('Owner');
-    const stranger = await createActor('Stranger');
-    const workspace = await createWorkspace(owner);
-    setTriage({ priority: 'URGENT', score: 0.9 });
-
-    const response = await request(triageUrl(workspace.id, 'x'), { actor: stranger });
-
-    expect(response.statusCode).toBe(404);
-    expect(triageCalls).toHaveLength(0);
-  });
-
-  test('a broken service answers with no suggestion, never an error', async () => {
-    const owner = await createActor('Owner');
-    const workspace = await createWorkspace(owner);
-    breakTriage();
-
-    const response = await request(triageUrl(workspace.id, 'anything'), { actor: owner });
+    const response = await request(suggestionsUrl(workspace.id, 'anything'), { actor: owner });
 
     expect(response.statusCode).toBe(200);
-    expect(response.json().suggestion).toBeNull();
-  });
-
-  test('a guest may read suggestions like any other issue data', async () => {
-    const owner = await createActor('Owner');
-    const guest = await createActor('Guest');
-    const workspace = await createWorkspace(owner);
-    await addMember(owner, workspace.id, guest, 'GUEST');
-    setTriage({ priority: 'LOW', score: 0.4 });
-
-    const response = await request(triageUrl(workspace.id, 'anything'), { actor: guest });
-
-    expect(response.statusCode).toBe(200);
+    const answer: unknown = response.json();
+    expect(answer).toEqual({ similar: [], suggestion: null });
   });
 });
 
@@ -219,17 +160,6 @@ describe('parseTriage', () => {
   });
 });
 
-describe('the priority route rejects a draft with no title', () => {
-  test('a missing title is a bad request', async () => {
-    const owner = await createActor('Owner');
-    const workspace = await createWorkspace(owner);
-
-    const response = await request(`/workspaces/${workspace.id}/issues/triage`, { actor: owner });
-
-    expect(response.statusCode).toBe(400);
-  });
-});
-
 describe('the real suggestion client', () => {
   // A stand-in ML service on a random local port, so the HTTP path itself
   // (auth header, endpoint, parsing, failure handling) is exercised rather
@@ -253,39 +183,68 @@ describe('the real suggestion client', () => {
     quiet,
   );
 
-  test('asks the triage endpoint with the token and parses the answer', async () => {
-    answer = { status: 200, body: { priority: 'URGENT', score: 0.7, trained_on: 50, needed: 40 } };
+  test('asks the combined endpoint once, with the token, and parses both halves', async () => {
+    answer = {
+      status: 200,
+      body: {
+        similar: [{ id: 'i1', title: 'Login loops', score: 0.7 }],
+        corpus_size: 10,
+        triage: { priority: 'URGENT', score: 0.7, trained_on: 50, needed: 40 },
+        model_age_seconds: 3,
+      },
+    };
+    const before = seen.length;
 
-    const result = await client.triage('ws-1', 'Everything is down');
+    const result = await client.suggest('ws-1', 'Everything is down');
 
-    expect(result).toEqual({ priority: 'URGENT', score: 0.7 });
-    expect(seen.at(-1)).toEqual({ path: '/workspaces/ws-1/triage', auth: 'Bearer secret' });
+    expect(result).toEqual({
+      similar: [{ id: 'i1', title: 'Login loops', score: 0.7 }],
+      triage: { priority: 'URGENT', score: 0.7 },
+    });
+    expect(seen.slice(before)).toEqual([
+      { path: '/workspaces/ws-1/suggestions', auth: 'Bearer secret' },
+    ]);
   });
 
   test('passes a refusal through with its counts', async () => {
-    answer = { status: 200, body: { priority: null, score: null, trained_on: 3, needed: 40 } };
+    answer = {
+      status: 200,
+      body: { similar: [], triage: { priority: null, score: null, trained_on: 3, needed: 40 } },
+    };
 
-    expect(await client.triage('ws-1', 'x')).toEqual({ priority: null, trainedOn: 3, needed: 40 });
+    expect((await client.suggest('ws-1', 'x')).triage).toEqual({
+      priority: null,
+      trainedOn: 3,
+      needed: 40,
+    });
   });
 
-  test('an error from the service becomes no suggestion', async () => {
+  test('an error from the service becomes no hints', async () => {
     answer = { status: 500, body: { detail: 'boom' } };
 
-    expect(await client.triage('ws-1', 'x')).toBeNull();
-    expect(await client.similar('ws-1', 'x')).toEqual([]);
+    expect(await client.suggest('ws-1', 'x')).toEqual({ similar: [], triage: null });
   });
 
   test('forwards the request id, so one trace spans the API and the model', async () => {
-    answer = { status: 200, body: { similar: [] } };
+    answer = { status: 200, body: { similar: [], triage: null } };
 
-    await client.similar('ws-1', 'x', null, { requestId: 'trace-abc-12345' });
+    await client.suggest('ws-1', 'x', null, { requestId: 'trace-abc-12345' });
 
     expect(lastRequestId).toBe('trace-abc-12345');
   });
 
-  test('a malformed answer becomes no suggestion', async () => {
-    answer = { status: 200, body: { priority: 'SOMEDAY', score: 3 } };
+  test('a malformed half becomes no hint, and leaves the other half', async () => {
+    answer = {
+      status: 200,
+      body: {
+        similar: [{ id: 'i1', title: 'Kept', score: 0.9 }],
+        triage: { priority: 'SOMEDAY', score: 3 },
+      },
+    };
 
-    expect(await client.triage('ws-1', 'x')).toBeNull();
+    expect(await client.suggest('ws-1', 'x')).toEqual({
+      similar: [{ id: 'i1', title: 'Kept', score: 0.9 }],
+      triage: null,
+    });
   });
 });

@@ -14,7 +14,7 @@ Written to be checkable. Every row names a file you can open.
 | --- | --- |
 | Services | 4 (web, API, realtime gateway, worker) plus an optional ML service |
 | Database tables | 18 |
-| HTTP endpoints | 84 |
+| HTTP endpoints | 83 |
 | Tests | Counted in [docs/ROADMAP.md](docs/ROADMAP.md), the one place they are kept |
 | Screenshots | 28, all captured from the running app |
 | Measured throughput | ~4,400 req/s, zero errors |

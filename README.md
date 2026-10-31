@@ -146,12 +146,12 @@ with Postgres on the same machine. Method and percentiles in
 
 ## Latest
 
+- **One call for both composer hints.** Duplicates and the suggested
+  priority come from one request.
 - **Mail goes out the moment it is queued.** The worker wakes on each new
   job instead of polling every second.
 - **Editing together works across gateways.** Editors connected to
   different gateways see each other live.
-- **The live connection sends only what a page shows.** A board never
-  hears chat; each page gets only its own events.
 
 Everything else, newest first, with how each was checked:
 [What's new](docs/WHATS_NEW.md).

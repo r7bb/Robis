@@ -41,19 +41,17 @@ export type TriageSuggestion =
 /** Carried to the ML service so one request id spans both processes' logs. */
 export type CallContext = { requestId?: string };
 
+/** Both hints for a draft (stage 3, item 27). */
+export type Suggestions = { similar: SimilarIssue[]; triage: TriageSuggestion | null };
+
 export type SuggestionClient = {
-  similar(
+  /** Duplicates and a priority for one draft, in one call to the service. */
+  suggest(
     workspaceId: string,
     title: string,
     description?: string | null,
     context?: CallContext,
-  ): Promise<SimilarIssue[]>;
-  triage(
-    workspaceId: string,
-    title: string,
-    description?: string | null,
-    context?: CallContext,
-  ): Promise<TriageSuggestion | null>;
+  ): Promise<Suggestions>;
 };
 
 export type SuggestionConfig = {
@@ -73,11 +71,8 @@ export type SuggestionConfig = {
 
 /** The feature switched off. Used when no URL is configured, and in tests. */
 export const noSuggestions: SuggestionClient = {
-  async similar() {
-    return [];
-  },
-  async triage() {
-    return null;
+  async suggest() {
+    return { similar: [], triage: null };
   },
 };
 
@@ -164,7 +159,7 @@ export function createSuggestionClient(
   /** The service's JSON for one endpoint, or `undefined` on any failure. */
   async function ask(
     workspaceId: string,
-    endpoint: 'similar' | 'triage',
+    endpoint: 'suggestions',
     title: string,
     description: string | null | undefined,
     context: CallContext | undefined,
@@ -202,11 +197,13 @@ export function createSuggestionClient(
   }
 
   return {
-    async similar(workspaceId, title, description, context) {
-      return parse(await ask(workspaceId, 'similar', title, description, context));
-    },
-    async triage(workspaceId, title, description, context) {
-      return parseTriage(await ask(workspaceId, 'triage', title, description, context));
+    async suggest(workspaceId, title, description, context) {
+      const body = await ask(workspaceId, 'suggestions', title, description, context);
+      // Each half on its own: a malformed priority does not cost the duplicates.
+      return {
+        similar: parse(body),
+        triage: parseTriage((body as { triage?: unknown } | undefined)?.triage),
+      };
     },
   };
 }

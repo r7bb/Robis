@@ -1981,10 +1981,10 @@
         }
       }
     },
-    "/workspaces/{workspaceId}/issues/similar": {
+    "/workspaces/{workspaceId}/issues/suggestions": {
       "get": {
-        "operationId": "issues.similar",
-        "summary": "Issues that may be duplicates of a draft; empty when the service has nothing.",
+        "operationId": "issues.suggestions",
+        "summary": "Hints for a draft, from one call to the suggestion service: issues it may duplicate, and a suggested priority (or a refusal with the counts it needs, or null for nothing to say).",
         "parameters": [
           {
             "name": "workspaceId",
@@ -2054,70 +2054,7 @@
                         ],
                         "additionalProperties": false
                       }
-                    }
-                  },
-                  "required": [
-                    "similar"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/workspaces/{workspaceId}/issues/triage": {
-      "get": {
-        "operationId": "issues.triage",
-        "summary": "A suggested priority for a draft, a refusal with the counts it needs, or null for nothing to say.",
-        "parameters": [
-          {
-            "name": "workspaceId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-            }
-          },
-          {
-            "name": "title",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 200
-            }
-          },
-          {
-            "name": "description",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 20000
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$schema": "https://json-schema.org/draft/2020-12/schema",
-                  "type": "object",
-                  "properties": {
+                    },
                     "suggestion": {
                       "anyOf": [
                         {
@@ -2173,6 +2110,7 @@
                     }
                   },
                   "required": [
+                    "similar",
                     "suggestion"
                   ],
                   "additionalProperties": false

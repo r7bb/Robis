@@ -76,57 +76,30 @@ export async function issueRoutes(
    * other route. The ML service trusts whatever workspace id it is handed,
    * so this is the only place that decides whether the caller may ask.
    */
-  serve(
-    app,
-    contracts['issues.similar'],
-    { preHandler: [requireAuth, requireMembership(db, 'issue:read')] },
-    async (request, { query }) => {
-      const { workspaceId } = currentMembership(request);
-
-      /*
-       * Caught here as well as inside the client. The client swallows its
-       * own network failures, but this route must hold the stronger
-       * property: whatever the client is, and however it breaks, a person
-       * filing an issue never sees an error from a hint.
-       */
-      try {
-        return {
-          similar: await suggestions.similar(workspaceId, query.title, query.description, {
-            requestId: request.id,
-          }),
-        };
-      } catch (error) {
-        request.log.warn({ err: error }, 'suggestion lookup failed');
-        return { similar: [] };
-      }
-    },
-  );
-
-  /**
-   * A suggested priority for the issue being written, or why there is none.
-   *
-   * Same shape and same rules as the duplicate hints above: a GET over the
-   * draft, membership checked here because the ML service trusts the id it
-   * is handed, and no failure of that service ever reaches the composer.
-   * `suggestion: null` means "nothing to say"; a refusal for lack of
-   * training data comes through as its own answer with the counts.
+  /*
+   * Both hints for a draft, from one call to the suggestion service per
+   * settled title (stage 3, item 27). Caught here as well as inside the
+   * client: whatever the client is, and however it breaks, a person filing
+   * an issue never sees an error from a hint.
    */
   serve(
     app,
-    contracts['issues.triage'],
+    contracts['issues.suggestions'],
     { preHandler: [requireAuth, requireMembership(db, 'issue:read')] },
     async (request, { query }) => {
       const { workspaceId } = currentMembership(request);
 
       try {
-        return {
-          suggestion: await suggestions.triage(workspaceId, query.title, query.description, {
-            requestId: request.id,
-          }),
-        };
+        const { similar, triage } = await suggestions.suggest(
+          workspaceId,
+          query.title,
+          query.description,
+          { requestId: request.id },
+        );
+        return { similar, suggestion: triage };
       } catch (error) {
-        request.log.warn({ err: error }, 'priority suggestion failed');
-        return { suggestion: null };
+        request.log.warn({ err: error }, 'suggestion lookup failed');
+        return { similar: [], suggestion: null };
       }
     },
   );

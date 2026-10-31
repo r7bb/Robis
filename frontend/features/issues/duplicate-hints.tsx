@@ -1,10 +1,7 @@
 'use client';
 
-import { contracts } from '@robis/shared';
-import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { call } from '../../lib/api.ts';
-import { useDebounced } from '../../lib/use-debounced.ts';
+import { useSuggestions } from './use-suggestions.ts';
 
 /**
  * "You may already have filed this."
@@ -21,29 +18,10 @@ import { useDebounced } from '../../lib/use-debounced.ts';
  * without `robis-ml` looks exactly as it did before this existed.
  */
 
-/** Below this, a title is too short to say anything about. */
-const MIN_LENGTH = 12;
-
-/** Long enough that a typist is not firing a request per keystroke. */
-const DEBOUNCE_MS = 400;
-
 export function DuplicateHints({ workspaceId, title }: { workspaceId: string; title: string }) {
-  const settled = useDebounced(title.trim(), DEBOUNCE_MS);
-  const longEnough = settled.length >= MIN_LENGTH;
-
-  const { data } = useQuery({
-    queryKey: ['similar', workspaceId, settled],
-    enabled: longEnough,
-    queryFn: () =>
-      call(contracts['issues.similar'], { params: { workspaceId }, query: { title: settled } }),
-    // A hint is not worth retrying for, and a stale answer for a title the
-    // writer has moved past is worse than none.
-    retry: false,
-    staleTime: 60_000,
-  });
-
-  const similar = data?.similar ?? [];
-  if (!longEnough || similar.length === 0) return null;
+  // Shared with the priority hint: one request for both.
+  const { similar } = useSuggestions(workspaceId, title);
+  if (similar.length === 0) return null;
 
   return (
     <aside

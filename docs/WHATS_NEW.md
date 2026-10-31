@@ -4,6 +4,8 @@ Newest first. The same list is the site's What's new page, where each entry
 opens to show how it was checked and, for features, where to find it and
 what each layer does. Back to the [README](../README.md).
 
+- **One call for both composer hints** (2026-10-31). Duplicate hints and the
+  suggested priority come from one request and one model load.
 - **Mail goes out the moment it is queued** (2026-10-30). Queueing a job
   wakes the worker at once; it no longer polls every second.
 - **Editing together works across gateways** (2026-10-30). Gateways tell

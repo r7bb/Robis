@@ -48,26 +48,17 @@ const comment = z.object({
 });
 
 export const issueContracts = {
-  'issues.similar': contract({
+  'issues.suggestions': contract({
     method: 'GET',
-    path: '/workspaces/:workspaceId/issues/similar',
-    summary: 'Issues that may be duplicates of a draft; empty when the service has nothing.',
+    path: '/workspaces/:workspaceId/issues/suggestions',
+    summary:
+      'Hints for a draft, from one call to the suggestion service: issues it may duplicate, and a suggested priority (or a refusal with the counts it needs, or null for nothing to say).',
     params: workspaceParams,
     query: similarIssuesQuerySchema,
     // The ML service's answer, already checked by the API's client; kept
     // loose here so nothing it sends can turn a hint into an error.
     response: z.object({
       similar: z.array(z.object({ id: z.string(), title: z.string(), score: z.number() })),
-    }),
-  }),
-  'issues.triage': contract({
-    method: 'GET',
-    path: '/workspaces/:workspaceId/issues/triage',
-    summary:
-      'A suggested priority for a draft, a refusal with the counts it needs, or null for nothing to say.',
-    params: workspaceParams,
-    query: similarIssuesQuerySchema,
-    response: z.object({
       suggestion: z
         .union([
           z.object({ priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']), score: z.number() }),
