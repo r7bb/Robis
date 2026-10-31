@@ -8,15 +8,16 @@
 # Build from the repository root:
 #   docker build -f deploy/docker/backend.Dockerfile --target api -t robis-api .
 
+# ---------------------------------------------------------------------------
 # Pinned by digest as well as version, so a rebuilt image starts from the
 # same bytes. Bun 1.4.2 is the version CI and development use.
-ARG BUN_IMAGE=oven/bun:1.4.2-slim@sha256:cb3bbbb08e13a4a2ff400f24c7a2a1d5efa83f6ef8544d52d95a519631e2fc61
-
-# ---------------------------------------------------------------------------
-# The pinned image plus Debian's security updates since it was published, so
-# a fix that exists is in the image even before the base is re-pinned. The
-# image scan in CI fails on any critical finding that has a fix.
-FROM ${BUN_IMAGE} AS base
+# Debian's security updates since the base was published are applied too,
+# because the pinned base still has fixable critical findings (oven/bun
+# 1.4.2-slim had three on 2026-10-31); the image scan in CI fails on any.
+# Pins are literal FROM lines so Dependabot can propose a new digest each
+# week, and CI rebuilds and scans every Monday; once a re-pinned base scans
+# clean, this upgrade step goes (stage 4, item 38; docs/ROADMAP.md).
+FROM oven/bun:1.4.2-slim@sha256:cb3bbbb08e13a4a2ff400f24c7a2a1d5efa83f6ef8544d52d95a519631e2fc61 AS base
 RUN apt-get update \
   && apt-get -y upgrade --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*

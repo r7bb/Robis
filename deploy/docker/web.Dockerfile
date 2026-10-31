@@ -10,10 +10,9 @@
 #     --build-arg NEXT_PUBLIC_API_URL=https://api.example.com \
 #     --build-arg NEXT_PUBLIC_REALTIME_URL=wss://rt.example.com/ws -t robis-web .
 
-ARG BUN_IMAGE=oven/bun:1.4.2-slim@sha256:cb3bbbb08e13a4a2ff400f24c7a2a1d5efa83f6ef8544d52d95a519631e2fc61
-
 # ---------------------------------------------------------------------------
-FROM ${BUN_IMAGE} AS build
+# The base is pinned as in backend.Dockerfile, which says why.
+FROM oven/bun:1.4.2-slim@sha256:cb3bbbb08e13a4a2ff400f24c7a2a1d5efa83f6ef8544d52d95a519631e2fc61 AS build
 WORKDIR /app
 COPY package.json bun.lock tsconfig.base.json ./
 COPY frontend ./frontend
@@ -45,7 +44,7 @@ RUN cd frontend/.next/standalone/node_modules/.bun \
 # ---------------------------------------------------------------------------
 # What ships: the pinned image plus Debian's security updates since it was
 # published (see backend.Dockerfile), and the traced server.
-FROM ${BUN_IMAGE} AS web
+FROM oven/bun:1.4.2-slim@sha256:cb3bbbb08e13a4a2ff400f24c7a2a1d5efa83f6ef8544d52d95a519631e2fc61 AS web
 RUN apt-get update \
   && apt-get -y upgrade --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*

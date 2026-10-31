@@ -4,13 +4,20 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Every Monday, with or without a push: the images are rebuilt from their
+  # pinned bases and scanned, so a critical finding published since the
+  # last push fails a run (stage 4, item 38).
+  schedule:
+    - cron: '0 6 * * 1'
 
 # The token reads the repository and nothing else; no job here writes.
 permissions:
   contents: read
 
+# A newer push cancels an older one; the weekly run has a group of its own,
+# so a push never cancels the scan and the scan never cancels a push.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 jobs:
@@ -185,13 +192,19 @@ jobs:
       # build contexts from where it runs. Read access to the repository and
       # read and write access to the cache are granted explicitly. The one-shot
       # migrate and seed services share the API image, which `migrate` builds.
+      # The weekly run restores no layers, so the security upgrade step runs
+      # afresh and picks up fixes published since the last build.
       - name: Build every image
         working-directory: deploy
+        env:
+          EVENT: ${{ github.event_name }}
         run: |
           set -- mail migrate realtime worker ml web
           args=""
           for image in "$@"; do
-            args="$args --set $image.cache-from=type=local,src=/tmp/buildx-cache/$image"
+            if [ "$EVENT" != schedule ]; then
+              args="$args --set $image.cache-from=type=local,src=/tmp/buildx-cache/$image"
+            fi
             args="$args --set $image.cache-to=type=local,dest=/tmp/buildx-cache-new/$image,mode=max"
           done
           # shellcheck disable=SC2086

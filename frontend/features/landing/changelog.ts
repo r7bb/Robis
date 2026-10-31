@@ -45,6 +45,17 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-31',
+    area: 'Security',
+    title: 'Base images are re-pinned on a schedule',
+    brief:
+      'Dependabot proposes new base image digests weekly and CI rebuilds and scans every Monday; the security upgrade step stays until a new base scans clean.',
+    summary:
+      'Each container starts from a base image pinned by digest. The pins were written in a form Dependabot cannot read, so nothing ever proposed a newer one, and a vulnerability published after the last push went unseen until the next. The pins are now plain lines Dependabot updates, it proposes new digests every week, and CI rebuilds and scans every image each Monday with or without a push. The plan was also to stop applying Debian’s security updates during the build and rely on re-pinning alone. That was not done: the newest Bun base image still has three critical findings with a fix, which only the update step removes.',
+    checked:
+      'A test fails if any image starts from a base that is not a literal name, version and digest, if Dependabot stops covering them, or if CI loses its schedule; against the files as they were, it failed on the pins and the schedule. The newest digests were looked up for both bases (the pins were current) and scanned with the same scanner and settings as CI: the Python base had no critical findings, the Bun base had three, all fixed by the update step. A security review of the change found that a push could cancel the weekly run and that cached layers could hide new fixes; the weekly run now has its own group and builds without the cache, and the test covers both.',
+  },
+  {
+    date: '2026-10-31',
     area: 'Site',
     title: 'Each topic is written in one place',
     brief:

@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Base images are re-pinned on a schedule** (2026-10-31). Dependabot
+  proposes new base image digests weekly and CI rebuilds and scans every
+  Monday; the security upgrade step stays until a new base scans clean.
 - **Each topic is written in one place** (2026-10-31). Status, known gaps
   and what is not being built live in the roadmap alone; stale lines saying
   account events are not recorded are corrected.

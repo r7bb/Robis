@@ -1,0 +1,11 @@
+# Proposes a new digest for each pinned base image (the FROM lines in
+# deploy/docker), once a week. CI builds and scans the proposed images on
+# the pull request before anything is merged (stage 4, item 38).
+version: 2
+updates:
+  - package-ecosystem: docker
+    directory: /deploy/docker
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
