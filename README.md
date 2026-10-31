@@ -146,12 +146,12 @@ with Postgres on the same machine. Method and percentiles in
 
 ## Latest
 
+- **The landing loads its heavy parts as you reach them.** The field and
+  the live demo download after the page is usable, as they come into view.
 - **The benchmark counts what a write costs afterwards.** Follow-up reads
   per write, and refreshed figures.
 - **Image uploads hold their line.** Decoding never passes its cap, and a
   flood is told when to come back.
-- **Old records are let go on a schedule.** Retry records replay for 30
-  days; read notifications go after 90.
 
 Everything else, newest first, with how each was checked:
 [What's new](docs/WHATS_NEW.md).

@@ -41,6 +41,15 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-31',
     area: 'Site',
+    title: 'The landing loads its heavy parts as you reach them',
+    summary:
+      'The moving field behind the landing and the live two-editor demo were part of the page’s first load, though the demo sits well below the fold. Each is now its own download, fetched after the page is usable and only once its spot comes within 200 pixels of the screen. The demo’s space is held at its real height while it loads, so nothing below it jumps. With reduced motion turned on, the field still draws one still frame and the demo still does not animate.',
+    checked:
+      'A test refuses any landing file that imports the field or the demo directly, so neither can slip back into the first load. In headless Chrome on the rebuilt stack, the field drew at the top, the demo was absent until scrolled near and then appeared, its held space measured the same 299 pixels as the demo itself, and the closing field drew at the bottom. The browser smoke test passed. Honestly: with the processor slowed six times, the page became interactive in about the same time as before, so the gain is in what the first load carries, not a faster measured start.',
+  },
+  {
+    date: '2026-10-31',
+    area: 'Site',
     title: 'The benchmark counts what a write costs afterwards',
     summary:
       'The load harness measured how fast a write reached every open client, but not what happened next: each open board then reads its issues again. Now each simulated client acts as an open board, scoped to its project and coalescing as the web app does, and the report counts the follow-up reads each write causes and times them. Across 50 open boards a write costs 14 reads, where it would cost 50 without coalescing. The harness had also stopped measuring anything since pictures became required: its test accounts had none, so every request was refused. They have one now, and the published figures are refreshed from three new runs.',

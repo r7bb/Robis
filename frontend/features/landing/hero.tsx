@@ -3,11 +3,10 @@
 import Link from 'next/link';
 import { type RefObject, useCallback, useRef, useState } from 'react';
 import { FILLED, OUTLINED } from './band.tsx';
-import { Field } from './field.tsx';
 import { type FieldMode, modeForLetter } from './field-modes.ts';
+import { LazyField, LazySyncDemo, WhenNear } from './lazy.tsx';
 import { Counter, Reveal } from './motion.tsx';
 import { NameStage } from './name-stage.tsx';
-import { SyncDemo } from './sync-demo.tsx';
 
 /**
  * The opening of the landing page, in two acts over one live background.
@@ -58,7 +57,9 @@ export function Hero({
     // scroll container for its sticky children and stop them pinning.
     <section className="relative isolate overflow-x-clip bg-[#08090c]">
       <div aria-hidden="true" className="sticky top-0 -z-10 h-[100svh]">
-        <Field mode={mode} pulse={pulse} activityAt={lastKeystroke} />
+        <WhenNear className="h-full w-full">
+          <LazyField mode={mode} pulse={pulse} activityAt={lastKeystroke} />
+        </WhenNear>
         {/* Darkens the top behind the name and fades the bottom edge into
             the band, so the near edge of the plane stays visible. */}
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgb(8_9_12/0.5),transparent_35%,transparent_85%,#08090c)]" />
@@ -102,15 +103,18 @@ export function Hero({
 
             <div className="border-t border-white/10 py-[clamp(3rem,8vh,6rem)] lg:col-span-7 lg:border-t-0">
               <Reveal delay={200}>
-                <SyncDemo
-                  onNetwork={({ online, merged }) => {
-                    setOffline(!online);
-                    if (online && merged > 0) setPulse((count) => count + 1);
-                  }}
-                  onActivity={() => {
-                    lastKeystroke.current = performance.now();
-                  }}
-                />
+                {/* Its height reserved, so nothing below moves when it arrives. */}
+                <WhenNear className="min-h-[514px] sm:min-h-[299px]">
+                  <LazySyncDemo
+                    onNetwork={({ online, merged }) => {
+                      setOffline(!online);
+                      if (online && merged > 0) setPulse((count) => count + 1);
+                    }}
+                    onActivity={() => {
+                      lastKeystroke.current = performance.now();
+                    }}
+                  />
+                </WhenNear>
               </Reveal>
             </div>
           </div>

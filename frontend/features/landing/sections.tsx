@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { FILLED, OUTLINED } from './band.tsx';
 import { Chapter, ChapterTitle } from './chapter.tsx';
-import { Field } from './field.tsx';
+import { LazyField, WhenNear } from './lazy.tsx';
 import { LiveParagraph } from './live-paragraph.tsx';
 import { Reveal } from './motion.tsx';
 import { StackMarquee } from './stack.tsx';
@@ -207,7 +207,9 @@ export function Closing({ href, label }: { href: string; label: string }) {
   return (
     <section className="relative isolate grid min-h-[85svh] place-items-center overflow-hidden bg-[#08090c] px-[clamp(1rem,3vw,2.5rem)] py-[clamp(5rem,14vh,10rem)]">
       <div aria-hidden="true" className="absolute inset-0 -z-10">
-        <Field mode="merge" pulse={0} />
+        <WhenNear className="h-full w-full">
+          <LazyField mode="merge" pulse={0} />
+        </WhenNear>
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,#08090c,transparent_30%,transparent_80%,#08090c)]" />
       </div>
 
