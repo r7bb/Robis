@@ -155,33 +155,12 @@ figures. See **[robis-ml/README.md](../robis-ml/README.md)**.
 
 ---
 
-## Status
+## Built to be read
 
-A portfolio project, built to be read. It runs locally and is tested. It has
-not been deployed. Every service has a container image, built, started,
-driven end to end and scanned by CI on every push (the `containers` job),
-and the same stack has been run on the development machine. Uploads work on local disk or any S3-compatible store;
-the S3 driver is tested in CI against S3Mock, not against a cloud provider.
-Mail goes out over SMTP, tested against a local SMTP server, not a real
-provider, and nothing here says whether a given provider will deliver it.
-The API and the worker **refuse to start in production** with no mail driver
-configured rather than print reset links into a log.
+A portfolio project, built to be read. It runs locally and is tested, and
+every service's container is built, started and driven end to end by CI on
+every push. It has not been deployed. Nothing here is a security or
+compliance claim: it describes what the code does and what was measured.
 
-Nothing here is a security or compliance claim. It describes what the code does
-and what was measured.
-
-The audit trail is built to outlive the accounts it names. New member events
-record a username rather than an email or real name, kept beside the hashed
-trail so `bun run audit:erase -- <user id>` can remove it while the chain
-still verifies. That erasure is a technical design marked for legal review,
-not a claim about any law. Events written before it hold their username,
-or before usernames their email, inside the hashed payload, where erasing
-it would break the chain. How long to keep the
-trail, and how that sits with a request to erase someone's data, needs a
-legal review before any real users. The terms and privacy pages are drafts
-for the same review, and the minimum age (16) is a placeholder. What each
-account agreed to is stored (the age confirmation, the terms version and
-when), and so is its answer when the terms change; how long those records
-are kept is part of the same review.
-
-What is next is in **[docs/ROADMAP.md](ROADMAP.md)**.
+What is left, the known gaps, what waits on legal review and what is
+deliberately not being built are in **[docs/ROADMAP.md](ROADMAP.md)**.

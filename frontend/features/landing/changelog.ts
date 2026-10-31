@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-31',
     area: 'Site',
+    title: 'Each topic is written in one place',
+    brief:
+      'Status, known gaps and what is not being built live in the roadmap alone; stale lines saying account events are not recorded are corrected.',
+    summary:
+      'Where Robis stands was written in four documents, and they had drifted: the app summary still listed storage quotas as missing weeks after they shipped, and the platform plan still said sign-ins were not recorded and that accounts could not be deleted. Now the roadmap holds status, the known gaps, what waits on legal review and what is deliberately not being built; the architecture notes hold the reasoning and the app summary the inventory, and both link to the roadmap. The roadmap also states the rule that keeps it so: when a feature lands, search the docs for anything still calling it missing.',
+    checked:
+      'A test refuses a status, gaps, legal review or not-doing section in any document but the roadmap; run against the documents as they were, it finds the four that were there. Each corrected line was checked against the code: the account trail’s event types, the account deletion test, and the storage drivers. Every relative link still resolves, and the full suite passes.',
+  },
+  {
+    date: '2026-10-31',
+    area: 'Site',
     title: 'What’s new is written from one list',
     brief:
       'The README’s Latest and docs/WHATS_NEW.md are generated from the site’s changelog, and CI refuses them out of date.',

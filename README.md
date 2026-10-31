@@ -148,13 +148,14 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Each topic is written in one place.** Status, known gaps and what is not
+  being built live in the roadmap alone; stale lines saying account events
+  are not recorded are corrected.
 - **What’s new is written from one list.** The README’s Latest and
   docs/WHATS_NEW.md are generated from the site’s changelog, and CI refuses
   them out of date.
 - **Unused code is found, and refused.** Dead definitions removed; CI checks
   for unused files, exports and dependencies.
-- **Screenshots are kept once, as WebP.** One copy of each at display size,
-  written by the screenshot script; the web build no longer converts images.
 
 <!-- latest:end -->
 

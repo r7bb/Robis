@@ -63,7 +63,8 @@ Deliberate gaps, stated rather than hidden:
   deletion leaves a tombstone (the trail's length and last hash), written by
   an owner-run trigger into a table the app can only read.
 - Sign-in, password and session events are account-level, not
-  workspace-level, so they are not in this trail yet.
+  workspace-level, so they are not in this trail: since 2026-10-15 they are
+  in each account's own trail (below).
 - Rows written before the chain existed were numbered by timestamp; rows
   that shared one were ordered by id, since nothing recorded their real
   order.
@@ -105,9 +106,7 @@ Left open from review, for a later pass:
   connections, a residual timing signal that has not been measured; the
   account chain has no checkpoint, so dropping its newest events is not
   detected; erasure by the runtime role leaves no record of itself and
-  cannot be told from an event that never had personal fields; there is no
-  account deletion yet, and when there is, the account's history goes with
-  it; signing out one session by itself has no route, and a person cannot
+  cannot be told from an event that never had personal fields; signing out one session by itself has no route, and a person cannot
   export their own history.
 - ~~The security view's "who" filter lists current members only.~~
   **Closed 2026-10-15 (B3):** `/audit/actors` lists everyone in the trail
@@ -158,8 +157,8 @@ Order of work, decided 2026-10-09:
    pick a generated avatar. The avatar is per account and is served only to
    people who share a workspace with its owner. **Shipped 2026-10-13**, with
    the gate enforced by the API and the realtime gateway as well as the app.
-   Left open: picture changes are not yet in an account trail (B3 in the
-   build plan); storage is local disk only, with no object-store driver yet.
+   Left open: picture changes are not in the account trail. Storage is local
+   disk or any S3-compatible store since 2026-10-13.
 3. **Photos and stories**, as below.
 
 - Rich profiles: photo, cover, role, a "working on" line, recent activity,

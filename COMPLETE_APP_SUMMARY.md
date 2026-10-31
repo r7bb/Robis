@@ -191,35 +191,9 @@ blocks filing an issue.
 
 ---
 
-## What it deliberately does not do
+## Where the rest is written
 
-**Direct messages.** DMs need a different privacy story: who may read the
-transcript, what an export contains, what happens when somebody leaves. Bolting
-them onto a workspace-scoped table would answer those badly and silently.
-
-**A public project directory with match percentages.** Robis workspaces are
-private tenancies with invite-only membership, and the 404-not-403 rule is
-tested. A public discovery surface would contradict that access model rather
-than extend it.
-
-**Conferencing.** Robis stores a link. It does not mint rooms, does not hold a
-provider relationship, and does not put a third party in the request path.
-
-**Any compliance claim.** The code does what is described here. That is not the
-same as being certified, secure or compliant, and this document does not say it
-is.
-
----
-
-## Known gaps
-
-| Gap | Why |
-| --- | --- |
-| Storage quotas | Uploads are rate-limited per account, but nothing caps how much a workspace stores |
-| Attachments beyond images | Only images are accepted; PDFs and other files are not, because their metadata cannot be stripped the same way |
-| Mail deliverability | Sent over SMTP and tested against a local SMTP server only. No provider has been tried, and there is no HTML version, bounce handling or unsubscribe |
-| Deployment | Not done. The images are built and checked in CI, but nothing runs anywhere public yet |
-| Duplicate detection, reworded intent | Finds 0 of 7 lexical-gap duplicates on the labelled set's test half |
-
-The deployment gap waits on choosing a host and accounts. Attachments and duplicate recall are real
-work that has not been done.
+Kept in one place, [docs/ROADMAP.md](docs/ROADMAP.md): what is left, the
+known gaps, and what Robis deliberately does not do. This document is the
+inventory of what exists; the reasoning is in
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).

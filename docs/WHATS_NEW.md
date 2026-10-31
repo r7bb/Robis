@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Each topic is written in one place** (2026-10-31). Status, known gaps
+  and what is not being built live in the roadmap alone; stale lines saying
+  account events are not recorded are corrected.
 - **What’s new is written from one list** (2026-10-31). The README’s Latest
   and docs/WHATS_NEW.md are generated from the site’s changelog, and CI
   refuses them out of date.

@@ -931,40 +931,9 @@ event-loop lag is reported alongside every result.
 
 ---
 
-## Status
+## Why only documents use CRDTs
 
-**Done**
-
-- Multi-tenant workspaces, four-role RBAC, audit trail
-- Session auth (Argon2id, opaque server-side sessions)
-- Projects and issues with per-project keys, comments
-- Realtime updates and presence over WebSockets
-- Offline-first board: IndexedDB store, durable mutation queue, exactly-once sync
-- Service worker so the app shell loads with no network
-- CRDT documents (Yjs) with live cursors, stored as an append-only update log
-- Background job queue on Postgres `SKIP LOCKED`, with `@mention` notifications
-- Issue detail pages, comment threads, and a notification inbox
-- Per-workspace themes, and engagement nudges that open a how-to guide
-- Full-text search over issues, comments and documents
-- Member management UI and rate limiting on credential endpoints
-- Delete for every entity, confirmed, with board deletes going through the
-  offline queue like any other write
-- Next.js client with optimistic updates
-- Load harness with measured throughput and fan-out numbers
-- Prometheus metrics on the API and the gateway
-- Editable issue descriptions, workspace activity feed, account settings
-- A tamper-evident audit trail with a security view, export and a SIEM stream
-- App-specific usernames, and a picture before you start
-- Images on issues and comments, and account mail over SMTP from the worker
-- Tests, CI, linting, typechecking (counts in [ROADMAP.md](ROADMAP.md))
-
-**Next**
-
-- Distributed tracing (metrics are in; spans are not)
-- Drag-and-drop board and a search results page
-
-See [ROADMAP.md](ROADMAP.md) for the full plan, including an honest
-list of what is thin in what already exists.
+What is built and what is left are kept in [ROADMAP.md](ROADMAP.md).
 
 Collaborative text is the one remaining piece that genuinely needs CRDTs. Issue
 fields converge fine under last-write-wins per field — two people editing
