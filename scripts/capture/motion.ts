@@ -8,7 +8,7 @@
  * API already depends on. Two clips:
  *
  *   imgs/motion-landing.webp   the landing page's hero
- *   imgs/02-workspaces.png      the signed-in home, still
+ *   imgs/02-workspaces.webp     the signed-in home, still
  *   imgs/motion-home.webp      the signed-in home while a teammate opens an
  *                              issue in another session: the spark flies
  *                              to its workspace, the feed and tile update
@@ -162,7 +162,7 @@ async function main() {
     await page.goto(`${WEB}/workspaces`);
     await page.waitFor('document.body.textContent.includes("Connected")', 20_000);
     await Bun.sleep(1800);
-    await page.shot('02-workspaces.png');
+    await page.shot('02-workspaces.webp');
     page.close();
   } finally {
     chrome.kill();

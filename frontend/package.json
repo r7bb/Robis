@@ -7,8 +7,8 @@
     "./*": "./*"
   },
   "scripts": {
-    "dev": "bun tools/landing-images.ts && NEXT_DIST_DIR=.next-dev NEXT_PUBLIC_REALTIME_URL=ws://localhost:4001/ws next dev",
-    "build": "bun tools/landing-images.ts && next build",
+    "dev": "NEXT_DIST_DIR=.next-dev NEXT_PUBLIC_REALTIME_URL=ws://localhost:4001/ws next dev",
+    "build": "next build",
     "start": "next start"
   },
   "dependencies": {
@@ -27,7 +27,6 @@
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
-    "sharp": "0.35.5",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.9.3"
   }

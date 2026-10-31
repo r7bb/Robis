@@ -4,6 +4,9 @@ Newest first. The same list is the site's What's new page, where each entry
 opens to show how it was checked and, for features, where to find it and
 what each layer does. Back to the [README](../README.md).
 
+- **Screenshots are kept once, as WebP** (2026-10-31). One copy of each at
+  display size, written by the screenshot script; the web build no longer
+  converts images.
 - **The landing loads its heavy parts as you reach them** (2026-10-31). The
   field and the live demo are separate downloads, fetched near the screen.
 - **The benchmark counts what a write costs afterwards** (2026-10-31). 14

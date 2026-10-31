@@ -47,8 +47,8 @@ once when you reconnect, in order, with nothing doubled.
 
 <table>
   <tr>
-    <td width="50%"><img src="imgs/06-offline-unsynced.png" alt="Offline, with changes waiting to sync"></td>
-    <td width="50%"><img src="imgs/07-after-reconnect.png" alt="Back online, everything synced"></td>
+    <td width="50%"><img src="frontend/public/shots/offline.webp" alt="Offline, with changes waiting to sync"></td>
+    <td width="50%"><img src="frontend/public/shots/reconnected.webp" alt="Back online, everything synced"></td>
   </tr>
   <tr>
     <td align="center"><sub>Offline: changes wait on the device</sub></td>
@@ -63,7 +63,7 @@ once when you reconnect, in order, with nothing doubled.
 Two people, one paragraph, no locks. Edits merge as you type, and nobody
 loses a keystroke.
 
-![Two people editing one document](imgs/08-document-collab.png)
+![Two people editing one document](imgs/08-document-collab.webp)
 
 <br>
 
@@ -72,7 +72,7 @@ loses a keystroke.
 Projects, statuses, priorities and assignees, with comments and
 `@mentions`. Drag an issue and everyone sees it move.
 
-![The issue board](imgs/04-board.png)
+![The issue board](frontend/public/shots/board.webp)
 
 <br>
 
@@ -83,11 +83,11 @@ every issue, document and comment.
 
 <table>
   <tr>
-    <td width="50%"><img src="imgs/03-workspace.png" alt="A workspace with its channels and team"></td>
-    <td width="50%"><img src="imgs/28-meetings.png" alt="The meetings panel"></td>
+    <td width="50%"><img src="imgs/03-workspace.webp" alt="A workspace with its channels and team"></td>
+    <td width="50%"><img src="imgs/28-meetings.webp" alt="The meetings panel"></td>
   </tr>
   <tr>
-    <td colspan="2"><img src="imgs/18-search.png" alt="Search across issues, documents and comments"></td>
+    <td colspan="2"><img src="imgs/18-search.webp" alt="Search across issues, documents and comments"></td>
   </tr>
 </table>
 
@@ -100,9 +100,9 @@ team you are working in.
 
 <table>
   <tr>
-    <td width="33%"><img src="imgs/12-theme-midnight.png" alt="The midnight theme"></td>
-    <td width="33%"><img src="imgs/13-theme-daylight.png" alt="The daylight theme"></td>
-    <td width="33%"><img src="imgs/14-theme-forest-board.png" alt="The forest theme on the board"></td>
+    <td width="33%"><img src="imgs/12-theme-midnight.webp" alt="The midnight theme"></td>
+    <td width="33%"><img src="imgs/13-theme-daylight.webp" alt="The daylight theme"></td>
+    <td width="33%"><img src="imgs/14-theme-forest-board.webp" alt="The forest theme on the board"></td>
   </tr>
 </table>
 
@@ -146,12 +146,12 @@ with Postgres on the same machine. Method and percentiles in
 
 ## Latest
 
+- **Screenshots are kept once, as WebP.** One copy of each, at display
+  size: 7.1 MB of stills down to 1.2 MB.
 - **The landing loads its heavy parts as you reach them.** The field and
   the live demo download after the page is usable, as they come into view.
 - **The benchmark counts what a write costs afterwards.** Follow-up reads
   per write, and refreshed figures.
-- **Image uploads hold their line.** Decoding never passes its cap, and a
-  flood is told when to come back.
 
 Everything else, newest first, with how each was checked:
 [What's new](docs/WHATS_NEW.md).

@@ -5,7 +5,7 @@ import config from '@robis/web/next.config.ts';
 
 /**
  * One sharp (stage 2, item 19). The API resizes uploads with it and the
- * web build prerenders the landing's screenshots with it; Next would bring
+ * screenshot script encodes WebP with it; the web app has none. Next would bring
  * its own copy for image optimisation, which the app no longer uses. Two
  * versions of a native library is two sets of binaries to patch.
  */
@@ -39,7 +39,12 @@ describe('one sharp', () => {
     expect(config.images?.unoptimized).toBe(true);
   });
 
-  test('the landing asks only for prerendered WebP, each with a source to render it from', () => {
+  test('the web app does not depend on sharp', () => {
+    const manifest = JSON.parse(readFileSync(join(ROOT, 'frontend/package.json'), 'utf8'));
+    expect({ ...manifest.dependencies, ...manifest.devDependencies }).not.toHaveProperty('sharp');
+  });
+
+  test('the landing asks only for committed WebP, which needs no image library', () => {
     const pages = [
       'frontend/features/landing/offline-story.tsx',
       'frontend/app/how-it-works/page.tsx',
@@ -50,8 +55,8 @@ describe('one sharp', () => {
     expect(shots.length).toBeGreaterThan(0);
     for (const shot of shots) {
       expect(shot).toMatch(/\.webp$/);
-      const source = join(ROOT, 'frontend/public/shots', shot.replace(/\.webp$/, '.png'));
-      expect({ shot, source: existsSync(source) }).toEqual({ shot, source: true });
+      const file = join(ROOT, 'frontend/public/shots', shot);
+      expect({ shot, committed: existsSync(file) }).toEqual({ shot, committed: true });
     }
   });
 });

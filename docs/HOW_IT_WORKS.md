@@ -15,22 +15,22 @@ permission rules as everything else.
 over a WebSocket gateway, so edits converge without a lock and without losing a
 keystroke.
 
-![Two people editing one document](../imgs/08-document-collab.png)
+![Two people editing one document](../imgs/08-document-collab.webp)
 
 **Issues on a board.** Projects, statuses, priorities, assignees, comments with
 `@mentions`, and a full audit trail.
 
-![The issue board](../imgs/04-board.png)
+![The issue board](../frontend/public/shots/board.webp)
 
 **Meetings.** Schedule, invite, answer. Moving the time clears everyone else's
 yes, because a yes was for a time.
 
-![The meetings panel](../imgs/28-meetings.png)
+![The meetings panel](../imgs/28-meetings.webp)
 
 **Search across everything.** Issues, documents and comments, through Postgres
 full-text search.
 
-![Search](../imgs/18-search.png)
+![Search](../imgs/18-search.webp)
 
 **An audit trail you can check.** Every change is written in the same
 transaction as the change itself, so a rolled-back edit leaves no event. Each
@@ -57,13 +57,13 @@ stream described in [GETTING_STARTED.md](GETTING_STARTED.md).
 Pull the network out mid-sentence. Writes land in a durable queue in IndexedDB
 and the board keeps working.
 
-![Offline, with unsynced changes](../imgs/06-offline-unsynced.png)
+![Offline, with unsynced changes](../frontend/public/shots/offline.webp)
 
 On reconnect the queue drains in order. A server-side ledger keyed by a
 client-generated id means a retry after an ambiguous failure cannot create the
 same issue twice.
 
-![After reconnecting](../imgs/07-after-reconnect.png)
+![After reconnecting](../frontend/public/shots/reconnected.webp)
 
 ---
 

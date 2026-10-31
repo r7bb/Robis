@@ -41,6 +41,15 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-31',
     area: 'Site',
+    title: 'Screenshots are kept once, as WebP',
+    summary:
+      'Five screenshots were stored twice, once for the README and once for the landing page, and every one was a full-size PNG. Each is now kept once, as WebP at the widest any page shows it: the three the landing uses live with the site, and the README points at them. The still screenshots went from 7.1 MB to 1.2 MB. The screenshot script now writes WebP itself, so the web build no longer converts images, and the web app no longer depends on an image library at all.',
+    checked:
+      'A test fails if any committed image is not WebP, if two image files are identical, if any is wider than the landing shows it, or if the README, the docs or the landing refer to an image that is not committed. Another test confirms the web app declares no image library. The full suite, lint and typecheck pass, and the production build runs without the conversion step.',
+  },
+  {
+    date: '2026-10-31',
+    area: 'Site',
     title: 'The landing loads its heavy parts as you reach them',
     summary:
       'The moving field behind the landing and the live two-editor demo were part of the page’s first load, though the demo sits well below the fold. Each is now its own download, fetched after the page is usable and only once its spot comes within 200 pixels of the screen. The demo’s space is held at its real height while it loads, so nothing below it jumps. With reduced motion turned on, the field still draws one still frame and the demo still does not animate.',

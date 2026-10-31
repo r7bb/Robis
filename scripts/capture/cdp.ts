@@ -10,6 +10,15 @@
  * used is small: navigate, evaluate, emulate offline, capture.
  */
 import { existsSync } from 'node:fs';
+import sharp from 'sharp';
+
+/**
+ * Screenshots are kept as WebP at the widest any page shows them (stage 4,
+ * item 34): the landing, 1100 CSS pixels, at twice that for sharp screens.
+ * The README's column is narrower, so this serves it too.
+ */
+export const SHOT_WIDTH = 2200;
+const SHOT_QUALITY = 80;
 
 export type PageConfig = {
   /** Debugging port Chrome was launched with. */
@@ -232,13 +241,17 @@ export class Page {
     });
   }
 
+  /** Capture the page as `name`, a `.webp` file in the shots directory. */
   async shot(name: string) {
     // Let any in-flight transition settle, so nothing is caught mid-fade.
     await Bun.sleep(400);
     const { data } = await this.send<{ data: string }>('Page.captureScreenshot', {
       format: 'png',
     });
-    await Bun.write(`${this.config.shotsDir}${name}`, Buffer.from(data, 'base64'));
+    await sharp(Buffer.from(data, 'base64'))
+      .resize({ width: SHOT_WIDTH, withoutEnlargement: true })
+      .webp({ quality: SHOT_QUALITY })
+      .toFile(`${this.config.shotsDir}${name}`);
     console.log(`  ${name}`);
   }
 

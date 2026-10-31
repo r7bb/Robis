@@ -6,7 +6,7 @@
  * The README claims its screenshots come from the running app rather than a
  * mockup. This is the script that makes that claim checkable: it drives a real
  * Chrome over the DevTools Protocol against the real stack, and every image in
- * `imgs/` is its output.
+ * `imgs/` and `frontend/public/shots/` is its output, as WebP.
  *
  * Chrome over CDP rather than Playwright, because Playwright's browser download
  * does not work on this machine and CDP is available without installing
@@ -28,7 +28,7 @@
  * It re-seeds first, so the images are of the same content every time rather
  * than whatever happened to be in the database.
  */
-import { mkdir } from 'node:fs/promises';
+import { mkdir, rename } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { issueAuthToken } from '@robis/auth';
@@ -57,20 +57,17 @@ const SHOTS = new URL('../../imgs/', import.meta.url).pathname;
 const PUBLIC_SHOTS = new URL('../../frontend/public/shots/', import.meta.url).pathname;
 
 /**
- * The four shots the landing page shows, under the names it asks for.
+ * The three shots the landing page shows, under the names it asks for.
  *
- * Next.js can only serve static files out of `public/`, so these have to
- * exist twice. They were copied by hand once, which is the kind of
- * duplication that silently goes stale the first time anybody recaptures
- * and forgets. Copying them here means `bun run screenshots` is the single
- * action that updates both places.
+ * Next.js can only serve static files out of `public/`, so these live there
+ * rather than in `imgs/`, and the README points at them. Each screenshot is
+ * kept once (stage 4, item 34): they are moved, not copied, so there is no
+ * second copy to go stale.
  */
 const LANDING_SHOTS: Record<string, string> = {
-  '03-workspace.png': 'workspace.png',
-  '04-board.png': 'board.png',
-  '06-offline-unsynced.png': 'offline.png',
-  '07-after-reconnect.png': 'reconnected.png',
-  '08-document-collab.png': 'document.png',
+  '04-board.webp': 'board.webp',
+  '06-offline-unsynced.webp': 'offline.webp',
+  '07-after-reconnect.webp': 'reconnected.webp',
 };
 
 async function publishLandingShots() {
@@ -78,7 +75,7 @@ async function publishLandingShots() {
   await mkdir(PUBLIC_SHOTS, { recursive: true });
 
   for (const [source, destination] of Object.entries(LANDING_SHOTS)) {
-    await Bun.write(`${PUBLIC_SHOTS}${destination}`, Bun.file(`${SHOTS}${source}`));
+    await rename(`${SHOTS}${source}`, `${PUBLIC_SHOTS}${destination}`);
     console.log(`  ${destination}`);
   }
 }
@@ -154,7 +151,7 @@ async function signIn(page: Page) {
   await page.waitFor('document.querySelector(\'input[type="email"]\')');
   await page.fill('input[type="email"]', EMAIL);
   await page.fill('input[type="password"]', PASSWORD);
-  await page.shot('01-login.png');
+  await page.shot('01-login.webp');
 
   await page.click('button[type="submit"]');
   await page.waitFor('location.pathname.startsWith("/workspaces")');
@@ -186,13 +183,13 @@ async function openBoard(page: Page, workspaceUrl: string, project: string): Pro
 async function captureBasics(page: Page) {
   console.log('\nBasics');
   await signIn(page);
-  await page.shot('02-workspaces.png');
+  await page.shot('02-workspaces.webp');
 
   const workspaceUrl = await openWorkspace(page);
-  await page.shot('03-workspace.png');
+  await page.shot('03-workspace.webp');
 
   const boardUrl = await openBoard(page, workspaceUrl, 'Web App');
-  await page.shot('04-board.png');
+  await page.shot('04-board.webp');
 
   return { workspaceUrl, boardUrl };
 }
@@ -212,7 +209,7 @@ async function captureRealtime(page: Page, boardUrl: string) {
 
     // It arrives over the socket, not a poll, so this is fast.
     await page.waitForText('Ship the activity feed', 10_000);
-    await page.shot('05-realtime.png');
+    await page.shot('05-realtime.webp');
   } finally {
     await closeTab(cdp, other);
   }
@@ -242,7 +239,7 @@ async function captureOffline(page: Page, boardUrl: string) {
       controlled = true;
     } catch {
       console.warn(
-        '  skipping 09-offline-cold-reload.png — no service worker in control.\n' +
+        '  skipping 09-offline-cold-reload.webp — no service worker in control.\n' +
           '  Start the web server with NEXT_PUBLIC_ENABLE_SW=1 to capture it.',
       );
     }
@@ -259,7 +256,7 @@ async function captureOffline(page: Page, boardUrl: string) {
   }
 
   await page.waitForText('unsynced');
-  await page.shot('06-offline-unsynced.png');
+  await page.shot('06-offline-unsynced.webp');
 
   // A cold reload with no network: the service worker serves the shell and the
   // board renders from IndexedDB.
@@ -267,13 +264,13 @@ async function captureOffline(page: Page, boardUrl: string) {
     await page.send('Page.reload', { ignoreCache: false });
     await page.waitFor('document.readyState === "complete"');
     await page.waitForText('Write the migration guide', 20_000);
-    await page.shot('09-offline-cold-reload.png');
+    await page.shot('09-offline-cold-reload.webp');
   }
 
   await page.setOffline(false);
   await page.waitForText('synced', 25_000);
   await Bun.sleep(1200);
-  await page.shot('07-after-reconnect.png');
+  await page.shot('07-after-reconnect.webp');
 }
 
 async function captureIssue(page: Page, boardUrl: string) {
@@ -284,7 +281,7 @@ async function captureIssue(page: Page, boardUrl: string) {
   await page.waitForText('description');
 
   const issueUrl = await page.eval<string>('location.href');
-  await page.shot('10-issue-detail.png');
+  await page.shot('10-issue-detail.webp');
 
   // Open the description editor and type into it.
   await page.clickText('button', 'Add a description');
@@ -293,13 +290,13 @@ async function captureIssue(page: Page, boardUrl: string) {
     'textarea[aria-label="Issue description"]',
     'Safari sends the refresh token as a query parameter on redirect, so it never reaches the handler.\n\nRepro: sign in on Safari 17, wait for the token to expire, then watch the network tab on the next request.',
   );
-  await page.shot('21-issue-description-editing.png');
+  await page.shot('21-issue-description-editing.webp');
 
   await page.clickText('button', 'Save');
   await Bun.sleep(900);
   await page.goto(issueUrl);
   await page.waitForText('never reaches the handler');
-  await page.shot('22-issue-description.png');
+  await page.shot('22-issue-description.webp');
 
   return issueUrl;
 }
@@ -385,7 +382,7 @@ async function captureDocuments(page: Page, workspaceUrl: string) {
       `document.querySelector('textarea[aria-label="Document content"]').value.includes('Exactly-once')`,
       15_000,
     );
-    await page.shot('08-document-collab.png');
+    await page.shot('08-document-collab.webp');
   } finally {
     await closeTab(cdp, other);
   }
@@ -395,17 +392,17 @@ async function captureThemes(page: Page, workspaceUrl: string, boardUrl: string)
   console.log('\nThemes');
   await page.goto(workspaceUrl);
   await page.waitForText('theme');
-  await page.shot('12-theme-midnight.png');
+  await page.shot('12-theme-midnight.webp');
 
   await page.clickText('button', 'Daylight');
   await Bun.sleep(900);
-  await page.shot('13-theme-daylight.png');
+  await page.shot('13-theme-daylight.webp');
 
   await page.clickText('button', 'Forest');
   await Bun.sleep(900);
   await page.goto(boardUrl);
   await page.waitFor('document.querySelector(\'input[placeholder="What needs doing?"]\')');
-  await page.shot('14-theme-forest-board.png');
+  await page.shot('14-theme-forest-board.webp');
 
   // Back to the default, so every later screenshot is consistent.
   await page.goto(workspaceUrl);
@@ -418,14 +415,14 @@ async function captureGuides(page: Page, workspaceId: string) {
   console.log('\nGuides');
   await page.goto(`${WEB}/guide/try_document?w=${workspaceId}`);
   await page.waitForText('document');
-  await page.shot('15-guide-page.png');
+  await page.shot('15-guide-page.webp');
 
   // The guide's action creates the sample document and opens it.
   await page.clickText('button', 'Create');
   await Bun.sleep(1800);
   await page.waitFor('location.pathname.includes("/documents/")', 15_000);
   await Bun.sleep(700);
-  await page.shot('16-sample-document.png');
+  await page.shot('16-sample-document.webp');
 }
 
 /**
@@ -442,7 +439,7 @@ async function captureInbox(page: Page) {
   await page.waitForText('inbox');
   await page.clickText('button', 'Inbox');
   await Bun.sleep(900);
-  await page.shot('11-notification-inbox.png');
+  await page.shot('11-notification-inbox.webp');
 }
 
 async function captureNudge(page: Page, workspaceUrl: string) {
@@ -451,7 +448,7 @@ async function captureNudge(page: Page, workspaceUrl: string) {
   await page.waitForText('inbox');
   await page.clickText('button', 'Inbox');
   await Bun.sleep(900);
-  await page.shot('17-nudge-inbox.png');
+  await page.shot('17-nudge-inbox.webp');
 }
 
 async function captureSearch(page: Page, workspaceUrl: string) {
@@ -461,7 +458,7 @@ async function captureSearch(page: Page, workspaceUrl: string) {
 
   await page.fill('input[aria-label="Search this workspace"]', 'refresh token');
   await Bun.sleep(1400);
-  await page.shot('18-search.png');
+  await page.shot('18-search.webp');
 }
 
 async function captureMembersAndActivity(page: Page, workspaceUrl: string) {
@@ -473,15 +470,15 @@ async function captureMembersAndActivity(page: Page, workspaceUrl: string) {
   // scroll down a long page.
   await page.clickText('[role="tab"]', 'Team');
   await Bun.sleep(700);
-  await page.shot('19-members.png');
+  await page.shot('19-members.webp');
 
   await page.clickText('[role="tab"]', 'Activity');
   await Bun.sleep(900);
-  await page.shot('20-activity-feed.png');
+  await page.shot('20-activity-feed.webp');
 
   await page.clickText('[role="tab"]', 'Meetings');
   await Bun.sleep(900);
-  await page.shot('28-meetings.png');
+  await page.shot('28-meetings.webp');
 }
 
 /**
@@ -503,11 +500,11 @@ async function captureRecovery(page: Page) {
   await page.clickText('a', 'Forgot your password');
   await page.waitForText('reset your password');
   await page.fill('#forgot-email', EMAIL);
-  await page.shot('24-forgot-password.png');
+  await page.shot('24-forgot-password.webp');
 
   await page.clickText('button', 'Send reset link');
   await page.waitForText('check your email');
-  await page.shot('25-forgot-password-sent.png');
+  await page.shot('25-forgot-password-sent.webp');
 
   // A real token for the seeded account, issued the same way the route does.
   const { db, close } = createDatabase(DATABASE_URL);
@@ -529,10 +526,10 @@ async function captureRecovery(page: Page) {
     // than a blank form.
     await page.fill('#reset-password', 'a-strong-enough-password');
     await page.fill('#reset-confirm', 'a-strong-enough-passwo');
-    await page.shot('26-reset-password.png');
+    await page.shot('26-reset-password.webp');
   } catch {
     console.warn(
-      '  skipping 26-reset-password.png - the form did not pick up the token.\n' +
+      '  skipping 26-reset-password.webp - the form did not pick up the token.\n' +
         '  It renders correctly on a cold navigation; something in this run\n' +
         '  reaches it without the query. Worth chasing, not worth blocking on.',
     );
@@ -561,9 +558,9 @@ async function captureVerifyEmail(page: Page) {
     await page.waitForText('confirm my address', 8000);
     await page.clickText('button', 'Confirm my address');
     await page.waitForText('address confirmed', 8000);
-    await page.shot('27-verify-email.png');
+    await page.shot('27-verify-email.webp');
   } catch {
-    console.warn('  skipping 27-verify-email.png - the page did not pick up the token.');
+    console.warn('  skipping 27-verify-email.webp - the page did not pick up the token.');
   }
 }
 
@@ -571,7 +568,7 @@ async function captureAccount(page: Page) {
   console.log('\nAccount');
   await page.goto(`${WEB}/account`);
   await page.waitForText('active sessions');
-  await page.shot('23-account.png');
+  await page.shot('23-account.webp');
 }
 
 /**
