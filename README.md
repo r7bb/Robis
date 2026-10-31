@@ -146,12 +146,17 @@ with Postgres on the same machine. Method and percentiles in
 
 ## Latest
 
-- **Unused code is found, and refused.** Dead definitions removed, and a
-  check on every push for unused files, exports and dependencies.
-- **Screenshots are kept once, as WebP.** One copy of each, at display
-  size: 7.1 MB of stills down to 1.2 MB.
-- **The landing loads its heavy parts as you reach them.** The field and
-  the live demo download after the page is usable, as they come into view.
+<!-- latest:start -->
+
+- **What’s new is written from one list.** The README’s Latest and
+  docs/WHATS_NEW.md are generated from the site’s changelog, and CI refuses
+  them out of date.
+- **Unused code is found, and refused.** Dead definitions removed; CI checks
+  for unused files, exports and dependencies.
+- **Screenshots are kept once, as WebP.** One copy of each at display size,
+  written by the screenshot script; the web build no longer converts images.
+
+<!-- latest:end -->
 
 Everything else, newest first, with how each was checked:
 [What's new](docs/WHATS_NEW.md).

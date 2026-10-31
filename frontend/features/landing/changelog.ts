@@ -30,6 +30,11 @@ export type Entry = {
   date: string;
   area: Area;
   title: string;
+  /**
+   * One or two sentences for the lists: the README's Latest and
+   * docs/WHATS_NEW.md, both written from here by `bun run docs:whats-new`.
+   */
+  brief: string;
   summary: string;
   /** How it is known to work: tests, measurements, or what was verified. */
   checked: string;
@@ -41,7 +46,19 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-31',
     area: 'Site',
+    title: 'What’s new is written from one list',
+    brief:
+      'The README’s Latest and docs/WHATS_NEW.md are generated from the site’s changelog, and CI refuses them out of date.',
+    summary:
+      'What has shipped was written three times: in the site’s changelog, in the README’s Latest, and in the What’s new document, each by hand, with a test checking only that the titles matched. Each entry now carries its own one-line brief, and one command writes both lists from the changelog, between markers, leaving the text around them alone. The 56 existing briefs were moved across word for word.',
+    checked:
+      'A test fails unless both files read exactly as the generator writes them, and another shows that adding an entry leaves both out of date until they are rewritten. The moved briefs were compared word by word with the old document: same words, same order, only the line breaks changed. The full suite, lint and the unused code check pass.',
+  },
+  {
+    date: '2026-10-31',
+    area: 'Site',
     title: 'Unused code is found, and refused',
+    brief: 'Dead definitions removed; CI checks for unused files, exports and dependencies.',
     summary:
       'Eleven database relation definitions that no query used, a status helper, a request type and six response types were removed, and about twenty names that were only used inside their own file stopped being exported. A check for unused files, exports and dependencies now runs on every push, so dead code is caught when it appears rather than in a review months later.',
     checked:
@@ -51,6 +68,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-31',
     area: 'Site',
     title: 'Screenshots are kept once, as WebP',
+    brief:
+      'One copy of each at display size, written by the screenshot script; the web build no longer converts images.',
     summary:
       'Five screenshots were stored twice, once for the README and once for the landing page, and every one was a full-size PNG. Each is now kept once, as WebP at the widest any page shows it: the three the landing uses live with the site, and the README points at them. The still screenshots went from 7.1 MB to 1.2 MB. The screenshot script now writes WebP itself, so the web build no longer converts images, and the web app no longer depends on an image library at all.',
     checked:
@@ -60,6 +79,7 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-31',
     area: 'Site',
     title: 'The landing loads its heavy parts as you reach them',
+    brief: 'The field and the live demo are separate downloads, fetched near the screen.',
     summary:
       'The moving field behind the landing and the live two-editor demo were part of the page’s first load, though the demo sits well below the fold. Each is now its own download, fetched after the page is usable and only once its spot comes within 200 pixels of the screen. The demo’s space is held at its real height while it loads, so nothing below it jumps. With reduced motion turned on, the field still draws one still frame and the demo still does not animate.',
     checked:
@@ -69,6 +89,7 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-31',
     area: 'Site',
     title: 'The benchmark counts what a write costs afterwards',
+    brief: '14 follow-up reads per write across 50 open boards; figures refreshed.',
     summary:
       'The load harness measured how fast a write reached every open client, but not what happened next: each open board then reads its issues again. Now each simulated client acts as an open board, scoped to its project and coalescing as the web app does, and the report counts the follow-up reads each write causes and times them. Across 50 open boards a write costs 14 reads, where it would cost 50 without coalescing. The harness had also stopped measuring anything since pictures became required: its test accounts had none, so every request was refused. They have one now, and the published figures are refreshed from three new runs.',
     checked:
@@ -78,6 +99,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-31',
     area: 'Security',
     title: 'Image uploads hold their line',
+    brief:
+      'A capped line for decoding, a 503 with Retry-After past it, and the upload limit checked before the bytes arrive.',
     summary:
       'Pictures are decoded two at a time, because a decode can take a lot of memory. Three things are firmer now. A finished decode hands its turn straight to the next upload in line, so a newcomer arriving at that instant can never make it three. The line itself is capped at eight: past that, an upload is told the service is busy and when to try again, instead of being held in memory without end. And the per-minute upload limit is checked with the size, before the image is received, so an upload over the limit is refused without its bytes being read.',
     checked:
@@ -87,6 +110,7 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-31',
     area: 'Security',
     title: 'Old records are let go on a schedule',
+    brief: 'Retry records replay for 30 days, read notifications go after 90.',
     summary:
       'Two tables only ever grew. The record that lets a retried change be recognised as a repeat, rather than done twice, was kept forever; it now replays for 30 days, which covers a long time offline with room to spare, and is then forgotten. Notifications you have read are removed 90 days after you read them; unread ones stay until you read them. Both are removed by the background worker’s hourly cleanup, which was granted only the two deletions it needs.',
     checked:
@@ -96,6 +120,7 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-31',
     area: 'Site',
     title: 'Indexes for the work that runs on a clock',
+    brief: 'A small index over pending jobs only, and one for removing expired sessions.',
     summary:
       'The background worker looks for due jobs, and once an hour expired sessions are removed. The jobs index covered every job ever run, finished ones included, which is most of the table in time; it is replaced by one over pending jobs only, by when they are due, which stays small however many jobs have finished. Expired sessions are now found through an index on when they expire, rather than by reading every session.',
     checked:
@@ -105,6 +130,7 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-31',
     area: 'Security',
     title: 'One query to know who you are and where you are',
+    brief: 'The session and your workspace role come from one database query.',
     summary:
       'Every request inside a workspace used to ask the database twice before doing anything: once for who the session belongs to, and once for that person’s role in the workspace. Now both come from one query, which joins the membership onto the session lookup for the workspace in the address. The access rules are the same: a stranger still gets not found, a member without the permission still gets forbidden, and an expired or idle session still counts as signed out.',
     checked:
@@ -114,6 +140,7 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-31',
     area: 'ML',
     title: 'One call for both composer hints',
+    brief: 'Duplicate hints and the suggested priority come from one request and one model load.',
     summary:
       'While you type a new issue’s title, the composer shows issues it may duplicate and suggests a priority. The two hints used to ask separately, and the API asked the suggestion service separately for each, so every settled title cost two round trips and two loads of the workspace’s models. Now one route answers both, the service fits or fetches the workspace’s models once for that answer, and the two hints share it. A malformed half of the answer costs only that hint, and a failing service still means no hints rather than an error.',
     checked:
@@ -123,6 +150,7 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-30',
     area: 'Product',
     title: 'Mail goes out the moment it is queued',
+    brief: 'Queueing a job wakes the worker at once; it no longer polls every second.',
     summary:
       'The background worker used to look for work once a second, so a sign-up link or a password reset waited up to a second before it was even started, and an idle worker asked the database every second for nothing. Now queueing a job wakes the worker straight away, through a database notification sent in the same transaction: it arrives when the job can be seen, and never for a job that was rolled back. The worker still looks every 30 seconds, for anything due later or a notification it missed. While it waits, it keeps telling the health check it is alive, but only while its database was reachable at its last look.',
     checked:
@@ -132,6 +160,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-30',
     area: 'Product',
     title: 'Editing together works across gateways',
+    brief:
+      'Gateways tell each other which stored edit to read, so editors on different gateways see each other live.',
     summary:
       'Two people writing in the same document only saw each other’s words live if their browsers happened to be connected to the same live gateway. With more than one gateway running, one could type and the other see nothing until a reload. Now each gateway stores what its own editors write, as it always has, and tells the other gateways which stored update to read; a gateway with the document open reads it and passes it to its editors. The notice carries only ids, because an edit can be far larger than a database notification may be, and an edit already folded into the document’s snapshot is read from the snapshot instead.',
     checked:
@@ -141,6 +171,7 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-30',
     area: 'Product',
     title: 'The live connection sends only what a page shows',
+    brief: 'Pages name their project, issue or channel, and the gateway sends only those events.',
     summary:
       'Every open page used to receive every live event in its workspace, then throw most of them away. Now a page tells the gateway what it shows: a board names its project, an issue page its issue, the workspace view the workspace and the open channel. The gateway then sends only the events about those, so a board never hears a chat message and a channel never hears another project’s board. Scopes only narrow what a member already receives; they never widen access. A page that names nothing, like the home, still hears everything in the workspace.',
     checked:
@@ -150,6 +181,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-30',
     area: 'Product',
     title: 'A board reads only when its issues change',
+    brief:
+      'No more reading on every chat message or every five seconds; bursts of events are handled once.',
     summary:
       'An open board used to read its whole issue list again on every live event in the workspace, a chat message included, and every five seconds besides. Now it reads only when an issue in its own project is filed, changed or deleted, or when the live connection comes back after a gap; the five-second timer only retries changes made offline, and only when there are some. An issue page refreshes only for its own issue, comments and images. Events that arrive within 150 ms of each other are handled once, so a teammate moving five cards is one read rather than five. A new issue now also refreshes the project list, which it did not before.',
     checked:
@@ -159,6 +192,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-29',
     area: 'Site',
     title: 'Every route described once',
+    brief:
+      'One definition per route types the API, the web app and a generated [OpenAPI document](openapi.json); describing them found and fixed real drift between what the API sent and what the web app expected.',
     summary:
       'A route used to be described three times: by the API handler, by a type the web app wrote by hand, and nowhere for anyone else. Now each of the 81 JSON routes is described once, in the shared package, with what it accepts and what it answers. The API serves it from that description, so its input is checked before the handler runs and its answer goes out through the same description, so a field nobody listed is never sent. The web app calls it from the same description, so its types cannot drift from what the API sends, and an OpenAPI document is generated from it. The two routes that answer with image bytes are listed apart, with that reason. Describing them found real drift: an edited issue answered without its key, a created or renamed document answered with its stored editing state and its search copy, created issues and messages carried their search vectors, the sign-in and sign-up answers were typed as the whole account when they carry only the public part, and a notification about no one thing was typed as always naming one. Each answer now matches its description, and the web app’s types match the answers.',
     checked:
@@ -168,6 +203,7 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-29',
     area: 'Site',
     title: 'The database library is current',
+    brief: 'Drizzle 0.38 to 0.45, with error codes read through its new error wrapping.',
     summary:
       'Drizzle, the library every service uses to talk to Postgres, moves from 0.38 to 0.45, with its migration tool from 0.30 to 0.31. The one change that could have hurt quietly is that Drizzle now wraps a failed query in an error of its own, with the database’s error inside it: code that looked for the database’s error code on the outside would have stopped noticing, for example, that a username had just been taken by someone else. That code now looks through the wrapping, and was changed and released first, on the old version, so the upgrade itself changes nothing else.',
     checked:
@@ -177,6 +213,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-29',
     area: 'Site',
     title: 'CI installs exactly what is locked, and runs the Python tests',
+    brief:
+      'Frozen installs, a Python 3.11 job from a hashed lock, and caching for downloads and image layers.',
     summary:
       'Continuous integration now refuses an out-of-date lockfile instead of quietly resolving new versions, and the duplicate and priority service’s Python tests run on every push, on the Python version it ships with, from a locked set where every package is checked against its hash. Downloads and image layers are cached between runs, so an unchanged dependency or build step is restored rather than fetched or rebuilt again.',
     checked:
@@ -186,6 +224,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-29',
     area: 'Site',
     title: 'One image library, and none in the web app',
+    brief:
+      "One sharp version across the repository; the landing's screenshots are WebP made at build, and the web image carries no image library.",
     summary:
       'The API resizes uploads with sharp, and the web app used to carry a second copy that Next.js loads to resize pictures on each request. Now there is one version of sharp, the current one, across the repository. The landing’s screenshots are converted to WebP at the size the page shows them, once, before each build, and the web app serves them as they are, so its image no longer holds an image library at all. Each screenshot is about a quarter of the size of the picture it replaces.',
     checked:
@@ -195,6 +235,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-29',
     area: 'Site',
     title: 'Every package lists what it uses',
+    brief:
+      'The top level installs only tooling; the tests and scripts are packages that declare their imports, checked in CI.',
     summary:
       'The repository’s top level used to install the database driver, the web server, the image library and every one of its own packages, so the tests and scripts worked whether or not anything declared what they used. It now installs only the tools that run across everything: the formatter, the type checker and the runtime’s types. The tests and the scripts are packages of their own that list what they import, and nothing reaches into another package by a relative path.',
     checked:
@@ -204,6 +246,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-29',
     area: 'Site',
     title: 'Each image carries only its own service',
+    brief:
+      "The gateway and worker images no longer hold the API's web server or image library, and CI checks each image after building it.",
     summary:
       'The API, the live gateway and the worker used to share one dependency install, so every image carried everything any of them needed. Each now installs only its own service’s packages: the gateway and the worker no longer carry the API’s web server or its native image library, and each is about 70 MB smaller. Fewer packages in an image is less to patch and less for a scanner to find.',
     checked:
@@ -213,6 +257,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-29',
     area: 'Site',
     title: 'No service reaches into another',
+    brief:
+      'File storage is a package of its own, the worker no longer depends on the API, and a test in CI refuses any import from one service into another.',
     summary:
       'Where uploaded files are kept, on disk or in any S3-compatible store, is now a package of its own that the API and the worker both use. Before, the worker borrowed it from inside the API, so the worker depended on the whole API package, its web server and its image library included. Now no service imports another: the API, the live gateway and the worker share code only through packages made for sharing, so each can be built, deployed and scaled on its own.',
     checked:
@@ -222,6 +268,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-29',
     area: 'Security',
     title: 'Every workspace has a storage limit',
+    brief:
+      'Each workspace can store up to 1 GB of images; an upload past it is refused before it is read, and owners see the usage on the home.',
     summary:
       'Each workspace can now store up to 1 GB of images. An upload that would go past it is refused before any of it is read, with a message saying an owner can make room by deleting old images, so one workspace cannot fill the disk for everyone. Owners see how much is used on the workspace’s tile on the home, as a thin bar in the workspace’s colour with the figures beside it; other members are not shown it.',
     checked:
@@ -231,6 +279,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-29',
     area: 'Security',
     title: 'Delete your own account',
+    brief:
+      'Delete your account from Account settings, with your password and a choice for each workspace you own; your details are removed and your work stays under "Deleted user".',
     summary:
       'Account settings now let you delete your account yourself. You confirm with your password, and for each workspace you own you choose: hand it to one of its members, who becomes its owner, or delete it with everything in it. Then every session ends, your name, email, username, picture and password are removed, and your picture’s file is deleted; what you wrote in workspaces that stay is kept under “Deleted user”. Your details in the audit trail are erased by the erasure tool’s own account, which the deletion asks for, since the app itself is not allowed to erase. The erasure design is a draft for legal review.',
     checked:
@@ -240,6 +290,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-29',
     area: 'Security',
     title: 'Erasure has its own key, and leaves a receipt',
+    brief:
+      "Only `audit:erase`'s own account can blank the audit trail's personal fields, and each erasure records counts and a commitment, never the person.",
     summary:
       'Blanking a person’s details out of the audit trail used to be something the app’s own database account could do. Now only the erasure tool’s own account can, and the app cannot read or write the record of erasures either. Each erasure, done in one step, removes the person’s fields and former usernames and writes a receipt: when it happened, how many records it changed, and a commitment to whom that names nobody on its own. The tool prints a one-time value to keep with the request; with it, the receipt proves which request it answered. The erasure design is a draft for legal review.',
     checked:
@@ -249,6 +301,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-29',
     area: 'Security',
     title: 'A database account per service',
+    brief:
+      'The gateway and the worker each connect as their own database account, granted only what their code does.',
     summary:
       'The live gateway and the background worker no longer share the app’s database account. Each connects as its own, granted only what its code does: the gateway can check a session and a membership and keep documents in step, and the worker can run its jobs, send its mail and notifications, tidy up expired records and stream the audit trail. Neither can change an issue, a person or a membership, and the worker reads the audit trail without being able to alter it. With the duplicate service’s read-only account, every service now has the narrowest access it can work with.',
     checked:
@@ -258,6 +312,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-29',
     area: 'Security',
     title: 'The ML service can read one view, and nothing else',
+    brief:
+      'The duplicate and priority service has a database account that can read one view of issue fields, owned by the migrations, and nothing else.',
     summary:
       'The duplicate and priority service used to connect with the same database account as the rest of the app, which could read and change nearly every table. It now has an account of its own that can read one view, made by the migrations, holding only the issue fields its models use: no other table, and no writing at all. A column added to issues later stays out of its reach until someone adds it to the view on purpose. The service’s own notes no longer claim a setting it chooses for itself is enforced by the database.',
     checked:
@@ -267,6 +323,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-29',
     area: 'Security',
     title: 'The whole stack tested as production runs it',
+    brief:
+      'CI now also runs the stack in production mode: HTTPS through the proxy with a throwaway certificate, mail over TLS, a fresh audit key and no demo data, driven by the same end-to-end and browser tests.',
     summary:
       'Every push now also runs the whole container stack in production mode: every service told it is production, the edge proxy serving HTTPS with a throwaway certificate made for that run, mail sent over TLS because plain mail is refused, a fresh signing key for the audit trail, and no demo data. The same end-to-end and browser tests then drive it, so a rule that only applies in production (a Secure host-only cookie, HSTS, an https web address, encrypted mail) is exercised before anything is deployed, not first discovered after.',
     checked:
@@ -276,6 +334,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-29',
     area: 'Security',
     title: 'One address for the whole app',
+    brief:
+      'The app, the API and the live gateway share one address behind an edge proxy: one web image runs anywhere, a production build pointing at localhost is refused, and no other site is allowed to read the API. See [DEPLOY.md](DEPLOY.md).',
     summary:
       'The web app, the API and the live gateway now sit behind one address: an edge proxy serves the app at /, the API at /api and the gateway at /ws. The web app holds no addresses of its own, so one built image runs anywhere, and a production build that points at localhost is refused. With one origin the API no longer tells any other site it may read its answers, and only the proxy is reachable from outside; the API, gateway and everything behind them are on the private network. A new deployment guide sets out the layout and how many database connections each service needs.',
     checked:
@@ -285,6 +345,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-23',
     area: 'Product',
     title: 'A live river of your team’s two weeks',
+    brief:
+      'Two weeks of activity as a river, one band per workspace in its colour; hover a day for counts, and each live change ripples from today.',
     summary:
       'The signed-in home has a picture of its own now, instead of the landing page’s field: two weeks of your team’s activity as a river, one band per workspace in its theme’s colour, stacked, so you can see when the team was busy and where. Hover a day for each workspace’s count; when a teammate changes something, a ripple goes out from today’s edge of that workspace’s band. Behind it, an aurora in the colours of the time of day. Rising numbers show a small +1, tiles lean toward the pointer, feed lines carry their workspace’s colour and assigned issues their status colours. The demo has three workspaces in three themes. Still under reduced motion.',
     checked:
@@ -294,6 +356,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-23',
     area: 'Product',
     title: 'A live home after you sign in',
+    brief:
+      "The first page after signing in now greets you over the landing's field of points, which ripples with your teammates' changes, and shows what is assigned to you, a live feed, and a tile per workspace with its open issues, activity and who is here now.",
     summary:
       'The page you land on after signing in used to be a plain list of workspace names. Now it greets you over the same moving field of points as the landing page, and that field reacts to your own workspaces: every change a teammate makes sends a ring across it, it quickens while someone else is here and greys if the connection drops. Below it, the open issues assigned to you, a live feed of what is happening, and a tile for each workspace with its open issues, two weeks of activity, who is in it and who is here right now, and what happened last. Tiles pulse when their workspace changes, and the numbers count to their new values. Everything is still under reduced motion, works from the keyboard and fits a phone.',
     checked:
@@ -303,6 +367,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-23',
     area: 'Security',
     title: 'One configuration loader that fails closed',
+    brief:
+      'Every service and command-line tool reads its settings the same way, and in production a missing database or web address, or a plain-http one, stops it at start-up instead of falling back to localhost.',
     summary:
       'The API, the realtime gateway, the worker and every command-line tool now read their settings through one loader with one set of rules. The environment must be named; nothing guesses. In production nothing falls back to a local default: a missing database address or web address, or a web address that is not https, stops the service at start-up with every problem listed, instead of quietly connecting to localhost or mailing links nobody can open. Before, the command-line tools fell back to a local database even in production, and the gateway to a local web address.',
     checked:
@@ -312,6 +378,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-23',
     area: 'Site',
     title: 'The demo account is ready in the container stack',
+    brief:
+      'The stack now seeds `rohit@robis.test` (password `robis-demo-password`) as owner of a populated workspace, with a confirmed address and a picture, so it can be tried without signing up.',
     summary:
       'Starting the container stack now creates the demo accounts, so it can be tried without signing up: rohit@robis.test, password robis-demo-password, owner of an Engineering workspace with projects, issues, channels and a team of three. The demo people start with a confirmed address and a picture, so signing in goes straight to the workspace. It happens once: later starts leave the accounts and anything changed in them alone. The demo password is refused in production, as before.',
     checked:
@@ -321,6 +389,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-23',
     area: 'Security',
     title: 'A strict security policy for every page',
+    brief:
+      'Pages run only scripts the server stamped for that response, so injected script cannot run; nothing may frame Robis; HTTPS is pinned in production; and only the camera is allowed, for Robis itself. A browser test in CI loads the real pages and fails on any violation.',
     summary:
       'Every page now carries a Content-Security-Policy that runs only the scripts the server stamped with a fresh one-time value, so a script or event handler slipped into a page cannot run. Nothing may show Robis inside a frame, which stops clickjacking. Browsers are told to use HTTPS only, the camera is allowed for Robis itself (the welcome screen takes a picture) and every other powerful feature, such as the microphone and location, is turned off. The sign-up page now gets the same no-referrer, no-store treatment as the reset and verification pages, and the offline cache never keeps a page carrying a one-time link. Next.js is now on 15.5.28, which fixes a critical flaw in image optimisation.',
     checked:
@@ -330,6 +400,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-23',
     area: 'Security',
     title: 'Sign up with your email first',
+    brief:
+      'Creating an account now starts with just your address and always says "check your inbox", so the form never reveals who already has an account. The link in that email finishes signing up, works once for 24 hours, and confirms your address as it does. Asking again never cancels a link already sent.',
     summary:
       'Creating an account used to say “an account with that email already exists”, which let anyone check whether an address was registered. Now sign-up starts with just your address and always answers “check your inbox”, after the same short wait either way. A new address gets a link that finishes signing up, where you choose your name, username and password; an address that already has an account gets a reminder to sign in instead, so only whoever reads that inbox learns which it was. The link works once, for 24 hours, and opening it confirms your address, so a new account starts confirmed and can join workspaces at once. Asking again sends another link without cancelling the first, the link is taken out of the address bar once the page has read it, and a sign-up nobody finishes is cleared away a week after its link runs out.',
     checked:
@@ -339,6 +411,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-20',
     area: 'Security',
     title: 'Email invitations that give nothing away',
+    brief:
+      'Inviting by email answers the same whether or not the address has an account, sends the same email either way, and the pending list shows the address as typed. Whoever owns the address sees the invitation once it is confirmed. The cap on unanswered invitations now counts per sender, so throwaway workspaces cannot block a real one, and a reserved name spelled with a 1 for an i (adm1n) is refused.',
     summary:
       'Inviting someone by email used to say “no account exists with that email”, which let anyone with a workspace check whether an address was registered. Now an email invitation answers the same whether or not the address has an account, the same email goes to it either way, and the pending list shows the address as typed, never who it turned out to be. Whoever owns the address sees the invitation once their address is confirmed, including someone who signs up later. The cap on unanswered invitations now counts per sender, so a stranger with throwaway workspaces cannot fill anyone’s and block a real team, and a reserved name spelled with a 1 for an i, such as adm1n, is refused.',
     checked:
@@ -348,6 +422,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-20',
     area: 'Security',
     title: 'Safer by default before going live',
+    brief:
+      'Every service refuses to start without being told which environment it is in. In production the session cookie is always Secure and host-only. Writes from another site are refused. Metrics moved off the public port. A session unused for 7 days ends, and deleting a workspace asks for your password.',
     summary:
       'A review before deployment tightened the defaults. The API, the live feed, the worker and the command-line tools now refuse to start unless they are told whether they are in development, test or production, instead of assuming development. In production the session cookie is always Secure and carries the __Host- prefix, so no other subdomain or plain-http page can set it. Writes from another website are refused before they are read, the same check the live feed already made. Metrics moved to an internal port, while the health check stays public. A session unused for 7 days now ends, within the 30 it can live, and deleting a workspace asks for your password.',
     checked:
@@ -357,6 +433,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-20',
     area: 'Security',
     title: 'Asked again when the terms change',
+    brief:
+      'Sign-up now keeps when you confirmed your age and which version of the terms you agreed to. When the terms change, you are asked again before you go back into a workspace. Accounts whose username was given to them are asked once to keep it or pick their own.',
     summary:
       'Sign-up now keeps when you confirmed your age and which version of the terms you agreed to. When the terms change, you are asked again before you go back into a workspace, and the server holds the line the same way it does for a profile picture: workspace pages, the live feed and the inbox wait for an answer, while your account and the way out of a workspace stay open. Accounts whose username was given to them rather than chosen are asked once to keep it or pick their own. The terms, the privacy notice and the minimum age are drafts for legal review.',
     checked:
@@ -366,6 +444,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-16',
     area: 'Product',
     title: 'Invitations you answer',
+    brief:
+      'Adding someone to a workspace now sends them an invitation. It shows in their inbox and on their workspaces page, and nothing joins their list until they accept. Joining needs a confirmed email address; admins see who has not answered and can withdraw an invitation.',
     summary:
       'Adding someone to a workspace now sends them an invitation rather than putting them in it. It arrives in their inbox and waits on their workspaces page, and nothing joins their list until they accept; they can decline instead. Accepting needs a confirmed email address, which settles what a confirmed address is for. Admins see who has not answered yet and can withdraw an invitation.',
     checked:
@@ -385,6 +465,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-16',
     area: 'Security',
     title: 'A username nobody else can wear',
+    brief:
+      'Lookalike names (`ada.l` and `ada_l`, `b0b` and `bob`) count as the same name. A name you let go is held for 90 days, and only you can take it back. A mention points at the person it meant when it was written, so an old `@name` never reaches whoever takes that name later.',
     summary:
       'Lookalike usernames now count as the same name: dots and underscores are ignored, 0 reads as o and 1 as l, so ada.l, ada_l and adal cannot all exist, and neither can b0b beside bob. A username you let go is held for 90 days, and only you can take it back; an account can hold three old names at once, so nobody can sit on a list of them. Every mention is tied to the person it meant when the comment was written, so if Bob renames and someone else later takes his old name, old comments still point at Bob, show his new name beside the old one, and notify only him.',
     checked:
@@ -394,6 +476,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-16',
     area: 'Site',
     title: 'A short tour before you sign up',
+    brief:
+      'Get started opens six slides of their own first: sourced quotes from Grace Hopper, Eisenhower and Fred Brooks, a messy desk to sort into a board, a tunnel where notes wait for signal, what signing up asks for, then the form, over a loom of slow threads. A two-finger trackpad swipe turns the slide.',
     summary:
       'Get started now opens six slides of their own instead of the sign-in form, rather than the landing page again: three sourced quotes on habit, plans and teams (Grace Hopper, Eisenhower, Fred Brooks), a messy desk of notes to sort into a board, a train tunnel where notes wait for signal and then go in order, what signing up asks for, and then the form. A loom of slow threads moves behind it, tinted for each slide and dimmed in the tunnel. A two-finger trackpad swipe turns the slide.',
     checked:
@@ -413,6 +497,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-15',
     area: 'Security',
     title: 'Your own sign-in history, and a way to erase someone',
+    brief:
+      'Account settings show your sign-ins, failed attempts, password changes and sessions signed out, signed and seen only by you. Member events keep usernames beside the trail, so a person can be erased without breaking the chain (a design, for legal review).',
     summary:
       'Account settings now show what has happened to your account: sign-ins, failed attempts, sign-outs, password changes and resets, sessions signed out, signed and chained like the workspace trail, and seen only by you. Separately, member events now keep usernames beside the trail rather than inside it, so a person can be erased from it without breaking the chain. The erasure design is a draft for legal review.',
     checked:
@@ -432,6 +518,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-15',
     area: 'Security',
     title: 'An audit trail that records who reads it',
+    brief:
+      "Reading, exporting and checking the trail are events in it, and a link on another site cannot add one in an admin's name. Checks start from a signed checkpoint, so they stay quick, with a full check one click away, and the who filter lists former members by username.",
     summary:
       'Reading, exporting and checking the trail are now events in it, kept out of the members’ activity feed. Checks start from the last verified point, stored with a signature, so they stay quick as the trail grows; a full check is one click away. The who filter now lists former members too, by username.',
     checked:
@@ -451,6 +539,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-15',
     area: 'Security',
     title: 'An audit trail the database cannot quietly rewrite',
+    brief:
+      'The app connects as a role that can add audit events but not change, remove or empty them, and new events are signed with a key kept outside the database. A rewrite without the key is caught, even of a whole chain.',
     summary:
       'The app now connects to the database as a role that can add audit events but never change, remove or empty them, and cannot switch off the trigger that guards them. New events are signed with a key kept outside the database, recorded by id so keys can rotate.',
     checked:
@@ -460,6 +550,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-15',
     area: 'Site',
     title: 'Every service as a container, checked on every push',
+    brief:
+      'Images for the web app, API, gateway, worker and ML service, and one compose file that runs them with Postgres, object storage and a mail catcher. CI builds them, waits for every health check, drives the stack end to end, and fails on fixable critical vulnerabilities.',
     summary:
       'The web app, API, realtime gateway, worker and ML service each have a container image, and one compose file runs them together with Postgres, object storage and a mail catcher. CI builds every image, starts the stack, and drives it the way a new person would.',
     checked:
@@ -469,6 +561,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-13',
     area: 'Product',
     title: 'Reset and confirmation emails over real mail',
+    brief:
+      'Password resets and address confirmations go out over SMTP, sent by the worker so a slow mail server never slows a request. Failed sends retry, then stay visible as dead letters. `bun run mail:start` runs a local inbox.',
     summary:
       'Password resets and address confirmations now go out over SMTP, sent by the background worker so a slow mail server never slows a request. A failed send is retried and then kept where it can be seen, and a local inbox shows every message during development.',
     checked:
@@ -488,6 +582,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-13',
     area: 'Security',
     title: 'The demo password works only in development',
+    brief:
+      "Outside development the API refuses the README's demo password everywhere, and the seed script refuses to run against production.",
     summary:
       'The seeded accounts share a password printed in the README. Outside development the API refuses it at sign-in, sign-up, password change and reset, and the seed script will not run against production at all.',
     checked:
@@ -497,6 +593,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-13',
     area: 'Product',
     title: 'Images on issues and comments',
+    brief:
+      'Attach a photo, take one with the camera, or paste a screenshot. Images are stripped of metadata, screenshots stay lossless, and only members can open them. One added with no network waits on the device and uploads exactly once on reconnect. Storage is local disk or any S3-compatible store, and deleting an issue, comment or workspace removes its files.',
     summary:
       'Attach a photo, take one with the camera, or paste a screenshot onto an issue or into a comment. Only members can open them, and one added with no network waits on the device and uploads exactly once when it returns.',
     checked:
@@ -516,6 +614,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-13',
     area: 'Site',
     title: 'Documentation that agrees with the code',
+    brief:
+      'Every relative link in every Markdown file resolves, test counts live in one place (the roadmap), and CI checks both on every push, including proving the check fails on a deliberately broken link.',
     summary:
       'The architecture guide pointed at folders that no longer existed and four documents quoted four different test counts. Every link now resolves, counts live in one place, and CI checks both on every push.',
     checked:
@@ -525,6 +625,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-13',
     area: 'Product',
     title: 'A picture before you start',
+    brief:
+      'New members upload a photo, take one with the camera, paste a screenshot or pick a generated pattern before using a workspace; the API and the live feed hold that line too. Photos are re-encoded with all metadata removed, location included, and are shown only to people who share a workspace.',
     summary:
       'New members choose how they appear before they use a workspace: upload a photo, take one with the camera, paste a screenshot, or pick a generated pattern. Pictures appear beside everything a person does, and only to people who share a workspace with them.',
     checked:
@@ -543,6 +645,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-09',
     area: 'Product',
     title: 'Usernames',
+    brief:
+      'Everyone picks an `@username` at sign-up; teammates add and mention each other by it. Email addresses are shown only to workspace admins, and the audit trail names people by username, not email. Sign-up now asks for an age confirmation and links draft terms and privacy pages, both marked for legal review.',
     summary:
       'Everyone picks an @username when they sign up, and that is how teammates find, add and mention each other. Email addresses are now shown only to workspace admins, and the audit trail names people by username instead of by email.',
     checked:
@@ -561,6 +665,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-09',
     area: 'Security',
     title: 'A tamper-evident audit trail',
+    brief:
+      'Every change in a workspace is recorded in the same transaction, numbered, and chained with SHA-256, so an edited or deleted event is named when the chain is checked. Admins get a security view and an export; an operator can stream the trail to a SIEM over HTTPS, with an idempotency key per event.',
     summary:
       'Every change in a workspace is recorded in the same transaction as the change, numbered, and chained with SHA-256, so an edited or deleted event is named when the chain is checked. Admins get a security view and an export, and an operator can stream the trail to a SIEM over HTTPS.',
     checked:
@@ -580,6 +686,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-09',
     area: 'Security',
     title: 'Request hardening',
+    brief:
+      'The API no longer trusts any client to name its own address (`TRUST_PROXY` now defaults to no proxy), every request carries an id from the API through to the ML service, and pages with a token in the link send no referrer and are never cached.',
     summary:
       'The API no longer trusts any client to name its own address, every request carries an id from the API through to the ML service, and pages with a token in the link send no referrer and are never cached.',
     checked:
@@ -589,6 +697,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-09',
     area: 'ML',
     title: 'Priority suggestions in the composer',
+    brief:
+      'Typing an issue title offers a suggested priority with its score, filed only if you press Use. Below 40 triaged issues the model says so instead of guessing.',
     summary:
       'Typing an issue title offers a suggested priority with its score, filed only if you press Use. Below 40 triaged issues the model says so instead of guessing.',
     checked:
@@ -607,6 +717,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-09',
     area: 'ML',
     title: 'Duplicate detection, measured',
+    brief:
+      'A labelled set of 84 queries, threshold chosen on one half and reported on the other: precision 0.79, recall 0.62, and none of the 7 duplicates that share almost no words.',
     summary:
       'A labelled set of 84 queries, with the threshold chosen on one half and reported on the other: precision 0.79, recall 0.62, and none of the 7 duplicates that share almost no words.',
     checked:
@@ -616,6 +728,7 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-09',
     area: 'ML',
     title: 'Character n-grams tried, and not adopted',
+    brief: 'None of five representations found more reworded duplicates without more false alarms.',
     summary:
       'Five representations compared against a rule fixed in advance. None found more reworded duplicates without more false alarms, so production stays as it was.',
     checked: 'Reproducible with python -m robis_ml.duplicate_eval --compare.',
@@ -624,6 +737,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-09',
     area: 'Site',
     title: 'A live landing page',
+    brief:
+      'The name letter by letter over a WebGL field, and a demo where you cut the network and watch it merge.',
     summary:
       'The name, letter by letter, over a WebGL field that acts each letter out, then a demo where you cut the network, type on both sides and watch it merge.',
     checked: 'The demo runs on real Yjs documents, with tests holding it to "nothing is lost".',
@@ -632,6 +747,8 @@ export const CHANGELOG: readonly Entry[] = [
     date: '2026-10-08',
     area: 'Security',
     title: 'An authenticated ML service',
+    brief:
+      'A token it refuses to start without, and duplicate hints that degrade to nothing when it is down.',
     summary:
       'The ML service needs a token and refuses to start without one. Duplicate hints reach the composer, and a broken service only ever means no hints.',
     checked:

@@ -90,7 +90,8 @@ export function brokenLinks(root: string, files: readonly string[]): BrokenLink[
  * example. Paths are matched only under the repository's own top-level
  * directories, so ordinary code like `a/b` is left alone.
  */
-const QUOTED_PATH = /`((?:backend|frontend|shared|scripts|robis-ml|tests|docs|\.github)\/[^`\s]*)`/g;
+const QUOTED_PATH =
+  /`((?:backend|frontend|shared|scripts|robis-ml|tests|docs|\.github)\/[^`\s]*)`/g;
 
 export function missingQuotedPaths(root: string, files: readonly string[]): BrokenLink[] {
   const missing: BrokenLink[] = [];
@@ -119,9 +120,7 @@ export const INVENTORIES = ['COMPLETE_APP_SUMMARY.md'] as const;
 /** Tracked Markdown files, except the checker's own deliberately broken fixtures. */
 export function trackedMarkdown(root: string): string[] {
   const listed = Bun.spawnSync(['git', 'ls-files', '*.md'], { cwd: root }).stdout.toString();
-  return listed
-    .split('\n')
-    .filter((file) => file && !file.startsWith('tests/fixtures/'));
+  return listed.split('\n').filter((file) => file && !file.startsWith('tests/fixtures/'));
 }
 
 /** Every Markdown file under a directory, for checking a fixture tree. */
