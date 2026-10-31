@@ -40,6 +40,15 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-10-31',
+    area: 'Site',
+    title: 'Indexes for the work that runs on a clock',
+    summary:
+      'The background worker looks for due jobs, and once an hour expired sessions are removed. The jobs index covered every job ever run, finished ones included, which is most of the table in time; it is replaced by one over pending jobs only, by when they are due, which stays small however many jobs have finished. Expired sessions are now found through an index on when they expire, rather than by reading every session.',
+    checked:
+      'Tests prove the new jobs index covers due times for pending jobs only and the old one is gone, that the claim query uses it, and that removing expired sessions uses the new sessions index. The migration tool reads the history without complaint, and the full suite passes on the migrated database.',
+  },
+  {
+    date: '2026-10-31',
     area: 'Security',
     title: 'One query to know who you are and where you are',
     summary:

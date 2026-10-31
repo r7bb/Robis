@@ -225,6 +225,13 @@
       "when": 1793300178618,
       "tag": "0031_account_deletion",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793419609600,
+      "tag": "0032_pending_jobs_and_session_expiry_indexes",
+      "breakpoints": true
     }
   ]
 }

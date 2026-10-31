@@ -4,6 +4,8 @@ Newest first. The same list is the site's What's new page, where each entry
 opens to show how it was checked and, for features, where to find it and
 what each layer does. Back to the [README](../README.md).
 
+- **Indexes for the work that runs on a clock** (2026-10-31). A small index
+  over pending jobs only, and one for removing expired sessions.
 - **One query to know who you are and where you are** (2026-10-31). The
   session and your workspace role come from one database query.
 - **One call for both composer hints** (2026-10-31). Duplicate hints and the

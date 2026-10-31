@@ -258,6 +258,8 @@ export const sessions = pgTable(
   (t) => [
     uniqueIndex('sessions_token_hash_key').on(t.tokenHash),
     index('sessions_user_id_idx').on(t.userId),
+    // For the hourly removal of expired sessions (stage 3, item 29).
+    index('sessions_expires_at_idx').on(t.expiresAt),
   ],
 );
 
@@ -821,9 +823,10 @@ export const jobs = pgTable(
     createdAt: createdAt(),
   },
   (t) => [
-    // The claim query's exact predicate and ordering, so it stays an index
-    // scan as the table grows.
-    index('jobs_claim_idx').on(t.status, t.runAt),
+    // The claim query's predicate and ordering (stage 3, item 29): pending
+    // jobs only, by when they are due. Finished and dead jobs, most of the
+    // table in time, are not in it, so it stays small as the table grows.
+    index('jobs_pending_run_at_idx').on(t.runAt).where(sql`${t.status} = 'pending'`),
     // At most one waiting email per account and kind. Asking again while one
     // is queued, retrying or in flight adds nothing, so neither a resend
     // button nor a burst of sign-ups can stack up mail for one inbox.
