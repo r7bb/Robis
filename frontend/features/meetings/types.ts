@@ -13,7 +13,7 @@ import type { BodyOf, contracts, ResponseOf } from '@robis/shared';
 
 export type Meeting = ResponseOf<(typeof contracts)['meetings.list']>['meetings'][number];
 
-export type MeetingAttendee = Meeting['attendees'][number];
+type MeetingAttendee = Meeting['attendees'][number];
 
 /** Where an attendee stands: `pending` until they answer. */
 export type MeetingResponse = MeetingAttendee['response'];

@@ -88,6 +88,15 @@ jobs:
       - name: Typecheck
         run: bun run typecheck
 
+      # No unused files, exports or dependencies (stage 4, item 35).
+      - name: Unused code
+        run: bun run knip
+
+      # And against a fixture with a known unused export it must fail, so the
+      # step above is shown to catch one.
+      - name: Unused code check catches an unused export
+        run: "! bun run knip --directory tests/fixtures/knip"
+
       # The image has no health command of its own, so wait for it to answer
       # before the tests that need it run.
       - name: Wait for S3Mock

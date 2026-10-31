@@ -14,7 +14,7 @@ const ROOT = resolve(import.meta.dir, '..');
 /** Build output and other things that are not this repository's source. */
 const SKIP = /^(?:node_modules|\.next.*|\.git|\.trivy|robis-ml|public|imgs)$/;
 /** What the repository root may install: the tools run across every package. */
-const ROOT_TOOLING = ['@biomejs/biome', '@types/bun', 'typescript'];
+const ROOT_TOOLING = ['@biomejs/biome', '@types/bun', 'knip', 'typescript'];
 const BUILTIN = new Set([...builtinModules, 'bun', 'bun:test', 'bun:sqlite', 'bun:ffi', 'bun:jsc']);
 
 // Static imports and re-exports start a line; anything mid-line is a string

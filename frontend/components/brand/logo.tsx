@@ -12,7 +12,7 @@
  * that holds at 16px and does not pretend to be more than it is.
  */
 
-export function LogoMark({ size = 28, className = '' }: { size?: number; className?: string }) {
+function LogoMark({ size = 28, className = '' }: { size?: number; className?: string }) {
   return (
     <svg
       width={size}

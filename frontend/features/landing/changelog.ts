@@ -17,7 +17,7 @@ export type Area = 'Product' | 'ML' | 'Security' | 'Site';
  * Measurements, refusals and hardening have none: they are real work, but
  * there is nothing to click.
  */
-export type Feature = {
+type Feature = {
   /** What a person would call it. */
   name: string;
   /** Where to find it in the app. */
@@ -38,6 +38,15 @@ export type Entry = {
 };
 
 export const CHANGELOG: readonly Entry[] = [
+  {
+    date: '2026-10-31',
+    area: 'Site',
+    title: 'Unused code is found, and refused',
+    summary:
+      'Eleven database relation definitions that no query used, a status helper, a request type and six response types were removed, and about twenty names that were only used inside their own file stopped being exported. A check for unused files, exports and dependencies now runs on every push, so dead code is caught when it appears rather than in a review months later.',
+    checked:
+      'The check (Knip, ISC licensed, pinned) reports nothing on the repository, and fails on a planted unused export; CI also runs it against a small sample with a known unused export and requires it to fail. Typecheck, lint and the full suite pass.',
+  },
   {
     date: '2026-10-31',
     area: 'Site',

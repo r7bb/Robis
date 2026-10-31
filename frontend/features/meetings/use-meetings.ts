@@ -13,7 +13,7 @@ import type { Meeting, MeetingAnswer, MeetingResponse, NewMeeting } from './type
  * Exporting the builder rather than spelling the array out in both places
  * means a rename cannot silently stop refreshing one of them.
  */
-export function meetingsKey(workspaceId: string, scope: MeetingScope) {
+function meetingsKey(workspaceId: string, scope: MeetingScope) {
   return ['meetings', workspaceId, scope] as const;
 }
 

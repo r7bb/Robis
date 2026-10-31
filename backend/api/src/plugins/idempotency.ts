@@ -18,7 +18,7 @@ import { ApiError } from '../errors.ts';
  * the winner's response or are told to retry.
  */
 
-export const IDEMPOTENCY_HEADER = 'idempotency-key';
+const IDEMPOTENCY_HEADER = 'idempotency-key';
 
 /** How long a replay waits for an in-flight original before giving up. */
 const IN_FLIGHT_TIMEOUT_MS = 5_000;

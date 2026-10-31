@@ -122,7 +122,7 @@ export function stepForKey(key: string): Step | null {
 }
 
 /** How far a drag must travel sideways before it counts as a swipe. */
-export const SWIPE_MIN_PX = 48;
+const SWIPE_MIN_PX = 48;
 
 /**
  * Which way a finished touch drag turns the deck: 1 forward, -1 back, 0

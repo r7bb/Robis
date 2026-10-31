@@ -26,7 +26,7 @@ const READ_COALESCE_MS = 60_000;
  * appends one `audit.exported` event to the trail it is walking, so a walk
  * must consume more than one event per page to ever reach the end.
  */
-export const MIN_EXPORT_PAGE = 10;
+const MIN_EXPORT_PAGE = 10;
 
 /** Pages of the trail per minute per person: a person reads, a loop does not. */
 const READS_PER_MINUTE = 120;

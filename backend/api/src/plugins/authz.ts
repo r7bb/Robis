@@ -21,8 +21,6 @@ declare module 'fastify' {
   }
 }
 
-/** Narrowed request types so handlers don't re-check what a guard guaranteed. */
-export type AuthedRequest = FastifyRequest & { user: AuthenticatedUser };
 export function currentUser(request: FastifyRequest): AuthenticatedUser {
   if (!request.user) throw ApiError.unauthorized();
   return request.user;
@@ -41,7 +39,7 @@ export function currentMembership(request: FastifyRequest) {
  * to creating a workspace; account routes stay open so the picture can be
  * chosen in the first place.
  */
-export function assertHasAvatar(user: AuthenticatedUser) {
+function assertHasAvatar(user: AuthenticatedUser) {
   if (!user.hasAvatar) {
     throw new ApiError(403, 'avatar_required', 'Add a picture before you start');
   }

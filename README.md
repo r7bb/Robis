@@ -146,12 +146,12 @@ with Postgres on the same machine. Method and percentiles in
 
 ## Latest
 
+- **Unused code is found, and refused.** Dead definitions removed, and a
+  check on every push for unused files, exports and dependencies.
 - **Screenshots are kept once, as WebP.** One copy of each, at display
   size: 7.1 MB of stills down to 1.2 MB.
 - **The landing loads its heavy parts as you reach them.** The field and
   the live demo download after the page is usable, as they come into view.
-- **The benchmark counts what a write costs afterwards.** Follow-up reads
-  per write, and refreshed figures.
 
 Everything else, newest first, with how each was checked:
 [What's new](docs/WHATS_NEW.md).

@@ -3,7 +3,7 @@ import type { Env } from './env.ts';
 import { ApiError } from './errors.ts';
 
 /** The public demo password works in development and nowhere else. */
-export function demoPasswordAllowed(env: Pick<Env, 'NODE_ENV'>): boolean {
+function demoPasswordAllowed(env: Pick<Env, 'NODE_ENV'>): boolean {
   return env.NODE_ENV === 'development';
 }
 

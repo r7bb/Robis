@@ -1,0 +1,39 @@
+// Unused files, exports and dependencies (stage 4, item 35): `bun run knip`,
+// run in CI. Knip is ISC licensed; see THIRD_PARTY_NOTICES.md.
+{
+  "$schema": "https://unpkg.com/knip@6.41.0/schema.json",
+  "workspaces": {
+    // Libraries need no entries: their package exports are the entries.
+    // These are the programs, run directly rather than imported.
+    "backend/api": {
+      "entry": ["src/main.ts"]
+    },
+    "backend/realtime": {
+      "entry": ["src/main.ts"]
+    },
+    "backend/worker": {
+      // health.ts is the container health check (deploy/docker/backend.Dockerfile).
+      "entry": ["src/main.ts", "src/health.ts"]
+    },
+    "backend/database": {
+      // `bun run audit:seal` and `bun run audit:erase`.
+      "entry": ["src/*-cli.ts"]
+    },
+    "frontend": {
+      // Served as is; the service worker is registered by URL, not imported.
+      "ignore": ["public/**"]
+    },
+    "scripts": {
+      // Every script is run by name from the root package.json or CI.
+      "entry": ["*/*.ts"],
+      // Never imported: installed for the Postgres binaries it brings, which
+      // scripts/db/pg-paths.ts finds on disk.
+      "ignoreDependencies": ["embedded-postgres"]
+    },
+    "tests": {
+      "entry": ["*.test.ts"],
+      // Sample trees the doc-links test reads as text.
+      "ignore": ["fixtures/**"]
+    }
+  }
+}

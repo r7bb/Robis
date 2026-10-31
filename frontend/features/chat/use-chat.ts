@@ -14,11 +14,11 @@ import type { ChatMessage, MessagePage } from './types.ts';
  * name from a long way away, and a typo there fails silently.
  */
 
-export function channelsKey(workspaceId: string) {
+function channelsKey(workspaceId: string) {
   return ['channels', workspaceId] as const;
 }
 
-export function messagesKey(workspaceId: string, channelId: string) {
+function messagesKey(workspaceId: string, channelId: string) {
   return ['messages', workspaceId, channelId] as const;
 }
 

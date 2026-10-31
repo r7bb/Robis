@@ -27,7 +27,7 @@ import { currentUser, requireAuth } from '../plugins/authz.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
 
 /** What a deleted account is called wherever its work still shows. */
-export const DELETED_NAME = 'Deleted user';
+const DELETED_NAME = 'Deleted user';
 
 type Decision = { id: string; action: 'transfer'; to: string } | { id: string; action: 'delete' };
 

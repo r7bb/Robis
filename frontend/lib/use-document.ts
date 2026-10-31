@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import * as Y from 'yjs';
 import { realtimeUrl } from './endpoints.ts';
 
-export type Collaborator = DocumentAwareness & { userId: string; name: string };
+type Collaborator = DocumentAwareness & { userId: string; name: string };
 
 export type DocumentState = {
   text: string;

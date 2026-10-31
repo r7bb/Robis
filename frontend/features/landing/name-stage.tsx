@@ -18,7 +18,7 @@ import { Wordmark } from './wordmark.tsx';
  * measured p50 from the load harness, not a round number.
  */
 
-export const LETTERS = [
+const LETTERS = [
   {
     letter: 'R',
     word: 'Realtime',

@@ -30,6 +30,7 @@
     "test": "bun test",
     "typecheck": "tsc --noEmit -p shared/contracts && tsc --noEmit -p shared/sync && tsc --noEmit -p backend/metrics && tsc --noEmit -p backend/mailer && tsc --noEmit -p backend/storage && tsc --noEmit -p backend/auth && tsc --noEmit -p backend/database && tsc --noEmit -p backend/api && tsc --noEmit -p backend/realtime && tsc --noEmit -p backend/worker && tsc --noEmit -p scripts && tsc --noEmit -p tests && tsc --noEmit -p frontend",
     "lint": "biome check .",
+    "knip": "knip --no-progress",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "docs:links": "bun run scripts/docs/links.ts",
@@ -49,6 +50,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.5.12",
     "@types/bun": "latest",
+    "knip": "6.41.0",
     "typescript": "^5.7.0"
   }
 }

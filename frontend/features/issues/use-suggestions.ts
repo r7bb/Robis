@@ -6,13 +6,13 @@ import { call } from '../../lib/api.ts';
 import { useDebounced } from '../../lib/use-debounced.ts';
 
 /** Below this, a title is too short to say anything about. */
-export const MIN_LENGTH = 12;
+const MIN_LENGTH = 12;
 
 /** Long enough that a typist is not firing a request per keystroke. */
-export const DEBOUNCE_MS = 400;
+const DEBOUNCE_MS = 400;
 
 /** The query key both hints share: one request per workspace and settled title. */
-export function suggestionsKey(workspaceId: string, settled: string) {
+function suggestionsKey(workspaceId: string, settled: string) {
   return ['suggestions', workspaceId, settled] as const;
 }
 

@@ -15,7 +15,7 @@ import { avatarOf } from '../media/avatars.ts';
 import { currentUser, requireAuth, requirePicture } from '../plugins/authz.ts';
 
 /** Days of activity each tile shows, oldest first. */
-export const ACTIVITY_DAYS = 14;
+const ACTIVITY_DAYS = 14;
 /** Members shown on a tile; the rest are a count. */
 const MEMBERS_SHOWN = 5;
 /** Open issues on the "needs you" list, across every workspace. */

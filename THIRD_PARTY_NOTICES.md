@@ -66,6 +66,10 @@ tests run against a real S3-compatible server. It is never shipped with
 Robis. It stands in for MinIO, whose image is no longer published on Docker
 Hub.
 
+**Knip** (`knip@6.41.0`, pinned), ISC License. Finds unused files, exports
+and dependencies; run by `bun run knip` and in the `test` job. A development
+tool only: it is never shipped with Robis.
+
 **Trivy** (`aquasec/trivy:0.74.0`, pinned by digest), Apache License 2.0.
 Scans every built image for known vulnerabilities in the `containers` job.
 It is never shipped with Robis.

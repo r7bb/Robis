@@ -1,5 +1,5 @@
 import { ISSUE_PRIORITIES, ISSUE_STATUSES, ROLES } from '@robis/shared';
-import { relations, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import {
   bigint,
   bigserial,
@@ -1058,65 +1058,6 @@ export const meetingAttendees = pgTable(
     index('meeting_attendees_user_idx').on(t.userId),
   ],
 );
-
-export const usersRelations = relations(users, ({ many }) => ({
-  memberships: many(workspaceMembers),
-  sessions: many(sessions),
-}));
-
-export const sessionsRelations = relations(sessions, ({ one }) => ({
-  user: one(users, { fields: [sessions.userId], references: [users.id] }),
-}));
-
-export const workspacesRelations = relations(workspaces, ({ many }) => ({
-  members: many(workspaceMembers),
-  projects: many(projects),
-}));
-
-export const workspaceMembersRelations = relations(workspaceMembers, ({ one }) => ({
-  workspace: one(workspaces, {
-    fields: [workspaceMembers.workspaceId],
-    references: [workspaces.id],
-  }),
-  user: one(users, { fields: [workspaceMembers.userId], references: [users.id] }),
-}));
-
-export const projectsRelations = relations(projects, ({ one, many }) => ({
-  workspace: one(workspaces, { fields: [projects.workspaceId], references: [workspaces.id] }),
-  issues: many(issues),
-}));
-
-export const issuesRelations = relations(issues, ({ one, many }) => ({
-  project: one(projects, { fields: [issues.projectId], references: [projects.id] }),
-  assignee: one(users, { fields: [issues.assigneeId], references: [users.id] }),
-  comments: many(comments),
-}));
-
-export const commentsRelations = relations(comments, ({ one }) => ({
-  issue: one(issues, { fields: [comments.issueId], references: [issues.id] }),
-  author: one(users, { fields: [comments.authorId], references: [users.id] }),
-}));
-
-export const channelsRelations = relations(channels, ({ one, many }) => ({
-  workspace: one(workspaces, { fields: [channels.workspaceId], references: [workspaces.id] }),
-  messages: many(messages),
-}));
-
-export const messagesRelations = relations(messages, ({ one }) => ({
-  channel: one(channels, { fields: [messages.channelId], references: [channels.id] }),
-  author: one(users, { fields: [messages.authorId], references: [users.id] }),
-}));
-
-export const meetingsRelations = relations(meetings, ({ one, many }) => ({
-  workspace: one(workspaces, { fields: [meetings.workspaceId], references: [workspaces.id] }),
-  organizer: one(users, { fields: [meetings.organizerId], references: [users.id] }),
-  attendees: many(meetingAttendees),
-}));
-
-export const meetingAttendeesRelations = relations(meetingAttendees, ({ one }) => ({
-  meeting: one(meetings, { fields: [meetingAttendees.meetingId], references: [meetings.id] }),
-  user: one(users, { fields: [meetingAttendees.userId], references: [users.id] }),
-}));
 
 export type User = typeof users.$inferSelect;
 export type Session = typeof sessions.$inferSelect;

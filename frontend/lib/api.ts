@@ -96,9 +96,6 @@ export type WorkspaceSummary = ResponseOf<
   (typeof contracts)['workspaces.list']
 >['workspaces'][number];
 
-/** A project in a workspace's list, as the contract describes it. */
-export type ProjectSummary = ResponseOf<(typeof contracts)['projects.list']>['projects'][number];
-
 /** Someone in a workspace, as the contract describes them. */
 export type Member = ResponseOf<(typeof contracts)['members.list']>['members'][number];
 
@@ -107,7 +104,6 @@ export type MyInvitation = ResponseOf<
   (typeof contracts)['invitations.mine']
 >['invitations'][number];
 
-/** An invitation a workspace has sent, as its admins see it. */
 /**
  * An invitation a workspace has sent: to a person (username set) or to an
  * address (email set, as it was typed; never shown as who it turned out to be).
@@ -121,14 +117,8 @@ export function invitedLabel(invitation: SentInvitation): string {
   return invitation.username ? `@${invitation.username}` : (invitation.email ?? 'someone');
 }
 
-/** A document in a workspace's list, as the contract describes it. */
-export type DocumentSummary = ResponseOf<(typeof contracts)['documents.list']>['documents'][number];
-
-/** One issue, as the contract describes it. */
-export type IssueDetail = ResponseOf<(typeof contracts)['issues.get']>['issue'];
-
 /** One comment, as the contract describes it. */
-export type Comment = ResponseOf<(typeof contracts)['comments.list']>['comments'][number];
+type Comment = ResponseOf<(typeof contracts)['comments.list']>['comments'][number];
 
 export type CommentMention = Comment['mentions'][number];
 
@@ -140,27 +130,10 @@ export type NotificationItem = ResponseOf<
 /** One search result, as the contract describes it. */
 export type SearchHit = ResponseOf<(typeof contracts)['search.workspace']>['results'][number];
 
-/**
- * One entry in the workspace audit trail.
- *
- * `payload` is deliberately loose: each event type stores the fields that
- * describe it, recorded as they were at the time, and the renderer switches on
- * `eventType`. Typing it as a discriminated union would be neater, but the
- * trail is append-only and holds rows written by older code, so the renderer
- * has to tolerate payloads it does not recognise either way.
- */
-export type ActivityEvent = ResponseOf<(typeof contracts)['workspaces.activity']>['events'][number];
-
 /** One audit event, in the shape the export API and the SIEM stream share. */
 export type AuditEvent = AuditPage['events'][number];
 
-export type AuditPage = ResponseOf<(typeof contracts)['audit.events']>;
+type AuditPage = ResponseOf<(typeof contracts)['audit.events']>;
 
 /** What `/audit/verify` found. `broken` names the first bad link, if any. */
-/** Someone who appears in a workspace's audit trail, member or not. */
-export type AuditActorSummary = ResponseOf<(typeof contracts)['audit.actors']>['actors'][number];
-
 export type ChainReport = ResponseOf<(typeof contracts)['audit.verify']>;
-
-/** One active browser session. Token hashes never reach the client. */
-export type SessionSummary = ResponseOf<(typeof contracts)['auth.sessions']>['sessions'][number];

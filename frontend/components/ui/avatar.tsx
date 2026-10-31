@@ -61,7 +61,7 @@ export function orbStyle(seed: string): CSSProperties {
 }
 
 /** First letters of the first two words -- "Ada Lovelace" becomes "AL". */
-export function initialsOf(name: string): string {
+function initialsOf(name: string): string {
   const letters = name
     .trim()
     .split(/\s+/)

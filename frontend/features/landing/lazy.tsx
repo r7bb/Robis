@@ -8,7 +8,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
  * within `rootMargin` of the viewport, then true for good (stage 3, item 33).
  * Where there is no IntersectionObserver, true at once.
  */
-export function useNearView<T extends Element>(rootMargin = '200px') {
+function useNearView<T extends Element>(rootMargin = '200px') {
   const ref = useRef<T>(null);
   const [near, setNear] = useState(false);
 

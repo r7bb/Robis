@@ -73,7 +73,3 @@ export function StatusBadge({ status }: { status: IssueStatus }) {
     </span>
   );
 }
-
-export function statusLabel(status: IssueStatus): string {
-  return STATUS_STYLES[status].label;
-}

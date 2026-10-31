@@ -14,7 +14,7 @@ function text(payload: Payload, key: string): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
 
-export function label(value: string | undefined): string {
+function label(value: string | undefined): string {
   return value ? value.toLowerCase().replaceAll('_', ' ') : 'unknown';
 }
 
