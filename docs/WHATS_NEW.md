@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **An edited issue keeps its assignee’s name** (2026-11-02). After an edit
+  made on the board synced, the card lost the assignee’s name until the next
+  full refresh; it keeps it now.
 - **Base images are re-pinned on a schedule** (2026-10-31). Dependabot
   proposes new base image digests weekly and CI rebuilds and scans every
   Monday; the security upgrade step stays until a new base scans clean.

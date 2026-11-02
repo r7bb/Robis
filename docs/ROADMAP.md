@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-10-31): **975 TypeScript tests, 100 Python tests, lint and
+Status (2026-11-02): **979 TypeScript tests, 100 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -143,13 +143,6 @@ new account does still works before the address is confirmed.
 ---
 
 ## Remaining backlog
-
-**Sync.** The offline engine's transport (`frontend/lib/sync.ts`) still
-types issue answers as its own `LocalIssue`. Creating or editing an issue
-answers without the assignee's name, so a locally edited row shows no
-assignee name until the next full sync; either the issue answers gain
-`assigneeName` or the engine keeps the stored one when the assignee is
-unchanged.
 
 **Operations.** Distributed tracing across API, gateway and worker.
 Request ids now span the API and the ML service; the gateway and worker are

@@ -35,6 +35,13 @@ export type LocalIssue = {
   pending: boolean;
 };
 
+/**
+ * What the API answers a create or an update with: the stored row, without
+ * the assignee's name (only the list joins it in) and without the client's
+ * `pending` flag.
+ */
+export type IssueAnswer = Omit<LocalIssue, 'assigneeName' | 'pending'>;
+
 /** Transport, injected so the engine can be tested without a server. */
 export interface SyncTransport {
   createIssue(
@@ -42,14 +49,14 @@ export interface SyncTransport {
     projectId: string,
     body: { id: string; title: string; status?: IssueStatus; priority?: IssuePriority },
     idempotencyKey: string,
-  ): Promise<{ issue: LocalIssue }>;
+  ): Promise<{ issue: IssueAnswer }>;
 
   updateIssue(
     workspaceId: string,
     issueId: string,
     body: Partial<{ title: string; status: IssueStatus; priority: IssuePriority }>,
     idempotencyKey: string,
-  ): Promise<{ issue: LocalIssue }>;
+  ): Promise<{ issue: IssueAnswer }>;
 
   /** Naturally idempotent, so it takes no idempotency key. */
   deleteIssue(workspaceId: string, issueId: string): Promise<void>;
@@ -62,7 +69,11 @@ export interface SyncTransport {
     idempotencyKey: string,
   ): Promise<{ attachment: { id: string } }>;
 
-  listIssues(workspaceId: string, projectId: string): Promise<{ issues: LocalIssue[] }>;
+  /** The list joins in the assignee's name; `pending` is the client's own. */
+  listIssues(
+    workspaceId: string,
+    projectId: string,
+  ): Promise<{ issues: Omit<LocalIssue, 'pending'>[] }>;
 }
 
 export class SyncError extends Error {
@@ -374,7 +385,7 @@ export class SyncEngine {
         mutation.id,
       );
 
-      await this.storage.put(STORE_ISSUES, issue.id, { ...issue, pending: false });
+      await this.storeAnswer(issue);
       return;
     }
 
@@ -398,7 +409,21 @@ export class SyncEngine {
       `${mutation.id}:${mutation.queuedAt}`,
     );
 
-    await this.storage.put(STORE_ISSUES, issue.id, { ...issue, pending: false });
+    await this.storeAnswer(issue);
+  }
+
+  /**
+   * Store the server's answer as the synced row. The answer carries the
+   * assignee's id but not their name, so the stored name is kept when the
+   * assignee is the one already stored; if the answer names someone else
+   * (reassigned elsewhere meanwhile), the name is left empty until the next
+   * reconcile brings it, rather than showing the previous person's.
+   */
+  private async storeAnswer(issue: IssueAnswer): Promise<void> {
+    const stored = await this.storage.get<LocalIssue>(STORE_ISSUES, issue.id);
+    const assigneeName =
+      stored && stored.assigneeId === issue.assigneeId ? (stored.assigneeName ?? null) : null;
+    await this.storage.put(STORE_ISSUES, issue.id, { ...issue, assigneeName, pending: false });
   }
 
   /** Undo a local change the server permanently refused. */

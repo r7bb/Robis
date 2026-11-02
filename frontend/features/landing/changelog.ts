@@ -44,6 +44,17 @@ export type Entry = {
 
 export const CHANGELOG: readonly Entry[] = [
   {
+    date: '2026-11-02',
+    area: 'Product',
+    title: 'An edited issue keeps its assignee’s name',
+    brief:
+      'After an edit made on the board synced, the card lost the assignee’s name until the next full refresh; it keeps it now.',
+    summary:
+      'Changing an issue’s status or title on the board, online or off, goes through the sync queue. When the change reached the server, the board stored the server’s answer as the card, and that answer names the assignee by id only, so the card showed nobody until the board next refreshed in full. The card now keeps the name it had when the assignee is the same person. If someone reassigned the issue elsewhere in the meantime, the card shows no name, never the previous person’s, until the refresh brings the new one.',
+    checked:
+      'Three new tests, written to fail first: the name survives an edit once it syncs; it is cleared rather than kept wrong when the answer names a different assignee, and the next refresh brings the new name; and an issue created on the device has an empty assignee, not a missing one. The test stand-in for the server now answers exactly as the API does, which is why the old tests never saw this. The web app’s sync now uses the typed API contracts, so the compiler checks the answers’ shape. The sync tests, typecheck, lint and the unused code check pass.',
+  },
+  {
     date: '2026-10-31',
     area: 'Security',
     title: 'Base images are re-pinned on a schedule',

@@ -24,12 +24,22 @@ const tick = () => (clock += 10);
 let idCounter = 0;
 const nextId = () => `00000000-0000-4000-8000-${String(++idCounter).padStart(12, '0')}`;
 
+/**
+ * What the API answers a create or an update with: the issue row, without
+ * the assignee's name (only the list joins it in) and without the client's
+ * own `pending` flag.
+ */
+function answer(issue: LocalIssue) {
+  const { assigneeName: _name, pending: _pending, ...row } = issue;
+  return { issue: row };
+}
+
 /** Records calls and can be told to fail. */
 class FakeTransport implements SyncTransport {
   calls: { method: string; key: string }[] = [];
   serverIssues = new Map<string, LocalIssue>();
   /** Idempotency ledger, mirroring what the API does. */
-  private ledger = new Map<string, { issue: LocalIssue }>();
+  private ledger = new Map<string, ReturnType<typeof answer>>();
   failWith: SyncError | null = null;
   /** Simulates a response lost in transit: the server applied it, client didn't hear. */
   dropNextResponse = false;
@@ -63,14 +73,14 @@ class FakeTransport implements SyncTransport {
     };
 
     this.serverIssues.set(issue.id, issue);
-    this.ledger.set(idempotencyKey, { issue });
+    this.ledger.set(idempotencyKey, answer(issue));
 
     if (this.dropNextResponse) {
       this.dropNextResponse = false;
       throw new SyncError('network dropped after the server applied it');
     }
 
-    return { issue };
+    return answer(issue);
   }
 
   async updateIssue(
@@ -87,7 +97,7 @@ class FakeTransport implements SyncTransport {
 
     const issue = { ...current, ...body, updatedAt: new Date(tick()).toISOString() };
     this.serverIssues.set(issueId, issue);
-    return { issue };
+    return answer(issue);
   }
 
   async deleteIssue(_workspaceId: string, issueId: string) {
@@ -289,6 +299,60 @@ describe('flushing', () => {
 
     expect(transport.calls).toHaveLength(1);
     expect(transport.serverIssues.get(created.id)?.status).toBe('DONE');
+  });
+});
+
+describe("the assignee's name", () => {
+  /** An issue on the server assigned to Ada, and on this device after a reconcile. */
+  async function assignedToAda() {
+    const created = await engine.createIssue(WORKSPACE, PROJECT, { title: 'Assigned' });
+    await engine.flush();
+    const server = transport.serverIssues.get(created.id)!;
+    transport.serverIssues.set(created.id, {
+      ...server,
+      assigneeId: 'user-ada',
+      assigneeName: 'Ada Lovelace',
+    });
+    await engine.reconcile(WORKSPACE, PROJECT);
+    return created.id;
+  }
+
+  const stored = async (id: string) => (await engine.localIssues(PROJECT)).find((i) => i.id === id);
+
+  test('survives an edit made here, once it syncs', async () => {
+    const id = await assignedToAda();
+
+    await engine.updateIssue(WORKSPACE, id, { status: 'IN_PROGRESS' });
+    await engine.flush();
+
+    expect(await stored(id)).toMatchObject({
+      status: 'IN_PROGRESS',
+      assigneeId: 'user-ada',
+      assigneeName: 'Ada Lovelace',
+      pending: false,
+    });
+  });
+
+  test('is cleared, not kept wrong, when the answer names a different assignee', async () => {
+    const id = await assignedToAda();
+    // Reassigned on another device in the meantime.
+    const server = transport.serverIssues.get(id)!;
+    transport.serverIssues.set(id, { ...server, assigneeId: 'user-grace', assigneeName: 'Grace' });
+
+    await engine.updateIssue(WORKSPACE, id, { status: 'DONE' });
+    await engine.flush();
+
+    // The next reconcile brings the new name; until then no name, not Ada's.
+    expect(await stored(id)).toMatchObject({ assigneeId: 'user-grace', assigneeName: null });
+    await engine.reconcile(WORKSPACE, PROJECT);
+    expect(await stored(id)).toMatchObject({ assigneeName: 'Grace' });
+  });
+
+  test('is null, not missing, on an issue created here', async () => {
+    const created = await engine.createIssue(WORKSPACE, PROJECT, { title: 'Fresh' });
+    await engine.flush();
+
+    expect(await stored(created.id)).toMatchObject({ assigneeId: null, assigneeName: null });
   });
 });
 

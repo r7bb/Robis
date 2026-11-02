@@ -1,13 +1,8 @@
 'use client';
 
-import {
-  createStorage,
-  type LocalIssue,
-  SyncEngine,
-  SyncError,
-  type SyncTransport,
-} from '@robis/sync';
-import { ApiError, api, BASE_URL } from './api.ts';
+import { contracts } from '@robis/shared';
+import { createStorage, SyncEngine, SyncError, type SyncTransport } from '@robis/sync';
+import { ApiError, api, BASE_URL, call } from './api.ts';
 
 /**
  * Wires the transport-agnostic sync engine to this app's HTTP client and to
@@ -25,10 +20,11 @@ function toSyncError(error: unknown): SyncError {
 const transport: SyncTransport = {
   async createIssue(workspaceId, projectId, body, idempotencyKey) {
     try {
-      return await api<{ issue: LocalIssue }>(
-        `/workspaces/${workspaceId}/projects/${projectId}/issues`,
-        { method: 'POST', body, headers: { 'idempotency-key': idempotencyKey } },
-      );
+      return await call(contracts['issues.create'], {
+        params: { workspaceId, projectId },
+        body,
+        headers: { 'idempotency-key': idempotencyKey },
+      });
     } catch (error) {
       throw toSyncError(error);
     }
@@ -36,8 +32,8 @@ const transport: SyncTransport = {
 
   async updateIssue(workspaceId, issueId, body, idempotencyKey) {
     try {
-      return await api<{ issue: LocalIssue }>(`/workspaces/${workspaceId}/issues/${issueId}`, {
-        method: 'PATCH',
+      return await call(contracts['issues.update'], {
+        params: { workspaceId, issueId },
         body,
         headers: { 'idempotency-key': idempotencyKey },
       });
@@ -87,9 +83,10 @@ const transport: SyncTransport = {
 
   async listIssues(workspaceId, projectId) {
     try {
-      return await api<{ issues: LocalIssue[] }>(
-        `/workspaces/${workspaceId}/projects/${projectId}/issues?limit=100`,
-      );
+      return await call(contracts['issues.list'], {
+        params: { workspaceId, projectId },
+        query: { limit: 100 },
+      });
     } catch (error) {
       throw toSyncError(error);
     }
