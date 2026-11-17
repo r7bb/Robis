@@ -1,4 +1,4 @@
-import { ISSUE_PRIORITIES, ISSUE_STATUSES, ROLES } from '@robis/shared';
+import { ISSUE_PRIORITIES, ISSUE_STATUSES, ROLES, USER_KINDS } from '@robis/shared';
 import { sql } from 'drizzle-orm';
 import {
   bigint,
@@ -47,6 +47,7 @@ const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull(
 const updatedAt = () => timestamp('updated_at', { withTimezone: true }).notNull().defaultNow();
 
 export const roleEnum = pgEnum('role', ROLES);
+export const userKindEnum = pgEnum('user_kind', USER_KINDS);
 export const issueStatusEnum = pgEnum('issue_status', ISSUE_STATUSES);
 export const issuePriorityEnum = pgEnum('issue_priority', ISSUE_PRIORITIES);
 
@@ -59,6 +60,12 @@ export const users = pgTable(
     // `Ada@x.com` and `ada@x.com` becoming two accounts.
     email: text('email').notNull(),
     name: text('name').notNull(),
+    /**
+     * A person, or an agent an admin added to a workspace (B5). An agent
+     * has no password anyone knows and never signs in: it acts only through
+     * `agent_tokens`, and is marked as an agent wherever it appears.
+     */
+    kind: userKindEnum('kind').notNull().default('human'),
     /**
      * The app-specific `@handle`. Stored lowercase; the format is enforced by
      * `usernameSchema` at the edge and uniqueness by the index below. It is
@@ -263,6 +270,41 @@ export const sessions = pgTable(
   ],
 );
 
+/**
+ * The keys an agent acts with (B5): each scoped to one workspace, shown once
+ * when issued and stored only as a hash, like a session. Revoking one sets
+ * `revoked_at`, and the next request carrying it is refused, since every
+ * request looks the token up.
+ */
+export const agentTokens = pgTable(
+  'agent_tokens',
+  {
+    id: id(),
+    agentId: uuid('agent_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    tokenHash: text('token_hash').notNull(),
+    /** What the admin called it, so a list of tokens can be told apart. */
+    label: text('label').notNull(),
+    createdBy: uuid('created_by')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    createdAt: createdAt(),
+    /** Null for a token that lasts until revoked; set for one minted for a single run. */
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex('agent_tokens_token_hash_key').on(t.tokenHash),
+    index('agent_tokens_agent_id_idx').on(t.agentId),
+    index('agent_tokens_workspace_id_idx').on(t.workspaceId),
+  ],
+);
+
 export const workspaces = pgTable(
   'workspaces',
   {
@@ -406,6 +448,12 @@ export const issues = pgTable(
     status: issueStatusEnum('status').notNull().default('TODO'),
     priority: issuePriorityEnum('priority').notNull().default('NONE'),
     assigneeId: uuid('assignee_id').references(() => users.id, { onDelete: 'set null' }),
+    /**
+     * The agent that last acted on this issue, beside its human assignee
+     * (B5). The assignee is always a person; an agent is recorded here
+     * instead, so who answers for the work never changes hands to a bot.
+     */
+    delegateId: uuid('delegate_id').references(() => users.id, { onDelete: 'set null' }),
     createdBy: uuid('created_by')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict' }),

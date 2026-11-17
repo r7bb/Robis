@@ -69,6 +69,9 @@ export const PERMISSIONS = [
   'attachment:delete_own',
   /** Remove anyone's attachment (moderation). */
   'attachment:delete_any',
+
+  /** Add and remove agents, and issue and revoke their tokens (B5). */
+  'agent:manage',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -130,6 +133,8 @@ const ADMIN: readonly Permission[] = [
   // Who did what is an administrator's question. Members still see the
   // workspace's activity feed; the full trail and its export are not theirs.
   'audit:read',
+  // Who acts on the workspace's behalf is the same kind of question.
+  'agent:manage',
 ];
 
 /** Owners differ from admins only by being able to destroy the workspace. */
@@ -141,6 +146,13 @@ const MATRIX: Record<Role, ReadonlySet<Permission>> = {
   MEMBER: new Set(MEMBER),
   GUEST: new Set(GUEST),
 };
+
+/**
+ * The roles an agent may hold (B5). Never an admin's or an owner's: a token
+ * that leaked could otherwise add people, remove them, or make more agents.
+ */
+export const AGENT_ROLES = ['MEMBER', 'GUEST'] as const satisfies readonly Role[];
+export type AgentRole = (typeof AGENT_ROLES)[number];
 
 export function can(role: Role, permission: Permission): boolean {
   return MATRIX[role].has(permission);

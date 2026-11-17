@@ -232,6 +232,13 @@
       "when": 1793419609600,
       "tag": "0032_pending_jobs_and_session_expiry_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1794891334013,
+      "tag": "0033_agents",
+      "breakpoints": true
     }
   ]
 }
