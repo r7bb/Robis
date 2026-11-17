@@ -1,4 +1,5 @@
 import {
+  type AuditActor,
   type Database,
   decodeCursor,
   type Executor,
@@ -14,7 +15,14 @@ import {
   users,
   workspaces,
 } from '@robis/database';
-import { contracts, isUuid, positionBetween, TRIAGE_JOB, type TriageJob } from '@robis/shared';
+import {
+  type CreateIssueInput,
+  contracts,
+  isUuid,
+  positionBetween,
+  TRIAGE_JOB,
+  type TriageJob,
+} from '@robis/shared';
 import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { serve, shape } from '../contract.ts';
@@ -28,6 +36,7 @@ import {
 } from '../plugins/authz.ts';
 import { withIdempotency } from '../plugins/idempotency.ts';
 import type { SuggestionClient } from '../suggestions.ts';
+import { assertParentAllowed, loadRelatives } from './issue-tree.ts';
 import { applyIssueUpdate, assertAssignable, delegateOf, deleteIssueRow } from './issue-writes.ts';
 import { loadProject } from './projects.ts';
 
@@ -58,6 +67,103 @@ async function queueTriage(tx: Tx, job: TriageJob, filedBy: string) {
     .limit(1);
   const agentId = workspace?.triageAgentId;
   if (agentId && agentId !== filedBy) await enqueue(tx, TRIAGE_JOB, job);
+}
+
+/**
+ * File an issue in the caller's transaction: take the project's next number,
+ * check its parent, put it at the top of the board, and record it.
+ */
+async function fileIssue(
+  tx: Tx,
+  actor: AuditActor,
+  {
+    user,
+    workspaceId,
+    projectId,
+    input,
+  }: {
+    user: { id: string; kind: string };
+    workspaceId: string;
+    projectId: string;
+    input: CreateIssueInput;
+  },
+) {
+  // The tree lock before the project row, the order every parent change takes.
+  if (input.parentId) {
+    await assertParentAllowed(tx, {
+      workspaceId,
+      projectId,
+      issueId: null,
+      parentId: input.parentId,
+    });
+  }
+  /*
+   * Reserve the next issue number by incrementing the counter in place.
+   * `UPDATE ... RETURNING` takes a row-level lock, so concurrent creates
+   * in the same project queue behind each other and each gets a distinct
+   * number. Reading the max issue number and adding one would race.
+   */
+  const [bumped] = await tx
+    .update(projects)
+    .set({ issueCounter: sql`${projects.issueCounter} + 1` })
+    .where(and(eq(projects.id, projectId), eq(projects.workspaceId, workspaceId)))
+    .returning({ number: projects.issueCounter, key: projects.key });
+
+  if (!bumped) throw ApiError.notFound('Project not found');
+
+  // A new card goes to the top of the board: before the project's first.
+  const [first] = await tx
+    .select({ position: issues.position })
+    .from(issues)
+    .where(eq(issues.projectId, projectId))
+    .orderBy(asc(issues.position))
+    .limit(1);
+
+  const [created] = await tx
+    .insert(issues)
+    .values({
+      // Falls back to the database default when the client did not
+      // choose one.
+      ...(input.id ? { id: input.id } : {}),
+      workspaceId,
+      projectId,
+      number: bumped.number,
+      title: input.title,
+      description: input.description ?? null,
+      status: input.status,
+      priority: input.priority,
+      assigneeId: input.assigneeId ?? null,
+      dueOn: input.dueOn ?? null,
+      parentId: input.parentId ?? null,
+      delegateId: delegateOf(user),
+      position: positionBetween(null, first?.position ?? null),
+      createdBy: user.id,
+    })
+    .returning();
+
+  await recordAudit(tx, actor, {
+    workspaceId,
+    entityType: 'issue',
+    entityId: created!.id,
+    eventType: 'issue.created',
+    payload: { key: `${bumped.key}-${bumped.number}`, title: created!.title },
+  });
+  await queueTriage(tx, { workspaceId, issueId: created!.id }, user.id);
+  if (user.kind === 'agent') {
+    await recordAgentChanges(tx, [
+      {
+        workspaceId,
+        agentId: user.id,
+        entityType: 'issue',
+        entityId: created!.id,
+        field: 'created',
+        before: null,
+        after: null,
+      },
+    ]);
+  }
+
+  return { ...created!, key: `${bumped.key}-${bumped.number}` };
 }
 
 export async function issueRoutes(
@@ -165,6 +271,8 @@ export async function issueRoutes(
           priority: issues.priority,
           assigneeId: issues.assigneeId,
           position: issues.position,
+          dueOn: issues.dueOn,
+          parentId: issues.parentId,
           assigneeName: users.name,
           createdAt: issues.createdAt,
           updatedAt: issues.updatedAt,
@@ -216,73 +324,9 @@ export async function issueRoutes(
       if (input.assigneeId) await assertAssignable(db, workspaceId, input.assigneeId);
 
       return withIdempotency(db, request, reply, 201, async () => {
-        const issue = await db.transaction(async (tx) => {
-          /*
-           * Reserve the next issue number by incrementing the counter in place.
-           * `UPDATE ... RETURNING` takes a row-level lock, so concurrent creates
-           * in the same project queue behind each other and each gets a distinct
-           * number. Reading the max issue number and adding one would race.
-           */
-          const [bumped] = await tx
-            .update(projects)
-            .set({ issueCounter: sql`${projects.issueCounter} + 1` })
-            .where(and(eq(projects.id, projectId), eq(projects.workspaceId, workspaceId)))
-            .returning({ number: projects.issueCounter, key: projects.key });
-
-          if (!bumped) throw ApiError.notFound('Project not found');
-
-          // A new card goes to the top of the board: before the project's first.
-          const [first] = await tx
-            .select({ position: issues.position })
-            .from(issues)
-            .where(eq(issues.projectId, projectId))
-            .orderBy(asc(issues.position))
-            .limit(1);
-
-          const [created] = await tx
-            .insert(issues)
-            .values({
-              // Falls back to the database default when the client did not
-              // choose one.
-              ...(input.id ? { id: input.id } : {}),
-              workspaceId,
-              projectId,
-              number: bumped.number,
-              title: input.title,
-              description: input.description ?? null,
-              status: input.status,
-              priority: input.priority,
-              assigneeId: input.assigneeId ?? null,
-              delegateId: delegateOf(user),
-              position: positionBetween(null, first?.position ?? null),
-              createdBy: user.id,
-            })
-            .returning();
-
-          await recordAudit(tx, auditActor(request), {
-            workspaceId,
-            entityType: 'issue',
-            entityId: created!.id,
-            eventType: 'issue.created',
-            payload: { key: `${bumped.key}-${bumped.number}`, title: created!.title },
-          });
-          await queueTriage(tx, { workspaceId, issueId: created!.id }, user.id);
-          if (user.kind === 'agent') {
-            await recordAgentChanges(tx, [
-              {
-                workspaceId,
-                agentId: user.id,
-                entityType: 'issue',
-                entityId: created!.id,
-                field: 'created',
-                before: null,
-                after: null,
-              },
-            ]);
-          }
-
-          return { ...created!, key: `${bumped.key}-${bumped.number}` };
-        });
+        const issue = await db.transaction((tx) =>
+          fileIssue(tx, auditActor(request), { user, workspaceId, projectId, input }),
+        );
 
         await publishEvent(db, {
           type: 'issue.created',
@@ -311,11 +355,19 @@ export async function issueRoutes(
         .from(issueLabels)
         .where(and(eq(issueLabels.issueId, issueId), eq(issueLabels.workspaceId, workspaceId)));
 
+      const relatives = await loadRelatives(db, {
+        workspaceId,
+        issueId,
+        parentId: issue.parentId,
+        projectKey: project.key,
+      });
+
       return {
         issue: {
           ...issue,
           key: `${project.key}-${issue.number}`,
           labelIds: tagged.map((t) => t.labelId),
+          ...relatives,
         },
       };
     },
@@ -338,8 +390,16 @@ export async function issueRoutes(
       const project = await loadProject(db, workspaceId, before.projectId);
 
       return withIdempotency(db, request, reply, 200, async () => {
-        const updated = await db.transaction((tx) =>
-          applyIssueUpdate(tx, auditActor(request), {
+        const updated = await db.transaction(async (tx) => {
+          if (input.parentId) {
+            await assertParentAllowed(tx, {
+              workspaceId,
+              projectId: before.projectId,
+              issueId,
+              parentId: input.parentId,
+            });
+          }
+          return applyIssueUpdate(tx, auditActor(request), {
             workspaceId,
             issueId,
             input,
@@ -347,8 +407,8 @@ export async function issueRoutes(
             issueKey: `${project.key}-${before.number}`,
             title: before.title,
             previous: before,
-          }),
-        );
+          });
+        });
 
         await publishEvent(db, {
           type: 'issue.updated',

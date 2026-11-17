@@ -9,11 +9,13 @@ import {
 } from '@robis/shared';
 import { sql } from 'drizzle-orm';
 import {
+  type AnyPgColumn,
   bigint,
   bigserial,
   boolean,
   check,
   customType,
+  date,
   doublePrecision,
   index,
   integer,
@@ -482,6 +484,15 @@ export const issues = pgTable(
      * bottom; a new issue takes a key before the project's first.
      */
     position: text('position').notNull(),
+    /** The day it is due (C1): a calendar date, not a moment, so it is the
+     * same day wherever it is read. */
+    dueOn: date('due_on', { mode: 'string' }),
+    /** The issue this is a part of (C1): one in the same project, never
+     * itself or its own descendant. Deleting the parent leaves its
+     * sub-issues standing on their own. */
+    parentId: uuid('parent_id').references((): AnyPgColumn => issues.id, {
+      onDelete: 'set null',
+    }),
     createdBy: uuid('created_by')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict' }),
@@ -506,6 +517,8 @@ export const issues = pgTable(
     index('issues_project_created_idx').on(t.projectId, t.createdAt, t.id),
     index('issues_assignee_idx').on(t.assigneeId),
     index('issues_project_position_idx').on(t.projectId, t.position),
+    index('issues_parent_idx').on(t.parentId),
+    check('issues_parent_not_self', sql`${t.parentId} <> ${t.id}`),
     index('issues_search_idx').using('gin', t.searchVector),
   ],
 );

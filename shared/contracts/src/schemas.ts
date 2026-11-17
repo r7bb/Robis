@@ -200,6 +200,15 @@ export const updateProjectSchema = z
   })
   .partial();
 
+const DUE_YEAR_MIN = 2000;
+const DUE_YEAR_MAX = 2999;
+
+/** A calendar day, `2026-11-24`: when an issue is due (C1). */
+export const dueDateSchema = z.iso.date().refine((day) => {
+  const year = Number(day.slice(0, 4));
+  return year >= DUE_YEAR_MIN && year <= DUE_YEAR_MAX;
+}, 'Pick a day between the years 2000 and 2999');
+
 export const createIssueSchema = z.object({
   /**
    * Optional client-generated id. An offline client must be able to name an
@@ -214,6 +223,9 @@ export const createIssueSchema = z.object({
   status: z.enum(ISSUE_STATUSES).default('TODO'),
   priority: z.enum(ISSUE_PRIORITIES).default('NONE'),
   assigneeId: uuid.nullable().optional(),
+  dueOn: dueDateSchema.nullable().optional(),
+  /** Filed as a sub-issue of this one, in the same project (C1). */
+  parentId: uuid.nullable().optional(),
 });
 export type CreateIssueInput = z.infer<typeof createIssueSchema>;
 
@@ -230,6 +242,10 @@ export const updateIssueSchema = z
     assigneeId: uuid.nullable(),
     /** Where the card sits on the board (C1); see `ordering.ts`. */
     position: positionSchema,
+    /** The day it is due, or null for none (C1). */
+    dueOn: dueDateSchema.nullable(),
+    /** The issue it is part of, or null to stand alone (C1). */
+    parentId: uuid.nullable(),
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, { message: 'No fields to update' });

@@ -23,6 +23,7 @@ import {
   StatusHeading,
   statusLabel,
 } from '../../../../../components/ui/badges.tsx';
+import { DueChip } from '../../../../../components/ui/due-chip.tsx';
 import { ErrorState } from '../../../../../components/ui/primitives.tsx';
 import { useBoardDrag } from '../../../../../features/board/board-drag.ts';
 import { BoardFilters } from '../../../../../features/board/board-filters.tsx';
@@ -282,6 +283,15 @@ function Board() {
                     )}
 
                     <CardLabels ids={issue.labelIds} labels={labelById} />
+
+                    {issue.dueOn && (
+                      <p className="mt-2">
+                        <DueChip
+                          dueOn={issue.dueOn}
+                          finished={issue.status === 'DONE' || issue.status === 'CANCELED'}
+                        />
+                      </p>
+                    )}
 
                     {issue.assigneeName && (
                       <Assignee name={issue.assigneeName} id={issue.assigneeId} avatars={avatars} />

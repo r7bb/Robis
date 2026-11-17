@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Due dates and sub-issues** (2026-11-18). Give an issue a day it is due,
+  shown on its card as it nears and once it passes, and break an issue into
+  sub-issues in the same project.
 - **A page of search results** (2026-11-18). Press Enter in the search box
   for every match on its own page, narrowed to issues, documents or
   comments, with the matched words marked.

@@ -34,10 +34,17 @@ const issue = z.object({
   delegateId: uuid.nullable(),
   /** Where the card sits on the board (C1). */
   position: z.string(),
+  /** The day it is due, `2026-11-24`, or null (C1). */
+  dueOn: z.string().nullable(),
+  /** The issue it is part of, or null (C1). */
+  parentId: uuid.nullable(),
   createdBy: uuid,
   createdAt: timestamp,
   updatedAt: timestamp,
 });
+
+/** A parent or sub-issue as its relative's page shows it (C1). */
+const relative = z.object({ id: uuid, key: z.string(), title: z.string(), status });
 
 /** Who each `@handle` in a comment meant when it was written, by today's username. */
 const mention = z.object({ handle: z.string(), userId: uuid, username: z.string() });
@@ -92,6 +99,8 @@ export const issueContracts = {
             priority: true,
             assigneeId: true,
             position: true,
+            dueOn: true,
+            parentId: true,
             createdAt: true,
             updatedAt: true,
           })
@@ -112,14 +121,21 @@ export const issueContracts = {
   'issues.get': contract({
     method: 'GET',
     path: '/workspaces/:workspaceId/issues/:issueId',
-    summary: 'One issue, with its labels.',
+    summary: 'One issue, with its labels, the issue it is part of, and its sub-issues.',
     params: issueParams,
-    response: z.object({ issue: issue.extend({ labelIds: z.array(uuid) }) }),
+    response: z.object({
+      issue: issue.extend({
+        labelIds: z.array(uuid),
+        parent: relative.nullable(),
+        children: z.array(relative),
+      }),
+    }),
   }),
   'issues.update': contract({
     method: 'PATCH',
     path: '/workspaces/:workspaceId/issues/:issueId',
-    summary: 'Change an issue: its title, description, status, priority or assignee.',
+    summary:
+      'Change an issue: its title, description, status, priority, assignee, place on the board, due day or parent.',
     params: issueParams,
     body: updateIssueSchema,
     response: z.object({ issue }),

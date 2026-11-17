@@ -20,7 +20,14 @@ export const FEEDBACK_DAYS = 365;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** The fields an agent may set on an issue, as they are compared later. */
-export const ISSUE_FIELDS = ['title', 'description', 'status', 'priority'] as const;
+export const ISSUE_FIELDS = [
+  'title',
+  'description',
+  'status',
+  'priority',
+  'dueOn',
+  'parentId',
+] as const;
 type IssueField = (typeof ISSUE_FIELDS)[number];
 
 export type AgentChange = {
@@ -86,6 +93,8 @@ export async function judgeAgentChanges(db: Executor, now = new Date()): Promise
           description: issues.description,
           status: issues.status,
           priority: issues.priority,
+          dueOn: issues.dueOn,
+          parentId: issues.parentId,
         })
         .from(issues)
         .where(inArray(issues.id, issueIds))

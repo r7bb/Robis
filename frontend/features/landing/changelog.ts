@@ -46,6 +46,27 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-18',
     area: 'Product',
+    title: 'Due dates and sub-issues',
+    brief:
+      'Give an issue a day it is due, shown on its card as it nears and once it passes, and break an issue into sub-issues in the same project.',
+    summary:
+      'An issue can now have a due day, set from its page. The card on the board and the issue page say how near it is: due today, tomorrow or in a few days, a date further off, or how many days overdue, louder as it nears. Done and cancelled work is never called overdue. A due day is a calendar day, not a moment, so it is the same day for everyone whatever their time zone. An issue can also be part of another in the same project: pick its parent from the issue page, or add sub-issues straight from the parent, which lists them with how many are done. An issue is never part of itself or of one of its own sub-issues, and two moves at once cannot make such a loop between them. A tree goes at most 50 deep. Deleting a parent leaves its sub-issues standing on their own, and an agent’s changes to a due day or a parent are judged later like its other edits.',
+    feature: {
+      name: 'Due dates and sub-issues',
+      where:
+        'An issue’s page, under Due and Part of, and its Sub-issues section; due days show on board cards',
+      layers: [
+        'Screen: a due day field and a chip on cards, a parent picker, and a sub-issues list with a quick add',
+        'API: dueOn and parentId on issues.create, issues.update and the list; issues.get adds the parent and sub-issues',
+        'Data: issues.due_on (a date) and issues.parent_id (same project, never itself, cleared when the parent goes)',
+      ],
+    },
+    checked:
+      'Fifteen new tests: a due day is set, listed and cleared, and something that is not a day, or a year no calendar here uses, is refused; a sub-issue names its parent and the parent lists it; moving under another issue and setting free are audited; an issue is never its own parent nor its descendant’s child, and two opposite moves at once let exactly one through; a sub-issue stays in its parent’s project and workspace; a tree goes at most 50 deep; sub-issues stand alone when the parent is deleted; and due days read as today, tomorrow, in N days, a date, or overdue by N days, never overdue once done, on the viewer’s own calendar. In headless Chrome on the rebuilt stack a due day set to yesterday read “Overdue by 1 day” on the issue and its card, a sub-issue added from the parent was listed with “0 of 1 done” and named its parent on its own page, and the issue page fits a phone with no sideways scroll.',
+  },
+  {
+    date: '2026-11-18',
+    area: 'Product',
     title: 'A page of search results',
     brief:
       'Press Enter in the search box for every match on its own page, narrowed to issues, documents or comments, with the matched words marked.',

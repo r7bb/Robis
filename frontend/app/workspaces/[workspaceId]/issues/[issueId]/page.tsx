@@ -18,6 +18,8 @@ import { DeleteButton } from '../../../../../components/delete-button.tsx';
 import { PresenceBar } from '../../../../../components/presence.tsx';
 import { AgentBadge, ErrorState } from '../../../../../components/ui/primitives.tsx';
 import { IssueAttachments } from '../../../../../features/issues/attachments.tsx';
+import { DueField } from '../../../../../features/issues/due-field.tsx';
+import { ParentPicker, SubIssues } from '../../../../../features/issues/issue-tree.tsx';
 import { LabelPicker } from '../../../../../features/issues/label-picker.tsx';
 import { call } from '../../../../../lib/api.ts';
 import { useCoalesced, useRealtime } from '../../../../../lib/realtime.ts';
@@ -194,6 +196,27 @@ export default function IssuePage() {
               />
             </Field>
 
+            <Field label="Due">
+              <DueField
+                dueOn={data.dueOn}
+                finished={data.status === 'DONE' || data.status === 'CANCELED'}
+                canEdit={canEdit}
+                onChange={(dueOn) => update.mutate({ dueOn })}
+              />
+            </Field>
+
+            <Field label="Part of">
+              <ParentPicker
+                workspaceId={workspaceId}
+                projectId={data.projectId}
+                issueId={issueId}
+                parent={data.parent}
+                subIssues={data.children}
+                canEdit={canEdit}
+                onChange={(parentId) => update.mutate({ parentId })}
+              />
+            </Field>
+
             {data.delegateId && (
               <Field label="Delegate">
                 <span className="flex items-center gap-2 py-1.5 text-sm text-content">
@@ -225,6 +248,15 @@ export default function IssuePage() {
             value={data.description}
             canEdit={canEdit}
             onSave={(next) => update.mutate({ description: next })}
+          />
+
+          <SubIssues
+            workspaceId={workspaceId}
+            projectId={data.projectId}
+            issueId={issueId}
+            parent={data.parent}
+            items={data.children}
+            canEdit={canEdit}
           />
 
           <IssueAttachments workspaceId={workspaceId} issueId={issueId} role={role} />

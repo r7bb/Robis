@@ -3954,6 +3954,24 @@
                           "position": {
                             "type": "string"
                           },
+                          "dueOn": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "parentId": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
                           "createdAt": {
                             "anyOf": [
                               {
@@ -4005,6 +4023,8 @@
                           "priority",
                           "assigneeId",
                           "position",
+                          "dueOn",
+                          "parentId",
                           "createdAt",
                           "updatedAt",
                           "assigneeName",
@@ -4099,6 +4119,30 @@
                     ]
                   },
                   "assigneeId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "dueOn": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "parentId": {
                     "anyOf": [
                       {
                         "type": "string",
@@ -4209,6 +4253,24 @@
                         "position": {
                           "type": "string"
                         },
+                        "dueOn": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "parentId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
                         "createdBy": {
                           "type": "string",
                           "format": "uuid",
@@ -4254,6 +4316,8 @@
                         "assigneeId",
                         "delegateId",
                         "position",
+                        "dueOn",
+                        "parentId",
                         "createdBy",
                         "createdAt",
                         "updatedAt"
@@ -4275,7 +4339,7 @@
     "/workspaces/{workspaceId}/issues/{issueId}": {
       "get": {
         "operationId": "issues.get",
-        "summary": "One issue, with its labels.",
+        "summary": "One issue, with its labels, the issue it is part of, and its sub-issues.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -4387,6 +4451,24 @@
                         "position": {
                           "type": "string"
                         },
+                        "dueOn": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "parentId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
                         "createdBy": {
                           "type": "string",
                           "format": "uuid",
@@ -4425,6 +4507,82 @@
                             "format": "uuid",
                             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                           }
+                        },
+                        "parent": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                },
+                                "key": {
+                                  "type": "string"
+                                },
+                                "title": {
+                                  "type": "string"
+                                },
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "TODO",
+                                    "IN_PROGRESS",
+                                    "IN_REVIEW",
+                                    "DONE",
+                                    "CANCELED"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "key",
+                                "title",
+                                "status"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "children": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "key": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "TODO",
+                                  "IN_PROGRESS",
+                                  "IN_REVIEW",
+                                  "DONE",
+                                  "CANCELED"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "key",
+                              "title",
+                              "status"
+                            ],
+                            "additionalProperties": false
+                          }
                         }
                       },
                       "required": [
@@ -4440,10 +4598,14 @@
                         "assigneeId",
                         "delegateId",
                         "position",
+                        "dueOn",
+                        "parentId",
                         "createdBy",
                         "createdAt",
                         "updatedAt",
-                        "labelIds"
+                        "labelIds",
+                        "parent",
+                        "children"
                       ],
                       "additionalProperties": false
                     }
@@ -4460,7 +4622,7 @@
       },
       "patch": {
         "operationId": "issues.update",
-        "summary": "Change an issue: its title, description, status, priority or assignee.",
+        "summary": "Change an issue: its title, description, status, priority, assignee, place on the board, due day or parent.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -4540,6 +4702,30 @@
                   "position": {
                     "type": "string",
                     "pattern": "^[A-Za-z][0-9A-Za-z]{1,79}$"
+                  },
+                  "dueOn": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "parentId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   }
                 }
               }
@@ -4637,6 +4823,24 @@
                         "position": {
                           "type": "string"
                         },
+                        "dueOn": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "parentId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
                         "createdBy": {
                           "type": "string",
                           "format": "uuid",
@@ -4682,6 +4886,8 @@
                         "assigneeId",
                         "delegateId",
                         "position",
+                        "dueOn",
+                        "parentId",
                         "createdBy",
                         "createdAt",
                         "updatedAt"

@@ -34,6 +34,10 @@ export type LocalIssue = {
   position: string | null;
   /** Its labels' ids (C1), as the server last said; absent for a card made offline. */
   labelIds?: string[];
+  /** The day it is due (C1), as the server last said; absent for a card made offline. */
+  dueOn?: string | null;
+  /** The issue it is part of (C1); absent for a card made offline. */
+  parentId?: string | null;
   updatedAt: string | null;
   /** True while the row exists only locally or has unflushed edits. */
   pending: boolean;
