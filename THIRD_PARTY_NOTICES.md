@@ -45,6 +45,11 @@ the Apache License 2.0, installed in the worker only. It brings
 `fast-sha256`, which is released under the Unlicense (a dedication to the
 public domain), flagged here because it is not a conventional licence.
 
+## Board ordering
+
+Card positions use `fractional-indexing` 4.0.0, pinned exactly, released
+under CC0-1.0 (a dedication to the public domain), with no dependencies.
+
 ## Mail
 
 `nodemailer` 10.0.12 sends mail over SMTP from the worker, and `smtp-server`

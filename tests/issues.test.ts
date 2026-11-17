@@ -1,4 +1,5 @@
 import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
+import { positionBetween } from '@robis/shared';
 import {
   ACTOR_PASSWORD,
   addMember,
@@ -255,5 +256,34 @@ describe('cascading deletes', () => {
         .statusCode,
     ).toBe(404);
     expect((await request(`/workspaces/${workspace.id}`, { actor: owner })).statusCode).toBe(200);
+  });
+});
+
+describe('board order (C1)', () => {
+  test('a new issue goes to the top, a move changes one row, and a bad key is refused', async () => {
+    const owner = await createActor('Orderer');
+    const workspace = await createWorkspace(owner);
+    const project = await createProject(owner, workspace.id);
+    const url = `/workspaces/${workspace.id}/projects/${project.id}/issues`;
+    const file = async (title: string) =>
+      (await request(url, { method: 'POST', actor: owner, payload: { title } })).json().issue;
+    const first = await file('First');
+    const second = await file('Second');
+    expect(second.position < first.position).toBe(true);
+
+    const moved = await request(`/workspaces/${workspace.id}/issues/${second.id}`, {
+      method: 'PATCH',
+      actor: owner,
+      payload: { position: positionBetween(first.position, null) },
+    });
+    expect(moved.statusCode).toBe(200);
+    expect(moved.json().issue.position > first.position).toBe(true);
+
+    const bad = await request(`/workspaces/${workspace.id}/issues/${second.id}`, {
+      method: 'PATCH',
+      actor: owner,
+      payload: { position: '<script>' },
+    });
+    expect(bad.statusCode).toBe(400);
   });
 });

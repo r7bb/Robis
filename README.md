@@ -148,15 +148,15 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Cards move by dragging, or by keyboard.** Drag a card within or between
+  columns, or lift it with Space and move it with the arrow keys; it works
+  offline like every other change.
 - **A page of what the agents did.** Admins see each agent’s latest runs
   call by call, how many of its changes people kept, edited or reverted, and
   how the hints fare in use.
 - **The composer’s hints are measured in use.** Using or setting aside a
   duplicate or priority hint is counted, without naming anyone, beside the
   offline evaluation it differs from.
-- **Whether people kept what an agent did.** Each change an agent makes is
-  judged after seven days: kept, edited by a person, or reverted, from the
-  values before and after.
 
 <!-- latest:end -->
 

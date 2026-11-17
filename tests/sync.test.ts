@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, test } from 'bun:test';
+import { positionBetween } from '@robis/shared';
 import {
   type LocalIssue,
   MemoryAdapter,
@@ -68,6 +69,14 @@ class FakeTransport implements SyncTransport {
       assigneeId: null,
       assigneeName: null,
       projectId,
+      // As the API does: a new card goes before the project's first.
+      position: positionBetween(
+        null,
+        [...this.serverIssues.values()]
+          .filter((i) => i.projectId === projectId)
+          .map((i) => i.position!)
+          .sort()[0] ?? null,
+      ),
       updatedAt: new Date(clock).toISOString(),
       pending: false,
     };
@@ -785,5 +794,37 @@ describe('whose offline data it is', () => {
     expect(await engine.localIssues(PROJECT)).toEqual([]);
     expect(await engine.pendingAttachments('issue-1')).toEqual([]);
     expect(await storage.get(STORE_BLOBS, 'id-2')).toBeUndefined();
+  });
+});
+
+describe('reordering the board offline (C1)', () => {
+  test('a move made offline survives reconnect, in the right place', async () => {
+    for (const title of ['Oldest', 'Middle', 'Newest']) {
+      await engine.createIssue(WORKSPACE, PROJECT, { title });
+      await engine.flush();
+    }
+    await engine.reconcile(WORKSPACE, PROJECT);
+    const titles = async () => (await engine.localIssues(PROJECT)).map((i) => i.title);
+    expect(await titles()).toEqual(['Newest', 'Middle', 'Oldest']);
+
+    // Offline: drag the oldest card to the top.
+    transport.failWith = new SyncError('offline');
+    const [top] = await engine.localIssues(PROJECT);
+    const oldest = (await engine.localIssues(PROJECT)).find((i) => i.title === 'Oldest')!;
+    await engine.updateIssue(WORKSPACE, oldest.id, {
+      position: positionBetween(null, top!.position),
+    });
+    expect(await titles()).toEqual(['Oldest', 'Newest', 'Middle']);
+    await engine.flush();
+    expect(await engine.queue.size()).toBe(1);
+
+    // Back online: the move lands, and the server's order agrees.
+    transport.failWith = null;
+    await engine.flush();
+    await engine.reconcile(WORKSPACE, PROJECT);
+    expect(await titles()).toEqual(['Oldest', 'Newest', 'Middle']);
+    expect(transport.serverIssues.get(oldest.id)?.position).toBe(
+      (await engine.localIssues(PROJECT))[0]!.position,
+    );
   });
 });

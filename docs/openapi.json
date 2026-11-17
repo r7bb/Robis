@@ -3266,6 +3266,9 @@
                               }
                             ]
                           },
+                          "position": {
+                            "type": "string"
+                          },
                           "createdAt": {
                             "anyOf": [
                               {
@@ -3308,6 +3311,7 @@
                           "status",
                           "priority",
                           "assigneeId",
+                          "position",
                           "createdAt",
                           "updatedAt",
                           "assigneeName"
@@ -3508,6 +3512,9 @@
                             }
                           ]
                         },
+                        "position": {
+                          "type": "string"
+                        },
                         "createdBy": {
                           "type": "string",
                           "format": "uuid",
@@ -3552,6 +3559,7 @@
                         "priority",
                         "assigneeId",
                         "delegateId",
+                        "position",
                         "createdBy",
                         "createdAt",
                         "updatedAt"
@@ -3682,6 +3690,9 @@
                             }
                           ]
                         },
+                        "position": {
+                          "type": "string"
+                        },
                         "createdBy": {
                           "type": "string",
                           "format": "uuid",
@@ -3726,6 +3737,7 @@
                         "priority",
                         "assigneeId",
                         "delegateId",
+                        "position",
                         "createdBy",
                         "createdAt",
                         "updatedAt"
@@ -3821,6 +3833,10 @@
                         "type": "null"
                       }
                     ]
+                  },
+                  "position": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z][0-9A-Za-z]{1,79}$"
                   }
                 }
               }
@@ -3915,6 +3931,9 @@
                             }
                           ]
                         },
+                        "position": {
+                          "type": "string"
+                        },
                         "createdBy": {
                           "type": "string",
                           "format": "uuid",
@@ -3959,6 +3978,7 @@
                         "priority",
                         "assigneeId",
                         "delegateId",
+                        "position",
                         "createdBy",
                         "createdAt",
                         "updatedAt"

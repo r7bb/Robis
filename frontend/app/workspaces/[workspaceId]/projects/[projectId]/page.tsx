@@ -11,13 +11,14 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { type FormEvent, useEffect, useState } from 'react';
+import { type FormEvent, type KeyboardEvent, useEffect, useState } from 'react';
 import { DeleteButton } from '../../../../../components/delete-button.tsx';
 import { PresenceBar } from '../../../../../components/presence.tsx';
 import { SyncStatus } from '../../../../../components/sync-status.tsx';
 import { Avatar } from '../../../../../components/ui/avatar.tsx';
 import { PriorityBadge, StatusHeading } from '../../../../../components/ui/badges.tsx';
 import { ErrorState } from '../../../../../components/ui/primitives.tsx';
+import { useBoardDrag } from '../../../../../features/board/board-drag.ts';
 import { DuplicateHints } from '../../../../../features/issues/duplicate-hints.tsx';
 import { PriorityHint } from '../../../../../features/issues/priority-hint.tsx';
 import { call } from '../../../../../lib/api.ts';
@@ -48,6 +49,7 @@ export default function BoardPage() {
   // The board reads from IndexedDB rather than the network, so it renders with
   // no connection and survives a reload mid-edit.
   const board = useOfflineBoard(workspaceId, projectId);
+  const drag = useBoardDrag(board.issues, BOARD_COLUMNS, board.updateIssue);
 
   // Reporting the project as our location is what lets other people see who
   // else is looking at this board. An issue event for this project pulls
@@ -102,6 +104,10 @@ export default function BoardPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">
+      {/* Said aloud as a card is lifted, moved and dropped by keyboard. */}
+      <p className="sr-only" aria-live="assertive">
+        {drag.said}
+      </p>
       <nav className="text-sm text-faint">
         <Link href="/workspaces" className="hover:text-muted">
           Workspaces
@@ -158,17 +164,37 @@ export default function BoardPage() {
             <section key={column} className="rounded-lg border border-line bg-raised/50 p-3">
               <StatusHeading status={column} count={columnIssues.length} />
 
-              <ul className="mt-3 space-y-2">
-                {columnIssues.map((issue) => (
+              <ul
+                className="mt-3 min-h-12 space-y-2"
+                onDragOver={(event) => {
+                  if (drag.dragging) event.preventDefault();
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  const over = (event.target as HTMLElement).closest('[data-index]');
+                  drag.onDrop(column, over ? Number(over.getAttribute('data-index')) : null);
+                }}
+              >
+                {columnIssues.map((issue, index) => (
                   <li
                     key={issue.id}
+                    {...drag.cardProps(issue.id, index, canEdit)}
                     className={[
-                      'rounded-md border bg-raised p-3',
+                      'rounded-md border bg-raised p-3 transition-[opacity,box-shadow] duration-[var(--micro)]',
                       issue.pending ? 'border-amber-500/40' : 'border-line',
+                      drag.cardState(issue.id),
                     ].join(' ')}
                   >
                     <div className="flex items-baseline justify-between gap-2">
                       <span className="font-mono text-[10px] text-faint">{issue.key}</span>
+
+                      {canEdit && (
+                        <MoveButton
+                          label={issue.key}
+                          lifted={drag.lifted?.id === issue.id}
+                          onKeyDown={(event) => drag.onKeyDown(event, issue)}
+                        />
+                      )}
 
                       {/* Deleting goes through the same offline queue as every
                           other board write, so it works with no connection. */}
@@ -254,5 +280,28 @@ function Assignee({
       <Avatar name={name} seed={id ?? undefined} avatar={avatar} size="sm" />
       {name}
     </p>
+  );
+}
+
+/** The keyboard way to move a card; pointers drag the card itself. */
+function MoveButton({
+  label,
+  lifted,
+  onKeyDown,
+}: {
+  label: string;
+  lifted: boolean;
+  onKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onKeyDown={onKeyDown}
+      aria-label={`Move ${label}: Space to lift, arrow keys to move, Space to drop`}
+      aria-pressed={lifted}
+      className="cursor-grab rounded px-1 text-[10px] text-faint transition-colors hover:text-content focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-soft"
+    >
+      Move
+    </button>
   );
 }

@@ -32,6 +32,8 @@ const issue = z.object({
   assigneeId: uuid.nullable(),
   /** The agent that last acted on it, beside the human assignee (B5). */
   delegateId: uuid.nullable(),
+  /** Where the card sits on the board (C1). */
+  position: z.string(),
   createdBy: uuid,
   createdAt: timestamp,
   updatedAt: timestamp,
@@ -89,6 +91,7 @@ export const issueContracts = {
             status: true,
             priority: true,
             assigneeId: true,
+            position: true,
             createdAt: true,
             updatedAt: true,
           })

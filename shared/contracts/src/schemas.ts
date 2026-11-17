@@ -10,6 +10,7 @@ import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
 } from './limits.ts';
+import { positionSchema } from './ordering.ts';
 import { ROLES } from './rbac.ts';
 import { THEME_IDS } from './themes.ts';
 import { usernameSchema } from './usernames.ts';
@@ -227,6 +228,8 @@ export const updateIssueSchema = z
     status: z.enum(ISSUE_STATUSES),
     priority: z.enum(ISSUE_PRIORITIES),
     assigneeId: uuid.nullable(),
+    /** Where the card sits on the board (C1); see `ordering.ts`. */
+    position: positionSchema,
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, { message: 'No fields to update' });

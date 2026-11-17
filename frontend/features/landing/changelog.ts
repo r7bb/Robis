@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-18',
     area: 'Product',
+    title: 'Cards move by dragging, or by keyboard',
+    brief:
+      'Drag a card within or between columns, or lift it with Space and move it with the arrow keys; it works offline like every other change.',
+    summary:
+      'Cards on the board can now be dragged to a new place in their column or to another column. From the keyboard, a card’s Move button lifts it with Space or Enter, the arrow keys carry it up, down and across, Space drops it and Escape puts it back, with each step read out. Every card has a position key that sorts between its neighbours, so moving one card writes only that card. A move is an ordinary edit and goes through the offline queue, so a card moved with no connection stays where it was put and lands there when the connection returns. Existing boards keep the order they had.',
+    checked:
+      'A test moves a card offline to the top, checks the queue holds it, reconnects, and finds the server and the board agree on the new place. Others check that a new issue goes to the top, a move changes that issue alone, a malformed position is refused, and where a dropped card lands between, above, below and beside a card made offline. The migration gives existing issues positions in their old order.',
+  },
+  {
+    date: '2026-11-18',
+    area: 'Product',
     title: 'A page of what the agents did',
     brief:
       'Admins see each agent’s latest runs call by call, how many of its changes people kept, edited or reverted, and how the hints fare in use.',

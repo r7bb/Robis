@@ -475,6 +475,12 @@ export const issues = pgTable(
      * instead, so who answers for the work never changes hands to a bot.
      */
     delegateId: uuid('delegate_id').references(() => users.id, { onDelete: 'set null' }),
+    /**
+     * Where the card sits on the board (C1): a fractional key, so moving one
+     * card between two others writes that card alone. Ascending is top to
+     * bottom; a new issue takes a key before the project's first.
+     */
+    position: text('position').notNull(),
     createdBy: uuid('created_by')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict' }),
@@ -498,6 +504,7 @@ export const issues = pgTable(
     // paging stays an index scan instead of a sort.
     index('issues_project_created_idx').on(t.projectId, t.createdAt, t.id),
     index('issues_assignee_idx').on(t.assigneeId),
+    index('issues_project_position_idx').on(t.projectId, t.position),
     index('issues_search_idx').using('gin', t.searchVector),
   ],
 );

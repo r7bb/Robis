@@ -9,6 +9,7 @@
     "./config": "./src/config.ts"
   },
   "dependencies": {
+    "fractional-indexing": "4.0.0",
     "zod": "^4.0.0"
   }
 }

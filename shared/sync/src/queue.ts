@@ -26,7 +26,12 @@ export type QueuedMutation =
       id: string;
       workspaceId: string;
       issueId: string;
-      input: Partial<{ title: string; status: IssueStatus; priority: IssuePriority }>;
+      input: Partial<{
+        title: string;
+        status: IssueStatus;
+        priority: IssuePriority;
+        position: string;
+      }>;
       /** `updatedAt` of the row this edit was based on, for conflict detection. */
       baseUpdatedAt: string | null;
       queuedAt: number;

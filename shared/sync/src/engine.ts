@@ -1,4 +1,4 @@
-import type { IssuePriority, IssueStatus } from '@robis/shared';
+import { byPosition, type IssuePriority, type IssueStatus } from '@robis/shared';
 import { MutationQueue, type QueuedMutation } from './queue.ts';
 import {
   STORE_BLOBS,
@@ -30,6 +30,8 @@ export type LocalIssue = {
   assigneeId: string | null;
   assigneeName: string | null;
   projectId: string;
+  /** Where the card sits on the board (C1); null until a card made offline is synced. */
+  position: string | null;
   updatedAt: string | null;
   /** True while the row exists only locally or has unflushed edits. */
   pending: boolean;
@@ -54,7 +56,12 @@ export interface SyncTransport {
   updateIssue(
     workspaceId: string,
     issueId: string,
-    body: Partial<{ title: string; status: IssueStatus; priority: IssuePriority }>,
+    body: Partial<{
+      title: string;
+      status: IssueStatus;
+      priority: IssuePriority;
+      position: string;
+    }>,
     idempotencyKey: string,
   ): Promise<{ issue: IssueAnswer }>;
 
@@ -150,7 +157,7 @@ export class SyncEngine {
 
   async localIssues(projectId: string): Promise<LocalIssue[]> {
     const all = await this.storage.getAll<LocalIssue>(STORE_ISSUES);
-    return all.filter((issue) => issue.projectId === projectId).sort((a, b) => b.number - a.number);
+    return all.filter((issue) => issue.projectId === projectId).sort(byPosition);
   }
 
   // ---------------------------------------------------------------- writes
@@ -222,6 +229,7 @@ export class SyncEngine {
       assigneeId: null,
       assigneeName: null,
       projectId,
+      position: null,
       updatedAt: null,
       pending: true,
     };
@@ -243,7 +251,12 @@ export class SyncEngine {
   async updateIssue(
     workspaceId: string,
     issueId: string,
-    input: Partial<{ title: string; status: IssueStatus; priority: IssuePriority }>,
+    input: Partial<{
+      title: string;
+      status: IssueStatus;
+      priority: IssuePriority;
+      position: string;
+    }>,
   ): Promise<LocalIssue | undefined> {
     const existing = await this.storage.get<LocalIssue>(STORE_ISSUES, issueId);
     if (!existing) return undefined;

@@ -26,7 +26,12 @@ export type BoardState = {
   createIssue: (input: { title: string; priority?: IssuePriority }) => Promise<void>;
   updateIssue: (
     issueId: string,
-    input: Partial<{ title: string; status: IssueStatus; priority: IssuePriority }>,
+    input: Partial<{
+      title: string;
+      status: IssueStatus;
+      priority: IssuePriority;
+      position: string;
+    }>,
   ) => Promise<void>;
   deleteIssue: (issueId: string) => Promise<void>;
   /** Pull server state, e.g. after a realtime event. */
@@ -136,7 +141,12 @@ export function useOfflineBoard(workspaceId: string, projectId: string): BoardSt
   const updateIssue = useCallback(
     async (
       issueId: string,
-      input: Partial<{ title: string; status: IssueStatus; priority: IssuePriority }>,
+      input: Partial<{
+        title: string;
+        status: IssueStatus;
+        priority: IssuePriority;
+        position: string;
+      }>,
     ) => {
       await engine.updateIssue(workspaceId, issueId, input);
       await readLocal();

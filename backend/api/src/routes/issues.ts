@@ -21,11 +21,12 @@ import {
 import {
   contracts,
   isUuid,
+  positionBetween,
   TRIAGE_JOB,
   type TriageJob,
   type UpdateIssueInput,
 } from '@robis/shared';
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { serve, shape } from '../contract.ts';
 import { ApiError } from '../errors.ts';
@@ -263,6 +264,7 @@ export async function issueRoutes(
           status: issues.status,
           priority: issues.priority,
           assigneeId: issues.assigneeId,
+          position: issues.position,
           assigneeName: users.name,
           createdAt: issues.createdAt,
           updatedAt: issues.updatedAt,
@@ -310,6 +312,14 @@ export async function issueRoutes(
 
           if (!bumped) throw ApiError.notFound('Project not found');
 
+          // A new card goes to the top of the board: before the project's first.
+          const [first] = await tx
+            .select({ position: issues.position })
+            .from(issues)
+            .where(eq(issues.projectId, projectId))
+            .orderBy(asc(issues.position))
+            .limit(1);
+
           const [created] = await tx
             .insert(issues)
             .values({
@@ -325,6 +335,7 @@ export async function issueRoutes(
               priority: input.priority,
               assigneeId: input.assigneeId ?? null,
               delegateId: delegateOf(user),
+              position: positionBetween(null, first?.position ?? null),
               createdBy: user.id,
             })
             .returning();

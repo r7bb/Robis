@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Cards move by dragging, or by keyboard** (2026-11-18). Drag a card
+  within or between columns, or lift it with Space and move it with the
+  arrow keys; it works offline like every other change.
 - **A page of what the agents did** (2026-11-18). Admins see each agent’s
   latest runs call by call, how many of its changes people kept, edited or
   reverted, and how the hints fare in use.

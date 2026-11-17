@@ -274,6 +274,13 @@
       "when": 1794903015765,
       "tag": "0038_agent_watching_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1794909322643,
+      "tag": "0039_issue_position",
+      "breakpoints": true
     }
   ]
 }

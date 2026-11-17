@@ -15,6 +15,7 @@
  * person -- there is nothing to see in a permission matrix when every session is
  * the same owner.
  */
+
 import { hashPassword } from '@robis/auth';
 import {
   channels,
@@ -39,6 +40,7 @@ import {
 } from '@robis/shared';
 import { loadConfig } from '@robis/shared/config';
 import { and, eq, inArray } from 'drizzle-orm';
+import { generateNKeysBetween } from 'fractional-indexing';
 import { EXTRA_SLUGS, seedExtraWorkspaces } from './seed-extra.ts';
 
 // Before anything else, and failing closed: see `loadConfig`.
@@ -358,6 +360,7 @@ try {
       })
       .returning();
 
+    const seedPositions = generateNKeysBetween(null, null, spec.issues.length);
     const createdIssues = await db
       .insert(issues)
       .values(
@@ -370,6 +373,8 @@ try {
             workspaceId: workspace!.id,
             projectId: project!.id,
             number: index + 1,
+            // Newest first on the board, as the app orders new issues.
+            position: seedPositions[spec.issues.length - 1 - index]!,
             title: issue.title,
             status: issue.status,
             priority: issue.priority,

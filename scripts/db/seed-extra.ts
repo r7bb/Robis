@@ -5,6 +5,7 @@
  * the activity sparklines have a shape. Used by `seed.ts`, on a fresh seed
  * and on `--if-missing`, which adds whichever of these is not there yet.
  */
+
 import {
   channels,
   type Database,
@@ -23,6 +24,7 @@ import {
   type ThemeId,
 } from '@robis/shared';
 import { eq } from 'drizzle-orm';
+import { generateNKeysBetween } from 'fractional-indexing';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -192,6 +194,7 @@ async function seedOne(
       createdBy: ownerId,
     })
     .returning();
+  const seedPositions = generateNKeysBetween(null, null, spec.project.issues.length);
   const created = await db
     .insert(issues)
     .values(
@@ -201,6 +204,8 @@ async function seedOne(
           workspaceId: workspace!.id,
           projectId: project!.id,
           number: index + 1,
+          // Newest first on the board, as the app orders new issues.
+          position: seedPositions[spec.project.issues.length - 1 - index]!,
           title: issue.title,
           status: issue.status,
           priority: issue.priority,
