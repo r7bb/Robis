@@ -7,6 +7,7 @@ import {
   issues,
   publishEvent,
   queueAttachmentPurge,
+  recordAgentChanges,
   recordAudit,
   type Tx,
   users,
@@ -167,6 +168,20 @@ export async function commentRoutes(app: FastifyInstance, opts: { db: Database }
 
           const mentions = await recordMentions(tx, workspaceId, row!.id, input.body);
           await enqueue(tx, 'notify.mentions', { commentId: row!.id });
+          // An agent's comment, to see later whether people kept it (B6).
+          if (user.kind === 'agent') {
+            await recordAgentChanges(tx, [
+              {
+                workspaceId,
+                agentId: user.id,
+                entityType: 'comment',
+                entityId: row!.id,
+                field: 'created',
+                before: null,
+                after: null,
+              },
+            ]);
+          }
 
           // Which issue, not what was said: the comment is the record of its
           // own words, and the trail outlives a deleted comment.

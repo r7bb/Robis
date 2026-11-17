@@ -6,10 +6,12 @@ import {
   type Executor,
   encodeCursor,
   enqueue,
+  ISSUE_FIELDS,
   issues,
   projects,
   publishEvent,
   queueAttachmentPurge,
+  recordAgentChanges,
   recordAudit,
   type Tx,
   users,
@@ -105,6 +107,8 @@ type IssueUpdate = {
   /** Resolved now so the trail still names the issue after it is deleted. */
   issueKey: string;
   title: string;
+  /** The issue as it was, for an agent's change to be judged against later (B6). */
+  previous: Record<string, unknown>;
 };
 
 /**
@@ -152,6 +156,23 @@ async function applyIssueUpdate(tx: Tx, actor: AuditActor, update: IssueUpdate) 
   });
 
   if (!row) throw ApiError.notFound('Issue not found');
+
+  // What an agent changed, with the value before, so a person's later undo
+  // can be told from an edit (B6).
+  if (update.delegateId) {
+    await recordAgentChanges(
+      tx,
+      ISSUE_FIELDS.filter((field) => input[field] !== undefined).map((field) => ({
+        workspaceId,
+        agentId: update.delegateId!,
+        entityType: 'issue' as const,
+        entityId: issueId,
+        field,
+        before: update.previous[field] ?? null,
+        after: input[field] ?? null,
+      })),
+    );
+  }
   return row;
 }
 
@@ -316,6 +337,19 @@ export async function issueRoutes(
             payload: { key: `${bumped.key}-${bumped.number}`, title: created!.title },
           });
           await queueTriage(tx, { workspaceId, issueId: created!.id }, user.id);
+          if (user.kind === 'agent') {
+            await recordAgentChanges(tx, [
+              {
+                workspaceId,
+                agentId: user.id,
+                entityType: 'issue',
+                entityId: created!.id,
+                field: 'created',
+                before: null,
+                after: null,
+              },
+            ]);
+          }
 
           return { ...created!, key: `${bumped.key}-${bumped.number}` };
         });
@@ -372,6 +406,7 @@ export async function issueRoutes(
             delegateId: delegateOf(user),
             issueKey: `${project.key}-${before.number}`,
             title: before.title,
+            previous: before,
           }),
         );
 

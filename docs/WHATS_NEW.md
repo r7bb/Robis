@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Whether people kept what an agent did** (2026-11-18). Each change an
+  agent makes is judged after seven days: kept, edited by a person, or
+  reverted, from the values before and after.
 - **Every call an agent makes is recorded** (2026-11-18). Each agent call in
   its workspace becomes a step of a run: the tool, whether it worked or was
   refused, and how long it took; the MCP server has metrics too.

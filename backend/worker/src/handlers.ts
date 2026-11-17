@@ -6,8 +6,10 @@ import {
   deleteExpiredUsernameHolds,
   deleteStaleSignups,
   issues,
+  judgeAgentChanges,
   notifications,
   projects,
+  pruneAgentHistory,
   pruneExpiredAgentTokens,
   pruneIdempotencyLedger,
   pruneReadNotifications,
@@ -131,6 +133,13 @@ export const cleanupSessions = async (_payload: unknown, { db }: { db: Database 
   await pruneReadNotifications(db);
   // And the triage agent's run tokens, a day after they expired (B5).
   await pruneExpiredAgentTokens(db);
+  // Agents' runs and judged changes after 90 days, hint feedback after a year (B6).
+  await pruneAgentHistory(db);
+};
+
+/** Judge agents' changes that are seven days old: kept, edited or reverted (B6). */
+export const judgeAgentWork = async (_payload: unknown, { db }: { db: Database }) => {
+  await judgeAgentChanges(db);
 };
 
 /** Periodic scan that decides who could use a prompt. See `nudges.ts`. */
@@ -142,4 +151,5 @@ export const handlers: Handlers = {
   'notify.mentions': notifyMentions,
   'sessions.cleanup': cleanupSessions,
   'nudges.scan': runNudgeScan,
+  'agents.judge': judgeAgentWork,
 };

@@ -63,6 +63,7 @@ function positiveMs(raw: string | undefined, fallback: number): number {
 async function scheduleMaintenance() {
   await enqueue(db, 'sessions.cleanup', {}, { delayMs: HOUR_MS });
   await enqueue(db, 'nudges.scan', {}, { delayMs: NUDGE_INTERVAL_MS });
+  await enqueue(db, 'agents.judge', {}, { delayMs: HOUR_MS });
 }
 
 // Recurring jobs re-enqueue themselves after running, which keeps the schedule
@@ -108,6 +109,7 @@ if (mcpUrl) {
 
 reschedule('sessions.cleanup', HOUR_MS);
 reschedule('nudges.scan', NUDGE_INTERVAL_MS);
+reschedule('agents.judge', HOUR_MS);
 
 await scheduleMaintenance();
 

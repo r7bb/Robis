@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-18',
     area: 'Security',
+    title: 'Whether people kept what an agent did',
+    brief:
+      'Each change an agent makes is judged after seven days: kept, edited by a person, or reverted, from the values before and after.',
+    summary:
+      'The honest measure of an agent is what people did with its work. Each change an agent makes to an issue, and each issue or comment it adds, is stored with the value before and after. Seven days later the worker looks again: if the agent’s value is still there the change was kept, if the earlier value is back or the thing was deleted it was reverted, and anything else counts as edited. The audit trail could not answer this by itself, because it records which fields changed and not their values, so an undo and an edit look the same there. Runs, steps and judgements are kept for 90 days, and hint feedback for a year.',
+    checked:
+      'Eight tests, judged by the worker’s own database account: an agent’s status change that a person sets back shows as reverted; one left alone is kept and one changed again is edited; nothing is judged before seven days; an issue the agent filed and a person deleted is reverted; a comment an admin removed is reverted; a person’s own edits record nothing; and runs with their steps and old judgements are pruned after 90 days.',
+  },
+  {
+    date: '2026-11-18',
+    area: 'Security',
     title: 'Every call an agent makes is recorded',
     brief:
       'Each agent call in its workspace becomes a step of a run: the tool, whether it worked or was refused, and how long it took; the MCP server has metrics too.',
