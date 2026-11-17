@@ -931,6 +931,49 @@ event-loop lag is reported alongside every result.
 
 ---
 
+## Agents as teammates
+
+An agent is an account with `kind = 'agent'` that an admin adds to one
+workspace, as a member or a guest and never higher, so a leaked token can
+never manage people. It never signs in: sign-in, password reset and
+invitations by username look for people only. It acts with bearer tokens
+(`rba_` and 256 random bits), shown once and kept as SHA-256 hashes the way
+sessions are; every request looks its token up, which is why a revoked one
+fails on the next call rather than at some later expiry. A token is honoured
+only on workspace routes and only when no session cookie is sent, and on a
+workspace other than its own it resolves to no membership, so the answer is
+the same 404 a stranger gets.
+
+**The MCP server holds no authority.** `backend/mcp` is a thin adapter: each
+tool is a call to the API with the caller's own token, so the permission
+matrix, the idempotency ledger and the audit trail are the API's, unchanged,
+and a refusal reaches the agent with the API's status and code. The server
+has no database account and no secrets, which keeps the one new public
+surface from becoming a second place where authorization is decided. It is
+stateless (a fresh server per request, JSON answers), so any instance can
+take any call. Writes take a client-chosen key, sent to the ledger, so a
+retried tool call happens once.
+
+**A person answers for the work.** An agent is never an assignee; an issue
+it creates or edits records it as `delegate_id` beside the human assignee,
+and the trail records `actor_kind = 'agent'`. Agents are marked wherever
+they appear in the app.
+
+**The triage agent is an ordinary agent.** It has no special path: the
+worker mints it a token for one run (five minutes, revoked at the end),
+and it calls the same MCP tools any agent would, including `suggest`, which
+returns the same hints the composer shows a person. It comments and changes
+nothing, because a suggestion is only advice until a person acts on it.
+
+**Two deliberate exceptions.** Adding an agent and issuing a token stay out
+of the idempotency ledger, which stores answers to replay them: the secret
+must exist nowhere but in the one answer that shows it, so a retried request
+makes a second, revocable token instead. And the worker's database account
+may insert tokens, cut to the columns it needs; what that leaves open is
+listed in [PLATFORM_PLAN.md](PLATFORM_PLAN.md), Phase 3.
+
+---
+
 ## Why only documents use CRDTs
 
 What is built and what is left are kept in [ROADMAP.md](ROADMAP.md).
