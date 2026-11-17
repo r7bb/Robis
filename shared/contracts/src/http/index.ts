@@ -9,6 +9,7 @@ import { type Contract, statusesOf } from './contract.ts';
 import { documentContracts } from './documents.ts';
 import { feedbackContracts } from './feedback.ts';
 import { issueContracts } from './issues.ts';
+import { bulkIssueContracts } from './issues-bulk.ts';
 import { labelContracts } from './labels.ts';
 import { meetingContracts } from './meetings.ts';
 import { memberContracts } from './members.ts';
@@ -25,6 +26,12 @@ export {
   SUGGESTION_ACTIONS,
   SUGGESTION_KINDS,
 } from './feedback.ts';
+export {
+  BULK_ISSUES_MAX,
+  BULK_SKIP_REASONS,
+  type BulkChange,
+} from './issues-bulk.ts';
+export { ISSUE_LABELS_MAX } from './labels.ts';
 export { SAVED_VIEWS_PER_PROJECT } from './saved-views.ts';
 
 /** Every route the API serves through a contract, by name. */
@@ -37,6 +44,7 @@ export const contracts = {
   ...labelContracts,
   ...savedViewContracts,
   ...issueContracts,
+  ...bulkIssueContracts,
   ...documentContracts,
   ...channelContracts,
   ...meetingContracts,

@@ -36,7 +36,7 @@ const UNIQUE_VIOLATION = '23505';
  * record it. Only this workspace's labels: another's ids are refused, not
  * attached.
  */
-async function replaceLabels(
+export async function replaceLabels(
   tx: Tx,
   actor: AuditActor,
   { workspaceId, issueId, wanted }: { workspaceId: string; issueId: string; wanted: string[] },

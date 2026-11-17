@@ -148,14 +148,14 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Change many issues at once.** Pick cards on the board and move,
+  prioritise, assign, label or delete them together; anything you may not
+  change is left alone and named.
 - **Board filters and saved views.** Narrow the board by status, priority,
   assignee or label, share it as a link, and keep a filter by name for the
   whole workspace.
 - **Labels on issues.** Make labels in six fixed colours, put them on issues
   from the issue page, and see them as chips on the board.
-- **Cards move by dragging, or by keyboard.** Drag a card within or between
-  columns, or lift it with Space and move it with the arrow keys; it works
-  offline like every other change.
 
 <!-- latest:end -->
 

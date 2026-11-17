@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-18',
     area: 'Product',
+    title: 'Change many issues at once',
+    brief:
+      'Pick cards on the board and move, prioritise, assign, label or delete them together; anything you may not change is left alone and named.',
+    summary:
+      'The board has a Select issues mode: tick cards, then move them to a column, set their priority or assignee, put a label on or take one off, or delete them, all in one go. Each issue is judged on its own. One you may not change, one that is gone, one already that way or one at the label limit is left alone, and the board says how many were left and why rather than failing the rest. Everything that does change is one transaction with one audit entry per issue, written by the same code as changing a single issue, and a retried request with the same key is not applied twice. An agent changes at most 25 issues at once and deletes one at a time, so its runs stay reviewable call by call. Changing many issues needs a connection; the board says so when there is none.',
+    feature: {
+      name: 'Bulk changes',
+      where: 'A project’s board: Select issues, then the bar above the columns',
+      layers: [
+        'Screen: Select issues, a pick box on each synced card, and a bar of actions with a plain summary of what changed and what was left',
+        'API: issues.bulk, judging each issue on its own and reporting the ones it skipped with a reason',
+        'Data: no new tables; the same issue, label and audit writes as single changes',
+      ],
+    },
+    checked:
+      'Fourteen tests: a bulk status change moves every issue with one audit event each; a guest’s bulk change skips every issue as not theirs to change and changes none; another workspace’s issue and a malformed id are skipped as not found while the rest change; an issue already that way is reported as unchanged; a label goes on and comes off, and another workspace’s label is refused; a bulk delete is audited per issue and a replay with the same key does nothing twice; an empty list and more than a hundred ids are refused; assigning and unassigning work and an agent is refused as assignee; an issue named twice, in either case, counts once; an issue at the label limit is left alone; a guest naming an unknown label learns only that it may not; an agent records itself as delegate, may not delete in bulk and is held to 25; and the summary counts what was left by reason.',
+  },
+  {
+    date: '2026-11-18',
+    area: 'Product',
     title: 'Board filters and saved views',
     brief:
       'Narrow the board by status, priority, assignee or label, share it as a link, and keep a filter by name for the whole workspace.',

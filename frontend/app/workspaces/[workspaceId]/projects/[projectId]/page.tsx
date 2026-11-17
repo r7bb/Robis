@@ -12,7 +12,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { type FormEvent, type KeyboardEvent, Suspense, useEffect, useState } from 'react';
+import { type FormEvent, type KeyboardEvent, Suspense, useEffect, useRef, useState } from 'react';
 import { DeleteButton } from '../../../../../components/delete-button.tsx';
 import { PresenceBar } from '../../../../../components/presence.tsx';
 import { SyncStatus } from '../../../../../components/sync-status.tsx';
@@ -26,6 +26,8 @@ import {
 import { ErrorState } from '../../../../../components/ui/primitives.tsx';
 import { useBoardDrag } from '../../../../../features/board/board-drag.ts';
 import { BoardFilters } from '../../../../../features/board/board-filters.tsx';
+import { BulkBar } from '../../../../../features/board/bulk-bar.tsx';
+import { useSelection } from '../../../../../features/board/use-selection.ts';
 import { DuplicateHints } from '../../../../../features/issues/duplicate-hints.tsx';
 import { PriorityHint } from '../../../../../features/issues/priority-hint.tsx';
 import { call } from '../../../../../lib/api.ts';
@@ -67,6 +69,9 @@ function Board() {
   const shown = board.issues.filter((issue) => matchesFilter(issue, filter));
   const columns = BOARD_COLUMNS.filter((column) => !filter.status || column === filter.status);
   const drag = useBoardDrag(shown, columns, board.updateIssue);
+  const selection = useSelection();
+  // Where focus goes once a bulk change is done and its picks are gone.
+  const selectToggle = useRef<HTMLButtonElement>(null);
   const labels = useQuery({
     queryKey: ['labels', workspaceId],
     queryFn: () => call(contracts['labels.list'], { params: { workspaceId } }),
@@ -187,10 +192,40 @@ function Board() {
         labels={labels.data?.labels ?? []}
       />
 
-      {/* Always mounted, so a change of count is announced, not just shown. */}
-      <p className="mt-3 min-h-4 text-xs text-faint" aria-live="polite">
-        {filterSummary(filter, shown.length, board.issues.length)}
-      </p>
+      <div className="mt-3 flex items-center justify-between gap-4">
+        {/* Always mounted, so a change of count is announced, not just shown. */}
+        <p className="min-h-4 text-xs text-faint" aria-live="polite">
+          {filterSummary(filter, shown.length, board.issues.length)}
+        </p>
+        {canEdit && (
+          <button
+            type="button"
+            ref={selectToggle}
+            aria-pressed={selection.on}
+            onClick={selection.toggleOn}
+            className="rounded px-1.5 py-0.5 text-xs text-muted transition-colors hover:text-content focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-soft"
+          >
+            {selection.on ? 'Done selecting' : 'Select issues'}
+          </button>
+        )}
+      </div>
+
+      {selection.on && (
+        <BulkBar
+          workspaceId={workspaceId}
+          // Only cards on show that exist on the server: a filter can hide a
+          // pick, and a card made offline has nothing to change yet.
+          issueIds={shown.filter((i) => !i.pending && selection.has(i.id)).map((i) => i.id)}
+          online={board.online}
+          canDelete={canDelete}
+          labels={labels.data?.labels ?? []}
+          onDone={() => {
+            selection.clear();
+            selectToggle.current?.focus();
+            void board.refresh();
+          }}
+        />
+      )}
 
       <div className="mt-6 grid gap-4 md:grid-cols-4">
         {columns.map((column) => {
@@ -221,38 +256,17 @@ function Board() {
                       drag.cardState(issue.id),
                     ].join(' ')}
                   >
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="font-mono text-[10px] text-faint">{issue.key}</span>
-
-                      {canEdit && (
-                        <MoveButton
-                          label={issue.key}
-                          lifted={drag.lifted?.id === issue.id}
-                          onKeyDown={(event) => drag.onKeyDown(event, issue)}
-                        />
-                      )}
-
-                      {/* Deleting goes through the same offline queue as every
-                          other board write, so it works with no connection. */}
-                      <DeleteButton
-                        allowed={canDelete}
-                        kind="issue"
-                        name={issue.pending ? issue.title : `${issue.key} · ${issue.title}`}
-                        onConfirm={() => board.deleteIssue(issue.id)}
-                        className="-my-1 -mr-1 order-last"
-                      />
-
-                      {issue.pending ? (
-                        <span
-                          title="Saved on this device, not yet synced"
-                          className="text-[10px] uppercase tracking-wide text-amber-500/90"
-                        >
-                          Unsynced
-                        </span>
-                      ) : (
-                        <PriorityBadge priority={issue.priority} />
-                      )}
-                    </div>
+                    <CardHeader
+                      issue={issue}
+                      canEdit={canEdit}
+                      canDelete={canDelete}
+                      lifted={drag.lifted?.id === issue.id}
+                      onMoveKey={(event) => drag.onKeyDown(event, issue)}
+                      onDelete={() => board.deleteIssue(issue.id)}
+                      selecting={selection.on}
+                      selected={selection.has(issue.id)}
+                      onSelect={() => selection.toggle(issue.id)}
+                    />
 
                     {/* Offline-created issues have no server row yet, so
                         there is nothing to open until they sync. */}
@@ -318,6 +332,71 @@ function Assignee({
       <Avatar name={name} seed={id ?? undefined} avatar={avatar} size="sm" />
       {name}
     </p>
+  );
+}
+
+/**
+ * A card's top line: its pick box while selecting, its key and Move on the
+ * left; its priority (or Unsynced) and Delete on the right.
+ */
+function CardHeader({
+  issue,
+  canEdit,
+  canDelete,
+  lifted,
+  onMoveKey,
+  onDelete,
+  selecting,
+  selected,
+  onSelect,
+}: {
+  issue: { key: string; title: string; pending: boolean; priority: IssuePriority };
+  canEdit: boolean;
+  canDelete: boolean;
+  lifted: boolean;
+  onMoveKey: (event: KeyboardEvent<HTMLButtonElement>) => void;
+  onDelete: () => void;
+  selecting: boolean;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span className="flex items-center gap-2">
+        {selecting && !issue.pending && (
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onSelect}
+            aria-label={`Select ${issue.key}`}
+            className="accent-accent"
+          />
+        )}
+        <span className="font-mono text-[10px] text-faint">{issue.key}</span>
+        {canEdit && <MoveButton label={issue.key} lifted={lifted} onKeyDown={onMoveKey} />}
+      </span>
+      <span className="flex items-center gap-1">
+        {issue.pending ? (
+          <span
+            title="Saved on this device, not yet synced"
+            className="text-[10px] uppercase tracking-wide text-amber-500/90"
+          >
+            Unsynced
+          </span>
+        ) : (
+          <PriorityBadge priority={issue.priority} />
+        )}
+        {/* Deleting goes through the same offline queue as every other
+            board write, so it works with no connection. */}
+        <DeleteButton
+          allowed={canDelete}
+          kind="issue"
+          name={issue.pending ? issue.title : `${issue.key} · ${issue.title}`}
+          onConfirm={onDelete}
+          className="-my-1 -mr-1"
+        />
+      </span>
+    </div>
   );
 }
 

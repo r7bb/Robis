@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Change many issues at once** (2026-11-18). Pick cards on the board and
+  move, prioritise, assign, label or delete them together; anything you may
+  not change is left alone and named.
 - **Board filters and saved views** (2026-11-18). Narrow the board by
   status, priority, assignee or label, share it as a link, and keep a filter
   by name for the whole workspace.

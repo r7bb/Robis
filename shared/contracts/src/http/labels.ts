@@ -10,6 +10,9 @@ import { contract, timestamp } from './contract.ts';
  * however malformed, is the same 404 as one that is gone.
  */
 
+/** The most labels one issue carries. */
+export const ISSUE_LABELS_MAX = 20;
+
 const label = z.object({
   id: uuid,
   name: z.string(),
@@ -50,7 +53,7 @@ export const labelContracts = {
     path: '/workspaces/:workspaceId/issues/:issueId/labels',
     summary: "Set an issue's labels: exactly these, replacing what it had.",
     params: workspaceParams.extend({ issueId: z.string() }),
-    body: z.object({ labelIds: z.array(uuid).max(20) }),
+    body: z.object({ labelIds: z.array(uuid).max(ISSUE_LABELS_MAX) }),
     response: z.object({ labelIds: z.array(uuid) }),
   }),
 };
