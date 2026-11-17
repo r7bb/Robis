@@ -227,6 +227,48 @@ async function main() {
     if ((await fetched.arrayBuffer()).byteLength === 0) fail('download', 'empty body');
   });
 
+  await step('an agent comments through the MCP server, at /mcp', async () => {
+    const added = await api('POST', `/workspaces/${workspaceId}/agents`, {
+      name: 'Smoke bot',
+      role: 'MEMBER',
+    });
+    await expectStatus('agent', added, 201);
+    const { agent, token } = (await added.json()) as {
+      agent: { id: string };
+      token: { secret: string };
+    };
+
+    // One stateless JSON-RPC call, as an MCP client sends it, through the edge.
+    const called = await fetch(`${WEB}/mcp/${workspaceId}`, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${token.secret}`,
+        'content-type': 'application/json',
+        accept: 'application/json, text/event-stream',
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: {
+          name: 'comment',
+          arguments: { issueId, body: 'Checked by an agent', idempotencyKey: `smoke-${run}` },
+        },
+      }),
+    });
+    await expectStatus('mcp', called, 200);
+    const answer = (await called.json()) as { result?: { isError?: boolean } };
+    if (!answer.result || answer.result.isError) fail('mcp', JSON.stringify(answer));
+
+    const listed = await api('GET', `/workspaces/${workspaceId}/issues/${issueId}/comments`);
+    const { comments } = (await listed.json()) as {
+      comments: { authorId: string; body: string }[];
+    };
+    if (!comments.some((c) => c.authorId === agent.id && c.body === 'Checked by an agent')) {
+      fail('mcp', 'the comment is not there, or not as the agent');
+    }
+  });
+
   process.stdout.write('Smoke test passed.\n');
 }
 

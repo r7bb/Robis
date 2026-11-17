@@ -199,7 +199,7 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
         run: |
-          set -- mail migrate realtime worker ml web
+          set -- mail migrate realtime worker mcp ml web
           args=""
           for image in "$@"; do
             if [ "$EVENT" != schedule ]; then
@@ -318,7 +318,7 @@ jobs:
       - name: Scan every image (Trivy)
         run: |
           mkdir -p .trivy/images
-          for image in api realtime worker web ml mail-sink; do
+          for image in api realtime worker mcp web ml mail-sink; do
             docker save "robis-${image}:stack" -o ".trivy/images/${image}.tar"
             docker run --rm -v "$PWD/.trivy:/trivy" -e TRIVY_CACHE_DIR=/trivy/cache "$TRIVY_IMAGE" \
               image --quiet --scanners vuln,secret --severity CRITICAL --ignore-unfixed \

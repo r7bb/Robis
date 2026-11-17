@@ -153,6 +153,17 @@ services:
     depends_on:
       migrate: { condition: service_completed_successfully }
 
+  # Agents' tools (B5): no database and no secrets, only the API's address.
+  mcp:
+    <<: *hardened
+    build: { <<: *backend-build, target: mcp }
+    image: robis-mcp:stack
+    environment:
+      NODE_ENV: development
+      MCP_API_URL: http://api:4000
+    depends_on:
+      api: { condition: service_healthy }
+
   worker:
     <<: *hardened
     build: { <<: *backend-build, target: worker }
@@ -215,3 +226,4 @@ services:
       web: { condition: service_started }
       api: { condition: service_healthy }
       realtime: { condition: service_started }
+      mcp: { condition: service_started }

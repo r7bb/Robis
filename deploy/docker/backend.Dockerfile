@@ -48,6 +48,9 @@ RUN bun install --frozen-lockfile --production --filter '@robis/realtime'
 FROM source AS deps-worker
 RUN bun install --frozen-lockfile --production --filter '@robis/worker'
 
+FROM source AS deps-mcp
+RUN bun install --frozen-lockfile --production --filter '@robis/mcp'
+
 # ---------------------------------------------------------------------------
 # What every backend image runs: source plus its own service's installed
 # dependencies, copied in by the stage below. No build step: Bun runs the
@@ -90,6 +93,19 @@ COPY --from=deps-worker /app/shared ./shared
 HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=3 \
   CMD ["bun", "backend/worker/src/health.ts"]
 CMD ["bun", "backend/worker/src/main.ts"]
+
+# ---------------------------------------------------------------------------
+# The MCP server (B5): no database account and no secrets, only the API's
+# address. It calls the API with each agent's own token.
+FROM runtime AS mcp
+COPY --from=deps-mcp /app/node_modules ./node_modules
+COPY --from=deps-mcp /app/backend ./backend
+COPY --from=deps-mcp /app/shared ./shared
+ENV MCP_HOST=0.0.0.0 MCP_PORT=4002
+EXPOSE 4002
+HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=3 \
+  CMD ["bun", "-e", "fetch('http://127.0.0.1:4002/health').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+CMD ["bun", "backend/mcp/src/main.ts"]
 
 # ---------------------------------------------------------------------------
 # Development and CI only: catches mail so a test can read it. Never deploy.

@@ -37,6 +37,10 @@ services:
   realtime:
     environment: *production
 
+  mcp:
+    environment:
+      NODE_ENV: production
+
   worker:
     environment:
       <<: *production

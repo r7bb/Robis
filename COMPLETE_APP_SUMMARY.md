@@ -12,7 +12,7 @@ Written to be checkable. Every row names a file you can open.
 
 | | |
 | --- | --- |
-| Services | 4 (web, API, realtime gateway, worker) plus an optional ML service |
+| Services | 5 (web, API, realtime gateway, worker, MCP server for agents) plus an optional ML service |
 | Database tables | 18 |
 | HTTP endpoints | 88 |
 | Tests | Counted in [docs/ROADMAP.md](docs/ROADMAP.md), the one place they are kept |
@@ -71,6 +71,7 @@ second "consumed" state to get wrong.
 | SIEM stream over HTTPS, at-least-once with an idempotency key per event | `backend/worker/src/audit-stream.ts` |
 | Emails shown only to admins; teammates see usernames | `backend/api/src/routes/members.ts` |
 | No workspace access, over HTTP or the live feed, until a picture is chosen | `backend/api/src/plugins/authz.ts`, `backend/realtime/src/gateway.ts` |
+| An MCP server for agents at `/mcp/<workspace id>`: search, list projects, read, create and update issues, comment; it holds no authority and calls the API with the agent's own token | `backend/mcp/` |
 | Agents as workspace members (member or guest only) with revocable bearer tokens, shown once and kept as hashes; recorded as agents in the audit trail and as the delegate on issues they touch, never as an assignee | `backend/api/src/routes/agents.ts`, `backend/auth/src/agent-tokens.ts` |
 
 A non-member gets **404, not 403**, because a 403 confirms the workspace

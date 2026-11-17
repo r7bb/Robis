@@ -4,10 +4,12 @@
   "private": true,
   "type": "module",
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
     "@robis/api": "workspace:*",
     "@robis/auth": "workspace:*",
     "@robis/database": "workspace:*",
     "@robis/mailer": "workspace:*",
+    "@robis/mcp": "workspace:*",
     "@robis/metrics": "workspace:*",
     "@robis/realtime": "workspace:*",
     "@robis/scripts": "workspace:*",

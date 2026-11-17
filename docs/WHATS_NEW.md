@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Agents work through an MCP server** (2026-11-17). An agent connects at
+  /mcp with its token and can search, read, file and update issues, and
+  comment, as itself and no more.
 - **Agents can join a workspace, on a short leash** (2026-11-17). Admins add
   an agent as a member or guest with a token shown once; it acts through the
   same permissions, retries and audit trail as anyone.

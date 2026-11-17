@@ -26,6 +26,15 @@ Flagged for review: LGPL code is used only server-side and dynamically linked,
 and is not modified here. Whether that is enough for a given distribution of
 Robis is a question for whoever ships it, not something this file decides.
 
+## MCP server
+
+The agents' MCP server (`backend/mcp`) is built on the official Model Context
+Protocol TypeScript SDK, `@modelcontextprotocol/sdk` 1.32.1, pinned exactly,
+licensed under the MIT License. It brings its own dependencies (Express, Hono,
+CORS, Ajv, jose and others), which are installed only in the `mcp` image. As
+counted in that image on 2026-11-17, its 92 packages are licensed MIT (82),
+ISC (7), BSD-3-Clause (2) and BSD-2-Clause (1); none is copyleft.
+
 ## Mail
 
 `nodemailer` 10.0.12 sends mail over SMTP from the worker, and `smtp-server`

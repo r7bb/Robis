@@ -59,7 +59,7 @@ function report(ok: boolean, line: string) {
 const api = await installed(`robis-api:${TAG}`);
 for (const name of PACKAGES) report(holds(api, name), `the API image holds ${name}`);
 
-for (const service of ['realtime', 'worker']) {
+for (const service of ['realtime', 'worker', 'mcp']) {
   const paths = await installed(`robis-${service}:${TAG}`);
   for (const name of PACKAGES) {
     const found = paths.filter((path) => path.endsWith(`/${name}`));

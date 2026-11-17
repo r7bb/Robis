@@ -45,6 +45,17 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-17',
+    area: 'Product',
+    title: 'Agents work through an MCP server',
+    brief:
+      'An agent connects at /mcp with its token and can search, read, file and update issues, and comment, as itself and no more.',
+    summary:
+      'Robis now speaks the Model Context Protocol, so an agent built on any MCP client can work in a workspace. It connects to /mcp with the workspace in the path and its token, and gets six tools: search, list projects, read an issue with its comments, file an issue, change one’s title, description or status, and comment. Priority and assignee are left to people. The server holds no authority of its own: every tool is a call to the API with the agent’s own token, so the API decides what is allowed and records what happened, exactly as for a person. Every write takes a key, and sending the same key again does not repeat it. It runs as its own small service with no database access and no secrets.',
+    checked:
+      'Thirteen tests drive it with the protocol’s own client: the tool list; filing, editing, commenting, reading and searching as the agent; a retried issue and comment with the same key happen once; a guest agent’s refused write carries the same status and code a guest person gets; another workspace is a 404; a revoked token is refused on the next call. A security review asked for unexpected errors to stop naming internal addresses, a 64 KB request cap, and refusing malformed tokens and browser pages early; each is done and tested. On the rebuilt stack, an agent commented through /mcp at the edge proxy, and its image holds neither the API’s web framework nor its image library. Its 92 packages are MIT, ISC or BSD licensed.',
+  },
+  {
+    date: '2026-11-17',
     area: 'Security',
     title: 'Agents can join a workspace, on a short leash',
     brief:
