@@ -45,6 +45,27 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-18',
+    area: 'Product',
+    title: 'A page of what the agents did',
+    brief:
+      'Admins see each agent’s latest runs call by call, how many of its changes people kept, edited or reverted, and how the hints fare in use.',
+    summary:
+      'Agents at work is a page for a workspace’s admins, reached from the agents list. It shows, per agent, how many of its changes people kept, edited or reverted once they were a week old, and how many are still too new to judge, as counts with a share beside them and never a share alone. Below are its latest runs: open one to see each call it made, which tool, whether it worked, was refused or failed, and how many milliseconds it took. Last, how often people used or set aside the composer’s hints, beside the duplicate finder’s offline evaluation and labelled as a different measurement. It works on a phone, where the counts scroll sideways in their own frame.',
+    feature: {
+      name: 'Agents at work',
+      where:
+        'A workspace’s side panel, under Team, then Agents, then See what they did (admins only)',
+      layers: [
+        'Screen: per-agent kept, edited, reverted and pending counts; latest runs that open to their steps; hint figures beside the offline evaluation',
+        'API: agents.activity and suggestions.stats, for admins and owners only',
+        'Data: agent_runs, agent_steps, agent_changes and suggestion_feedback, kept 90 days (feedback a year)',
+      ],
+    },
+    checked:
+      'Tests: the page’s answer gives the latest runs step by step and the per-agent counts after a person reverted an agent’s change, a stranger gets a 404, and an agent cannot add hint feedback. In headless Chrome on the rebuilt stack the page showed a triage run’s four calls with their outcomes and times, the agent’s separate call, and its pending changes, at desktop and phone widths with no sideways scroll. A security review led to the runs being read in three queries rather than one per run, and to agents being refused from the hint figures.',
+  },
+  {
+    date: '2026-11-18',
     area: 'ML',
     title: 'The composer’s hints are measured in use',
     brief:

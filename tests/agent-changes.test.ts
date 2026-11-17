@@ -202,3 +202,37 @@ describe('history', () => {
     ).toEqual([]);
   });
 });
+
+describe('the activity view’s answer', () => {
+  test('gives the latest runs step by step, and per agent what people did with its changes', async () => {
+    const { owner, workspace, agentId, bot, issueBy, edit } = await setUp();
+    const issue = await issueBy(null, 'Watched');
+    await edit(issue.id, bot, { status: 'IN_PROGRESS' });
+    await edit(issue.id, null, { status: 'TODO' });
+    await judged();
+
+    let activity = await request(`/workspaces/${workspace.id}/agents/activity`, { actor: owner });
+    for (let i = 0; i < 25 && activity.json().runs.length === 0; i++) {
+      await Bun.sleep(20);
+      activity = await request(`/workspaces/${workspace.id}/agents/activity`, { actor: owner });
+    }
+    const body = activity.json();
+    expect(body.agents).toEqual([
+      { id: agentId, name: 'Change bot', kept: 0, edited: 0, reverted: 1, pending: 0 },
+    ]);
+    expect(body.runs[0]).toMatchObject({ agentId, source: 'calls', stepCount: 1 });
+    expect(body.runs[0].steps[0]).toMatchObject({
+      tool: 'api:/workspaces/:workspaceId/issues/:issueId',
+      outcome: 'ok',
+    });
+  });
+
+  test('is for admins', async () => {
+    const { workspace } = await setUp();
+    const stranger = await createActor('Stranger');
+    expect(
+      (await request(`/workspaces/${workspace.id}/agents/activity`, { actor: stranger }))
+        .statusCode,
+    ).toBe(404);
+  });
+});

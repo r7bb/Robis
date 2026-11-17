@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNotNull, isNull, lt } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, lt, sql } from 'drizzle-orm';
 import type { Executor } from './index.ts';
 import { agentChanges, agentRuns, comments, issues, suggestionFeedback } from './schema.ts';
 
@@ -117,4 +117,27 @@ export async function pruneAgentHistory(db: Executor, now = new Date()) {
   await db
     .delete(suggestionFeedback)
     .where(lt(suggestionFeedback.at, new Date(now.getTime() - FEEDBACK_DAYS * DAY_MS)));
+}
+
+/** Per agent: changes kept, edited and reverted, and those not judged yet. */
+export async function changeCounts(db: Executor, workspaceId: string) {
+  const rows = await db
+    .select({
+      agentId: agentChanges.agentId,
+      outcome: agentChanges.outcome,
+      n: sql<number>`count(*)::int`,
+    })
+    .from(agentChanges)
+    .where(eq(agentChanges.workspaceId, workspaceId))
+    .groupBy(agentChanges.agentId, agentChanges.outcome);
+  const counts = new Map<
+    string,
+    { kept: number; edited: number; reverted: number; pending: number }
+  >();
+  for (const row of rows) {
+    const entry = counts.get(row.agentId) ?? { kept: 0, edited: 0, reverted: 0, pending: 0 };
+    entry[row.outcome ?? 'pending'] += row.n;
+    counts.set(row.agentId, entry);
+  }
+  return counts;
 }

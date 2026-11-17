@@ -57,7 +57,53 @@ const createAgentSchema = z.object({
   summaries: z.boolean().default(false),
 });
 
+const step = z.object({
+  id: z.number().int(),
+  tool: z.string().max(80),
+  outcome: z.enum(['ok', 'denied', 'error']),
+  status: z.number().int(),
+  durationMs: z.number().int(),
+  at: timestamp,
+});
+
+/** How many steps of one run are shown; a run's total is given beside them. */
+export const RUN_STEPS_SHOWN = 50;
+/** How many of the latest runs the activity view shows. */
+export const RUNS_SHOWN = 20;
+
 export const agentContracts = {
+  'agents.activity': contract({
+    method: 'GET',
+    path: '/workspaces/:workspaceId/agents/activity',
+    summary:
+      "What the workspace's agents did: their latest runs step by step, and what people did with their changes.",
+    params: workspaceParams,
+    response: z.object({
+      agents: z.array(
+        z.object({
+          id: uuid,
+          name: z.string(),
+          /** Judged after seven days; counts, never a rate without them. */
+          kept: z.number().int(),
+          edited: z.number().int(),
+          reverted: z.number().int(),
+          /** Younger than seven days, not judged yet. */
+          pending: z.number().int(),
+        }),
+      ),
+      runs: z.array(
+        z.object({
+          id: uuid,
+          agentId: uuid,
+          source: z.string(),
+          startedAt: timestamp,
+          lastStepAt: timestamp,
+          stepCount: z.number().int(),
+          steps: z.array(step),
+        }),
+      ),
+    }),
+  }),
   'agents.list': contract({
     method: 'GET',
     path: '/workspaces/:workspaceId/agents',

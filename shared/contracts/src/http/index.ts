@@ -16,6 +16,7 @@ import { overviewContracts } from './overview.ts';
 import { projectContracts } from './projects.ts';
 import { workspaceContracts } from './workspaces.ts';
 
+export { RUN_STEPS_SHOWN, RUNS_SHOWN } from './agents.ts';
 export * from './contract.ts';
 export {
   OFFLINE_DUPLICATE_EVALUATION,

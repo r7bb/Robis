@@ -148,15 +148,15 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **A page of what the agents did.** Admins see each agent’s latest runs
+  call by call, how many of its changes people kept, edited or reverted, and
+  how the hints fare in use.
 - **The composer’s hints are measured in use.** Using or setting aside a
   duplicate or priority hint is counted, without naming anyone, beside the
   offline evaluation it differs from.
 - **Whether people kept what an agent did.** Each change an agent makes is
   judged after seven days: kept, edited by a person, or reverted, from the
   values before and after.
-- **Every call an agent makes is recorded.** Each agent call in its
-  workspace becomes a step of a run: the tool, whether it worked or was
-  refused, and how long it took; the MCP server has metrics too.
 
 <!-- latest:end -->
 

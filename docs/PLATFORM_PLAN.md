@@ -226,6 +226,21 @@ over HTTP and through the MCP client. Left open, from its reviews:
 - Report the live acceptance rate beside the offline evaluation, clearly
   labelled as a different measurement.
 
+**Phases 4 and 5 built 2026-11-18** (B6): runs and steps for every agent call,
+MCP tool metrics, changes judged kept, edited or reverted after seven days,
+hint feedback with no user named, and the admin page at
+`/workspaces/<id>/agents`. Both done-when cases have tests. Left open:
+
+- Another agent's runs are grouped by a 30-minute quiet spell unless its
+  client sends a run id, so they are approximate.
+- A change is judged once, at seven days; what happens to it afterwards is
+  not followed.
+- Hint feedback is counted per workspace with no person named, so one
+  person's habits cannot be told from the workspace's; a per-person rate
+  limit bounds how far one person can move the figures.
+- Priority suggestions have no offline evaluation to set beside their
+  live figures.
+
 ## Phase 6. Insights dashboards (S to M)
 
 - Cycle time and throughput per project, from real status-change events.

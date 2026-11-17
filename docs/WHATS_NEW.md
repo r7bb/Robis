@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **A page of what the agents did** (2026-11-18). Admins see each agent’s
+  latest runs call by call, how many of its changes people kept, edited or
+  reverted, and how the hints fare in use.
 - **The composer’s hints are measured in use** (2026-11-18). Using or
   setting aside a duplicate or priority hint is counted, without naming
   anyone, beside the offline evaluation it differs from.

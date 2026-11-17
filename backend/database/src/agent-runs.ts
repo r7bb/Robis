@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, isNull, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, isNull, lt, lte, sql } from 'drizzle-orm';
 import type { Executor } from './index.ts';
 import { agentRuns, agentSteps } from './schema.ts';
 
@@ -126,4 +126,61 @@ export function deferAgentStep(db: Executor, step: AgentStep, onError: (error: u
 
 export async function settleAgentSteps() {
   await Promise.all([...deferred]);
+}
+
+/**
+ * A workspace's latest runs, newest first, each with its first steps and its
+ * total: three queries, whatever the number of runs.
+ */
+export async function latestRuns(
+  db: Executor,
+  workspaceId: string,
+  limits: { runs: number; steps: number },
+) {
+  const runs = await db
+    .select()
+    .from(agentRuns)
+    .where(eq(agentRuns.workspaceId, workspaceId))
+    .orderBy(desc(agentRuns.startedAt))
+    .limit(limits.runs);
+  if (runs.length === 0) return [];
+  const ids = runs.map((run) => run.id);
+
+  const numbered = db
+    .select({
+      id: agentSteps.id,
+      runId: agentSteps.runId,
+      tool: agentSteps.tool,
+      outcome: agentSteps.outcome,
+      status: agentSteps.status,
+      durationMs: agentSteps.durationMs,
+      at: agentSteps.at,
+      place:
+        sql<number>`row_number() over (partition by ${agentSteps.runId} order by ${agentSteps.id})`.as(
+          'place',
+        ),
+    })
+    .from(agentSteps)
+    .where(inArray(agentSteps.runId, ids))
+    .as('numbered');
+  const [steps, totals] = await Promise.all([
+    db.select().from(numbered).where(lte(numbered.place, limits.steps)).orderBy(numbered.id),
+    db
+      .select({ runId: agentSteps.runId, n: sql<number>`count(*)::int` })
+      .from(agentSteps)
+      .where(inArray(agentSteps.runId, ids))
+      .groupBy(agentSteps.runId),
+  ]);
+
+  return runs.map((run) => ({
+    id: run.id,
+    agentId: run.agentId,
+    source: run.source,
+    startedAt: run.startedAt,
+    lastStepAt: run.lastStepAt,
+    stepCount: totals.find((t) => t.runId === run.id)?.n ?? 0,
+    steps: steps
+      .filter((step) => step.runId === run.id)
+      .map(({ runId: _runId, place: _place, ...step }) => step),
+  }));
 }

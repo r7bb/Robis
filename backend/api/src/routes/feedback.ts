@@ -3,7 +3,13 @@ import { contracts, OFFLINE_DUPLICATE_EVALUATION } from '@robis/shared';
 import { count, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { serve } from '../contract.ts';
-import { currentMembership, requireAuth, requireMembership } from '../plugins/authz.ts';
+import { ApiError } from '../errors.ts';
+import {
+  currentMembership,
+  currentUser,
+  requireAuth,
+  requireMembership,
+} from '../plugins/authz.ts';
 import { withIdempotency } from '../plugins/idempotency.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
 
@@ -36,6 +42,10 @@ export async function feedbackRoutes(app: FastifyInstance, opts: { db: Database 
     { preHandler: [requireAuth, requireMembership(db, 'issue:read'), perPerson] },
     async (request, { body }, reply) => {
       const { workspaceId } = currentMembership(request);
+      // The figures measure how people take the hints; an agent's opinion is not one.
+      if (currentUser(request).kind === 'agent') {
+        throw new ApiError(403, 'people_only', 'Hint feedback is for people, not agents');
+      }
       return withIdempotency(db, request, reply, 204, async () => {
         await db.insert(suggestionFeedback).values({
           workspaceId,

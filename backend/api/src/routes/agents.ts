@@ -2,7 +2,9 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { issueAgentToken, revokeAgentToken, revokeAllAgentTokens } from '@robis/auth';
 import {
   agentTokens,
+  changeCounts,
   type Database,
+  latestRuns,
   lockUsername,
   publishEvent,
   recordAudit,
@@ -12,7 +14,15 @@ import {
   workspaceMembers,
   workspaces,
 } from '@robis/database';
-import { AGENT_ROLES, type AgentRole, contracts, isUuid, usernameProblem } from '@robis/shared';
+import {
+  AGENT_ROLES,
+  type AgentRole,
+  contracts,
+  isUuid,
+  RUN_STEPS_SHOWN,
+  RUNS_SHOWN,
+  usernameProblem,
+} from '@robis/shared';
 import { and, eq, inArray } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { serve } from '../contract.ts';
@@ -94,6 +104,43 @@ async function findAgent(db: Database | Tx, workspaceId: string, agentId: string
 export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) {
   const { db } = opts;
   const manage = { preHandler: [requireAuth, requireMembership(db, 'agent:manage')] };
+
+  /*
+   * What the workspace's agents did (B6): their latest runs, step by step,
+   * and per agent what people did with their changes. Agents removed since
+   * still appear while their changes are counted, so taking an agent away
+   * does not take its record with it.
+   */
+  serve(app, contracts['agents.activity'], manage, async (request) => {
+    const { workspaceId } = currentMembership(request);
+    const [runs, counts] = await Promise.all([
+      latestRuns(db, workspaceId, { runs: RUNS_SHOWN, steps: RUN_STEPS_SHOWN }),
+      changeCounts(db, workspaceId),
+    ]);
+    const current = await db
+      .select({ id: users.id })
+      .from(workspaceMembers)
+      .innerJoin(users, eq(users.id, workspaceMembers.userId))
+      .where(and(eq(workspaceMembers.workspaceId, workspaceId), eq(users.kind, 'agent')));
+    const ids = [
+      ...new Set([...current.map((a) => a.id), ...counts.keys(), ...runs.map((r) => r.agentId)]),
+    ];
+    const named = ids.length
+      ? await db
+          .select({ id: users.id, name: users.name })
+          .from(users)
+          .where(and(inArray(users.id, ids), eq(users.kind, 'agent')))
+      : [];
+
+    return {
+      agents: named.map(({ id, name }) => ({
+        id,
+        name,
+        ...(counts.get(id) ?? { kept: 0, edited: 0, reverted: 0, pending: 0 }),
+      })),
+      runs,
+    };
+  });
 
   serve(app, contracts['agents.list'], manage, async (request) => {
     const { workspaceId } = currentMembership(request);

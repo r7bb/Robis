@@ -972,6 +972,18 @@ makes a second, revocable token instead. And the worker's database account
 may insert tokens, cut to the columns it needs; what that leaves open is
 listed in [PLATFORM_PLAN.md](PLATFORM_PLAN.md), Phase 3.
 
+**Watching them.** Every call an agent makes in its own workspace becomes a
+step of a run once it has been answered: the tool, whether it worked or was
+refused, its status and duration, and never what was sent. The write happens
+after the answer, so watching costs a caller nothing; a failure to record is
+logged, never returned. Whether an agent helped is judged from what people
+did with its work, not from what it says about itself: each change is stored
+with the value before and after (the audit trail keeps only field names,
+which cannot tell an edit from an undo) and judged after seven days. Hint
+feedback names nobody and stays out of the audit trail, which records
+changes to the workspace, not opinions about hints; the live figures are
+shown beside the offline evaluation and labelled as a different measurement.
+
 ---
 
 ## Why only documents use CRDTs

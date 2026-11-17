@@ -107,3 +107,21 @@ describe('the figures', () => {
     expect(stats.statusCode).toBe(403);
   });
 });
+
+describe('what the review asked for', () => {
+  test('an agent cannot add to the figures', async () => {
+    const { owner, workspace } = await setUp();
+    const created = await request(`/workspaces/${workspace.id}/agents`, {
+      method: 'POST',
+      actor: owner,
+      payload: { name: 'Opinion bot', role: 'MEMBER' },
+    });
+    const response = await request(`/workspaces/${workspace.id}/suggestions/feedback`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${created.json().token.secret}` },
+      payload: { kind: 'priority', action: 'accepted' },
+    });
+    expect(response.statusCode).toBe(403);
+    expect(response.json().error).toBe('people_only');
+  });
+});

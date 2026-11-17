@@ -2,6 +2,7 @@
 
 import { AGENT_ROLES, type AgentRole, contracts, type ResponseOf } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import Link from 'next/link';
 import { type FormEvent, useState } from 'react';
 import { call } from '../lib/api.ts';
 import { DeleteButton } from './delete-button.tsx';
@@ -117,6 +118,12 @@ export function AgentList({ workspaceId }: { workspaceId: string }) {
         Programs that work here through the MCP server, as a member or a guest. What they do is
         recorded as an agent’s, and a person stays responsible for every issue.
       </p>
+      <Link
+        href={`/workspaces/${workspaceId}/agents`}
+        className="mt-1 inline-block text-sm text-accent-soft hover:underline"
+      >
+        See what they did
+      </Link>
 
       <form onSubmit={onCreate} className="mt-3 flex flex-wrap items-center gap-2">
         <input
