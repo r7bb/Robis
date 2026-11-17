@@ -13,6 +13,7 @@
  */
 
 import { findChrome, listTargets, Page, type Target } from '../capture/cdp.ts';
+import { PageTrouble } from './page-trouble.ts';
 
 // The API as the web app was built to reach it: the only one its policy allows.
 const WEB_API = process.env.SMOKE_WEB_API_URL ?? '/api';
@@ -97,19 +98,21 @@ async function checkNonces() {
   );
 }
 
-/** Load a page and report what the policy blocked, and whether React ran. */
-async function visit(page: Page, path: string) {
+const HYDRATED =
+  "[...document.querySelectorAll('body *')].some((el) => Object.keys(el).some((k) => k.startsWith('__react')))";
+
+/**
+ * Load a page and report what the policy blocked, and whether React ran:
+ * how long it took, and if it did not, what the page was doing instead.
+ */
+async function visit(page: Page, path: string, trouble: PageTrouble) {
+  trouble.reset();
+  const began = performance.now();
   await page.goto(`${WEB}${path}`);
-  await page
-    .waitFor(
-      "[...document.querySelectorAll('body *')].some((el) => Object.keys(el).some((k) => k.startsWith('__react')))",
-      15_000,
-    )
-    .catch(() => undefined);
-  const hydrated = await page.eval<boolean>(
-    "[...document.querySelectorAll('body *')].some((el) => Object.keys(el).some((k) => k.startsWith('__react')))",
-  );
-  check(`${path}: hydrated`, hydrated);
+  await page.waitFor(HYDRATED, 15_000).catch(() => undefined);
+  const hydrated = await page.eval<boolean>(HYDRATED);
+  const seconds = ((performance.now() - began) / 1000).toFixed(1);
+  check(`${path}: hydrated (${seconds} s)`, hydrated, hydrated ? '' : await trouble.describe(page));
   const violations = await page.eval<string[]>('window.__violations');
   check(`${path}: no policy violations`, violations.length === 0, violations.join(' | '));
 }
@@ -239,10 +242,11 @@ async function main() {
       scale: 1,
     });
     await page.send('Page.addScriptToEvaluateOnNewDocument', { source: RECORD_VIOLATIONS });
+    const trouble = new PageTrouble(page);
 
     for (const path of PUBLIC_PAGES) {
       checkHeaders(path, await headersOf(path));
-      await visit(page, path);
+      await visit(page, path, trouble);
     }
     // A page that does not exist is still a page.
     checkHeaders('a missing page', await headersOf('/no-such-page'));
@@ -302,7 +306,7 @@ async function main() {
     const workspaceId = await signUpInBrowser(page);
     // The signed-in home: the field, the overview and a live connection per workspace.
     await page.send('Runtime.evaluate', { expression: 'window.__violations = []' });
-    await visit(page, '/workspaces');
+    await visit(page, '/workspaces', trouble);
     await Bun.sleep(SETTLE_MS);
     check(
       'the home shows the workspace, live',
@@ -314,7 +318,7 @@ async function main() {
     check('the home, once settled: no violations', home.length === 0, home.join(' | '));
 
     await page.send('Runtime.evaluate', { expression: 'window.__violations = []' });
-    await visit(page, `/workspaces/${workspaceId}`);
+    await visit(page, `/workspaces/${workspaceId}`, trouble);
     // Its API calls and the gateway socket start after hydration; a wrong
     // connect-src shows up only once they have run.
     await Bun.sleep(SETTLE_MS);

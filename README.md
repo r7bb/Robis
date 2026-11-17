@@ -148,15 +148,15 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **A page that does not start says why.** The browser check now reports how
+  long each page took to start, and for one that never does, what it was
+  waiting on.
 - **An edited issue keeps its assignee’s name.** After an edit made on the
   board synced, the card lost the assignee’s name until the next full
   refresh; it keeps it now.
 - **Base images are re-pinned on a schedule.** Dependabot proposes new base
   image digests weekly and CI rebuilds and scans every Monday; the security
   upgrade step stays until a new base scans clean.
-- **Each topic is written in one place.** Status, known gaps and what is not
-  being built live in the roadmap alone; stale lines saying account events
-  are not recorded are corrected.
 
 <!-- latest:end -->
 

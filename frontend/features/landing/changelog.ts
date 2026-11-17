@@ -44,6 +44,17 @@ export type Entry = {
 
 export const CHANGELOG: readonly Entry[] = [
   {
+    date: '2026-11-16',
+    area: 'Site',
+    title: 'A page that does not start says why',
+    brief:
+      'The browser check now reports how long each page took to start, and for one that never does, what it was waiting on.',
+    summary:
+      'About one CI run in five, the browser check finds the landing page has not started within 15 seconds over HTTPS, though the next page starts in under a second. This week’s scheduled run was one of them. It could not be made to happen here: ten fresh browsers started the page in about 0.15 seconds, still under 1.6 seconds with the processor slowed twenty times, and three full runs of the check over HTTPS passed. So the check now says how long each page took, and when one does not start, it records what the page threw, which requests failed or were blocked, which were still open, and which took longest. The next failure will name its cause instead of only reporting it.',
+    checked:
+      'Run over HTTPS against the production stack, every page reported its time (about 0.9 seconds each) and the check passed. With the app’s main script blocked on purpose, the report named the page’s state, its slowest requests and the blocked script. Not yet known: the cause of the CI failures, which waits on the next one.',
+  },
+  {
     date: '2026-11-02',
     area: 'Product',
     title: 'An edited issue keeps its assignee’s name',
