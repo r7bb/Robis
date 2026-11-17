@@ -34,13 +34,13 @@ import {
   DEMO_PASSWORD,
   type IssuePriority,
   type IssueStatus,
+  positionsInOrder,
   type Role,
   slugify,
   TERMS_VERSION,
 } from '@robis/shared';
 import { loadConfig } from '@robis/shared/config';
 import { and, eq, inArray } from 'drizzle-orm';
-import { generateNKeysBetween } from 'fractional-indexing';
 import { EXTRA_SLUGS, seedExtraWorkspaces } from './seed-extra.ts';
 
 // Before anything else, and failing closed: see `loadConfig`.
@@ -360,7 +360,7 @@ try {
       })
       .returning();
 
-    const seedPositions = generateNKeysBetween(null, null, spec.issues.length);
+    const seedPositions = positionsInOrder(spec.issues.length);
     const createdIssues = await db
       .insert(issues)
       .values(

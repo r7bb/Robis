@@ -1,4 +1,4 @@
-import { generateKeyBetween } from 'fractional-indexing';
+import { generateKeyBetween, generateNKeysBetween } from 'fractional-indexing';
 import { z } from 'zod';
 
 /**
@@ -34,4 +34,9 @@ export function byPosition<T extends { position: string | null; number: number }
   }
   if (a.position !== b.position) return a.position < b.position ? -1 : 1;
   return b.number - a.number;
+}
+
+/** `count` keys in order, for filling a board at once (the demo seed). */
+export function positionsInOrder(count: number): string[] {
+  return generateNKeysBetween(null, null, count);
 }

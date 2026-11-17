@@ -19,12 +19,12 @@ import {
 import {
   type IssuePriority,
   type IssueStatus,
+  positionsInOrder,
   type Role,
   slugify,
   type ThemeId,
 } from '@robis/shared';
 import { eq } from 'drizzle-orm';
-import { generateNKeysBetween } from 'fractional-indexing';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -194,7 +194,7 @@ async function seedOne(
       createdBy: ownerId,
     })
     .returning();
-  const seedPositions = generateNKeysBetween(null, null, spec.project.issues.length);
+  const seedPositions = positionsInOrder(spec.project.issues.length);
   const created = await db
     .insert(issues)
     .values(
