@@ -1,5 +1,5 @@
 import { type Executor, sessions, users, workspaceMembers } from '@robis/database';
-import { isUuid, type Role, TERMS_VERSION } from '@robis/shared';
+import { isUuid, type Role, TERMS_VERSION, type UserKind } from '@robis/shared';
 import { and, desc, eq, gt, lt, ne, sql } from 'drizzle-orm';
 import {
   generateSessionToken,
@@ -14,6 +14,8 @@ export type AuthenticatedUser = {
   name: string;
   /** The app-specific `@handle`. */
   username: string;
+  /** A person signed in with a session, or an agent acting with a token (B5). */
+  kind: UserKind;
   /**
    * Whether a picture has been chosen. Workspaces are closed to an account
    * without one; see `requireMembership`.
@@ -88,7 +90,9 @@ async function lookUpSession(
       role: workspaceId ? workspaceMembers.role : sql<null>`null`,
     })
     .from(sessions)
-    .innerJoin(users, eq(users.id, sessions.userId));
+    // Sessions are for people. An agent never signs in, so a session row
+    // naming one (none should exist) resolves to nobody.
+    .innerJoin(users, and(eq(users.id, sessions.userId), eq(users.kind, 'human')));
   const joined = workspaceId
     ? base.leftJoin(
         workspaceMembers,
@@ -121,6 +125,7 @@ async function lookUpSession(
       email: row.email,
       name: row.name,
       username: row.username,
+      kind: 'human',
       // Both halves, so a row left half-written can never count as a picture.
       hasAvatar: row.avatarKind !== null && row.avatarRef !== null,
       hasAgreed: row.termsVersion === TERMS_VERSION,

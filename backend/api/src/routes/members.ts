@@ -1,3 +1,4 @@
+import { revokeAllAgentTokens } from '@robis/auth';
 import {
   type Database,
   type Executor,
@@ -19,6 +20,7 @@ import {
   requireAuth,
   requireMembership,
 } from '../plugins/authz.ts';
+import { isAgentRole } from './agents.ts';
 
 async function ownerCount(db: Executor, workspaceId: string): Promise<number> {
   const [row] = await db
@@ -40,7 +42,7 @@ async function ownerCount(db: Executor, workspaceId: string): Promise<number> {
  */
 async function findMember(db: Executor, workspaceId: string, userId: string) {
   const [row] = await db
-    .select({ role: workspaceMembers.role, username: users.username })
+    .select({ role: workspaceMembers.role, username: users.username, kind: users.kind })
     .from(workspaceMembers)
     .innerJoin(users, eq(users.id, workspaceMembers.userId))
     .where(and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, userId)))
@@ -87,6 +89,7 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
           email: users.email,
           name: users.name,
           username: users.username,
+          kind: users.kind,
           role: workspaceMembers.role,
           joinedAt: workspaceMembers.createdAt,
           avatarKind: users.avatarKind,
@@ -132,6 +135,10 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
 
       assertCanManage(actorRole, target.role);
       assertCanGrant(actorRole, input.role);
+      // An agent never manages people, whoever would promote it (B5).
+      if (target.kind === 'agent' && !isAgentRole(input.role)) {
+        throw new ApiError(403, 'agent_role', 'An agent can be a member or a guest, nothing more');
+      }
 
       // Demoting the last owner would leave the workspace with nobody able to
       // delete it or promote a replacement.
@@ -204,6 +211,11 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
         if (removed.length === 0) {
           throw ApiError.notFound('That user is not a member of this workspace');
         }
+        // An agent removed here loses its tokens too, as through the agent
+        // routes, so none comes back to life if it is ever added again (B5).
+        if (target.kind === 'agent') {
+          await revokeAllAgentTokens(tx, { agentId: userId, workspaceId });
+        }
 
         await recordAudit(tx, auditActor(request), {
           workspaceId,
@@ -233,6 +245,15 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
     async (request) => {
       const actor = currentUser(request);
       const { workspaceId, role } = currentMembership(request);
+
+      // An agent is removed by an admin, who sees its tokens go with it (B5).
+      if (actor.kind === 'agent') {
+        throw new ApiError(
+          403,
+          'agent_cannot_leave',
+          'An admin removes an agent from the workspace',
+        );
+      }
 
       if (role === 'OWNER' && (await ownerCount(db, workspaceId)) <= 1) {
         throw ApiError.conflict(

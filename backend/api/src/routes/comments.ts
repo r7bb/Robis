@@ -15,7 +15,7 @@ import {
 import { can, contracts, isUuid, parseMentions, resolveMentions } from '@robis/shared';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
-import { serve } from '../contract.ts';
+import { serve, shape } from '../contract.ts';
 import { ApiError } from '../errors.ts';
 import {
   auditActor,
@@ -24,6 +24,7 @@ import {
   requireAuth,
   requireMembership,
 } from '../plugins/authz.ts';
+import { withIdempotency } from '../plugins/idempotency.ts';
 
 /** A mention as the client shows it: what was written, and who it meant. */
 export type CommentMention = { handle: string; userId: string; username: string };
@@ -135,7 +136,7 @@ export async function commentRoutes(app: FastifyInstance, opts: { db: Database }
     app,
     contracts['comments.create'],
     { preHandler: [requireAuth, requireMembership(db, 'comment:create')] },
-    async (request, { params: { issueId }, body: input }) => {
+    async (request, { params: { issueId }, body: input }, reply) => {
       const user = currentUser(request);
       const { workspaceId } = currentMembership(request);
 
@@ -151,39 +152,45 @@ export async function commentRoutes(app: FastifyInstance, opts: { db: Database }
 
       if (!issue) throw ApiError.notFound('Issue not found');
 
-      // The insert and the notification job commit together: no window where
-      // the comment exists but nobody is told, and no job for a comment that
-      // rolled back. This is the reason the queue lives in Postgres.
-      const created = await db.transaction(async (tx) => {
-        const [row] = await tx
-          .insert(comments)
-          .values({ workspaceId, issueId, authorId: user.id, body: input.body })
-          .returning();
+      // Through the ledger when the caller sends a key, so a retried comment
+      // (an agent's call that timed out, say) is posted once (B5).
+      return withIdempotency(db, request, reply, 201, async () => {
+        // The insert and the notification job commit together: no window where
+        // the comment exists but nobody is told, and no job for a comment that
+        // rolled back. This is the reason the queue lives in Postgres.
+        const created = await db.transaction(async (tx) => {
+          const [row] = await tx
+            .insert(comments)
+            .values({ workspaceId, issueId, authorId: user.id, body: input.body })
+            .returning();
 
-        const mentions = await recordMentions(tx, workspaceId, row!.id, input.body);
-        await enqueue(tx, 'notify.mentions', { commentId: row!.id });
+          const mentions = await recordMentions(tx, workspaceId, row!.id, input.body);
+          await enqueue(tx, 'notify.mentions', { commentId: row!.id });
 
-        // Which issue, not what was said: the comment is the record of its
-        // own words, and the trail outlives a deleted comment.
-        await recordAudit(tx, auditActor(request), {
-          workspaceId,
-          entityType: 'comment',
-          entityId: row!.id,
-          eventType: 'comment.created',
-          payload: { issueId },
+          // Which issue, not what was said: the comment is the record of its
+          // own words, and the trail outlives a deleted comment.
+          await recordAudit(tx, auditActor(request), {
+            workspaceId,
+            entityType: 'comment',
+            entityId: row!.id,
+            eventType: 'comment.created',
+            payload: { issueId },
+          });
+
+          return { ...row!, mentions };
         });
 
-        return { ...row!, mentions };
-      });
+        await publishEvent(db, {
+          type: 'comment.created',
+          workspaceId,
+          issueId,
+          actorId: user.id,
+        });
 
-      await publishEvent(db, {
-        type: 'comment.created',
-        workspaceId,
-        issueId,
-        actorId: user.id,
+        return shape(contracts['comments.create'], {
+          comment: { ...created, authorName: user.name },
+        });
       });
-
-      return { comment: { ...created, authorName: user.name } };
     },
   );
 

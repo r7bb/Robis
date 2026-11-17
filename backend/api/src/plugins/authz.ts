@@ -1,4 +1,9 @@
-import { type AuthenticatedUser, resolveSession, resolveSessionIn } from '@robis/auth';
+import {
+  type AuthenticatedUser,
+  resolveAgentToken,
+  resolveSession,
+  resolveSessionIn,
+} from '@robis/auth';
 import { type AuditActor, type Database, findMembership } from '@robis/database';
 import { can, type Permission, type Role } from '@robis/shared';
 import type { FastifyReply, FastifyRequest, preHandlerHookHandler } from 'fastify';
@@ -79,11 +84,20 @@ export const requirePicture: preHandlerHookHandler = async (request: FastifyRequ
 /**
  * Who the audit trail should name for this request.
  *
- * The one place that decides it, so when agents act through tokens (they
- * will record `kind: 'agent'`) no route has to change.
+ * The one place that decides it, so an agent acting through a token is
+ * recorded as an agent (B5) without any route having to change.
  */
 export function auditActor(request: FastifyRequest): AuditActor {
-  return { id: currentUser(request).id, kind: 'human', requestId: request.id };
+  const user = currentUser(request);
+  return { id: user.id, kind: user.kind, requestId: request.id };
+}
+
+/** The agent token this request carries as `Authorization: Bearer`, if any. */
+function bearerToken(request: FastifyRequest): string | undefined {
+  const header = request.headers.authorization;
+  if (typeof header !== 'string') return undefined;
+  const [scheme, token] = header.split(' ');
+  return scheme?.toLowerCase() === 'bearer' && token ? token : undefined;
 }
 
 /**
@@ -98,7 +112,10 @@ export function sessionToken(request: FastifyRequest): string | undefined {
 export function attachUser(db: Database): preHandlerHookHandler {
   return async (request: FastifyRequest) => {
     const token = sessionToken(request);
-    if (!token) return;
+    if (!token) {
+      await attachAgent(db, request);
+      return;
+    }
 
     // On a workspace route the membership comes in the same query (stage 3,
     // item 28), and `requireMembership` uses it rather than asking again.
@@ -114,6 +131,23 @@ export function attachUser(db: Database): preHandlerHookHandler {
     const user = await resolveSession(db, token);
     if (user) request.user = user;
   };
+}
+
+/**
+ * An agent's token (B5), honoured on workspace routes only: everything an
+ * agent may do is inside the one workspace its token names. Account routes,
+ * the workspace list and the rest answer an agent as they answer nobody.
+ * A session cookie wins when both are sent, so a browser is never an agent.
+ */
+async function attachAgent(db: Database, request: FastifyRequest) {
+  const secret = bearerToken(request);
+  const { workspaceId } = (request.params ?? {}) as { workspaceId?: string };
+  if (!secret || !workspaceId) return;
+
+  const resolved = await resolveAgentToken(db, secret, workspaceId);
+  if (!resolved) return;
+  request.user = resolved.user;
+  request.resolvedRole = { workspaceId, role: resolved.role };
 }
 
 export const requireAuth: preHandlerHookHandler = async (request: FastifyRequest) => {

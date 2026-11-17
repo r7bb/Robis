@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { USER_KINDS } from '../domain.ts';
 import { ROLES } from '../rbac.ts';
 import { inviteMemberSchema, setMemberRoleSchema, uuid } from '../schemas.ts';
 import { avatar, workspaceParams } from './common.ts';
@@ -16,6 +17,8 @@ const member = z.object({
   email: z.string().nullable(),
   name: z.string(),
   username: z.string(),
+  /** An agent is marked wherever it appears (B5). */
+  kind: z.enum(USER_KINDS),
   role,
   joinedAt: timestamp,
   avatar,

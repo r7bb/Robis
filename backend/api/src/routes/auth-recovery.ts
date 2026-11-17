@@ -102,7 +102,8 @@ export async function authRecoveryRoutes(app: FastifyInstance, opts: RecoveryDep
         const [user] = await db
           .select({ id: users.id })
           .from(users)
-          .where(eq(users.email, asked.email))
+          // An agent has no password to reset (B5).
+          .where(and(eq(users.email, asked.email), eq(users.kind, 'human')))
           .limit(1);
 
         if (user) {

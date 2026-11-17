@@ -104,7 +104,9 @@ export async function invitationRoutes(app: FastifyInstance, opts: { db: Databas
     const [invitee] = await db
       .select({ id: users.id, name: users.name, username: users.username })
       .from(users)
-      .where(eq(users.username, input.username))
+      // People only: an agent belongs to the one workspace that made it
+      // (B5), and is answered as no account at all.
+      .where(and(eq(users.username, input.username), eq(users.kind, 'human')))
       .limit(1);
     if (!invitee) throw ApiError.notFound('No account has that username');
 

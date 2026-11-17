@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { accountContracts } from './account.ts';
+import { agentContracts } from './agents.ts';
 import { attachmentContracts } from './attachments.ts';
 import { auditContracts } from './audit.ts';
 import { authContracts } from './auth.ts';
@@ -21,6 +22,7 @@ export const contracts = {
   ...workspaceContracts,
   ...projectContracts,
   ...memberContracts,
+  ...agentContracts,
   ...issueContracts,
   ...documentContracts,
   ...channelContracts,

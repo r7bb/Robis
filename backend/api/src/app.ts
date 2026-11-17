@@ -16,6 +16,7 @@ import { createMetrics, registerMetrics } from './metrics.ts';
 import { attachUser } from './plugins/authz.ts';
 import { accountDeletionRoutes } from './routes/account-deletion.ts';
 import { accountEventRoutes } from './routes/account-events.ts';
+import { agentRoutes } from './routes/agents.ts';
 import { attachmentRoutes } from './routes/attachments.ts';
 import { auditRoutes } from './routes/audit.ts';
 import { authRoutes } from './routes/auth.ts';
@@ -234,6 +235,7 @@ export function buildApp({
       }),
   });
   app.register(memberRoutes, { db });
+  app.register(agentRoutes, { db });
   app.register(invitationRoutes, { db });
   app.register(consentRoutes, { db });
   app.register(projectRoutes, { db });

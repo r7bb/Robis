@@ -1,4 +1,5 @@
 import {
+  type AuditActor,
   attachments,
   type Database,
   decodeCursor,
@@ -9,10 +10,11 @@ import {
   publishEvent,
   queueAttachmentPurge,
   recordAudit,
+  type Tx,
   users,
   workspaceMembers,
 } from '@robis/database';
-import { contracts, isUuid } from '@robis/shared';
+import { contracts, isUuid, type UpdateIssueInput } from '@robis/shared';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { serve, shape } from '../contract.ts';
@@ -44,12 +46,15 @@ async function loadIssue(db: Executor, workspaceId: string, issueId: string) {
 
 /**
  * An assignee must already belong to the workspace. Skipping this would let a
- * caller probe for valid user ids and attach outsiders to internal work.
+ * caller probe for valid user ids and attach outsiders to internal work. And
+ * an assignee is a person (B5): who answers for the work never passes to an
+ * agent, which is recorded as the issue's delegate instead.
  */
 async function assertAssignable(db: Executor, workspaceId: string, assigneeId: string) {
   const [member] = await db
-    .select({ userId: workspaceMembers.userId })
+    .select({ userId: workspaceMembers.userId, kind: users.kind })
     .from(workspaceMembers)
+    .innerJoin(users, eq(users.id, workspaceMembers.userId))
     .where(
       and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, assigneeId)),
     )
@@ -57,6 +62,74 @@ async function assertAssignable(db: Executor, workspaceId: string, assigneeId: s
 
   if (!member)
     throw ApiError.badRequest('Assignee is not a member of this workspace', 'bad_assignee');
+  if (member.kind === 'agent') {
+    throw ApiError.badRequest(
+      'An agent cannot be an assignee; a person answers for the work',
+      'assignee_not_person',
+    );
+  }
+}
+
+/** The agent acting, to record as the issue's delegate; null for a person. */
+const delegateOf = (user: { id: string; kind: string }) => (user.kind === 'agent' ? user.id : null);
+
+type IssueUpdate = {
+  workspaceId: string;
+  issueId: string;
+  input: UpdateIssueInput;
+  /** The acting agent, or null for a person, who leaves the last agent named. */
+  delegateId: string | null;
+  /** Resolved now so the trail still names the issue after it is deleted. */
+  issueKey: string;
+  title: string;
+};
+
+/**
+ * Apply an edit and record it, in the caller's transaction.
+ *
+ * The status being moved *from* is read again here, under a row lock: a copy
+ * loaded before the transaction would let two people moving the same issue
+ * at once both record leaving the same column. A status move keeps its own
+ * event type, because it is what the activity feed narrates ("moved WEB-4 to
+ * done"); any other edit is `issue.updated` with the names of the fields
+ * touched, not their new text, which the trail has no reason to copy.
+ */
+async function applyIssueUpdate(tx: Tx, actor: AuditActor, update: IssueUpdate) {
+  const { workspaceId, issueId, input } = update;
+  const [current] = await tx
+    .select({ status: issues.status })
+    .from(issues)
+    .where(and(eq(issues.id, issueId), eq(issues.workspaceId, workspaceId)))
+    .for('update');
+
+  if (!current) throw ApiError.notFound('Issue not found');
+  const statusChanged = input.status !== undefined && input.status !== current.status;
+
+  const [row] = await tx
+    .update(issues)
+    .set({
+      ...input,
+      ...(update.delegateId ? { delegateId: update.delegateId } : {}),
+      updatedAt: new Date(),
+    })
+    .where(and(eq(issues.id, issueId), eq(issues.workspaceId, workspaceId)))
+    .returning();
+
+  await recordAudit(tx, actor, {
+    workspaceId,
+    entityType: 'issue',
+    entityId: issueId,
+    eventType: statusChanged ? 'issue.status_changed' : 'issue.updated',
+    payload: {
+      key: update.issueKey,
+      title: update.title,
+      fields: Object.keys(input),
+      ...(statusChanged ? { from: current.status, to: input.status } : {}),
+    },
+  });
+
+  if (!row) throw ApiError.notFound('Issue not found');
+  return row;
 }
 
 export async function issueRoutes(
@@ -207,6 +280,7 @@ export async function issueRoutes(
               status: input.status,
               priority: input.priority,
               assigneeId: input.assigneeId ?? null,
+              delegateId: delegateOf(user),
               createdBy: user.id,
             })
             .returning();
@@ -253,7 +327,7 @@ export async function issueRoutes(
     app,
     contracts['issues.update'],
     { preHandler: [requireAuth, requireMembership(db, 'issue:update')] },
-    async (request, { params: { issueId }, body: input }) => {
+    async (request, { params: { issueId }, body: input }, reply) => {
       const user = currentUser(request);
       const { workspaceId } = currentMembership(request);
 
@@ -265,61 +339,31 @@ export async function issueRoutes(
       // so the entry still names the issue after the issue is deleted.
       const project = await loadProject(db, workspaceId, before.projectId);
 
-      const updated = await db.transaction(async (tx) => {
-        /*
-         * The status being moved *from* is read again here, under a row
-         * lock. The copy loaded above is from before the transaction, and two
-         * people moving the same issue at once would both record leaving the
-         * same column.
-         */
-        const [current] = await tx
-          .select({ status: issues.status })
-          .from(issues)
-          .where(and(eq(issues.id, issueId), eq(issues.workspaceId, workspaceId)))
-          .for('update');
-
-        if (!current) throw ApiError.notFound('Issue not found');
-        const statusChanged = input.status !== undefined && input.status !== current.status;
-
-        const [row] = await tx
-          .update(issues)
-          .set({ ...input, updatedAt: new Date() })
-          .where(and(eq(issues.id, issueId), eq(issues.workspaceId, workspaceId)))
-          .returning();
-
-        /*
-         * A status move keeps its own event type, because it is what the
-         * activity feed narrates ("moved WEB-4 to done"). Any other edit is
-         * `issue.updated` with the names of the fields touched -- not their
-         * new text, which is content the trail has no reason to copy.
-         */
-        await recordAudit(tx, auditActor(request), {
-          workspaceId,
-          entityType: 'issue',
-          entityId: issueId,
-          eventType: statusChanged ? 'issue.status_changed' : 'issue.updated',
-          payload: {
-            key: `${project.key}-${before.number}`,
+      return withIdempotency(db, request, reply, 200, async () => {
+        const updated = await db.transaction((tx) =>
+          applyIssueUpdate(tx, auditActor(request), {
+            workspaceId,
+            issueId,
+            input,
+            delegateId: delegateOf(user),
+            issueKey: `${project.key}-${before.number}`,
             title: before.title,
-            fields: Object.keys(input),
-            ...(statusChanged ? { from: current.status, to: input.status } : {}),
-          },
+          }),
+        );
+
+        await publishEvent(db, {
+          type: 'issue.updated',
+          workspaceId,
+          projectId: before.projectId,
+          issueId: issueId,
+          actorId: user.id,
         });
 
-        if (!row) throw ApiError.notFound('Issue not found');
-        return row;
+        // With its key, as the other issue answers have it.
+        return shape(contracts['issues.update'], {
+          issue: { ...updated, key: `${project.key}-${updated.number}` },
+        });
       });
-
-      await publishEvent(db, {
-        type: 'issue.updated',
-        workspaceId,
-        projectId: before.projectId,
-        issueId: issueId,
-        actorId: user.id,
-      });
-
-      // With its key, as the other issue answers have it.
-      return { issue: { ...updated, key: `${project.key}-${updated.number}` } };
     },
   );
 

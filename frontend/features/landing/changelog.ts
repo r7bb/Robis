@@ -44,6 +44,17 @@ export type Entry = {
 
 export const CHANGELOG: readonly Entry[] = [
   {
+    date: '2026-11-17',
+    area: 'Security',
+    title: 'Agents can join a workspace, on a short leash',
+    brief:
+      'Admins add an agent as a member or guest with a token shown once; it acts through the same permissions, retries and audit trail as anyone.',
+    summary:
+      'The first part of agents as teammates. An admin adds an agent to a workspace as a member or a guest, never higher, and gets a token for it, shown once and kept only as a hash. With the token the agent can do in that workspace what its role allows and nothing else: outside it, it is answered exactly as a stranger is, and it has no account to sign in to. Everything it does is recorded as done by an agent, and an issue it touches names it as the delegate while a person stays the assignee. Revoking a token stops it on the next call. Editing an issue and posting a comment now go through the retry ledger too, so a repeated call never posts twice. The MCP server and the triage agent that use this come next.',
+    checked:
+      'Tests written alongside the code, 29 in all: an agent outside its workspace gets the same 404 and body a stranger does, and a guest agent the same 403 a guest person does; a repeated issue, comment or edit happens once; a revoked token fails on the very next call while another keeps working; an agent cannot sign in, be invited elsewhere, be made an admin, be an assignee or leave on its own. A security review found the retry ledger would have kept new token secrets; those two answers now stay out of it, and a test checks no secret is stored. The stack and browser smoke tests pass on the rebuilt stack, and the full suite passes.',
+  },
+  {
     date: '2026-11-16',
     area: 'Site',
     title: 'A page that does not start says why',

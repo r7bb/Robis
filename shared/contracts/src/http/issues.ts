@@ -30,6 +30,8 @@ const issue = z.object({
   status,
   priority,
   assigneeId: uuid.nullable(),
+  /** The agent that last acted on it, beside the human assignee (B5). */
+  delegateId: uuid.nullable(),
   createdBy: uuid,
   createdAt: timestamp,
   updatedAt: timestamp,

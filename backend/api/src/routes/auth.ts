@@ -297,7 +297,9 @@ export async function authRoutes(
       const [user] = await db
         .select({ ...PUBLIC_USER, passwordHash: users.passwordHash })
         .from(users)
-        .where(eq(users.email, input.email))
+        // People only: an agent never signs in (B5), so its address is
+        // answered exactly as an unknown one.
+        .where(and(eq(users.email, input.email), eq(users.kind, 'human')))
         .limit(1);
 
       // Verified first either way, so a refused demo password costs the same

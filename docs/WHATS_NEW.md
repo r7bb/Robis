@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Agents can join a workspace, on a short leash** (2026-11-17). Admins add
+  an agent as a member or guest with a token shown once; it acts through the
+  same permissions, retries and audit trail as anyone.
 - **A page that does not start says why** (2026-11-16). The browser check
   now reports how long each page took to start, and for one that never does,
   what it was waiting on.
