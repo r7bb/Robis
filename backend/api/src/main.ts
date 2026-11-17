@@ -2,6 +2,7 @@ import {
   auditKeyringFromEnv,
   configureAuditKeys,
   createDatabase,
+  settleAgentSteps,
   settleDeferredAccountEvents,
 } from '@robis/database';
 import { mailerFromEnv } from '@robis/mailer';
@@ -43,6 +44,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     metricsServer.stop();
     // A failed sign-in is recorded just after its reply; let those land.
     await settleDeferredAccountEvents();
+    await settleAgentSteps();
     await close();
     process.exit(0);
   });

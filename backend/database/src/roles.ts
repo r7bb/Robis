@@ -240,6 +240,12 @@ export const WORKER_GRANTS: TableGrants = {
   // and deleted by the hourly cleanup once long expired. Column by column:
   // it never reads a token's hash and can change nothing but `revoked_at`,
   // which a trigger lets go only one way.
+  // Watching agents (B6): runs and steps pruned after 90 days, changes
+  // judged once seven days old, hint feedback pruned. The API writes them all.
+  agent_runs: ['select', 'delete'],
+  agent_steps: ['select', 'delete'],
+  agent_changes: ['select', 'update (outcome, judged_at)', 'delete'],
+  suggestion_feedback: ['select', 'delete'],
   agent_tokens: [
     'select (id, agent_id, workspace_id, revoked_at, expires_at)',
     // Every column, as an insert names them all; the defaults fill the rest.

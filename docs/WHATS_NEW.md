@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Every call an agent makes is recorded** (2026-11-18). Each agent call in
+  its workspace becomes a step of a run: the tool, whether it worked or was
+  refused, and how long it took; the MCP server has metrics too.
 - **An optional one-line summary on triage comments** (2026-11-17). With a
   provider key set and a workspace’s consent, the triage agent adds a
   one-line summary from a language model; without either, nothing is sent

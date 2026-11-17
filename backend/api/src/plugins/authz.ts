@@ -23,6 +23,8 @@ declare module 'fastify' {
     resolvedRole?: { workspaceId: string; role: Role | null };
     /** Set by `requireMembership`; the actor's role in the workspace on the path. */
     membership?: { workspaceId: string; role: Role };
+    /** Set for a request made with an agent token (B6): which token. */
+    agentToken?: { id: string; perRun: boolean };
   }
 }
 
@@ -148,6 +150,7 @@ async function attachAgent(db: Database, request: FastifyRequest) {
   if (!resolved) return;
   request.user = resolved.user;
   request.resolvedRole = { workspaceId, role: resolved.role };
+  request.agentToken = resolved.token;
 }
 
 export const requireAuth: preHandlerHookHandler = async (request: FastifyRequest) => {

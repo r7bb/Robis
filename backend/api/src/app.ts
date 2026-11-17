@@ -13,6 +13,7 @@ import {
 } from './hardening.ts';
 import { DECODE_RETRY_AFTER_SECONDS, ImagesBusyError } from './media/images.ts';
 import { createMetrics, registerMetrics } from './metrics.ts';
+import { recordAgentSteps } from './plugins/agent-steps.ts';
 import { attachUser } from './plugins/authz.ts';
 import { accountDeletionRoutes } from './routes/account-deletion.ts';
 import { accountEventRoutes } from './routes/account-events.ts';
@@ -177,6 +178,8 @@ export function buildApp({
   registerMetrics(app, createMetrics());
 
   app.addHook('preHandler', attachUser(db));
+  // What agents do, step by step, once each call is answered (B6).
+  app.addHook('onResponse', recordAgentSteps(db));
 
   app.setErrorHandler((error: Error & { statusCode?: number; code?: string }, request, reply) => {
     if (error instanceof ApiError) {

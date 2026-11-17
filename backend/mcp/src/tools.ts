@@ -102,7 +102,9 @@ export function createToolServer(
       inputSchema: { query: z.string().min(1).max(200) },
     },
     ({ query }) =>
-      run('search', observe, () => api.call('search.workspace', { params, query: { q: query } })),
+      run('search', observe, () =>
+        api.call('search.workspace', { tool: 'search', params, query: { q: query } }),
+      ),
   );
 
   server.registerTool(
@@ -118,6 +120,7 @@ export function createToolServer(
     ({ title, description }) =>
       run('suggest', observe, () =>
         api.call('issues.suggestions', {
+          tool: 'suggest',
           params,
           query: { title, ...(description ? { description } : {}) },
         }),
@@ -127,7 +130,10 @@ export function createToolServer(
   server.registerTool(
     'list_projects',
     { description: 'The workspace’s projects, with their ids, for creating an issue in one.' },
-    () => run('list_projects', observe, () => api.call('projects.list', { params })),
+    () =>
+      run('list_projects', observe, () =>
+        api.call('projects.list', { tool: 'list_projects', params }),
+      ),
   );
 
   server.registerTool(
@@ -139,8 +145,8 @@ export function createToolServer(
     ({ issueId }) =>
       run('read_issue', observe, async () => {
         const [{ issue }, { comments }] = await Promise.all([
-          api.call('issues.get', { params: { ...params, issueId } }),
-          api.call('comments.list', { params: { ...params, issueId } }),
+          api.call('issues.get', { tool: 'read_issue', params: { ...params, issueId } }),
+          api.call('comments.list', { tool: 'read_issue', params: { ...params, issueId } }),
         ]);
         return { issue, comments };
       }),
@@ -161,6 +167,7 @@ export function createToolServer(
     ({ projectId, title, description, idempotencyKey: key }) =>
       run('create_issue', observe, () =>
         api.call('issues.create', {
+          tool: 'create_issue',
           params: { ...params, projectId },
           body: { title, ...(description ? { description } : {}) },
           idempotencyKey: key,
@@ -184,6 +191,7 @@ export function createToolServer(
     ({ issueId, idempotencyKey: key, ...changes }) =>
       run('update_issue', observe, () =>
         api.call('issues.update', {
+          tool: 'update_issue',
           params: { ...params, issueId },
           body: changes,
           idempotencyKey: key,
@@ -200,6 +208,7 @@ export function createToolServer(
     ({ issueId, body, idempotencyKey: key }) =>
       run('comment', observe, () =>
         api.call('comments.create', {
+          tool: 'comment',
           params: { ...params, issueId },
           body: { body },
           idempotencyKey: key,

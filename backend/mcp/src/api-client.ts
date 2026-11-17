@@ -28,6 +28,8 @@ export class ApiRefusal extends Error {
 }
 
 type Call<C extends Contract> = {
+  /** The tool making the call, so the API can record which (B6). */
+  tool: string;
   params: Record<string, string>;
   query?: Record<string, string | number | undefined>;
   body?: BodyOf<C>;
@@ -42,6 +44,8 @@ export class ApiClient {
     private readonly baseUrl: string,
     private readonly token: string,
     private readonly fetcher: typeof fetch = fetch,
+    /** The run id the caller sent, passed on so its calls are grouped as one run. */
+    private readonly runKey: string | null = null,
   ) {}
 
   async call<N extends ContractName>(
@@ -60,6 +64,8 @@ export class ApiClient {
         method: route.method,
         headers: {
           authorization: `Bearer ${this.token}`,
+          'x-robis-tool': input.tool,
+          ...(this.runKey ? { 'x-robis-run': this.runKey } : {}),
           ...(input.body !== undefined ? { 'content-type': 'application/json' } : {}),
           ...(input.idempotencyKey ? { 'idempotency-key': input.idempotencyKey } : {}),
         },

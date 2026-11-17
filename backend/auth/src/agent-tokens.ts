@@ -65,13 +65,19 @@ export async function resolveAgentToken(
   db: Executor,
   secret: string,
   workspaceId: string,
-): Promise<{ user: AuthenticatedUser; role: Role | null } | null> {
+): Promise<{
+  user: AuthenticatedUser;
+  role: Role | null;
+  /** Which token, and whether it was minted for one run (it expires). */
+  token: { id: string; perRun: boolean };
+} | null> {
   if (!isAgentToken(secret)) return null;
 
   const now = new Date();
   const [row] = await db
     .select({
       tokenId: agentTokens.id,
+      tokenExpiresAt: agentTokens.expiresAt,
       tokenWorkspaceId: agentTokens.workspaceId,
       lastUsedAt: agentTokens.lastUsedAt,
       id: users.id,
@@ -122,6 +128,7 @@ export async function resolveAgentToken(
       hasAgreed: true,
     },
     role: sameWorkspace ? (row.role ?? null) : null,
+    token: { id: row.tokenId, perRun: row.tokenExpiresAt !== null },
   };
 }
 

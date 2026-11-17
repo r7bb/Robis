@@ -44,6 +44,17 @@ export type Entry = {
 
 export const CHANGELOG: readonly Entry[] = [
   {
+    date: '2026-11-18',
+    area: 'Security',
+    title: 'Every call an agent makes is recorded',
+    brief:
+      'Each agent call in its workspace becomes a step of a run: the tool, whether it worked or was refused, and how long it took; the MCP server has metrics too.',
+    summary:
+      'The first part of watching agents. Every call an agent makes in its own workspace is recorded once it has been answered, as a step in a run: which tool made it, whether it succeeded, was refused or failed, its status and how long it took. Nothing it sent or wrote is stored. A triage run is exactly one run, because it works with a token made for that run; another agent’s calls are grouped by the run id its client sends, or else into runs that end after half an hour of quiet. The MCP server also counts its tool calls and times them for Prometheus, labelled only by tool and outcome. A page to read all this comes next.',
+    checked:
+      'Thirteen tests: a direct call is named by its route, a refusal is a denied step, a call into another workspace is not recorded there, a person’s call is not a step, tools are named through the MCP server, calls close together share a run and a quiet spell starts a new one, each triage run is its own, and a client’s run id cannot pass for a triage run. A database review led to grants for the worker, indexes for the prune and the run lookup, and fewer writes per call. On the rebuilt stack the smoke test’s agent calls appeared as steps with their tools and outcomes.',
+  },
+  {
     date: '2026-11-17',
     area: 'ML',
     title: 'An optional one-line summary on triage comments',

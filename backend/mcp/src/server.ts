@@ -20,6 +20,8 @@ export const MAX_BODY_BYTES = 64 * 1024;
 
 /** An agent token's shape (see `@robis/auth`): anything else is refused here. */
 const AGENT_TOKEN = /^rba_[A-Za-z0-9_-]{43}$/;
+/** A run id a caller may send: short and plain, or it is ignored. */
+const RUN_KEY = /^[A-Za-z0-9_.:-]{1,100}$/;
 
 export type McpOptions = {
   /** Where the API answers, from inside the stack. */
@@ -86,7 +88,14 @@ export function createMcpHandler(options: McpOptions) {
     if (admitted instanceof Response) return admitted;
     const { workspaceId, token } = admitted;
 
-    const api = new ApiClient(options.apiUrl, token, options.fetcher);
+    // A caller may name its run, so its calls are grouped as one (B6).
+    const runKey = request.headers.get('x-robis-run');
+    const api = new ApiClient(
+      options.apiUrl,
+      token,
+      options.fetcher,
+      runKey && RUN_KEY.test(runKey) ? runKey : null,
+    );
     const server = createToolServer(api, workspaceId, options.observe);
     const transport = new WebStandardStreamableHTTPServerTransport({
       sessionIdGenerator: undefined,

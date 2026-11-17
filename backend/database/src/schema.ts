@@ -1147,13 +1147,22 @@ export const agentRuns = pgTable(
     /** The run id a caller sent, if it sent one; otherwise calls are grouped by time. */
     runKey: text('run_key'),
     startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
+    /**
+     * Within 30 seconds of the latest step: written at most that often, so a
+     * busy agent does not rewrite its run row on every call. Its steps are
+     * counted from `agent_steps`, not kept here.
+     */
     lastStepAt: timestamp('last_step_at', { withTimezone: true }).notNull().defaultNow(),
-    steps: integer('steps').notNull().default(0),
   },
   (t) => [
     index('agent_runs_workspace_started_idx').on(t.workspaceId, t.startedAt),
-    index('agent_runs_agent_last_step_idx').on(t.agentId, t.lastStepAt),
-    uniqueIndex('agent_runs_agent_run_key_key').on(t.agentId, t.runKey),
+    // The run a keyless call joins: the agent's latest in this workspace.
+    index('agent_runs_open_idx')
+      .on(t.agentId, t.workspaceId, t.lastStepAt)
+      .where(sql`${t.runKey} is null`),
+    // For the retention prune, which deletes runs and with them their steps.
+    index('agent_runs_last_step_idx').on(t.lastStepAt),
+    uniqueIndex('agent_runs_agent_workspace_run_key_key').on(t.agentId, t.workspaceId, t.runKey),
   ],
 );
 
@@ -1212,7 +1221,10 @@ export const agentChanges = pgTable(
   },
   (t) => [
     index('agent_changes_workspace_agent_idx').on(t.workspaceId, t.agentId),
+    index('agent_changes_agent_idx').on(t.agentId),
     index('agent_changes_unjudged_idx').on(t.at).where(sql`${t.judgedAt} is null`),
+    // Judged means both: an outcome, and when it was decided.
+    check('agent_changes_judged_whole', sql`(${t.outcome} is null) = (${t.judgedAt} is null)`),
   ],
 );
 
@@ -1238,7 +1250,7 @@ export const suggestionFeedback = pgTable(
     score: doublePrecision('score'),
     at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index('suggestion_feedback_workspace_kind_idx').on(t.workspaceId, t.kind)],
+  (t) => [index('suggestion_feedback_counts_idx').on(t.workspaceId, t.kind, t.action)],
 );
 
 export type User = typeof users.$inferSelect;

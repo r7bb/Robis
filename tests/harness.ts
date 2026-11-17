@@ -26,6 +26,7 @@ import {
   ensureWorkerRole,
   MAIL_JOBS,
   pgErrorCode,
+  settleAgentSteps,
   settleDeferredAccountEvents,
   users,
 } from '@robis/database';
@@ -357,6 +358,7 @@ export async function resetDatabaseWithin(lockTimeout: string): Promise<void> {
   // A failed sign-in is recorded after its reply; let the last test's land
   // before the tables are emptied under it.
   await settleDeferredAccountEvents();
+  await settleAgentSteps();
   mailer.clear();
   // Buckets are process-wide; each test starts with a full budget, as it
   // starts with empty tables.
