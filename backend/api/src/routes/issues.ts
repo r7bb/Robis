@@ -235,6 +235,23 @@ export async function issueRoutes(
       const filters = [eq(issues.projectId, projectId), eq(issues.workspaceId, workspaceId)];
       if (query.status) filters.push(eq(issues.status, query.status));
       if (query.assigneeId) filters.push(eq(issues.assigneeId, query.assigneeId));
+      if (query.priority) filters.push(eq(issues.priority, query.priority));
+      if (query.labelId) {
+        filters.push(
+          inArray(
+            issues.id,
+            db
+              .select({ id: issueLabels.issueId })
+              .from(issueLabels)
+              .where(
+                and(
+                  eq(issueLabels.labelId, query.labelId),
+                  eq(issueLabels.workspaceId, workspaceId),
+                ),
+              ),
+          ),
+        );
+      }
 
       /*
        * Keyset paging: take rows strictly "after" the cursor in the sort

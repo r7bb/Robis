@@ -35,6 +35,13 @@ const STATUS_STYLES: Record<IssueStatus, { label: string; dot: string; text: str
   CANCELED: { label: 'Canceled', dot: 'bg-slate-600', text: 'text-faint' },
 };
 
+/** A status's name, as its column heading says it. */
+export const statusLabel = (status: IssueStatus) => STATUS_STYLES[status].label;
+
+/** A priority's name; the untriaged one, which has no badge, is "None". */
+export const priorityLabel = (priority: IssuePriority) =>
+  PRIORITY_STYLES[priority]?.label ?? 'None';
+
 export function PriorityBadge({ priority }: { priority: IssuePriority }) {
   const style = PRIORITY_STYLES[priority];
   if (!style) return null;

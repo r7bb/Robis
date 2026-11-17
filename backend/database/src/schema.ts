@@ -1303,6 +1303,30 @@ export const issueLabels = pgTable(
   ],
 );
 
+/**
+ * A board filter someone named and kept (C1): which statuses, priority,
+ * assignee and label to show. Shared with everyone in the workspace who can
+ * see the project, and kept as the validated filter, not a URL string.
+ */
+export const savedViews = pgTable(
+  'saved_views',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    /** JSON of the board filter (`boardFilterSchema`). */
+    filter: text('filter').notNull(),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('saved_views_project_name_key').on(t.projectId, sql`lower(${t.name})`)],
+);
+
 export type User = typeof users.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
 export type Workspace = typeof workspaces.$inferSelect;

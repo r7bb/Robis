@@ -3,6 +3,7 @@
 import {
   type Avatar as AvatarRef,
   BOARD_COLUMNS,
+  type BoardFilter,
   can,
   contracts,
   type IssuePriority,
@@ -10,33 +11,37 @@ import {
 } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { type FormEvent, type KeyboardEvent, useEffect, useState } from 'react';
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { type FormEvent, type KeyboardEvent, Suspense, useEffect, useState } from 'react';
 import { DeleteButton } from '../../../../../components/delete-button.tsx';
 import { PresenceBar } from '../../../../../components/presence.tsx';
 import { SyncStatus } from '../../../../../components/sync-status.tsx';
 import { Avatar } from '../../../../../components/ui/avatar.tsx';
-import { LabelChip, PriorityBadge, StatusHeading } from '../../../../../components/ui/badges.tsx';
+import {
+  LabelChip,
+  PriorityBadge,
+  StatusHeading,
+  statusLabel,
+} from '../../../../../components/ui/badges.tsx';
 import { ErrorState } from '../../../../../components/ui/primitives.tsx';
 import { useBoardDrag } from '../../../../../features/board/board-drag.ts';
+import { BoardFilters } from '../../../../../features/board/board-filters.tsx';
 import { DuplicateHints } from '../../../../../features/issues/duplicate-hints.tsx';
 import { PriorityHint } from '../../../../../features/issues/priority-hint.tsx';
 import { call } from '../../../../../lib/api.ts';
+import {
+  filterFromParams,
+  filterToQuery,
+  isFiltered,
+  matchesFilter,
+} from '../../../../../lib/board-filter.ts';
 import { useCoalesced, useRealtime } from '../../../../../lib/realtime.ts';
 import { concernsBoard } from '../../../../../lib/realtime-events.ts';
 import { lastTheme, useApplyTheme } from '../../../../../lib/theme.ts';
 import { useMemberAvatars } from '../../../../../lib/use-member-avatars.ts';
 import { useOfflineBoard } from '../../../../../lib/use-offline-board.ts';
 
-const COLUMN_LABELS: Record<IssueStatus, string> = {
-  TODO: 'Todo',
-  IN_PROGRESS: 'In Progress',
-  IN_REVIEW: 'In Review',
-  DONE: 'Done',
-  CANCELED: 'Canceled',
-};
-
-export default function BoardPage() {
+function Board() {
   const { workspaceId, projectId } = useParams<{ workspaceId: string; projectId: string }>();
   const avatars = useMemberAvatars();
   const [title, setTitle] = useState('');
@@ -49,7 +54,19 @@ export default function BoardPage() {
   // The board reads from IndexedDB rather than the network, so it renders with
   // no connection and survives a reload mid-edit.
   const board = useOfflineBoard(workspaceId, projectId);
-  const drag = useBoardDrag(board.issues, BOARD_COLUMNS, board.updateIssue);
+
+  // The filter lives in the URL (C1), so a filtered board is a link. Every
+  // issue is already on the device, so narrowing it needs no request.
+  const router = useRouter();
+  const pathname = usePathname();
+  const filter = filterFromParams(useSearchParams());
+  const setFilter = (next: BoardFilter) => {
+    const query = filterToQuery(next);
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  };
+  const shown = board.issues.filter((issue) => matchesFilter(issue, filter));
+  const columns = BOARD_COLUMNS.filter((column) => !filter.status || column === filter.status);
+  const drag = useBoardDrag(shown, columns, board.updateIssue);
   const labels = useQuery({
     queryKey: ['labels', workspaceId],
     queryFn: () => call(contracts['labels.list'], { params: { workspaceId } }),
@@ -161,9 +178,23 @@ export default function BoardPage() {
         </div>
       )}
 
-      <div className="mt-8 grid gap-4 md:grid-cols-4">
-        {BOARD_COLUMNS.map((column) => {
-          const columnIssues = board.issues.filter((issue) => issue.status === column);
+      <BoardFilters
+        workspaceId={workspaceId}
+        projectId={projectId}
+        filter={filter}
+        onChange={setFilter}
+        canEdit={canEdit}
+        labels={labels.data?.labels ?? []}
+      />
+
+      {/* Always mounted, so a change of count is announced, not just shown. */}
+      <p className="mt-3 min-h-4 text-xs text-faint" aria-live="polite">
+        {filterSummary(filter, shown.length, board.issues.length)}
+      </p>
+
+      <div className="mt-6 grid gap-4 md:grid-cols-4">
+        {columns.map((column) => {
+          const columnIssues = shown.filter((issue) => issue.status === column);
 
           return (
             <section key={column} className="rounded-lg border border-line bg-raised/50 p-3">
@@ -255,7 +286,7 @@ export default function BoardPage() {
                       >
                         {BOARD_COLUMNS.map((status) => (
                           <option key={status} value={status}>
-                            {COLUMN_LABELS[status]}
+                            {statusLabel(status)}
                           </option>
                         ))}
                       </select>
@@ -333,4 +364,22 @@ function CardLabels({
       ))}
     </p>
   );
+}
+
+/** `useSearchParams` needs a boundary so the route can still be prerendered. */
+export default function BoardPage() {
+  return (
+    <Suspense
+      fallback={<main className="mx-auto max-w-6xl px-6 py-12 text-sm text-faint">Loading…</main>}
+    >
+      <Board />
+    </Suspense>
+  );
+}
+
+/** What a filter leaves showing, said once; nothing when there is no filter. */
+function filterSummary(filter: BoardFilter, shown: number, total: number): string {
+  if (!isFiltered(filter)) return '';
+  if (shown === 0) return 'No issues match these filters.';
+  return `Showing ${shown} of ${total} issues.`;
 }

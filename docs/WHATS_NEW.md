@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Board filters and saved views** (2026-11-18). Narrow the board by
+  status, priority, assignee or label, share it as a link, and keep a filter
+  by name for the whole workspace.
 - **Labels on issues** (2026-11-18). Make labels in six fixed colours, put
   them on issues from the issue page, and see them as chips on the board.
 - **Cards move by dragging, or by keyboard** (2026-11-18). Drag a card

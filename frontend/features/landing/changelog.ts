@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-18',
     area: 'Product',
+    title: 'Board filters and saved views',
+    brief:
+      'Narrow the board by status, priority, assignee or label, share it as a link, and keep a filter by name for the whole workspace.',
+    summary:
+      'The board now has a filter bar: status, priority, assignee and label, each one narrowing what the board shows. The filter lives in the address, so a filtered board can be sent as a link and comes back after a reload; since every issue is already on the device, filtering works with no connection too. Members can name the current filter and keep it as a saved view, which everyone in the workspace then sees in a list above the board. A view may only name this workspace’s labels and people, names and filters are unique in a project, and making or deleting one is in the audit trail. The issue list in the API takes priority and label filters as well.',
+    feature: {
+      name: 'Board filters and saved views',
+      where: 'A project’s board, above the columns',
+      layers: [
+        'Screen: a filter bar with four filters, Clear filters, a saved views list and Save view',
+        'API: savedViews.list, savedViews.create and savedViews.delete, and priority and label filters on issues.list',
+        'Data: saved_views (a name unique per project and the validated filter)',
+      ],
+    },
+    checked:
+      'Fourteen tests: the issue list narrows by priority, by label and by both; saved views keep a filter and list by name for a guest too; names are unique whatever their case, and two views cannot keep the same filter; an empty filter is not saved; a filter naming another workspace’s label or person, or a priority that does not exist, is refused; a guest may not make or delete a view; deleting is audited, works once, and another workspace gets a 404. The URL helpers read back what they write, drop invalid values, and never change the filter they are given. In headless Chrome on the rebuilt stack, filtering by priority narrowed 10 cards to 1 and put it in the address, the filter survived a reload, a saved view was picked from the list, the bar wrapped at phone width with no sideways scroll, and deleting the view went through the confirm dialog.',
+  },
+  {
+    date: '2026-11-18',
+    area: 'Product',
     title: 'Labels on issues',
     brief:
       'Make labels in six fixed colours, put them on issues from the issue page, and see them as chips on the board.',

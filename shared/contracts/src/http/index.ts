@@ -15,6 +15,7 @@ import { memberContracts } from './members.ts';
 import { notificationContracts } from './notifications.ts';
 import { overviewContracts } from './overview.ts';
 import { projectContracts } from './projects.ts';
+import { savedViewContracts } from './saved-views.ts';
 import { workspaceContracts } from './workspaces.ts';
 
 export { RUN_STEPS_SHOWN, RUNS_SHOWN } from './agents.ts';
@@ -24,6 +25,7 @@ export {
   SUGGESTION_ACTIONS,
   SUGGESTION_KINDS,
 } from './feedback.ts';
+export { SAVED_VIEWS_PER_PROJECT } from './saved-views.ts';
 
 /** Every route the API serves through a contract, by name. */
 export const contracts = {
@@ -33,6 +35,7 @@ export const contracts = {
   ...agentContracts,
   ...feedbackContracts,
   ...labelContracts,
+  ...savedViewContracts,
   ...issueContracts,
   ...documentContracts,
   ...channelContracts,

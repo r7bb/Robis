@@ -36,6 +36,7 @@ import { memberRoutes } from './routes/members.ts';
 import { notificationRoutes } from './routes/notifications.ts';
 import { overviewRoutes } from './routes/overview.ts';
 import { projectRoutes } from './routes/projects.ts';
+import { savedViewRoutes } from './routes/saved-views.ts';
 import { searchRoutes } from './routes/search.ts';
 import { signupRoutes } from './routes/signup.ts';
 import { workspaceRoutes } from './routes/workspaces.ts';
@@ -243,6 +244,7 @@ export function buildApp({
   app.register(agentRoutes, { db });
   app.register(feedbackRoutes, { db });
   app.register(labelRoutes, { db });
+  app.register(savedViewRoutes, { db });
   app.register(invitationRoutes, { db });
   app.register(consentRoutes, { db });
   app.register(projectRoutes, { db });

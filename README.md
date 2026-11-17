@@ -148,14 +148,14 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Board filters and saved views.** Narrow the board by status, priority,
+  assignee or label, share it as a link, and keep a filter by name for the
+  whole workspace.
 - **Labels on issues.** Make labels in six fixed colours, put them on issues
   from the issue page, and see them as chips on the board.
 - **Cards move by dragging, or by keyboard.** Drag a card within or between
   columns, or lift it with Space and move it with the arrow keys; it works
   offline like every other change.
-- **A page of what the agents did.** Admins see each agent’s latest runs
-  call by call, how many of its changes people kept, edited or reverted, and
-  how the hints fare in use.
 
 <!-- latest:end -->
 

@@ -235,9 +235,20 @@ export const updateIssueSchema = z
   .refine((v) => Object.keys(v).length > 0, { message: 'No fields to update' });
 export type UpdateIssueInput = z.infer<typeof updateIssueSchema>;
 
-export const listIssuesQuerySchema = z.object({
+/**
+ * Which issues a board shows (C1): any of these left out means "all". The
+ * board keeps it in the URL, and a saved view keeps it by name.
+ */
+export const boardFilterSchema = z.object({
   status: z.enum(ISSUE_STATUSES).optional(),
   assigneeId: uuid.optional(),
+  priority: z.enum(ISSUE_PRIORITIES).optional(),
+  /** Only issues carrying this label. */
+  labelId: uuid.optional(),
+});
+export type BoardFilter = z.infer<typeof boardFilterSchema>;
+
+export const listIssuesQuerySchema = boardFilterSchema.extend({
   limit: z.coerce.number().int().min(1).max(100).default(50),
   /**
    * Opaque keyset cursor, echoed back from a previous page.
