@@ -1,5 +1,7 @@
+import { Registry } from '@robis/metrics';
 import { requireNodeEnv } from '@robis/shared';
 import { portFrom } from '@robis/shared/config';
+import { toolMetrics } from './metrics.ts';
 import { createMcpHandler, MAX_BODY_BYTES } from './server.ts';
 
 /** Seconds a connection may sit idle: a tool call takes at most the API's 10 s. */
@@ -22,12 +24,25 @@ try {
 }
 
 const port = portFrom(process.env, 'MCP_PORT', 4002);
+const metrics = toolMetrics();
 const server = Bun.serve({
   port,
   hostname: process.env.MCP_HOST ?? '127.0.0.1',
   maxRequestBodySize: MAX_BODY_BYTES,
   idleTimeout: IDLE_TIMEOUT_SECONDS,
-  fetch: createMcpHandler({ apiUrl }),
+  fetch: createMcpHandler({ apiUrl, observe: metrics.observe }),
+});
+
+// Not on the public port, which the edge proxies: on its own, inside the network.
+const metricsServer = Bun.serve({
+  port: portFrom(process.env, 'MCP_METRICS_PORT', 9466),
+  hostname: process.env.METRICS_HOST?.trim() || '127.0.0.1',
+  fetch: (request) =>
+    new URL(request.url).pathname === '/metrics'
+      ? new Response(metrics.registry.render(), {
+          headers: { 'content-type': Registry.CONTENT_TYPE },
+        })
+      : new Response('Not found', { status: 404 }),
 });
 
 console.log(`MCP server listening on http://${server.hostname}:${server.port}/mcp/<workspace id>`);
@@ -35,6 +50,7 @@ console.log(`MCP server listening on http://${server.hostname}:${server.port}/mc
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.once(signal, () => {
     server.stop();
+    metricsServer.stop();
     process.exit(0);
   });
 }

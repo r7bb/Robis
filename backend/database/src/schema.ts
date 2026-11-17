@@ -6,6 +6,7 @@ import {
   boolean,
   check,
   customType,
+  doublePrecision,
   index,
   integer,
   pgEnum,
@@ -1118,6 +1119,126 @@ export const meetingAttendees = pgTable(
     primaryKey({ columns: [t.meetingId, t.userId] }),
     index('meeting_attendees_user_idx').on(t.userId),
   ],
+);
+
+// ---------------------------------------------------------------------------
+// Watching agents (B6): what they did, how long it took, and whether people
+// kept it. Nothing here holds what was sent or written: tools, outcomes,
+// timings, and the ids of what was touched.
+
+export const AGENT_STEP_OUTCOMES = ['ok', 'denied', 'error'] as const;
+export const agentStepOutcome = pgEnum('agent_step_outcome', AGENT_STEP_OUTCOMES);
+export const AGENT_CHANGE_OUTCOMES = ['kept', 'edited', 'reverted'] as const;
+export const agentChangeOutcome = pgEnum('agent_change_outcome', AGENT_CHANGE_OUTCOMES);
+
+/** One stretch of an agent's work: a triage run, or calls close together in time. */
+export const agentRuns = pgTable(
+  'agent_runs',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    agentId: uuid('agent_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** `triage` for the triage agent's runs; `calls` for any other agent's. */
+    source: text('source').notNull(),
+    /** The run id a caller sent, if it sent one; otherwise calls are grouped by time. */
+    runKey: text('run_key'),
+    startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
+    lastStepAt: timestamp('last_step_at', { withTimezone: true }).notNull().defaultNow(),
+    steps: integer('steps').notNull().default(0),
+  },
+  (t) => [
+    index('agent_runs_workspace_started_idx').on(t.workspaceId, t.startedAt),
+    index('agent_runs_agent_last_step_idx').on(t.agentId, t.lastStepAt),
+    uniqueIndex('agent_runs_agent_run_key_key').on(t.agentId, t.runKey),
+  ],
+);
+
+/** One call an agent made: the tool, the outcome, how long it took. */
+export const agentSteps = pgTable(
+  'agent_steps',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    runId: uuid('run_id')
+      .notNull()
+      .references(() => agentRuns.id, { onDelete: 'cascade' }),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    /** An MCP tool's name, or `api:<route>` for a call made to the API directly. */
+    tool: text('tool').notNull(),
+    outcome: agentStepOutcome('outcome').notNull(),
+    status: integer('status').notNull(),
+    durationMs: integer('duration_ms').notNull(),
+    at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('agent_steps_run_idx').on(t.runId, t.id),
+    index('agent_steps_workspace_at_idx').on(t.workspaceId, t.at),
+  ],
+);
+
+/**
+ * One change an agent made, with the value before and after, so a person's
+ * later edit can be told from a revert. Judged once it is seven days old:
+ * still the agent's value is kept, back to the earlier one (or deleted) is
+ * reverted, anything else is edited.
+ */
+export const agentChanges = pgTable(
+  'agent_changes',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    agentId: uuid('agent_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** `issue` or `comment`. */
+    entityType: text('entity_type').notNull(),
+    /** Not a foreign key: a deleted issue is exactly what a revert can look like. */
+    entityId: uuid('entity_id').notNull(),
+    /** A field the agent set, or `created` for a whole new issue or comment. */
+    field: text('field').notNull(),
+    /** JSON values; null for a creation, which had no before. */
+    before: text('before'),
+    after: text('after'),
+    at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
+    outcome: agentChangeOutcome('outcome'),
+    judgedAt: timestamp('judged_at', { withTimezone: true }),
+  },
+  (t) => [
+    index('agent_changes_workspace_agent_idx').on(t.workspaceId, t.agentId),
+    index('agent_changes_unjudged_idx').on(t.at).where(sql`${t.judgedAt} is null`),
+  ],
+);
+
+export const SUGGESTION_KINDS = ['duplicate', 'priority'] as const;
+export const suggestionKind = pgEnum('suggestion_kind', SUGGESTION_KINDS);
+export const SUGGESTION_ACTIONS = ['accepted', 'dismissed'] as const;
+export const suggestionAction = pgEnum('suggestion_action', SUGGESTION_ACTIONS);
+
+/**
+ * What people did with a hint (B6): used it, or set it aside. No user is
+ * named: this measures the hints, not the people.
+ */
+export const suggestionFeedback = pgTable(
+  'suggestion_feedback',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    kind: suggestionKind('kind').notNull(),
+    action: suggestionAction('action').notNull(),
+    /** The hint's own score, kept to compare with the offline evaluation's thresholds. */
+    score: doublePrecision('score'),
+    at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('suggestion_feedback_workspace_kind_idx').on(t.workspaceId, t.kind)],
 );
 
 export type User = typeof users.$inferSelect;

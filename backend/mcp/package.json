@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.1",
+    "@robis/metrics": "workspace:*",
     "@robis/shared": "workspace:*",
     "zod": "^4.0.0"
   }
