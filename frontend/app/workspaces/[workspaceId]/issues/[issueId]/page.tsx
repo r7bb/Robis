@@ -16,7 +16,7 @@ import { type FormEvent, useState } from 'react';
 import { CommentThread } from '../../../../../components/comment-thread.tsx';
 import { DeleteButton } from '../../../../../components/delete-button.tsx';
 import { PresenceBar } from '../../../../../components/presence.tsx';
-import { ErrorState } from '../../../../../components/ui/primitives.tsx';
+import { AgentBadge, ErrorState } from '../../../../../components/ui/primitives.tsx';
 import { IssueAttachments } from '../../../../../features/issues/attachments.tsx';
 import { call } from '../../../../../lib/api.ts';
 import { useCoalesced, useRealtime } from '../../../../../lib/realtime.ts';
@@ -185,13 +185,23 @@ export default function IssuePage() {
                 onChange={(value) => update.mutate({ assigneeId: value || null })}
                 options={[
                   { value: '', label: 'Unassigned' },
-                  ...(members.data?.members ?? []).map((member) => ({
-                    value: member.userId,
-                    label: member.name,
-                  })),
+                  // A person answers for the work; an agent is its delegate at most.
+                  ...(members.data?.members ?? [])
+                    .filter((member) => member.kind === 'human')
+                    .map((member) => ({ value: member.userId, label: member.name })),
                 ]}
               />
             </Field>
+
+            {data.delegateId && (
+              <Field label="Delegate">
+                <span className="flex items-center gap-2 py-1.5 text-sm text-content">
+                  {members.data?.members.find((m) => m.userId === data.delegateId)?.name ??
+                    'A removed agent'}
+                  <AgentBadge />
+                </span>
+              </Field>
+            )}
           </dl>
 
           {update.isError && (

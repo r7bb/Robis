@@ -422,3 +422,40 @@ describe('what the review asked for', () => {
     expect(response.statusCode).toBe(401);
   });
 });
+
+describe('marking agents where they appear', () => {
+  test('a comment and an activity entry say an agent made them; its placeholder address is never shown', async () => {
+    const { owner, workspace, project, agent } = await setUp();
+    const issue = (
+      await request(`/workspaces/${workspace.id}/projects/${project.id}/issues`, {
+        method: 'POST',
+        headers: as(agent),
+        payload: { title: 'Marked' },
+      })
+    ).json().issue;
+    await request(`/workspaces/${workspace.id}/issues/${issue.id}/comments`, {
+      method: 'POST',
+      headers: as(agent),
+      payload: { body: 'From a bot' },
+    });
+
+    const listed = await request(`/workspaces/${workspace.id}/issues/${issue.id}/comments`, {
+      actor: owner,
+    });
+    expect(listed.json().comments[0]).toMatchObject({ authorId: agent.id, authorKind: 'agent' });
+
+    const activity = await request(`/workspaces/${workspace.id}/activity`, { actor: owner });
+    const byAgent = activity
+      .json()
+      .events.filter((e: { actorId: string }) => e.actorId === agent.id)
+      .map((e: { actorKind: string }) => e.actorKind);
+    expect(byAgent.length).toBeGreaterThan(0);
+    expect(new Set(byAgent)).toEqual(new Set(['agent']));
+
+    const { members } = (
+      await request(`/workspaces/${workspace.id}/members`, { actor: owner })
+    ).json();
+    const bot = members.find((m: { userId: string }) => m.userId === agent.id);
+    expect(bot.email).toBeNull();
+  });
+});

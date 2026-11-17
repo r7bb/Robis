@@ -106,6 +106,21 @@ export function RoleBadge({ role }: { role: string }) {
   );
 }
 
+/**
+ * Marks an agent wherever it appears (B5): it acts with a token an admin
+ * gave it, and what it does is recorded as an agent's, never a person's.
+ */
+export function AgentBadge() {
+  return (
+    <span
+      title="An agent: it acts with a token an admin gave it"
+      className="rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent-soft"
+    >
+      Agent
+    </span>
+  );
+}
+
 export function ErrorState({ message }: { message: string }) {
   return (
     <main className="mx-auto max-w-md px-6 py-24 text-center">

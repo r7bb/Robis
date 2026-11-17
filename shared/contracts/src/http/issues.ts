@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ISSUE_PRIORITIES, ISSUE_STATUSES } from '../domain.ts';
+import { ISSUE_PRIORITIES, ISSUE_STATUSES, USER_KINDS } from '../domain.ts';
 import {
   createCommentSchema,
   createIssueSchema,
@@ -46,6 +46,8 @@ const comment = z.object({
   createdAt: timestamp,
   authorId: uuid,
   authorName: z.string(),
+  /** An agent's comment is marked as one (B5). */
+  authorKind: z.enum(USER_KINDS),
   mentions: z.array(mention),
 });
 

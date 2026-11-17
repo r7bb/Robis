@@ -52,6 +52,10 @@ function removal(payload: Payload, what: string): string {
 
 /** One phrasing per event type. */
 const PHRASES: Record<string, (payload: Payload) => string> = {
+  'agent.created': (p) => `added the agent ${who(p)}`,
+  'agent.token_issued': (p) => `gave ${who(p)} a new token`,
+  'agent.token_revoked': (p) => `revoked a token of ${who(p)}`,
+  'agent.removed': (p) => `removed the agent ${who(p)}`,
   'issue.created': (p) => issue(p, 'created'),
   'issue.status_changed': (p) => `moved ${text(p, 'key') ?? 'an issue'} ${moved(p)}`,
   'issue.updated': (p) => `edited ${text(p, 'key') ?? 'an issue'}`,

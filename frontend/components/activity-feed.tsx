@@ -4,6 +4,7 @@ import { contracts } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import { call } from '../lib/api.ts';
 import { describeEvent } from '../lib/audit-events.ts';
+import { AgentBadge } from './ui/primitives.tsx';
 
 /**
  * The workspace audit trail.
@@ -75,6 +76,7 @@ export function ActivityFeed({ workspaceId }: { workspaceId: string }) {
         {events.slice(0, 20).map((event) => (
           <li key={event.id} className="flex items-baseline gap-2 px-4 py-2.5 text-sm">
             <span className="font-medium text-content">{event.actorName ?? 'Someone'}</span>
+            {event.actorKind === 'agent' && <AgentBadge />}
             <span className="min-w-0 flex-1 text-muted">
               {describeEvent(event.eventType, event.payload)}
             </span>

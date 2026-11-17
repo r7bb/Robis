@@ -110,7 +110,8 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
       return {
         members: members.map(({ avatarKind, avatarRef, avatarUpdatedAt, ...member }) => ({
           ...member,
-          email: seesEmail ? member.email : null,
+          // An agent's address is a placeholder nobody reads (B5).
+          email: seesEmail && member.kind === 'human' ? member.email : null,
           avatar: avatarOf({ id: member.userId, avatarKind, avatarRef, avatarUpdatedAt }),
         })),
       };

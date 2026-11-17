@@ -16,7 +16,12 @@ import { PresenceBar } from '../../components/presence.tsx';
 import { SearchBox } from '../../components/search-box.tsx';
 import { ThemePicker } from '../../components/theme-picker.tsx';
 import { Avatar } from '../../components/ui/avatar.tsx';
-import { ErrorState, RoleBadge, SectionLabel } from '../../components/ui/primitives.tsx';
+import {
+  AgentBadge,
+  ErrorState,
+  RoleBadge,
+  SectionLabel,
+} from '../../components/ui/primitives.tsx';
 import { ApiError, call, type Me, type Member } from '../../lib/api.ts';
 import { type ConnectionState, useRealtime } from '../../lib/realtime.ts';
 import { lastTheme, rememberTheme, useApplyTheme } from '../../lib/theme.ts';
@@ -143,6 +148,7 @@ function TeamRoster({ members, onlineIds }: { members: Member[]; onlineIds: Set<
               >
                 {member.name}
               </span>
+              {member.kind === 'agent' && <AgentBadge />}
             </li>
           );
         })}

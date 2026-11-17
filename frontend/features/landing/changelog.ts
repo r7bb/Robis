@@ -45,6 +45,26 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-17',
+    area: 'Product',
+    title: 'Agents are marked wherever they appear',
+    brief:
+      'An Agent mark beside every agent in the team list, comments, activity and an issue’s delegate; admins add agents and their tokens from the Team panel.',
+    summary:
+      'Anything an agent does now says so. Its name carries an Agent mark in the sidebar’s team list, the member list, on its comments and in the activity feed, and an issue an agent has worked on shows it as the delegate beside the person assigned, who is always a person: agents are not offered as assignees. Admins add agents from the Team panel, as a member or a guest, optionally as the workspace’s triage agent. A new token is shown once, with a button to copy it, and is kept nowhere afterwards; tokens can be revoked one by one after a second click, and removing an agent stops all of them.',
+    feature: {
+      name: 'Agents in a workspace',
+      where: 'A workspace’s side panel, under Team, then Agents (admins only)',
+      layers: [
+        'Screen: an Agents list under the members, a form to add one, a token shown once with Copy, Revoke with a confirming second click',
+        'API: agent routes for admins, and answers that carry who is an agent: member kind, comment author kind, activity actor kind, issue delegate',
+        'Data: users.kind, agent_tokens kept as hashes, issues.delegate_id, workspaces.triage_agent_id',
+      ],
+    },
+    checked:
+      'A test checks that comments and activity entries made by an agent say so and that its placeholder address is never shown. In headless Chrome on the rebuilt stack, an admin added an agent with triage from the Team panel: the token appeared once with Copy, the agent appeared marked in the sidebar, the member list and the agents list, and its triage comment on a new issue carried the mark. The panel was checked against the web interface guidelines, which led to a confirming second click on Revoke and a progress label on Add.',
+  },
+  {
+    date: '2026-11-17',
     area: 'ML',
     title: 'A triage agent that suggests and changes nothing',
     brief:

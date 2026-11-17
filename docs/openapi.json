@@ -532,6 +532,14 @@
                               "null"
                             ]
                           },
+                          "actorKind": {
+                            "type": "string",
+                            "enum": [
+                              "human",
+                              "agent",
+                              "system"
+                            ]
+                          },
                           "entityType": {
                             "type": "string"
                           },
@@ -568,6 +576,7 @@
                           "id",
                           "actorId",
                           "actorName",
+                          "actorKind",
                           "entityType",
                           "entityId",
                           "eventType",
@@ -3646,6 +3655,13 @@
                           "authorName": {
                             "type": "string"
                           },
+                          "authorKind": {
+                            "type": "string",
+                            "enum": [
+                              "human",
+                              "agent"
+                            ]
+                          },
                           "mentions": {
                             "type": "array",
                             "items": {
@@ -3678,6 +3694,7 @@
                           "createdAt",
                           "authorId",
                           "authorName",
+                          "authorKind",
                           "mentions"
                         ],
                         "additionalProperties": false
@@ -3779,6 +3796,13 @@
                         "authorName": {
                           "type": "string"
                         },
+                        "authorKind": {
+                          "type": "string",
+                          "enum": [
+                            "human",
+                            "agent"
+                          ]
+                        },
                         "mentions": {
                           "type": "array",
                           "items": {
@@ -3811,6 +3835,7 @@
                         "createdAt",
                         "authorId",
                         "authorName",
+                        "authorKind",
                         "mentions"
                       ],
                       "additionalProperties": false

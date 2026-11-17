@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Agents are marked wherever they appear** (2026-11-17). An Agent mark
+  beside every agent in the team list, comments, activity and an issue’s
+  delegate; admins add agents and their tokens from the Team panel.
 - **A triage agent that suggests and changes nothing** (2026-11-17). A
   workspace can choose a triage agent; on each new issue it comments likely
   duplicates and a priority with their scores, and leaves every field to

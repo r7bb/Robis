@@ -1,13 +1,16 @@
 'use client';
 
-import { contracts, ROLES, type Role, rankOf } from '@robis/shared';
+import { AGENT_ROLES, contracts, ROLES, type Role, rankOf } from '@robis/shared';
+
+const isAgentRole = (role: Role) => (AGENT_ROLES as readonly Role[]).includes(role);
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { call, type Member } from '../lib/api.ts';
 import { DeleteButton } from './delete-button.tsx';
 import { SentInvitations } from './sent-invitations.tsx';
 import { Avatar } from './ui/avatar.tsx';
-import { RoleBadge } from './ui/primitives.tsx';
+import { AgentBadge, RoleBadge } from './ui/primitives.tsx';
 
 /**
  * Workspace members: invite, change role, remove. An invitation waits
@@ -170,6 +173,7 @@ export function MemberList({
               <span className="flex items-center gap-2.5">
                 <Avatar name={member.name} seed={member.userId} avatar={member.avatar} size="md" />
                 <span className="text-sm text-content">{member.name}</span>
+                {member.kind === 'agent' && <AgentBadge />}
                 <span className="ml-2 text-xs text-faint">
                   @{member.username}
                   {member.email ? ` · ${member.email}` : ''}
@@ -189,11 +193,14 @@ export function MemberList({
                     aria-label={`Role for ${member.name}`}
                     className="rounded-md border border-line bg-surface px-2 py-1 text-xs text-muted outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
                   >
-                    {grantable().map((candidate) => (
-                      <option key={candidate} value={candidate}>
-                        {candidate}
-                      </option>
-                    ))}
+                    {grantable()
+                      // An agent is a member or a guest, never more (the API says so too).
+                      .filter((candidate) => member.kind !== 'agent' || isAgentRole(candidate))
+                      .map((candidate) => (
+                        <option key={candidate} value={candidate}>
+                          {candidate}
+                        </option>
+                      ))}
                   </select>
                 ) : (
                   <RoleBadge role={member.role} />

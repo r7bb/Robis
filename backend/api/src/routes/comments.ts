@@ -115,6 +115,7 @@ export async function commentRoutes(app: FastifyInstance, opts: { db: Database }
           createdAt: comments.createdAt,
           authorId: comments.authorId,
           authorName: users.name,
+          authorKind: users.kind,
         })
         .from(comments)
         .innerJoin(users, eq(users.id, comments.authorId))
@@ -188,7 +189,7 @@ export async function commentRoutes(app: FastifyInstance, opts: { db: Database }
         });
 
         return shape(contracts['comments.create'], {
-          comment: { ...created, authorName: user.name },
+          comment: { ...created, authorName: user.name, authorKind: user.kind },
         });
       });
     },

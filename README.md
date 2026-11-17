@@ -148,15 +148,15 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Agents are marked wherever they appear.** An Agent mark beside every
+  agent in the team list, comments, activity and an issue’s delegate; admins
+  add agents and their tokens from the Team panel.
 - **A triage agent that suggests and changes nothing.** A workspace can
   choose a triage agent; on each new issue it comments likely duplicates and
   a priority with their scores, and leaves every field to people.
 - **Agents work through an MCP server.** An agent connects at /mcp with its
   token and can search, read, file and update issues, and comment, as itself
   and no more.
-- **Agents can join a workspace, on a short leash.** Admins add an agent as
-  a member or guest with a token shown once; it acts through the same
-  permissions, retries and audit trail as anyone.
 
 <!-- latest:end -->
 

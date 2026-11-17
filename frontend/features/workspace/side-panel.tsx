@@ -4,6 +4,7 @@ import { can, type Role } from '@robis/shared';
 import Link from 'next/link';
 import { type KeyboardEvent, useRef, useState } from 'react';
 import { ActivityFeed } from '../../components/activity-feed.tsx';
+import { AgentList } from '../../components/agent-list.tsx';
 import { MemberList } from '../../components/member-list.tsx';
 import type { Member } from '../../lib/api.ts';
 import { MeetingsPanel } from '../meetings/meetings-panel.tsx';
@@ -124,7 +125,12 @@ export function SidePanel({
           />
         ) : null}
 
-        {active === 'Team' ? <MemberList workspaceId={workspaceId} viewerRole={role} /> : null}
+        {active === 'Team' ? (
+          <>
+            <MemberList workspaceId={workspaceId} viewerRole={role} />
+            {can(role, 'agent:manage') ? <AgentList workspaceId={workspaceId} /> : null}
+          </>
+        ) : null}
         {active === 'Activity' ? (
           <>
             {can(role, 'audit:read') ? (

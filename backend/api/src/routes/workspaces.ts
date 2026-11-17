@@ -234,6 +234,7 @@ export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database
         .select({
           id: auditEvents.id,
           actorId: auditEvents.actorId,
+          actorKind: auditEvents.actorKind,
           // Joined rather than stored in the payload: unlike the entities an
           // entry describes, the actor is a real account that still exists,
           // and showing their current name is right when they rename.

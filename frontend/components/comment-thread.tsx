@@ -8,6 +8,7 @@ import { BASE_URL, type CommentMention, call } from '../lib/api.ts';
 import { useMemberAvatars } from '../lib/use-member-avatars.ts';
 import { DeleteButton } from './delete-button.tsx';
 import { Avatar } from './ui/avatar.tsx';
+import { AgentBadge } from './ui/primitives.tsx';
 
 /** Comments have no title, so the dialog quotes the opening of the body. */
 function preview(body: string): string {
@@ -152,6 +153,7 @@ export function CommentThread({
                   size="sm"
                 />
                 <span className="text-sm font-medium text-content">{comment.authorName}</span>
+                {comment.authorKind === 'agent' && <AgentBadge />}
               </span>
 
               <span className="flex items-center gap-3">
