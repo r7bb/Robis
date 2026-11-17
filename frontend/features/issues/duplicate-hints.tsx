@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useSuggestions } from './use-suggestions.ts';
+import { useState } from 'react';
+import { reportHint, useSuggestions } from './use-suggestions.ts';
 
 /**
  * "You may already have filed this."
@@ -21,7 +22,10 @@ import { useSuggestions } from './use-suggestions.ts';
 export function DuplicateHints({ workspaceId, title }: { workspaceId: string; title: string }) {
   // Shared with the priority hint: one request for both.
   const { similar } = useSuggestions(workspaceId, title);
-  if (similar.length === 0) return null;
+  // Set aside for the title it was set aside for; a new title asks again.
+  const [dismissedFor, setDismissedFor] = useState<string | null>(null);
+  if (similar.length === 0 || dismissedFor === title) return null;
+  const best = Math.max(...similar.map((issue) => issue.score));
 
   return (
     <aside
@@ -39,6 +43,7 @@ export function DuplicateHints({ workspaceId, title }: { workspaceId: string; ti
           <li key={issue.id}>
             <Link
               href={`/workspaces/${workspaceId}/issues/${issue.id}`}
+              onClick={() => reportHint(workspaceId, 'duplicate', 'accepted', issue.score)}
               className="flex items-baseline justify-between gap-3 rounded px-2 py-1 text-sm text-muted transition-colors duration-[var(--micro)] ease-[var(--ease)] hover:bg-amber-400/10 hover:text-content"
             >
               <span className="truncate">{issue.title}</span>
@@ -53,6 +58,16 @@ export function DuplicateHints({ workspaceId, title }: { workspaceId: string; ti
           </li>
         ))}
       </ul>
+      <button
+        type="button"
+        onClick={() => {
+          reportHint(workspaceId, 'duplicate', 'dismissed', best);
+          setDismissedFor(title);
+        }}
+        className="mt-1 rounded px-2 py-0.5 text-xs text-faint transition-colors hover:text-content focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-soft"
+      >
+        Not a duplicate
+      </button>
     </aside>
   );
 }

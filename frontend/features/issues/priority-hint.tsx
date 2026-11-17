@@ -1,8 +1,9 @@
 'use client';
 
 import type { IssuePriority } from '@robis/shared';
+import { useState } from 'react';
 import { PriorityBadge } from '../../components/ui/badges.tsx';
-import { useSuggestions } from './use-suggestions.ts';
+import { reportHint, useSuggestions } from './use-suggestions.ts';
 
 /**
  * "This reads like a high-priority issue."
@@ -35,6 +36,8 @@ export function PriorityHint({
   // Shared with the duplicate hints: one request for both, which keeps
   // coming while a priority is chosen because the duplicates still want it.
   const { suggestion } = useSuggestions(workspaceId, title);
+  // Set aside for the title it was set aside for; a new title asks again.
+  const [dismissedFor, setDismissedFor] = useState<string | null>(null);
 
   if (chosen !== null) {
     return (
@@ -63,6 +66,7 @@ export function PriorityHint({
   }
 
   const { priority, score } = suggestion;
+  if (dismissedFor === title) return null;
 
   return (
     <p aria-live="polite" className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
@@ -72,10 +76,23 @@ export function PriorityHint({
       <span className="font-mono text-[10px] text-faint">{Math.round(score * 100)}%</span>
       <button
         type="button"
-        onClick={() => onChoose(priority)}
+        onClick={() => {
+          reportHint(workspaceId, 'priority', 'accepted', score);
+          onChoose(priority);
+        }}
         className="rounded-md border border-line px-2 py-0.5 text-content transition-colors hover:border-accent-soft hover:text-accent-soft focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-soft"
       >
         Use
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          reportHint(workspaceId, 'priority', 'dismissed', score);
+          setDismissedFor(title);
+        }}
+        className="rounded px-1.5 py-0.5 text-faint transition-colors hover:text-content focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-soft"
+      >
+        Not this
       </button>
     </p>
   );

@@ -45,6 +45,17 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-18',
+    area: 'ML',
+    title: 'The composer’s hints are measured in use',
+    brief:
+      'Using or setting aside a duplicate or priority hint is counted, without naming anyone, beside the offline evaluation it differs from.',
+    summary:
+      'The composer’s hints now have a Not this and a Not a duplicate button, and using a hint, by pressing Use or opening a suggested duplicate, is counted too. Each count records only the kind of hint, what was done with it and its score: nobody is named, because this measures the hints and not the people. An admin sees how often each kind was used or set aside, beside the duplicate finder’s offline evaluation (precision 0.79, 15 of 19 hints, on a labelled set), labelled as a different measurement: one is people at work, the other a set of pairs judged by hand. Priority suggestions have no offline evaluation to show beside theirs.',
+    checked:
+      'Six tests: feedback is recorded without a user, a stranger gets a 404 and a bad kind a 400, one person is limited to 60 a minute, the figures match a seeded set of 3 and 5 duplicate and 4 and 1 priority accepts and dismisses, the offline figures shown are the ones robis-ml’s README reports (a test reads it), and the figures are for admins only.',
+  },
+  {
+    date: '2026-11-18',
     area: 'Security',
     title: 'Whether people kept what an agent did',
     brief:

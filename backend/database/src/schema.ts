@@ -1,4 +1,11 @@
-import { ISSUE_PRIORITIES, ISSUE_STATUSES, ROLES, USER_KINDS } from '@robis/shared';
+import {
+  ISSUE_PRIORITIES,
+  ISSUE_STATUSES,
+  ROLES,
+  SUGGESTION_ACTIONS,
+  SUGGESTION_KINDS,
+  USER_KINDS,
+} from '@robis/shared';
 import { sql } from 'drizzle-orm';
 import {
   bigint,
@@ -1228,9 +1235,7 @@ export const agentChanges = pgTable(
   ],
 );
 
-export const SUGGESTION_KINDS = ['duplicate', 'priority'] as const;
 export const suggestionKind = pgEnum('suggestion_kind', SUGGESTION_KINDS);
-export const SUGGESTION_ACTIONS = ['accepted', 'dismissed'] as const;
 export const suggestionAction = pgEnum('suggestion_action', SUGGESTION_ACTIONS);
 
 /**

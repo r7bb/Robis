@@ -2584,6 +2584,210 @@
         }
       }
     },
+    "/workspaces/{workspaceId}/suggestions/feedback": {
+      "post": {
+        "operationId": "suggestions.feedback",
+        "summary": "Record that a hint was used or set aside; nobody is named.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "duplicate",
+                      "priority"
+                    ]
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "accepted",
+                      "dismissed"
+                    ]
+                  },
+                  "score": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": [
+                  "kind",
+                  "action"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "No content"
+          }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/suggestions/stats": {
+      "get": {
+        "operationId": "suggestions.stats",
+        "summary": "How often this workspace's people used each kind of hint, beside the offline evaluation.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "live": {
+                      "type": "object",
+                      "properties": {
+                        "duplicate": {
+                          "type": "object",
+                          "properties": {
+                            "accepted": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "dismissed": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "accepted",
+                            "dismissed"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "priority": {
+                          "type": "object",
+                          "properties": {
+                            "accepted": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "dismissed": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "accepted",
+                            "dismissed"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "duplicate",
+                        "priority"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "offline": {
+                      "type": "object",
+                      "properties": {
+                        "duplicate": {
+                          "type": "object",
+                          "properties": {
+                            "threshold": {
+                              "type": "number"
+                            },
+                            "precision": {
+                              "type": "number"
+                            },
+                            "correctHints": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "hints": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "recall": {
+                              "type": "number"
+                            },
+                            "foundPairs": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "pairs": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "threshold",
+                            "precision",
+                            "correctHints",
+                            "hints",
+                            "recall",
+                            "foundPairs",
+                            "pairs"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "priority": {
+                          "type": "null"
+                        }
+                      },
+                      "required": [
+                        "duplicate",
+                        "priority"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "live",
+                    "offline"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/workspaces/{workspaceId}/issues/suggestions": {
       "get": {
         "operationId": "issues.suggestions",

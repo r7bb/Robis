@@ -7,6 +7,7 @@ import { authContracts } from './auth.ts';
 import { channelContracts } from './channels.ts';
 import { type Contract, statusesOf } from './contract.ts';
 import { documentContracts } from './documents.ts';
+import { feedbackContracts } from './feedback.ts';
 import { issueContracts } from './issues.ts';
 import { meetingContracts } from './meetings.ts';
 import { memberContracts } from './members.ts';
@@ -16,6 +17,11 @@ import { projectContracts } from './projects.ts';
 import { workspaceContracts } from './workspaces.ts';
 
 export * from './contract.ts';
+export {
+  OFFLINE_DUPLICATE_EVALUATION,
+  SUGGESTION_ACTIONS,
+  SUGGESTION_KINDS,
+} from './feedback.ts';
 
 /** Every route the API serves through a contract, by name. */
 export const contracts = {
@@ -23,6 +29,7 @@ export const contracts = {
   ...projectContracts,
   ...memberContracts,
   ...agentContracts,
+  ...feedbackContracts,
   ...issueContracts,
   ...documentContracts,
   ...channelContracts,

@@ -46,3 +46,19 @@ export function useSuggestions(workspaceId: string, title: string) {
     suggestion: longEnough ? (data?.suggestion ?? null) : null,
   };
 }
+
+/**
+ * Say what happened to a hint (B6): used or set aside, with its score.
+ * Fire and forget: a lost report costs one count, never the writer's work.
+ */
+export function reportHint(
+  workspaceId: string,
+  kind: 'duplicate' | 'priority',
+  action: 'accepted' | 'dismissed',
+  score: number,
+) {
+  call(contracts['suggestions.feedback'], {
+    params: { workspaceId },
+    body: { kind, action, score: Math.min(1, Math.max(0, score)) },
+  }).catch(() => {});
+}

@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **The composer’s hints are measured in use** (2026-11-18). Using or
+  setting aside a duplicate or priority hint is counted, without naming
+  anyone, beside the offline evaluation it differs from.
 - **Whether people kept what an agent did** (2026-11-18). Each change an
   agent makes is judged after seven days: kept, edited by a person, or
   reverted, from the values before and after.
