@@ -20,7 +20,7 @@ import {
   requireAuth,
   requireMembership,
 } from '../plugins/authz.ts';
-import { isAgentRole } from './agents.ts';
+import { isAgentRole, stopTriaging } from './agents.ts';
 
 async function ownerCount(db: Executor, workspaceId: string): Promise<number> {
   const [row] = await db
@@ -215,6 +215,7 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
         // routes, so none comes back to life if it is ever added again (B5).
         if (target.kind === 'agent') {
           await revokeAllAgentTokens(tx, { agentId: userId, workspaceId });
+          await stopTriaging(tx, workspaceId, userId);
         }
 
         await recordAudit(tx, auditActor(request), {

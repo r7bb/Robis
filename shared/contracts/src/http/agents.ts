@@ -33,6 +33,8 @@ const agent = z.object({
   role: z.enum(AGENT_ROLES),
   avatar,
   createdAt: timestamp,
+  /** Whether it triages new issues here: comments suggestions, changes nothing. */
+  triage: z.boolean(),
   tokens: z.array(token),
 });
 
@@ -43,6 +45,8 @@ const createAgentSchema = z.object({
   name: z.string().trim().min(1, 'Name the agent').max(60),
   role: z.enum(AGENT_ROLES),
   tokenLabel: label.default('First token'),
+  /** Make it the workspace's triage agent, in place of any other. */
+  triage: z.boolean().default(false),
 });
 
 export const agentContracts = {

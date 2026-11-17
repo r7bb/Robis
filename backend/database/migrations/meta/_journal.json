@@ -239,6 +239,20 @@
       "when": 1794891334013,
       "tag": "0033_agents",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1794893667999,
+      "tag": "0034_triage_agent",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1794894112607,
+      "tag": "0035_agent_token_revocation_is_final",
+      "breakpoints": true
     }
   ]
 }

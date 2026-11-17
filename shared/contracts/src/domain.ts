@@ -14,3 +14,10 @@ export const BOARD_COLUMNS: readonly IssueStatus[] = ['TODO', 'IN_PROGRESS', 'IN
  */
 export const USER_KINDS = ['human', 'agent'] as const;
 export type UserKind = (typeof USER_KINDS)[number];
+
+/**
+ * The job that has a workspace's triage agent look at a new issue (B5): it
+ * comments suggested duplicates and a priority, and changes nothing.
+ */
+export const TRIAGE_JOB = 'agent.triage';
+export type TriageJob = { workspaceId: string; issueId: string };

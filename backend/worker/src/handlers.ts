@@ -8,6 +8,7 @@ import {
   issues,
   notifications,
   projects,
+  pruneExpiredAgentTokens,
   pruneIdempotencyLedger,
   pruneReadNotifications,
   workspaceMembers,
@@ -128,6 +129,8 @@ export const cleanupSessions = async (_payload: unknown, { db }: { db: Database 
   // more than 90 days ago (stage 3, item 30).
   await pruneIdempotencyLedger(db);
   await pruneReadNotifications(db);
+  // And the triage agent's run tokens, a day after they expired (B5).
+  await pruneExpiredAgentTokens(db);
 };
 
 /** Periodic scan that decides who could use a prompt. See `nudges.ts`. */

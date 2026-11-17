@@ -71,7 +71,8 @@ second "consumed" state to get wrong.
 | SIEM stream over HTTPS, at-least-once with an idempotency key per event | `backend/worker/src/audit-stream.ts` |
 | Emails shown only to admins; teammates see usernames | `backend/api/src/routes/members.ts` |
 | No workspace access, over HTTP or the live feed, until a picture is chosen | `backend/api/src/plugins/authz.ts`, `backend/realtime/src/gateway.ts` |
-| An MCP server for agents at `/mcp/<workspace id>`: search, list projects, read, create and update issues, comment; it holds no authority and calls the API with the agent's own token | `backend/mcp/` |
+| A scripted triage agent: on each new issue it comments suggested duplicates and a priority with their scores, through the MCP server with a five-minute token, and changes nothing | `backend/worker/src/triage.ts` |
+| An MCP server for agents at `/mcp/<workspace id>`: search, suggest, list projects, read, create and update issues, comment; it holds no authority and calls the API with the agent's own token | `backend/mcp/` |
 | Agents as workspace members (member or guest only) with revocable bearer tokens, shown once and kept as hashes; recorded as agents in the audit trail and as the delegate on issues they touch, never as an assignee | `backend/api/src/routes/agents.ts`, `backend/auth/src/agent-tokens.ts` |
 
 A non-member gets **404, not 403**, because a 403 confirms the workspace

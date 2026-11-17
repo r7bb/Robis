@@ -5,6 +5,7 @@ import {
   decodeCursor,
   type Executor,
   encodeCursor,
+  enqueue,
   issues,
   projects,
   publishEvent,
@@ -13,8 +14,15 @@ import {
   type Tx,
   users,
   workspaceMembers,
+  workspaces,
 } from '@robis/database';
-import { contracts, isUuid, type UpdateIssueInput } from '@robis/shared';
+import {
+  contracts,
+  isUuid,
+  TRIAGE_JOB,
+  type TriageJob,
+  type UpdateIssueInput,
+} from '@robis/shared';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { serve, shape } from '../contract.ts';
@@ -68,6 +76,21 @@ async function assertAssignable(db: Executor, workspaceId: string, assigneeId: s
       'assignee_not_person',
     );
   }
+}
+
+/**
+ * Have the workspace's triage agent, if it has one, look at a new issue
+ * (B5). Queued in the transaction that files it, so there is no issue the
+ * agent never hears of; not for an issue the agent filed itself.
+ */
+async function queueTriage(tx: Tx, job: TriageJob, filedBy: string) {
+  const [workspace] = await tx
+    .select({ triageAgentId: workspaces.triageAgentId })
+    .from(workspaces)
+    .where(eq(workspaces.id, job.workspaceId))
+    .limit(1);
+  const agentId = workspace?.triageAgentId;
+  if (agentId && agentId !== filedBy) await enqueue(tx, TRIAGE_JOB, job);
 }
 
 /** The agent acting, to record as the issue's delegate; null for a person. */
@@ -292,6 +315,7 @@ export async function issueRoutes(
             eventType: 'issue.created',
             payload: { key: `${bumped.key}-${bumped.number}`, title: created!.title },
           });
+          await queueTriage(tx, { workspaceId, issueId: created!.id }, user.id);
 
           return { ...created!, key: `${bumped.key}-${bumped.number}` };
         });

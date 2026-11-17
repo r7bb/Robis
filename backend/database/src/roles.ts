@@ -189,7 +189,10 @@ export function mlRoleFromEnv(
 }
 
 /** What a service role may do to one table. */
-type TableGrants = Readonly<Record<string, readonly ('select' | 'insert' | 'update' | 'delete')[]>>;
+type Privilege = 'select' | 'insert' | 'update' | 'delete';
+/** A privilege on the whole table, or on some of its columns: `update (revoked_at)`. */
+type Right = Privilege | `${Exclude<Privilege, 'delete'>} (${string})`;
+type TableGrants = Readonly<Record<string, readonly Right[]>>;
 
 /**
  * The realtime gateway's grants (stage 1, item 8): it resolves a session
@@ -233,6 +236,17 @@ export const WORKER_GRANTS: TableGrants = {
   // own place per workspace.
   audit_events: ['select'],
   audit_stream_cursors: ['select', 'insert', 'update'],
+  // The triage agent's token for one run (B5): minted, revoked at the end,
+  // and deleted by the hourly cleanup once long expired. Column by column:
+  // it never reads a token's hash and can change nothing but `revoked_at`,
+  // which a trigger lets go only one way.
+  agent_tokens: [
+    'select (id, agent_id, workspace_id, revoked_at, expires_at)',
+    // Every column, as an insert names them all; the defaults fill the rest.
+    'insert (id, agent_id, workspace_id, token_hash, label, created_by, created_at, expires_at, revoked_at, last_used_at)',
+    'update (revoked_at)',
+    'delete',
+  ],
 };
 
 export const DEFAULT_GATEWAY_ROLE = 'robis_gateway';

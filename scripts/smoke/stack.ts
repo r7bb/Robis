@@ -227,10 +227,11 @@ async function main() {
     if ((await fetched.arrayBuffer()).byteLength === 0) fail('download', 'empty body');
   });
 
-  await step('an agent comments through the MCP server, at /mcp', async () => {
+  const triageAgent = await step('an agent comments through the MCP server, at /mcp', async () => {
     const added = await api('POST', `/workspaces/${workspaceId}/agents`, {
       name: 'Smoke bot',
       role: 'MEMBER',
+      triage: true,
     });
     await expectStatus('agent', added, 201);
     const { agent, token } = (await added.json()) as {
@@ -267,6 +268,28 @@ async function main() {
     if (!comments.some((c) => c.authorId === agent.id && c.body === 'Checked by an agent')) {
       fail('mcp', 'the comment is not there, or not as the agent');
     }
+    return agent.id;
+  });
+
+  await step('the triage agent comments suggestions on a new issue', async () => {
+    const projects = await api('GET', `/workspaces/${workspaceId}/projects`);
+    const { projects: list } = (await projects.json()) as { projects: { id: string }[] };
+    const created = await api('POST', `/workspaces/${workspaceId}/projects/${list[0]!.id}/issues`, {
+      title: 'Checkout button does nothing on Safari',
+    });
+    await expectStatus('triaged issue', created, 201);
+    const { issue } = (await created.json()) as { issue: { id: string } };
+
+    // Filed -> queued in the same transaction -> the worker -> MCP -> the API.
+    await until('the triage comment', EVENT_WAIT_MS, async () => {
+      const listed = await api('GET', `/workspaces/${workspaceId}/issues/${issue.id}/comments`);
+      const { comments } = (await listed.json()) as {
+        comments: { authorId: string; body: string }[];
+      };
+      return comments.find(
+        (c) => c.authorId === triageAgent && c.body.includes('a person decides'),
+      );
+    });
   });
 
   process.stdout.write('Smoke test passed.\n');

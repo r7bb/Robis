@@ -5,12 +5,14 @@ import { type ApiClient, ApiRefusal } from './api-client.ts';
 
 /**
  * The tools an agent sees (B5): search, read an issue, create one, update
- * one, comment, and list projects (a read the create tool needs: an issue
- * belongs to a project). Every tool is a call to the API as the agent; the
+ * one, comment, and two reads besides: suggestions for a title (the hints
+ * the composer shows a person) and the list of projects (an issue belongs
+ * to one). Every tool is a call to the API as the agent; the
  * fixed list is also the label set for the server's metrics.
  */
 export const TOOL_NAMES = [
   'search',
+  'suggest',
   'list_projects',
   'read_issue',
   'create_issue',
@@ -101,6 +103,25 @@ export function createToolServer(
     },
     ({ query }) =>
       run('search', observe, () => api.call('search.workspace', { params, query: { q: query } })),
+  );
+
+  server.registerTool(
+    'suggest',
+    {
+      description:
+        'For a title (and description): issues it may duplicate, with similarity scores, and a suggested priority with its score. Advice only, the same hints a person sees while writing.',
+      inputSchema: {
+        title: z.string().min(1).max(200),
+        description: z.string().max(10_000).optional(),
+      },
+    },
+    ({ title, description }) =>
+      run('suggest', observe, () =>
+        api.call('issues.suggestions', {
+          params,
+          query: { title, ...(description ? { description } : {}) },
+        }),
+      ),
   );
 
   server.registerTool(

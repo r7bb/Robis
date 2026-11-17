@@ -10,6 +10,7 @@ import {
   usernameClaim,
   users,
   workspaceMembers,
+  workspaces,
 } from '@robis/database';
 import { AGENT_ROLES, type AgentRole, contracts, isUuid, usernameProblem } from '@robis/shared';
 import { and, eq, inArray } from 'drizzle-orm';
@@ -104,12 +105,14 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
         username: users.username,
         role: workspaceMembers.role,
         createdAt: workspaceMembers.createdAt,
+        triageAgentId: workspaces.triageAgentId,
         avatarKind: users.avatarKind,
         avatarRef: users.avatarRef,
         avatarUpdatedAt: users.avatarUpdatedAt,
       })
       .from(workspaceMembers)
       .innerJoin(users, eq(users.id, workspaceMembers.userId))
+      .innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
       .where(and(eq(workspaceMembers.workspaceId, workspaceId), eq(users.kind, 'agent')))
       .orderBy(workspaceMembers.createdAt);
 
@@ -138,14 +141,17 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
       : [];
 
     return {
-      agents: rows.map(({ avatarKind, avatarRef, avatarUpdatedAt, role, ...agent }) => ({
-        ...agent,
-        role: role as AgentRole,
-        avatar: avatarOf({ id: agent.id, avatarKind, avatarRef, avatarUpdatedAt }),
-        tokens: tokens
-          .filter((token) => token.agentId === agent.id)
-          .map(({ agentId: _agentId, ...token }) => token),
-      })),
+      agents: rows.map(
+        ({ avatarKind, avatarRef, avatarUpdatedAt, role, triageAgentId, ...agent }) => ({
+          ...agent,
+          role: role as AgentRole,
+          triage: triageAgentId === agent.id,
+          avatar: avatarOf({ id: agent.id, avatarKind, avatarRef, avatarUpdatedAt }),
+          tokens: tokens
+            .filter((token) => token.agentId === agent.id)
+            .map(({ agentId: _agentId, ...token }) => token),
+        }),
+      ),
     };
   });
 
@@ -189,13 +195,19 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
         createdBy: actor.id,
         label: input.tokenLabel,
       });
+      if (input.triage) {
+        await tx
+          .update(workspaces)
+          .set({ triageAgentId: id })
+          .where(eq(workspaces.id, workspaceId));
+      }
 
       await recordAudit(tx, auditActor(request), {
         workspaceId,
         entityType: 'agent',
         entityId: id,
         eventType: 'agent.created',
-        payload: { username, role: input.role },
+        payload: { username, role: input.role, triage: input.triage },
       });
 
       return { agent: agent!, joinedAt: membership!.createdAt, token };
@@ -211,6 +223,7 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
         username: agent.username,
         role: input.role,
         avatar: avatarOf(agent),
+        triage: input.triage,
         createdAt: joinedAt,
       },
       token: { id: token.id, label: input.tokenLabel, secret: token.secret },
@@ -282,6 +295,7 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
 
     await db.transaction(async (tx) => {
       await revokeAllAgentTokens(tx, { agentId: agent.id, workspaceId });
+      await stopTriaging(tx, workspaceId, agent.id);
       await tx
         .delete(workspaceMembers)
         .where(
@@ -299,6 +313,14 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
     await publishEvent(db, { type: 'member.changed', workspaceId, actorId: actor.id });
     return undefined;
   });
+}
+
+/** A removed agent no longer triages the workspace's new issues. */
+export async function stopTriaging(tx: Tx, workspaceId: string, agentId: string) {
+  await tx
+    .update(workspaces)
+    .set({ triageAgentId: null })
+    .where(and(eq(workspaces.id, workspaceId), eq(workspaces.triageAgentId, agentId)));
 }
 
 /** For the member routes: an agent's role must stay one an agent may hold. */

@@ -317,6 +317,13 @@ export const workspaces = pgTable(
      * longer recognises falls back rather than failing.
      */
     theme: text('theme').notNull().default('midnight'),
+    /**
+     * The agent that triages new issues here, if any (B5): it comments
+     * suggested duplicates and a priority on each, and changes nothing.
+     */
+    triageAgentId: uuid('triage_agent_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
     createdBy: uuid('created_by')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict' }),

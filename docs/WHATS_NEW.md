@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **A triage agent that suggests and changes nothing** (2026-11-17). A
+  workspace can choose a triage agent; on each new issue it comments likely
+  duplicates and a priority with their scores, and leaves every field to
+  people.
 - **Agents work through an MCP server** (2026-11-17). An agent connects at
   /mcp with its token and can search, read, file and update issues, and
   comment, as itself and no more.

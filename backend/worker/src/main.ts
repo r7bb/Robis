@@ -7,6 +7,7 @@ import {
   STORAGE_PURGE_JOB,
 } from '@robis/database';
 import { mailerFromEnv } from '@robis/mailer';
+import { TRIAGE_JOB } from '@robis/shared';
 import { loadConfig } from '@robis/shared/config';
 import { auditStreamConfig, httpSink, streamAuditEvents } from './audit-stream.ts';
 import { handlers } from './handlers.ts';
@@ -14,6 +15,7 @@ import { DEFAULT_HEARTBEAT_FILE, heartbeat } from './heartbeat.ts';
 import { mailHandlers } from './mail.ts';
 import { Runner } from './runner.ts';
 import { storagePurgeHandler, workerStorage } from './storage-purge.ts';
+import { triageHandler } from './triage.ts';
 
 // Before anything else, and failing closed: see `loadConfig`. The origin is
 // the one every mailed link is built from.
@@ -87,6 +89,15 @@ Object.assign(handlers, mailHandlers({ mailer: mailerFromEnv(process.env), webOr
 
 // Files left behind by deleted issues, comments and workspaces.
 handlers[STORAGE_PURGE_JOB] = storagePurgeHandler(workerStorage(process.env));
+
+// The scripted triage agent (B5), through the MCP server. Without its
+// address the jobs wait in the queue, and the log says why.
+const mcpUrl = process.env.MCP_URL;
+if (mcpUrl) {
+  handlers[TRIAGE_JOB] = triageHandler({ mcpUrl });
+} else {
+  console.warn('MCP_URL is not set: new issues are not triaged by an agent.');
+}
 
 reschedule('sessions.cleanup', HOUR_MS);
 reschedule('nudges.scan', NUDGE_INTERVAL_MS);

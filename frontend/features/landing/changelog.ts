@@ -45,6 +45,17 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-17',
+    area: 'ML',
+    title: 'A triage agent that suggests and changes nothing',
+    brief:
+      'A workspace can choose a triage agent; on each new issue it comments likely duplicates and a priority with their scores, and leaves every field to people.',
+    summary:
+      'When an admin adds an agent, they can make it the workspace’s triage agent. From then on, each new issue gets a comment from it within a second or so: the issues it may duplicate with their similarity, and the priority the model suggests with its score, or how many triaged issues the model still needs before it will suggest one. It never sets the priority or anything else, and says so in the comment: it advises exactly as the composer does while a person writes. It has no model of its own and no language model. It works as any agent does, through the MCP server, with a token made for that one run, good for five minutes and revoked when the run ends, so the audit trail names it and its permissions are those of its role.',
+    checked:
+      'Fourteen tests: the comment’s wording for a suggestion, for a model still learning, with and without a summary line; a new issue is queued only in a workspace with a triage agent and not when the agent filed it; a run comments as the agent, leaves the priority alone and revokes its token; a job run twice comments once; a removed agent stops triaging. A security review led to narrower database rights for the worker, a trigger that makes revoking a token final, deletion of old run tokens, and titles kept to one line in the comment; each has a test. On the rebuilt stack, filing an issue produced the agent’s comment in about half a second, with the real model’s answer. What is left open is listed in the platform plan.',
+  },
+  {
+    date: '2026-11-17',
     area: 'Product',
     title: 'Agents work through an MCP server',
     brief:

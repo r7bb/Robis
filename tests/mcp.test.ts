@@ -16,6 +16,7 @@ import {
   request,
   resetDatabase,
 } from './harness.ts';
+import { mcpHandler as handler, mcpFetch, observed } from './mcp-harness.ts';
 
 /**
  * The MCP server (B5, slice 3), driven by the SDK's own client. The server
@@ -27,45 +28,13 @@ import {
 beforeEach(resetDatabase);
 afterAll(closeHarness);
 
-function headersOf(init: HeadersInit | undefined): Record<string, string> {
-  const headers: Record<string, string> = {};
-  new Headers(init).forEach((value, key) => {
-    headers[key] = value;
-  });
-  return headers;
-}
-
-/** The API, reached in-process: what the MCP server would fetch over the network. */
-async function apiFetch(input: string | URL | Request, init?: RequestInit): Promise<Response> {
-  const { app } = await getHarness();
-  const url = new URL(input instanceof Request ? input.url : input);
-  const reply = await app.inject({
-    method: (init?.method ?? 'GET') as 'GET',
-    url: `${url.pathname}${url.search}`,
-    headers: headersOf(init?.headers),
-    payload: typeof init?.body === 'string' ? init.body : undefined,
-  });
-  return new Response(reply.statusCode === 204 ? null : reply.body, {
-    status: reply.statusCode,
-    headers: { 'content-type': String(reply.headers['content-type'] ?? 'application/json') },
-  });
-}
-
-const observed: { name: string; outcome: string }[] = [];
-const handler = createMcpHandler({
-  apiUrl: 'http://api.internal',
-  fetcher: apiFetch as typeof fetch,
-  observe: (name, outcome) => observed.push({ name, outcome }),
-});
-
 async function connect(workspaceId: string, secret: string) {
   const client = new Client({ name: 'test-agent', version: '1.0.0' });
   const transport = new StreamableHTTPClientTransport(
     new URL(`http://mcp.internal/mcp/${workspaceId}`),
     {
       requestInit: { headers: { authorization: `Bearer ${secret}` } },
-      fetch: ((input: string | URL | Request, init?: RequestInit) =>
-        handler(new Request(input, init))) as typeof fetch,
+      fetch: mcpFetch,
     },
   );
   await client.connect(transport);

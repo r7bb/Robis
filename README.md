@@ -148,15 +148,15 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **A triage agent that suggests and changes nothing.** A workspace can
+  choose a triage agent; on each new issue it comments likely duplicates and
+  a priority with their scores, and leaves every field to people.
 - **Agents work through an MCP server.** An agent connects at /mcp with its
   token and can search, read, file and update issues, and comment, as itself
   and no more.
 - **Agents can join a workspace, on a short leash.** Admins add an agent as
   a member or guest with a token shown once; it acts through the same
   permissions, retries and audit trail as anyone.
-- **A page that does not start says why.** The browser check now reports how
-  long each page took to start, and for one that never does, what it was
-  waiting on.
 
 <!-- latest:end -->
 

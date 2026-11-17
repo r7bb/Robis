@@ -177,6 +177,8 @@ services:
       # in production.
       SMTP_REQUIRE_TLS: '0'
       MAIL_FROM: Robis <no-reply@robis.test>
+      # The triage agent works through the MCP server (B5).
+      MCP_URL: http://mcp:4002
     depends_on:
       migrate: { condition: service_completed_successfully }
       mail: { condition: service_healthy }
