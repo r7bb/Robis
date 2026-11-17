@@ -24,6 +24,10 @@ import type { JobHandler } from './runner.ts';
 const RUN_TOKEN_TTL_MS = 5 * 60_000;
 /** Duplicates worth naming, at most. */
 const MAX_DUPLICATES = 3;
+/** Summaries one workspace may ask for in a day: a bound on what a flood of issues costs. */
+export const SUMMARIES_PER_WORKSPACE_PER_DAY = 200;
+/** Summaries remembered per issue, so a retried job does not pay for one twice. */
+const REMEMBERED_SUMMARIES = 500;
 
 const similar = z.array(z.object({ id: z.string(), title: z.string(), score: z.number() }));
 const suggestion = z
@@ -48,7 +52,7 @@ const percent = (score: number) => score.toFixed(2);
  */
 export function triageComment(issueId: string, found: TriageHints, summary?: string | null) {
   const lines = ['Triage suggestions. Nothing on this issue was changed; a person decides.'];
-  if (summary) lines.push('', `Summary: ${summary}`);
+  if (summary) lines.push('', `Summary (written by a language model, unchecked): ${summary}`);
 
   const { suggestion: priority } = found;
   lines.push('');
@@ -125,25 +129,61 @@ export type TriageOptions = {
   fetcher?: typeof fetch;
   /** The optional language model port; without one, the scripted agent alone. */
   summarize?: Summarizer;
+  /** Defaults to `SUMMARIES_PER_WORKSPACE_PER_DAY`. */
+  summariesPerDay?: number;
 };
 
-async function triageAgentOf(db: Database, workspaceId: string): Promise<string | null> {
+/** The workspace's triage agent, and whether it opted in to summaries. */
+async function triageAgentOf(db: Database, workspaceId: string) {
   const [row] = await db
-    .select({ agentId: workspaces.triageAgentId })
+    .select({ agentId: workspaces.triageAgentId, summaries: workspaces.triageSummaries })
     .from(workspaces)
     .where(eq(workspaces.id, workspaceId))
     .limit(1);
-  return row?.agentId ?? null;
+  return row?.agentId ? { agentId: row.agentId, summaries: row.summaries } : null;
+}
+
+/**
+ * The summarizer, bounded: at most so many calls per workspace a day, and
+ * each issue's summary remembered, so a job retried after its comment
+ * failed does not pay again. Kept in the worker's memory; a restart starts
+ * the day's count again, which the provider key's own spend limit backs.
+ */
+function bounded(summarize: Summarizer, perDay: number) {
+  const used = new Map<string, { day: string; count: number }>();
+  const remembered = new Map<string, string | null>();
+
+  return async (workspaceId: string, issueId: string, issue: Parameters<Summarizer>[0]) => {
+    if (remembered.has(issueId)) return remembered.get(issueId) ?? null;
+    const day = new Date().toISOString().slice(0, 10);
+    const spent = used.get(workspaceId);
+    const count = spent?.day === day ? spent.count : 0;
+    if (count >= perDay) return null;
+    used.set(workspaceId, { day, count: count + 1 });
+
+    const summary = await summarize(issue).catch(() => null);
+    remembered.set(issueId, summary);
+    if (remembered.size > REMEMBERED_SUMMARIES) {
+      remembered.delete(remembered.keys().next().value!);
+    }
+    return summary;
+  };
 }
 
 export function triageHandler(options: TriageOptions): JobHandler {
   const fetcher = options.fetcher ?? fetch;
+  const summarizeBounded = options.summarize
+    ? bounded(options.summarize, options.summariesPerDay ?? SUMMARIES_PER_WORKSPACE_PER_DAY)
+    : null;
 
   return async (payload, { db }) => {
     const { workspaceId, issueId } = payload as TriageJob;
-    const agentId = await triageAgentOf(db, workspaceId);
+    const triage = await triageAgentOf(db, workspaceId);
     // The workspace stopped using one since the issue was filed.
-    if (!agentId) return;
+    if (!triage) return;
+    const { agentId } = triage;
+    // Issue text leaves Robis only where the workspace said it may.
+    const summarize = triage.summaries ? summarizeBounded : null;
 
     const token = await issueAgentToken(db, {
       agentId,
@@ -164,7 +204,7 @@ export function triageHandler(options: TriageOptions): JobHandler {
           ...(issue.description ? { description: issue.description } : {}),
         }),
       );
-      const summary = options.summarize ? await options.summarize(issue).catch(() => null) : null;
+      const summary = summarize ? await summarize(workspaceId, issueId, issue) : null;
       await call('comment', {
         issueId,
         body: triageComment(issueId, found, summary),

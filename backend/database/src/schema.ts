@@ -324,6 +324,12 @@ export const workspaces = pgTable(
     triageAgentId: uuid('triage_agent_id').references(() => users.id, {
       onDelete: 'set null',
     }),
+    /**
+     * Whether the triage agent may add a one-line summary from a language
+     * model (B5). Off unless an admin turns it on: with it, an issue's title
+     * and description are sent to a third-party service.
+     */
+    triageSummaries: boolean('triage_summaries').notNull().default(false),
     createdBy: uuid('created_by')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict' }),

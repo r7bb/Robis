@@ -127,6 +127,17 @@ point it at Postgres directly.
 - Object storage (`STORAGE_DRIVER=s3` and its `S3_*` settings), or local
   disk at an absolute `MEDIA_DIR`.
 - `NODE_ENV=production` on every service; nothing guesses it.
+- For agents (B5): `MCP_API_URL` on the MCP server (where the API answers
+  inside the network) and `MCP_URL` on the worker (where the MCP server
+  answers), both on the private network only, since tokens cross them in
+  plain HTTP there. Without `MCP_URL` new issues are not triaged.
+- Optionally `SUMMARY_API_KEY` on the worker (and `SUMMARY_MODEL` to choose
+  the model): the triage agent may then add a one-line summary to its
+  comment, in workspaces whose admin turned summaries on. Those workspaces
+  send each new issue's title and description to the language-model
+  provider, a paid third-party service; without the key nothing is sent.
+  Whether that is acceptable for a given workspace's data is for whoever
+  runs it to decide.
 
 The full list, and what each refuses without, is in
 [GETTING_STARTED.md](GETTING_STARTED.md) and

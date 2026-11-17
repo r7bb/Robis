@@ -24,6 +24,7 @@ export function AgentList({ workspaceId }: { workspaceId: string }) {
   const [name, setName] = useState('');
   const [role, setRole] = useState<AgentRole>('MEMBER');
   const [triage, setTriage] = useState(false);
+  const [summaries, setSummaries] = useState(false);
   const [issued, setIssued] = useState<Issued | null>(null);
   const [copied, setCopied] = useState(false);
   /** The token whose revocation is waiting for a second click. */
@@ -47,11 +48,12 @@ export function AgentList({ workspaceId }: { workspaceId: string }) {
     mutationFn: () =>
       call(contracts['agents.create'], {
         params: { workspaceId },
-        body: { name: name.trim(), role, triage },
+        body: { name: name.trim(), role, triage, summaries: triage && summaries },
       }),
     onSuccess: ({ agent, token }) => {
       setName('');
       setTriage(false);
+      setSummaries(false);
       show({ agentName: agent.name, label: token.label, secret: token.secret });
       refresh();
     },
@@ -149,6 +151,20 @@ export function AgentList({ workspaceId }: { workspaceId: string }) {
           />
           Triages new issues
         </label>
+        {triage && (
+          <label
+            className="flex items-center gap-2 text-sm text-muted"
+            title="Each new issue's title and description are sent to a third-party language model"
+          >
+            <input
+              type="checkbox"
+              checked={summaries}
+              onChange={(event) => setSummaries(event.target.checked)}
+              className="accent-[rgb(var(--accent))]"
+            />
+            Add a one-line summary (sends issue text to a third party)
+          </label>
+        )}
         <button
           type="submit"
           disabled={create.isPending || !name.trim()}
@@ -216,7 +232,9 @@ export function AgentList({ workspaceId }: { workspaceId: string }) {
                       <RoleBadge role={agent.role} />
                     </span>
                     {agent.triage && (
-                      <span className="block text-xs text-muted">Triages new issues</span>
+                      <span className="block text-xs text-muted">
+                        Triages new issues{agent.summaries ? ', with a one-line summary' : ''}
+                      </span>
                     )}
                   </span>
                 </span>

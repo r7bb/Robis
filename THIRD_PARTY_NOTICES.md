@@ -35,6 +35,16 @@ CORS, Ajv, jose and others), which are installed only in the `mcp` image. As
 counted in that image on 2026-11-17, its 92 packages are licensed MIT (82),
 ISC (7), BSD-3-Clause (2) and BSD-2-Clause (1); none is copyleft.
 
+## Language-model summaries (optional)
+
+The triage agent's optional one-line summary uses Anthropic's official
+TypeScript SDK, `@anthropic-ai/sdk` 1.4.0, pinned exactly, licensed under
+the Apache License 2.0, installed in the worker only. It brings
+`@opentelemetry/api` (Apache-2.0), `json-schema-to-ts`, `standardwebhooks`,
+`ts-algebra`, `@stablelib/base64` and `@babel/runtime` (all MIT), and
+`fast-sha256`, which is released under the Unlicense (a dedication to the
+public domain), flagged here because it is not a conventional licence.
+
 ## Mail
 
 `nodemailer` 10.0.12 sends mail over SMTP from the worker, and `smtp-server`

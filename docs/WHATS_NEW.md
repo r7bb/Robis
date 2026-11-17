@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **An optional one-line summary on triage comments** (2026-11-17). With a
+  provider key set and a workspace’s consent, the triage agent adds a
+  one-line summary from a language model; without either, nothing is sent
+  anywhere.
 - **Agents are marked wherever they appear** (2026-11-17). An Agent mark
   beside every agent in the team list, comments, activity and an issue’s
   delegate; admins add agents and their tokens from the Team panel.

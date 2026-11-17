@@ -35,6 +35,8 @@ const agent = z.object({
   createdAt: timestamp,
   /** Whether it triages new issues here: comments suggestions, changes nothing. */
   triage: z.boolean(),
+  /** Whether its triage comments may carry a language model's one-line summary. */
+  summaries: z.boolean(),
   tokens: z.array(token),
 });
 
@@ -47,6 +49,12 @@ const createAgentSchema = z.object({
   tokenLabel: label.default('First token'),
   /** Make it the workspace's triage agent, in place of any other. */
   triage: z.boolean().default(false),
+  /**
+   * With `triage`: let its comments carry a one-line summary from a
+   * language model, which sends each issue's text to a third party. Has
+   * effect only where the server is configured with a provider key.
+   */
+  summaries: z.boolean().default(false),
 });
 
 export const agentContracts = {

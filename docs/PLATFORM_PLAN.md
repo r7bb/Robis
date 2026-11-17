@@ -193,9 +193,10 @@ Order of work, decided 2026-10-09:
 Done when: integration tests cover a denied call, a replayed write that
 does not duplicate, and a revoked token that stops working at once.
 
-**Built 2026-11-17** (slices 1 to 4: schema, agent tokens in the API, the
-MCP server, the triage agent; the optional language-model summary and the
-agent marks in the app are still to come). Each done-when case has a test,
+**Built 2026-11-17**: schema, agent tokens in the API, the MCP server, the
+triage agent, the optional language-model summary (off without a provider
+key, and per workspace an admin's choice, since it sends issue text to a
+third party), and agent marks throughout the app. Each done-when case has a test,
 over HTTP and through the MCP client. Left open, from its reviews:
 
 - The worker's database account may insert agent tokens, so a compromised

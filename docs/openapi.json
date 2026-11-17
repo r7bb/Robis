@@ -2103,6 +2103,9 @@
                           "triage": {
                             "type": "boolean"
                           },
+                          "summaries": {
+                            "type": "boolean"
+                          },
                           "tokens": {
                             "type": "array",
                             "items": {
@@ -2210,6 +2213,7 @@
                           "avatar",
                           "createdAt",
                           "triage",
+                          "summaries",
                           "tokens"
                         ],
                         "additionalProperties": false
@@ -2268,6 +2272,10 @@
                     "maxLength": 80
                   },
                   "triage": {
+                    "default": false,
+                    "type": "boolean"
+                  },
+                  "summaries": {
                     "default": false,
                     "type": "boolean"
                   }
@@ -2366,6 +2374,9 @@
                         },
                         "triage": {
                           "type": "boolean"
+                        },
+                        "summaries": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -2375,7 +2386,8 @@
                         "role",
                         "avatar",
                         "createdAt",
-                        "triage"
+                        "triage",
+                        "summaries"
                       ],
                       "additionalProperties": false
                     },

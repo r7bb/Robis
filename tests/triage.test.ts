@@ -98,9 +98,9 @@ describe('the comment', () => {
 
   test('adds a summary line only when one is given', () => {
     const found = { suggestion: null, similar: [] };
-    expect(triageComment('x', found)).not.toContain('Summary:');
+    expect(triageComment('x', found)).not.toContain('Summary');
     expect(triageComment('x', found, 'A login bug on Safari.')).toContain(
-      'Summary: A login bug on Safari.',
+      'unchecked): A login bug on Safari.',
     );
   });
 });
@@ -191,7 +191,7 @@ describe('a triage run', () => {
     const { workerDb, ownerDb } = await getHarness();
     await handler({ workspaceId: workspace.id, issueId: issue.id }, { db: workerDb });
     const [posted] = await ownerDb.select().from(comments).where(eq(comments.issueId, issue.id));
-    expect(posted?.body).not.toContain('Summary:');
+    expect(posted?.body).not.toContain('Summary');
   });
 
   test('a removed triage agent stops triaging', async () => {

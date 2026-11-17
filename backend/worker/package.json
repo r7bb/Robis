@@ -11,9 +11,11 @@
     "./nudges": "./src/nudges.ts",
     "./runner": "./src/runner.ts",
     "./storage-purge": "./src/storage-purge.ts",
+    "./summary-provider": "./src/summary-provider.ts",
     "./triage": "./src/triage.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "1.4.0",
     "@robis/auth": "workspace:*",
     "@robis/database": "workspace:*",
     "@robis/mailer": "workspace:*",

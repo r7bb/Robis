@@ -45,6 +45,17 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-17',
+    area: 'ML',
+    title: 'An optional one-line summary on triage comments',
+    brief:
+      'With a provider key set and a workspace’s consent, the triage agent adds a one-line summary from a language model; without either, nothing is sent anywhere.',
+    summary:
+      'The triage agent can now begin its comment with a one-sentence summary of the issue, written by a small language model. It is off twice over: the server needs a provider key, and an admin must turn it on for the workspace when choosing the triage agent, because each new issue’s title and description are then sent to a paid third-party service. The setting says so where it is chosen. The issue text is passed to the model as quoted data, never as instructions, and what comes back is cut to one plain line, labelled as written by a language model and unchecked. A refusal, a timeout or an outage costs the summary, never the comment.',
+    checked:
+      'Eight tests, run with no key and no network: summaries are off unless chosen, the summarizer is never asked in a workspace that did not opt in even when one is configured, the summary line appears when it did, a failing summarizer still leaves the comment, removing the triage agent turns summaries off, and the provider port asks the small default model at low effort and returns one line, or nothing on a refusal or an error. A security review led to a cap of 200 summaries per workspace a day, a summary remembered per issue so a retried run does not pay twice, the issue text capped and escaped so it cannot close its quoting, errors logged by name only, and the line labelled as machine-written and unchecked; each has a test. Not checked here: a call to the real service, which needs a key this machine does not have.',
+  },
+  {
+    date: '2026-11-17',
     area: 'Product',
     title: 'Agents are marked wherever they appear',
     brief:

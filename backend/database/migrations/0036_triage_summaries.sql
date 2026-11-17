@@ -1,0 +1,1 @@
+ALTER TABLE "workspaces" ADD COLUMN "triage_summaries" boolean DEFAULT false NOT NULL;

@@ -15,6 +15,7 @@ import { DEFAULT_HEARTBEAT_FILE, heartbeat } from './heartbeat.ts';
 import { mailHandlers } from './mail.ts';
 import { Runner } from './runner.ts';
 import { storagePurgeHandler, workerStorage } from './storage-purge.ts';
+import { providerSummarizer } from './summary-provider.ts';
 import { triageHandler } from './triage.ts';
 
 // Before anything else, and failing closed: see `loadConfig`. The origin is
@@ -93,8 +94,14 @@ handlers[STORAGE_PURGE_JOB] = storagePurgeHandler(workerStorage(process.env));
 // The scripted triage agent (B5), through the MCP server. Without its
 // address the jobs wait in the queue, and the log says why.
 const mcpUrl = process.env.MCP_URL;
+// The optional one-line summary: only with a key, and then only for
+// workspaces that turned it on (they send issue text to a third party).
+const summaryKey = process.env.SUMMARY_API_KEY;
+const summarize = summaryKey
+  ? providerSummarizer({ apiKey: summaryKey, model: process.env.SUMMARY_MODEL || undefined })
+  : undefined;
 if (mcpUrl) {
-  handlers[TRIAGE_JOB] = triageHandler({ mcpUrl });
+  handlers[TRIAGE_JOB] = triageHandler({ mcpUrl, summarize });
 } else {
   console.warn('MCP_URL is not set: new issues are not triaged by an agent.');
 }

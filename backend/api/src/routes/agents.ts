@@ -106,6 +106,7 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
         role: workspaceMembers.role,
         createdAt: workspaceMembers.createdAt,
         triageAgentId: workspaces.triageAgentId,
+        triageSummaries: workspaces.triageSummaries,
         avatarKind: users.avatarKind,
         avatarRef: users.avatarRef,
         avatarUpdatedAt: users.avatarUpdatedAt,
@@ -142,10 +143,19 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
 
     return {
       agents: rows.map(
-        ({ avatarKind, avatarRef, avatarUpdatedAt, role, triageAgentId, ...agent }) => ({
+        ({
+          avatarKind,
+          avatarRef,
+          avatarUpdatedAt,
+          role,
+          triageAgentId,
+          triageSummaries,
+          ...agent
+        }) => ({
           ...agent,
           role: role as AgentRole,
           triage: triageAgentId === agent.id,
+          summaries: triageAgentId === agent.id && triageSummaries,
           avatar: avatarOf({ id: agent.id, avatarKind, avatarRef, avatarUpdatedAt }),
           tokens: tokens
             .filter((token) => token.agentId === agent.id)
@@ -198,7 +208,7 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
       if (input.triage) {
         await tx
           .update(workspaces)
-          .set({ triageAgentId: id })
+          .set({ triageAgentId: id, triageSummaries: input.summaries })
           .where(eq(workspaces.id, workspaceId));
       }
 
@@ -207,7 +217,12 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
         entityType: 'agent',
         entityId: id,
         eventType: 'agent.created',
-        payload: { username, role: input.role, triage: input.triage },
+        payload: {
+          username,
+          role: input.role,
+          triage: input.triage,
+          summaries: input.triage && input.summaries,
+        },
       });
 
       return { agent: agent!, joinedAt: membership!.createdAt, token };
@@ -224,6 +239,7 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
         role: input.role,
         avatar: avatarOf(agent),
         triage: input.triage,
+        summaries: input.triage && input.summaries,
         createdAt: joinedAt,
       },
       token: { id: token.id, label: input.tokenLabel, secret: token.secret },
@@ -319,7 +335,7 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
 export async function stopTriaging(tx: Tx, workspaceId: string, agentId: string) {
   await tx
     .update(workspaces)
-    .set({ triageAgentId: null })
+    .set({ triageAgentId: null, triageSummaries: false })
     .where(and(eq(workspaces.id, workspaceId), eq(workspaces.triageAgentId, agentId)));
 }
 
