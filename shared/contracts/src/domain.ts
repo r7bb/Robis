@@ -21,3 +21,10 @@ export type UserKind = (typeof USER_KINDS)[number];
  */
 export const TRIAGE_JOB = 'agent.triage';
 export type TriageJob = { workspaceId: string; issueId: string };
+
+/**
+ * Label colours (C1): a fixed palette, so every label is readable on every
+ * theme and no one can pick a colour that hides its text.
+ */
+export const LABEL_COLOURS = ['slate', 'sky', 'emerald', 'amber', 'rose', 'violet'] as const;
+export type LabelColour = (typeof LABEL_COLOURS)[number];

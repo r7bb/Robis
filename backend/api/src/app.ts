@@ -30,6 +30,7 @@ import { documentRoutes } from './routes/documents.ts';
 import { feedbackRoutes } from './routes/feedback.ts';
 import { invitationRoutes } from './routes/invitations.ts';
 import { issueRoutes } from './routes/issues.ts';
+import { labelRoutes } from './routes/labels.ts';
 import { meetingRoutes } from './routes/meetings.ts';
 import { memberRoutes } from './routes/members.ts';
 import { notificationRoutes } from './routes/notifications.ts';
@@ -241,6 +242,7 @@ export function buildApp({
   app.register(memberRoutes, { db });
   app.register(agentRoutes, { db });
   app.register(feedbackRoutes, { db });
+  app.register(labelRoutes, { db });
   app.register(invitationRoutes, { db });
   app.register(consentRoutes, { db });
   app.register(projectRoutes, { db });

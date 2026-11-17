@@ -32,6 +32,8 @@ export type LocalIssue = {
   projectId: string;
   /** Where the card sits on the board (C1); null until a card made offline is synced. */
   position: string | null;
+  /** Its labels' ids (C1), as the server last said; absent for a card made offline. */
+  labelIds?: string[];
   updatedAt: string | null;
   /** True while the row exists only locally or has unflushed edits. */
   pending: boolean;

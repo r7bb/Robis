@@ -18,6 +18,7 @@ import { DeleteButton } from '../../../../../components/delete-button.tsx';
 import { PresenceBar } from '../../../../../components/presence.tsx';
 import { AgentBadge, ErrorState } from '../../../../../components/ui/primitives.tsx';
 import { IssueAttachments } from '../../../../../features/issues/attachments.tsx';
+import { LabelPicker } from '../../../../../features/issues/label-picker.tsx';
 import { call } from '../../../../../lib/api.ts';
 import { useCoalesced, useRealtime } from '../../../../../lib/realtime.ts';
 import { concernsIssue } from '../../../../../lib/realtime-events.ts';
@@ -203,6 +204,16 @@ export default function IssuePage() {
               </Field>
             )}
           </dl>
+
+          <div className="mt-4">
+            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-faint">Labels</p>
+            <LabelPicker
+              workspaceId={workspaceId}
+              issueId={issueId}
+              current={data.labelIds}
+              canEdit={canEdit}
+            />
+          </div>
 
           {update.isError && (
             <p role="alert" className="mt-3 text-sm text-danger-soft">

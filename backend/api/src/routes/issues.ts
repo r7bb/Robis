@@ -7,6 +7,7 @@ import {
   encodeCursor,
   enqueue,
   ISSUE_FIELDS,
+  issueLabels,
   issues,
   projects,
   publishEvent,
@@ -26,7 +27,7 @@ import {
   type TriageJob,
   type UpdateIssueInput,
 } from '@robis/shared';
-import { and, asc, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { serve, shape } from '../contract.ts';
 import { ApiError } from '../errors.ts';
@@ -276,9 +277,28 @@ export async function issueRoutes(
         .limit(query.limit);
 
       const last = rows.at(-1);
+      // Each issue's labels, in one query for the page (C1).
+      const tagged = rows.length
+        ? await db
+            .select({ issueId: issueLabels.issueId, labelId: issueLabels.labelId })
+            .from(issueLabels)
+            .where(
+              and(
+                eq(issueLabels.workspaceId, workspaceId),
+                inArray(
+                  issueLabels.issueId,
+                  rows.map((r) => r.id),
+                ),
+              ),
+            )
+        : [];
 
       return {
-        issues: rows.map((r) => ({ ...r, key: `${project.key}-${r.number}` })),
+        issues: rows.map((r) => ({
+          ...r,
+          key: `${project.key}-${r.number}`,
+          labelIds: tagged.filter((t) => t.issueId === r.id).map((t) => t.labelId),
+        })),
         // A full page implies there may be more; a short page is the end.
         nextCursor: rows.length === query.limit && last ? encodeCursor(last.id) : null,
       };
@@ -387,8 +407,18 @@ export async function issueRoutes(
 
       const issue = await loadIssue(db, workspaceId, issueId);
       const project = await loadProject(db, workspaceId, issue.projectId);
+      const tagged = await db
+        .select({ labelId: issueLabels.labelId })
+        .from(issueLabels)
+        .where(and(eq(issueLabels.issueId, issueId), eq(issueLabels.workspaceId, workspaceId)));
 
-      return { issue: { ...issue, key: `${project.key}-${issue.number}` } };
+      return {
+        issue: {
+          ...issue,
+          key: `${project.key}-${issue.number}`,
+          labelIds: tagged.map((t) => t.labelId),
+        },
+      };
     },
   );
 

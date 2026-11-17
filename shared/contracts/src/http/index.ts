@@ -9,6 +9,7 @@ import { type Contract, statusesOf } from './contract.ts';
 import { documentContracts } from './documents.ts';
 import { feedbackContracts } from './feedback.ts';
 import { issueContracts } from './issues.ts';
+import { labelContracts } from './labels.ts';
 import { meetingContracts } from './meetings.ts';
 import { memberContracts } from './members.ts';
 import { notificationContracts } from './notifications.ts';
@@ -31,6 +32,7 @@ export const contracts = {
   ...memberContracts,
   ...agentContracts,
   ...feedbackContracts,
+  ...labelContracts,
   ...issueContracts,
   ...documentContracts,
   ...channelContracts,

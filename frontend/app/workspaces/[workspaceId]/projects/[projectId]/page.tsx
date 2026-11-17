@@ -16,7 +16,7 @@ import { DeleteButton } from '../../../../../components/delete-button.tsx';
 import { PresenceBar } from '../../../../../components/presence.tsx';
 import { SyncStatus } from '../../../../../components/sync-status.tsx';
 import { Avatar } from '../../../../../components/ui/avatar.tsx';
-import { PriorityBadge, StatusHeading } from '../../../../../components/ui/badges.tsx';
+import { LabelChip, PriorityBadge, StatusHeading } from '../../../../../components/ui/badges.tsx';
 import { ErrorState } from '../../../../../components/ui/primitives.tsx';
 import { useBoardDrag } from '../../../../../features/board/board-drag.ts';
 import { DuplicateHints } from '../../../../../features/issues/duplicate-hints.tsx';
@@ -50,6 +50,11 @@ export default function BoardPage() {
   // no connection and survives a reload mid-edit.
   const board = useOfflineBoard(workspaceId, projectId);
   const drag = useBoardDrag(board.issues, BOARD_COLUMNS, board.updateIssue);
+  const labels = useQuery({
+    queryKey: ['labels', workspaceId],
+    queryFn: () => call(contracts['labels.list'], { params: { workspaceId } }),
+  });
+  const labelById = new Map((labels.data?.labels ?? []).map((label) => [label.id, label]));
 
   // Reporting the project as our location is what lets other people see who
   // else is looking at this board. An issue event for this project pulls
@@ -231,6 +236,8 @@ export default function BoardPage() {
                       </Link>
                     )}
 
+                    <CardLabels ids={issue.labelIds} labels={labelById} />
+
                     {issue.assigneeName && (
                       <Assignee name={issue.assigneeName} id={issue.assigneeId} avatars={avatars} />
                     )}
@@ -303,5 +310,27 @@ function MoveButton({
     >
       Move
     </button>
+  );
+}
+
+/** A card's labels, as chips; nothing at all for a card with none. */
+function CardLabels({
+  ids,
+  labels,
+}: {
+  ids: readonly string[] | undefined;
+  labels: ReadonlyMap<string, { name: string; colour: string }>;
+}) {
+  const shown = (ids ?? []).flatMap((id) => {
+    const label = labels.get(id);
+    return label ? [{ id, ...label }] : [];
+  });
+  if (shown.length === 0) return null;
+  return (
+    <p className="mt-2 flex flex-wrap gap-1">
+      {shown.map((label) => (
+        <LabelChip key={label.id} name={label.name} colour={label.colour} />
+      ))}
+    </p>
   );
 }

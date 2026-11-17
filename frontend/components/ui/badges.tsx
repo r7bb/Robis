@@ -73,3 +73,23 @@ export function StatusBadge({ status }: { status: IssueStatus }) {
     </span>
   );
 }
+
+/** The fixed label palette (C1), as literal hues like the priority colours. */
+const LABEL_STYLES: Record<string, string> = {
+  slate: 'border-slate-400/30 bg-slate-400/10 text-slate-300',
+  sky: 'border-sky-400/30 bg-sky-400/10 text-sky-300',
+  emerald: 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300',
+  amber: 'border-amber-400/35 bg-amber-400/10 text-amber-300',
+  rose: 'border-rose-400/40 bg-rose-400/15 text-rose-300',
+  violet: 'border-violet-400/35 bg-violet-400/10 text-violet-300',
+};
+
+export function LabelChip({ name, colour }: { name: string; colour: string }) {
+  return (
+    <span
+      className={`inline-flex max-w-[12rem] items-center truncate rounded-full border px-2 py-0.5 text-[10px] font-medium ${LABEL_STYLES[colour] ?? LABEL_STYLES.slate}`}
+    >
+      {name}
+    </span>
+  );
+}

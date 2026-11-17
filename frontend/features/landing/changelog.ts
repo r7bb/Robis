@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-18',
     area: 'Product',
+    title: 'Labels on issues',
+    brief:
+      'Make labels in six fixed colours, put them on issues from the issue page, and see them as chips on the board.',
+    summary:
+      'A workspace can now have labels: a name, unique whatever its case, and one of six colours chosen so every label reads on every theme. Members make and delete them; anyone who may edit an issue sets its labels from the issue page, where a new label can be made in place. The board shows each card’s labels as chips. Deleting a label takes it off every issue. Each change is in the audit trail, and an issue can only carry its own workspace’s labels.',
+    feature: {
+      name: 'Labels',
+      where: 'An issue’s page, under Labels; chips appear on the board',
+      layers: [
+        'Screen: Edit labels on the issue page, with a field to make one, and chips on board cards',
+        'API: labels.list, labels.create, labels.delete and issues.setLabels, with each issue’s label ids on the list',
+        'Data: labels (name unique per workspace, colour from a fixed palette) and issue_labels',
+      ],
+    },
+    checked:
+      'Six tests: labels are made with a palette colour and listed by name, an unknown colour is refused, names are unique whatever their case, a guest may not make one, an issue’s labels are set exactly and audited, another workspace’s label is refused, and deleting a label takes it off its issues. In headless Chrome on the rebuilt stack a label made from the issue page appeared as a chip on its card on the board.',
+  },
+  {
+    date: '2026-11-18',
+    area: 'Product',
     title: 'Cards move by dragging, or by keyboard',
     brief:
       'Drag a card within or between columns, or lift it with Space and move it with the arrow keys; it works offline like every other change.',

@@ -1,6 +1,7 @@
 import {
   ISSUE_PRIORITIES,
   ISSUE_STATUSES,
+  LABEL_COLOURS,
   ROLES,
   SUGGESTION_ACTIONS,
   SUGGESTION_KINDS,
@@ -1263,6 +1264,43 @@ export const suggestionFeedback = pgTable(
     at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index('suggestion_feedback_counts_idx').on(t.workspaceId, t.kind, t.action)],
+);
+
+export const labelColour = pgEnum('label_colour', LABEL_COLOURS);
+
+/** A workspace's labels (C1): a name and a colour from the fixed palette. */
+export const labels = pgTable(
+  'labels',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    colour: labelColour('colour').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('labels_workspace_name_key').on(t.workspaceId, sql`lower(${t.name})`)],
+);
+
+/** Which labels an issue carries. */
+export const issueLabels = pgTable(
+  'issue_labels',
+  {
+    issueId: uuid('issue_id')
+      .notNull()
+      .references(() => issues.id, { onDelete: 'cascade' }),
+    labelId: uuid('label_id')
+      .notNull()
+      .references(() => labels.id, { onDelete: 'cascade' }),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.issueId, t.labelId] }),
+    index('issue_labels_label_idx').on(t.labelId),
+  ],
 );
 
 export type User = typeof users.$inferSelect;

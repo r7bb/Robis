@@ -95,7 +95,7 @@ export const issueContracts = {
             createdAt: true,
             updatedAt: true,
           })
-          .extend({ assigneeName: z.string().nullable() }),
+          .extend({ assigneeName: z.string().nullable(), labelIds: z.array(uuid) }),
       ),
       nextCursor: z.string().nullable(),
     }),
@@ -112,9 +112,9 @@ export const issueContracts = {
   'issues.get': contract({
     method: 'GET',
     path: '/workspaces/:workspaceId/issues/:issueId',
-    summary: 'One issue.',
+    summary: 'One issue, with its labels.',
     params: issueParams,
-    response: z.object({ issue }),
+    response: z.object({ issue: issue.extend({ labelIds: z.array(uuid) }) }),
   }),
   'issues.update': contract({
     method: 'PATCH',
