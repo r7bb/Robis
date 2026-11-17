@@ -3,8 +3,11 @@
 import { contracts } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { call, type SearchHit } from '../lib/api.ts';
+import { hitHref, searchHref } from '../lib/search-links.ts';
+import { Highlight } from './ui/highlight.tsx';
 
 /** Wait this long after typing stops before querying. */
 const DEBOUNCE_MS = 200;
@@ -20,6 +23,7 @@ export function SearchBox({ workspaceId }: { workspaceId: string }) {
   const [query, setQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
+  const router = useRouter();
 
   // Debounce so a full-text query does not run on every keystroke.
   useEffect(() => {
@@ -73,6 +77,13 @@ export function SearchBox({ workspaceId }: { workspaceId: string }) {
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
+        // Enter opens every result, on the results page.
+        onKeyDown={(event) => {
+          // Not while an input method is still composing: that Enter confirms a word.
+          if (event.key !== 'Enter' || event.nativeEvent.isComposing || !input.trim()) return;
+          setOpen(false);
+          router.push(searchHref(workspaceId, input));
+        }}
         placeholder="Search issues, docs and comments…"
         aria-label="Search this workspace"
         className="w-full text-ellipsis rounded-md border border-line bg-surface py-2 pl-9 pr-3 text-sm text-content outline-none transition placeholder:text-faint focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60 [&::-webkit-search-cancel-button]:hidden"
@@ -92,7 +103,7 @@ export function SearchBox({ workspaceId }: { workspaceId: string }) {
                 {hits.map((hit) => (
                   <li key={`${hit.kind}:${hit.id}`}>
                     <Link
-                      href={hrefFor(workspaceId, hit)}
+                      href={hitHref(workspaceId, hit)}
                       onClick={() => setOpen(false)}
                       className="block px-4 py-3 hover:bg-surface"
                     >
@@ -103,12 +114,22 @@ export function SearchBox({ workspaceId }: { workspaceId: string }) {
                         </span>
                       </div>
 
-                      <Snippet html={hit.snippet} />
+                      <Highlight
+                        parts={hit.parts}
+                        className="mt-1 line-clamp-2 text-xs text-faint"
+                      />
                     </Link>
                   </li>
                 ))}
               </ul>
             )}
+            <Link
+              href={searchHref(workspaceId, query)}
+              onClick={() => setOpen(false)}
+              className="block border-t border-line px-4 py-2.5 text-xs text-muted hover:bg-surface hover:text-content"
+            >
+              All results for “{query}”
+            </Link>
           </div>
         )}
       </div>
@@ -132,50 +153,4 @@ function SearchIcon() {
       <path d="m10.25 10.25 3.25 3.25" />
     </svg>
   );
-}
-
-function hrefFor(workspaceId: string, hit: SearchHit): string {
-  if (hit.kind === 'document') return `/workspaces/${workspaceId}/documents/${hit.id}`;
-  // A comment's own id is not addressable, so it points at its issue.
-  if (hit.issueId) return `/workspaces/${workspaceId}/issues/${hit.issueId}`;
-  return `/workspaces/${workspaceId}`;
-}
-
-/**
- * Render the highlighted excerpt.
- *
- * Postgres returns the snippet with `<mark>` around the matched terms and
- * everything else HTML-escaped. Rather than trust that and use
- * `dangerouslySetInnerHTML`, the string is split on the marks and rebuilt as
- * React nodes -- so even a stored `<script>` renders as text.
- */
-function Snippet({ html }: { html: string }) {
-  const parts = html.split(/(<mark>.*?<\/mark>)/g);
-
-  return (
-    <p className="mt-1 line-clamp-2 text-xs text-faint">
-      {parts.map((part, index) => {
-        const match = /^<mark>(.*)<\/mark>$/s.exec(part);
-
-        return match ? (
-          // biome-ignore lint/suspicious/noArrayIndexKey: split output is positional and re-rendered wholesale, so the index is the only identity available.
-          <mark key={index} className="rounded bg-accent/20 px-0.5 text-accent-soft">
-            {decodeEntities(match[1] ?? '')}
-          </mark>
-        ) : (
-          decodeEntities(part)
-        );
-      })}
-    </p>
-  );
-}
-
-/** `ts_headline` escapes the surrounding text, so it comes back encoded. */
-function decodeEntities(text: string): string {
-  return text
-    .replaceAll('&lt;', '<')
-    .replaceAll('&gt;', '>')
-    .replaceAll('&quot;', '"')
-    .replaceAll('&#39;', "'")
-    .replaceAll('&amp;', '&');
 }

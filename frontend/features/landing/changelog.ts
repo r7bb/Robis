@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-18',
     area: 'Product',
+    title: 'A page of search results',
+    brief:
+      'Press Enter in the search box for every match on its own page, narrowed to issues, documents or comments, with the matched words marked.',
+    summary:
+      'Search now has a results page. Press Enter in the search box, or pick All results under its list, to see up to fifty matches instead of twenty, and narrow them to issues, documents or comments with the tabs above. The query and the tab live in the address, so a search can be sent as a link. Each result shows an excerpt with the matched words marked. Excerpts now come from the server as plain pieces of text with the matches flagged, rather than as text with tags in it, so what someone wrote is shown exactly as written: a literal “&amp;” in an issue no longer turns into “&”, and nothing in the text can pose as a match.',
+    feature: {
+      name: 'Search results',
+      where: 'Press Enter in the workspace search box, or open /workspaces/<id>/search',
+      layers: [
+        'Screen: a results page with tabs for each kind, a live count, and marked excerpts; the search box links to it',
+        'API: search.workspace takes a type and a limit, and returns excerpts as text pieces with the matches flagged',
+        'Data: no new tables; the full-text query marks matches with its own delimiters',
+      ],
+    },
+    checked:
+      'Six new tests: an excerpt comes back as text pieces with only the matched word flagged; text with planted delimiters or tag-shaped words cannot fake a match and an “&amp;” comes back as written; results narrow to one kind and a page of more is allowed while an unknown kind or a limit past fifty is refused; and the links lead a document to itself and an issue or comment to its issue, with the query and kind carried in the address. The other nineteen search tests still pass. In headless Chrome on the rebuilt stack, Enter in the search box opened the page with 7 results for “export”, each match marked; the Comments tab narrowed it to 3; a query with no match said so; and the page fits a phone with no sideways scroll.',
+  },
+  {
+    date: '2026-11-18',
+    area: 'Product',
     title: 'Change many issues at once',
     brief:
       'Pick cards on the board and move, prioritise, assign, label or delete them together; anything you may not change is left alone and named.',

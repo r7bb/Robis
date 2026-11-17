@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **A page of search results** (2026-11-18). Press Enter in the search box
+  for every match on its own page, narrowed to issues, documents or
+  comments, with the matched words marked.
 - **Change many issues at once** (2026-11-18). Pick cards on the board and
   move, prioritise, assign, label or delete them together; anything you may
   not change is left alone and named.

@@ -30,6 +30,12 @@ const auditEvent = z.object({
   personalCommitment: z.string().nullable(),
 });
 
+/** What search finds. */
+export const SEARCH_KINDS = ['issue', 'document', 'comment'] as const;
+
+/** The most results one search returns: the box shows 20, the results page asks for more. */
+export const SEARCH_LIMIT_MAX = 50;
+
 export const auditContracts = {
   'audit.events': contract({
     method: 'GET',
@@ -91,18 +97,26 @@ export const auditContracts = {
   'search.workspace': contract({
     method: 'GET',
     path: '/workspaces/:workspaceId/search',
-    summary: 'Issues, documents and comments matching a query, best first.',
+    summary:
+      'Issues, documents and comments matching a query, best first; one kind with type, more with limit.',
     params: workspaceParams,
-    query: z.object({ q: z.string().optional() }),
+    query: z.object({
+      q: z.string().optional(),
+      type: z.enum(SEARCH_KINDS).optional(),
+      limit: z.coerce.number().int().min(1).max(SEARCH_LIMIT_MAX).optional(),
+    }),
     response: z.object({
       query: z.string(),
       results: z.array(
         z.object({
-          kind: z.enum(['issue', 'document', 'comment']),
+          kind: z.enum(SEARCH_KINDS),
           id: uuid,
           title: z.string(),
-          /** Matched terms wrapped in `<mark>`; rendered as text, never as HTML. */
-          snippet: z.string(),
+          /**
+           * An excerpt in plain text pieces, the matched terms marked. Never
+           * markup: whatever the text says, it is shown as text.
+           */
+          parts: z.array(z.object({ text: z.string(), match: z.boolean() })),
           rank: z.number(),
           issueId: uuid.nullable(),
           projectId: uuid.nullable(),

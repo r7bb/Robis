@@ -31,10 +31,13 @@ export async function searchRoutes(
         rateLimit({ name: 'search', limit: limits.searchPerMinute, windowMs: 60_000 }),
       ],
     },
-    async (request, { query: { q } }) => {
+    async (request, { query: { q, type, limit } }) => {
       const { workspaceId } = currentMembership(request);
 
-      const results = await searchWorkspace(db, workspaceId, (q ?? '').slice(0, 200));
+      const results = await searchWorkspace(db, workspaceId, (q ?? '').slice(0, 200), {
+        type,
+        limit,
+      });
 
       return { query: q ?? '', results };
     },

@@ -159,14 +159,68 @@ describe('finding things', () => {
     expect(results[0].title).toBe('Notes');
   });
 
-  test('returns a highlighted snippet', async () => {
+  test('returns the excerpt as plain text pieces, the matches marked', async () => {
     const { owner, workspace } = await workspaceWithIssues(
       ['Investigate'],
       ['The refresh token expires far too early in production'],
     );
 
     const { results } = await search(owner, workspace.id, 'token');
-    expect(results[0].snippet).toContain('<mark>');
+    const parts = results[0].parts as { text: string; match: boolean }[];
+    expect(parts.filter((p) => p.match).map((p) => p.text)).toEqual(['token']);
+    // An excerpt around the match, in the text's own words.
+    expect(parts.map((p) => p.text).join('')).toContain('refresh token expires');
+  });
+
+  test('text cannot fake a match, and is not decoded on its way out', async () => {
+    const { owner, workspace } = await workspaceWithIssues(
+      ['Odd description'],
+      ['<mark>fake</mark> &amp; <b>bold</b> widget \u0002sneaky\u0003 end'],
+    );
+
+    const { results } = await search(owner, workspace.id, 'widget');
+    const parts = results[0].parts as { text: string; match: boolean }[];
+    expect(parts.filter((p) => p.match).map((p) => p.text)).toEqual(['widget']);
+    // Postgres leaves tags out of an excerpt; what is written as `&amp;`
+    // comes back as written, and the planted delimiters are gone.
+    const text = parts.map((p) => p.text).join('');
+    expect(text).toContain('fake');
+    expect(text).toContain('&amp;');
+    expect(text).toContain('sneaky');
+    expect(text.includes('\u0002') || text.includes('\u0003')).toBe(false);
+  });
+
+  test('narrows to one kind, and takes a larger page', async () => {
+    const { owner, workspace, project } = await workspaceWithIssues(
+      ['Gamma ray report'],
+      ['Gamma readings are off'],
+    );
+    const issue = (
+      await request(`/workspaces/${workspace.id}/projects/${project.id}/issues?limit=1`, {
+        actor: owner,
+      })
+    ).json().issues[0];
+    await request(`/workspaces/${workspace.id}/issues/${issue.id}/comments`, {
+      method: 'POST',
+      actor: owner,
+      payload: { body: 'Gamma again, see the logs' },
+    });
+
+    const all = await search(owner, workspace.id, 'gamma');
+    expect(all.results.map((r: { kind: string }) => r.kind).sort()).toEqual(['comment', 'issue']);
+    const onlyComments = (
+      await request(`/workspaces/${workspace.id}/search?q=gamma&type=comment`, { actor: owner })
+    ).json();
+    expect(onlyComments.results.map((r: { kind: string }) => r.kind)).toEqual(['comment']);
+
+    const bad = await request(`/workspaces/${workspace.id}/search?q=gamma&type=meeting`, {
+      actor: owner,
+    });
+    expect(bad.statusCode).toBe(400);
+    const tooMany = await request(`/workspaces/${workspace.id}/search?q=gamma&limit=500`, {
+      actor: owner,
+    });
+    expect(tooMany.statusCode).toBe(400);
   });
 
   test('an empty query returns nothing rather than everything', async () => {

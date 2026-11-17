@@ -20,6 +20,7 @@ import { savedViewContracts } from './saved-views.ts';
 import { workspaceContracts } from './workspaces.ts';
 
 export { RUN_STEPS_SHOWN, RUNS_SHOWN } from './agents.ts';
+export { SEARCH_KINDS, SEARCH_LIMIT_MAX } from './audit.ts';
 export * from './contract.ts';
 export {
   OFFLINE_DUPLICATE_EVALUATION,

@@ -7775,7 +7775,7 @@
     "/workspaces/{workspaceId}/search": {
       "get": {
         "operationId": "search.workspace",
-        "summary": "Issues, documents and comments matching a query, best first.",
+        "summary": "Issues, documents and comments matching a query, best first; one kind with type, more with limit.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -7793,6 +7793,29 @@
             "required": false,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "issue",
+                "document",
+                "comment"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
             }
           }
         ],
@@ -7829,8 +7852,24 @@
                           "title": {
                             "type": "string"
                           },
-                          "snippet": {
-                            "type": "string"
+                          "parts": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "text": {
+                                  "type": "string"
+                                },
+                                "match": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "required": [
+                                "text",
+                                "match"
+                              ],
+                              "additionalProperties": false
+                            }
                           },
                           "rank": {
                             "type": "number"
@@ -7864,7 +7903,7 @@
                           "kind",
                           "id",
                           "title",
-                          "snippet",
+                          "parts",
                           "rank",
                           "issueId",
                           "projectId"
