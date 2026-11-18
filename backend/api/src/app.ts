@@ -257,7 +257,7 @@ export function buildApp({
   app.register(channelRoutes, { db });
   app.register(meetingRoutes, { db });
   app.register(notificationRoutes, { db });
-  app.register(notificationSettingRoutes, { db });
+  app.register(notificationSettingRoutes, { db, limits });
   app.register(auditRoutes, { db, limits });
   app.register(accountEventRoutes, { db, limits });
   app.register(avatarRoutes, { db, storage });

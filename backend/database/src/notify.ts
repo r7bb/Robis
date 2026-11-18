@@ -4,8 +4,9 @@ import {
   type NotificationChannel,
   type NotificationKind,
 } from '@robis/shared';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, gt, inArray, sql } from 'drizzle-orm';
 import type { Executor } from './index.ts';
+import { queueNotificationMail } from './mail-jobs.ts';
 import { notificationSettings, notifications } from './schema.ts';
 
 /**
@@ -89,6 +90,45 @@ export async function setSetting(
     });
 }
 
+/**
+ * When a notification goes by email (C3): a mention at once, anything else
+ * in the day's digest, nothing for a kind off by email or outside the
+ * settings (an invitation has its own mail).
+ */
+function emailDueFor(
+  kind: string,
+  channels: Channels | undefined,
+  mentionsMailedThisHour: number,
+): 'now' | 'digest' | null {
+  if (!isSetting(kind) || !channels?.email) return null;
+  return kind === 'mention' && mentionsMailedThisHour < MENTION_EMAILS_PER_HOUR ? 'now' : 'digest';
+}
+
+/**
+ * Mentions mailed at once to one person in an hour (C3); past this, the
+ * rest wait for the digest, so a busy thread, or someone mentioning another
+ * over and over, cannot fill their inbox.
+ */
+export const MENTION_EMAILS_PER_HOUR = 10;
+const HOUR_MS = 60 * 60_000;
+
+/** How many mentions each of these people was mailed at once in the last hour. */
+async function mentionsMailedRecently(db: Executor, userIds: readonly string[]) {
+  const rows = await db
+    .select({ userId: notifications.userId, count: sql<number>`count(*)::int` })
+    .from(notifications)
+    .where(
+      and(
+        inArray(notifications.userId, [...userIds]),
+        eq(notifications.kind, 'mention'),
+        eq(notifications.emailDue, 'now'),
+        gt(notifications.createdAt, new Date(Date.now() - HOUR_MS)),
+      ),
+    )
+    .groupBy(notifications.userId);
+  return new Map(rows.map((row) => [row.userId, row.count]));
+}
+
 export type NotificationInput = {
   userId: string;
   workspaceId: string | null;
@@ -126,21 +166,44 @@ export async function notify(
   );
   if (wanted.length === 0) return [];
 
-  const made = await db
-    .insert(notifications)
-    .values(
-      wanted.map((item) => ({
-        ...item,
-        payload: JSON.stringify(item.payload),
-        inApp: channels.get(item.userId)?.in_app ?? true,
-      })),
-    )
-    // Idempotency: a redelivered job must not notify twice. The unique index
-    // on (user_id, dedupe_key) is what makes this a no-op.
-    .onConflictDoNothing({ target: [notifications.userId, notifications.dedupeKey] })
-    .returning({ id: notifications.id, userId: notifications.userId });
-
-  return made.map((row) => ({ ...row, channels: channels.get(row.userId) ?? { ...ALL_ON } }));
+  // The rows and the mail that sends a mention commit together: a retried
+  // job finds its rows made and queues nothing twice, and a mail job is
+  // never lost between the two.
+  const recent =
+    kind === 'mention'
+      ? await mentionsMailedRecently(
+          db,
+          wanted.map((w) => w.userId),
+        )
+      : new Map<string, number>();
+  return db.transaction(async (tx) => {
+    const made = await tx
+      .insert(notifications)
+      .values(
+        wanted.map((item) => ({
+          ...item,
+          payload: JSON.stringify(item.payload),
+          inApp: channels.get(item.userId)?.in_app ?? true,
+          emailDue: emailDueFor(kind, channels.get(item.userId), recent.get(item.userId) ?? 0),
+        })),
+      )
+      // Idempotency: a redelivered job must not notify twice. The unique index
+      // on (user_id, dedupe_key) is what makes this a no-op.
+      .onConflictDoNothing({ target: [notifications.userId, notifications.dedupeKey] })
+      .returning({
+        id: notifications.id,
+        userId: notifications.userId,
+        emailDue: notifications.emailDue,
+      });
+    for (const row of made) {
+      if (row.emailDue === 'now') await queueNotificationMail(tx, row.id);
+    }
+    return made.map((row) => ({
+      id: row.id,
+      userId: row.userId,
+      channels: channels.get(row.userId) ?? { ...ALL_ON },
+    }));
+  });
 }
 
 /**

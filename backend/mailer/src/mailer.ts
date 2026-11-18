@@ -15,7 +15,22 @@ export type Mail = {
   to: string;
   subject: string;
   text: string;
+  /**
+   * Extra headers, such as `List-Unsubscribe` (C3). Names and values are
+   * the sender's own, never a user's text; a line break in either is
+   * refused by the drivers, so nothing can add a header of its own.
+   */
+  headers?: Record<string, string>;
 };
+
+/** Refuse a header that could end itself and start another. */
+export function assertSafeHeaders(headers: Record<string, string> | undefined): void {
+  for (const [name, value] of Object.entries(headers ?? {})) {
+    if (/[\r\n]/.test(name) || /[\r\n]/.test(value) || !/^[A-Za-z0-9-]+$/.test(name)) {
+      throw new Error(`refusing an unsafe mail header: ${JSON.stringify(name)}`);
+    }
+  }
+}
 
 export type Mailer = {
   send(mail: Mail): Promise<void>;
@@ -42,6 +57,7 @@ export class ConsoleMailer implements Mailer {
         '  --- mail ------------------------------------------',
         `  to:      ${mail.to}`,
         `  subject: ${mail.subject}`,
+        ...Object.entries(mail.headers ?? {}).map(([name, value]) => `  ${name}: ${value}`),
         '  ---------------------------------------------------',
         ...mail.text.split('\n').map((line) => `  ${line}`),
         '  ---------------------------------------------------',
@@ -62,6 +78,7 @@ export class MemoryMailer implements Mailer {
   private readonly messages: Mail[] = [];
 
   async send(mail: Mail): Promise<void> {
+    assertSafeHeaders(mail.headers);
     this.messages.push(mail);
   }
 

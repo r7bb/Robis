@@ -1,5 +1,5 @@
 import { createTransport, type Transporter } from 'nodemailer';
-import type { Mail, Mailer } from './mailer.ts';
+import { assertSafeHeaders, type Mail, type Mailer } from './mailer.ts';
 
 export type SmtpOptions = {
   host: string;
@@ -81,6 +81,7 @@ export class SmtpMailer implements Mailer {
   }
 
   async send(mail: Mail): Promise<void> {
+    assertSafeHeaders(mail.headers);
     let timer: ReturnType<typeof setTimeout> | undefined;
     const budget = new Promise<never>((_resolve, reject) => {
       timer = setTimeout(
@@ -96,6 +97,7 @@ export class SmtpMailer implements Mailer {
           to: mail.to,
           subject: mail.subject,
           text: mail.text,
+          ...(mail.headers ? { headers: mail.headers } : {}),
         }),
         budget,
       ]);

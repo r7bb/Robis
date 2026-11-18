@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Notifications by email** (2026-11-18). Get mentions by email as they
+  happen and everything else in one summary a day, each with a link that
+  stops it without signing in.
 - **Choose what you hear about** (2026-11-18). Turn each kind of
   notification on or off from your account, and hear when you are given an
   issue, someone comments on yours, or a meeting you are in moves.

@@ -8,6 +8,7 @@ import {
 } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { call } from '../../lib/api.ts';
+import { NOTIFICATION_KIND_NAMES } from '../../lib/notification-kinds.ts';
 
 /**
  * Your notification settings (C3): each kind on or off, by channel. A
@@ -17,26 +18,15 @@ import { call } from '../../lib/api.ts';
 
 type Settings = ResponseOf<(typeof contracts)['notificationSettings.get']>;
 
-const KINDS: Record<NotificationKind, { name: string; when: string }> = {
-  mention: { name: 'Mentions', when: 'Someone writes your @name in a comment.' },
-  assignment: { name: 'Given to you', when: 'Someone makes you the assignee of an issue.' },
-  issue_comment: {
-    name: 'Comments on your issues',
-    when: 'On an issue you filed or are assigned, by anyone but you.',
-  },
-  meeting: {
-    name: 'Meeting changes',
-    when: 'A meeting you are in is moved, changed or called off.',
-  },
-  nudge: { name: 'Suggestions', when: 'A next step to try, at most one a week.' },
-};
-
-/** The channels that deliver today; email and push join as they do. */
+/** The channels that deliver today; push joins when it does. */
 const CHANNELS: readonly {
   id: NotificationChannel;
   name: string;
   field: 'inApp' | 'email' | 'push';
-}[] = [{ id: 'in_app', name: 'In the app', field: 'inApp' }];
+}[] = [
+  { id: 'in_app', name: 'In the app', field: 'inApp' },
+  { id: 'email', name: 'Email', field: 'email' },
+];
 
 const KEY = ['notification-settings'];
 
@@ -86,8 +76,12 @@ export function NotificationSettings() {
           {settings.data.settings.map((setting) => (
             <tr key={setting.kind}>
               <th scope="row" className="px-4 py-3 text-left font-normal">
-                <span className="block text-content">{KINDS[setting.kind].name}</span>
-                <span className="block text-xs text-faint">{KINDS[setting.kind].when}</span>
+                <span className="block text-content">
+                  {NOTIFICATION_KIND_NAMES[setting.kind].name}
+                </span>
+                <span className="block text-xs text-faint">
+                  {NOTIFICATION_KIND_NAMES[setting.kind].when}
+                </span>
               </th>
               {CHANNELS.map((channel) => (
                 <td key={channel.id} className="px-4 py-3 text-right">
@@ -106,7 +100,7 @@ export function NotificationSettings() {
                         enabled: event.target.checked,
                       });
                     }}
-                    aria-label={`${KINDS[setting.kind].name}, ${channel.name.toLowerCase()}`}
+                    aria-label={`${NOTIFICATION_KIND_NAMES[setting.kind].name}, ${channel.name.toLowerCase()}`}
                     className="h-4 w-4 accent-accent"
                   />
                 </td>
@@ -121,7 +115,7 @@ export function NotificationSettings() {
         ) : save.isSuccess ? (
           'Saved.'
         ) : (
-          'Invitations to a workspace always reach you.'
+          'Mentions are emailed as they happen; everything else comes in one summary a day. Invitations to a workspace always reach you.'
         )}
       </p>
     </div>

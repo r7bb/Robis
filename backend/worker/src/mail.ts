@@ -23,6 +23,7 @@ import {
   workspaceInvitationMail,
 } from '@robis/mailer';
 import { eq } from 'drizzle-orm';
+import { notificationMailHandlers } from './notification-mail.ts';
 import type { Handlers } from './runner.ts';
 
 /** How long a link to finish signing up works. */
@@ -45,6 +46,9 @@ export function mailHandlers(deps: { mailer: Mailer; webOrigin: string }): Handl
   const { mailer, webOrigin } = deps;
 
   return {
+    // Mentions at once and the daily digests (C3).
+    ...notificationMailHandlers(deps),
+
     [MAIL_PASSWORD_RESET_JOB]: async (payload, { db }) => {
       const { userId } = payload as AccountMailPayload;
       const [user] = await db

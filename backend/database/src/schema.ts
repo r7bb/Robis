@@ -967,6 +967,14 @@ export const notifications = pgTable(
      * from, so it is kept, but the inbox never lists it.
      */
     inApp: boolean('in_app').notNull().default(true),
+    /**
+     * By email (C3): `now` (a mention, sent by its own job), `digest` (in
+     * the day's summary) or null (not by email). Decided from the settings
+     * when it is made, and checked again when it is sent.
+     */
+    emailDue: text('email_due'),
+    /** When it went by email, or was passed over because its email was turned off. */
+    emailedAt: timestamp('emailed_at', { withTimezone: true }),
     readAt: timestamp('read_at', { withTimezone: true }),
     createdAt: createdAt(),
   },
@@ -974,7 +982,58 @@ export const notifications = pgTable(
     // Unread-first inbox for one user, which is the only way this is read.
     index('notifications_user_created_idx').on(t.userId, t.createdAt),
     uniqueIndex('notifications_dedupe_key').on(t.userId, t.dedupeKey),
+    // What the next digests hold: small, as a row leaves it once mailed.
+    index('notifications_digest_due_idx')
+      .on(t.userId)
+      .where(sql`${t.emailDue} = 'digest' and ${t.emailedAt} is null`),
+    check('notifications_email_due', sql`${t.emailDue} in ('now', 'digest')`),
   ],
+);
+
+/**
+ * One summary email per person per day (C3). The row is written before the
+ * mail is sent, holding the notifications it is about, so a retried job
+ * sends the same email and a finished one (`sent_at`) sends nothing: a
+ * digest job retried three times sends one email. The day is a UTC date.
+ */
+export const emailDigests = pgTable(
+  'email_digests',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    day: date('day', { mode: 'string' }).notNull(),
+    /** The notification ids it is about, as a JSON array: fixed when it is first claimed. */
+    notificationIds: text('notification_ids').notNull(),
+    sentAt: timestamp('sent_at', { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.day] }),
+    index('email_digests_created_idx').on(t.createdAt),
+  ],
+);
+
+/**
+ * The links in notification emails that stop them without signing in (C3).
+ * A token does one thing: turns email off for the kinds it names, for its
+ * owner. Stored as a hash, like a reset token; used once, then deleted;
+ * expires after a while (`UNSUBSCRIBE_TOKEN_DAYS`). One per email, so an
+ * older email's link still works after a newer one is sent.
+ */
+export const unsubscribeTokens = pgTable(
+  'unsubscribe_tokens',
+  {
+    tokenHash: text('token_hash').primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** The kinds it turns email off for, as a JSON array. */
+    kinds: text('kinds').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index('unsubscribe_tokens_expires_idx').on(t.expiresAt)],
 );
 
 /**

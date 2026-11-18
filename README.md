@@ -148,15 +148,15 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Notifications by email.** Get mentions by email as they happen and
+  everything else in one summary a day, each with a link that stops it
+  without signing in.
 - **Choose what you hear about.** Turn each kind of notification on or off
   from your account, and hear when you are given an issue, someone comments
   on yours, or a meeting you are in moves.
 - **The board by keyboard.** Run the whole board from the keyboard: single
   keys to file, move between, change, select and delete issues, and a list
   of them on the question mark key.
-- **A command palette.** Press Ctrl K or Cmd K anywhere in a workspace to
-  find an issue, a document, a channel or a person, or to file an issue,
-  open a board or change the open issue’s status.
 
 <!-- latest:end -->
 

@@ -225,7 +225,12 @@ export const WORKER_GRANTS: TableGrants = {
   // Read by the nudge scan: who has started a document yet.
   documents: ['select'],
   // Delete: read notifications past their retention (stage 3, item 30).
-  notifications: ['select', 'insert', 'delete'],
+  // Update: marking one emailed (C3).
+  notifications: ['select', 'insert', 'update (emailed_at)', 'delete'],
+  // One summary a day, written before it is sent (C3).
+  email_digests: ['select', 'insert', 'update (sent_at)', 'delete'],
+  // Made for each email, pruned once expired; the API redeems them (C3).
+  unsubscribe_tokens: ['select', 'insert', 'delete'],
   // What each person turned off, read before anything is sent (C3).
   notification_settings: ['select'],
   // Who is told when a meeting moves or is called off (C3).

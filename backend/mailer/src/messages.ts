@@ -147,3 +147,140 @@ export function signupExistingMail(to: string, links: { signIn: string; reset: s
     ].join('\n'),
   };
 }
+
+/**
+ * A notification as one line of plain text (C3): who did what to which
+ * thing. Every field is text someone typed in Robis, passed through as text.
+ */
+export type NotificationLine = {
+  kind: string;
+  actor: string | null;
+  issueKey?: string | null;
+  issueTitle?: string | null;
+  excerpt?: string;
+  title?: string;
+  body?: string;
+  change?: string;
+  link: string;
+};
+
+const MEETING_DID: Record<string, string> = {
+  moved: 'moved',
+  changed: 'changed',
+  canceled: 'called off',
+};
+
+/** Control characters, zero-width ones and the marks that reverse text: never shown as meant. */
+function isInvisible(code: number): boolean {
+  return (
+    code < 0x20 ||
+    (code >= 0x7f && code <= 0x9f) ||
+    (code >= 0x200b && code <= 0x200f) ||
+    (code >= 0x202a && code <= 0x202e) ||
+    (code >= 0x2060 && code <= 0x2069) ||
+    code === 0xfeff
+  );
+}
+
+/**
+ * Text someone typed, made one plain line for an email (C3): every run of
+ * whitespace one space, invisible and direction-changing characters gone.
+ * A comment cannot then start a line of its own and pose as the email's
+ * own text (a forged unsubscribe link, say), nor hide what it says.
+ */
+export function oneLine(text: string | null | undefined): string {
+  const spaced = (text ?? '').replace(/\s+/g, ' ');
+  const visible = [...spaced].filter((char) => !isInvisible(char.codePointAt(0) ?? 0)).join('');
+  return visible.replace(/ {2,}/g, ' ').trim();
+}
+
+/** Every typed field of a line, made one plain line. */
+function cleaned(item: Omit<NotificationLine, 'kind' | 'link'>) {
+  return {
+    actor: oneLine(item.actor) || 'Someone',
+    issueKey: oneLine(item.issueKey) || null,
+    issueTitle: oneLine(item.issueTitle),
+    excerpt: oneLine(item.excerpt),
+    title: oneLine(item.title),
+    body: oneLine(item.body),
+    change: oneLine(item.change),
+  };
+}
+
+export function notificationLine(item: NotificationLine): string {
+  const c = cleaned(item);
+  const issue = c.issueKey ?? 'an issue';
+  const said = (text: string) => (text ? `: ${text}` : '');
+  switch (item.kind) {
+    case 'assignment':
+      return `${c.actor} gave you ${issue}${said(c.issueTitle)}`;
+    case 'issue_comment':
+      return `${c.actor} commented on ${issue}${said(c.excerpt)}`;
+    case 'meeting':
+      return `${c.actor} ${MEETING_DID[c.change] ?? 'changed'} ${c.title || 'a meeting'}`;
+    case 'nudge':
+      return [c.title, c.body].filter(Boolean).join(': ');
+    default:
+      return `${c.actor} mentioned you on ${issue}${said(c.excerpt)}`;
+  }
+}
+
+/** The end of every notification email: how to stop it, and where to choose. */
+function footer(links: { unsubscribe: string; settings: string }, what: string): string[] {
+  return [
+    '',
+    '',
+    `You get this because ${what} by email is on.`,
+    `Stop these emails: ${links.unsubscribe}`,
+    `Choose what you hear about: ${links.settings}`,
+    'Robis never asks for your password by email.',
+  ];
+}
+
+/** The header that lets a mail client offer its own unsubscribe button. */
+function unsubscribeHeaders(link: string): Record<string, string> {
+  return { 'List-Unsubscribe': `<${link}>` };
+}
+
+/** A mention, sent as it happens. */
+export function mentionMail(
+  to: string,
+  item: Omit<NotificationLine, 'kind'>,
+  links: { unsubscribe: string; settings: string },
+): Mail {
+  const c = cleaned(item);
+  const on = c.issueKey ? ` on ${c.issueKey}` : '';
+  return {
+    to,
+    subject: `${c.actor} mentioned you${on}`,
+    text: [
+      `${c.actor} mentioned you${on}${c.issueTitle ? `, ${c.issueTitle}` : ''}:`,
+      '',
+      `  ${c.excerpt}`,
+      '',
+      `Open it: ${item.link}`,
+      ...footer(links, 'mentions'),
+    ].join('\n'),
+    headers: unsubscribeHeaders(links.unsubscribe),
+  };
+}
+
+/** The day's summary: everything else, one line and link each. */
+export function digestMail(
+  to: string,
+  items: readonly NotificationLine[],
+  links: { unsubscribe: string; settings: string },
+): Mail {
+  const count = items.length === 1 ? '1 update' : `${items.length} updates`;
+  return {
+    to,
+    subject: `Your Robis summary: ${count}`,
+    text: [
+      'Since your last summary:',
+      '',
+      ...items.flatMap((item) => [`${notificationLine(item)}`, `  ${item.link}`, '']),
+      ...footer(links, 'this summary').slice(1),
+    ].join('\n'),
+    headers: unsubscribeHeaders(links.unsubscribe),
+  };
+}

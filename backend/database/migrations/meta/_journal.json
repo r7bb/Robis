@@ -309,6 +309,13 @@
       "when": 1795030371262,
       "tag": "0043_notification_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1795031919613,
+      "tag": "0044_notification_email",
+      "breakpoints": true
     }
   ]
 }

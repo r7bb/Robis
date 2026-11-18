@@ -22,6 +22,10 @@ export const MAIL_WORKSPACE_INVITATION_JOB = 'mail.workspace_invitation';
 export const MAIL_SIGNUP_JOB = 'mail.signup';
 /** For an address that already has one: a reminder, not a second account. */
 export const MAIL_SIGNUP_EXISTING_JOB = 'mail.signup_existing';
+/** One notification by email at once (C3): a mention. */
+export const MAIL_NOTIFICATION_JOB = 'mail.notification';
+/** One person's summary for one day (C3). */
+export const MAIL_DIGEST_JOB = 'mail.digest';
 
 export const MAIL_JOBS = [
   MAIL_PASSWORD_RESET_JOB,
@@ -29,6 +33,8 @@ export const MAIL_JOBS = [
   MAIL_WORKSPACE_INVITATION_JOB,
   MAIL_SIGNUP_JOB,
   MAIL_SIGNUP_EXISTING_JOB,
+  MAIL_NOTIFICATION_JOB,
+  MAIL_DIGEST_JOB,
 ] as const;
 
 /** A sign-up waiting for its link: the job names the row, never the address. */
@@ -38,6 +44,12 @@ export type SignupMailPayload = { signupId: string };
 export type InvitationMailPayload = { invitationId: string };
 
 export type AccountMailPayload = { userId: string };
+
+/** A notification to email now: the job names the row, never what it says. */
+export type NotificationMailPayload = { notificationId: string };
+
+/** A day's summary for one person: the day is a UTC date, `YYYY-MM-DD`. */
+export type DigestMailPayload = { userId: string; day: string };
 
 /**
  * Retries with backoff, then a dead letter: a dead provider is visible, not
@@ -102,6 +114,32 @@ export async function queueSignupMail(db: Executor, signupId: string) {
     })
     .onConflictDoNothing();
   await wakeWorkers(db, MAIL_SIGNUP_JOB);
+}
+
+/** Queue a mail job, at most one waiting for the same payload (`jobs_pending_mail_once`). */
+async function queueMail(db: Executor, kind: string, payload: unknown) {
+  await db
+    .insert(jobs)
+    .values({
+      kind,
+      payload: JSON.stringify(payload),
+      runAt: new Date(),
+      maxAttempts: MAIL_ATTEMPTS,
+    })
+    .onConflictDoNothing();
+  await wakeWorkers(db, kind);
+}
+
+/** Email a notification now (C3), in the transaction that made it. */
+export function queueNotificationMail(db: Executor, notificationId: string) {
+  const payload: NotificationMailPayload = { notificationId };
+  return queueMail(db, MAIL_NOTIFICATION_JOB, payload);
+}
+
+/** Send one person their summary for a day (C3). */
+export function queueDigestMail(db: Executor, userId: string, day: string) {
+  const payload: DigestMailPayload = { userId, day };
+  return queueMail(db, MAIL_DIGEST_JOB, payload);
 }
 
 /** Tell an account holder someone tried to sign up with their address. */

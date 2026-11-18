@@ -5,9 +5,11 @@ import {
   deleteStaleSignups,
   judgeAgentChanges,
   pruneAgentHistory,
+  pruneEmailRecords,
   pruneExpiredAgentTokens,
   pruneIdempotencyLedger,
   pruneReadNotifications,
+  scanDigests,
 } from '@robis/database';
 import { notifyHandlers } from './notify.ts';
 import { scanNudges } from './nudges.ts';
@@ -36,6 +38,8 @@ export const cleanupSessions = async (_payload: unknown, { db }: { db: Database 
   // more than 90 days ago (stage 3, item 30).
   await pruneIdempotencyLedger(db);
   await pruneReadNotifications(db);
+  // Unsubscribe links past their 60 days, and digests long sent (C3).
+  await pruneEmailRecords(db);
   // And the triage agent's run tokens, a day after they expired (B5).
   await pruneExpiredAgentTokens(db);
   // Agents' runs and judged changes after 90 days, hint feedback after a year (B6).
@@ -52,10 +56,16 @@ export const runNudgeScan = async (_payload: unknown, { db }: { db: Database }) 
   await scanNudges(db);
 };
 
+/** Queue the day's digests for whoever has news waiting (C3). Runs hourly. */
+export const runDigestScan = async (_payload: unknown, { db }: { db: Database }) => {
+  await scanDigests(db);
+};
+
 export const handlers: Handlers = {
   // Mentions, comments on your issue, assignments, meeting changes (C3).
   ...notifyHandlers,
   'sessions.cleanup': cleanupSessions,
   'nudges.scan': runNudgeScan,
   'agents.judge': judgeAgentWork,
+  'digests.scan': runDigestScan,
 };

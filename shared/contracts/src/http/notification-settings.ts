@@ -32,3 +32,25 @@ export const notificationSettingContracts = {
     response: settings,
   }),
 } as const;
+
+/** An unsubscribe link's secret, as it came in the email: 32 random bytes, base64url. */
+const unsubscribeBody = z.object({ token: z.string().min(16).max(128) });
+const stopped = z.object({ kinds: z.array(z.enum(NOTIFICATION_KINDS)) });
+
+/** The links in notification emails (C3): no session, only the token. */
+export const unsubscribeContracts = {
+  'unsubscribe.preview': contract({
+    method: 'POST',
+    path: '/unsubscribe/preview',
+    summary: 'What an unsubscribe link would stop, without using it.',
+    body: unsubscribeBody,
+    response: stopped,
+  }),
+  'unsubscribe.confirm': contract({
+    method: 'POST',
+    path: '/unsubscribe',
+    summary: 'Use an unsubscribe link: email off for the kinds it names. Works once.',
+    body: unsubscribeBody,
+    response: stopped,
+  }),
+} as const;

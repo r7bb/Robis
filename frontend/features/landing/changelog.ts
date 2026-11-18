@@ -46,6 +46,27 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-18',
     area: 'Product',
+    title: 'Notifications by email',
+    brief:
+      'Get mentions by email as they happen and everything else in one summary a day, each with a link that stops it without signing in.',
+    summary:
+      'Notifications now reach you by email too, following the same switches on your account page, which gains an Email column. A mention is emailed as it happens. Everything else waits for one summary a day, sent from 08:00 UTC, listing each update with a link to it. Past ten mention emails in an hour, further mentions wait for the summary, so a busy thread cannot fill your inbox. Every email ends with a link that stops that kind of email without signing in: it opens a page saying what it will stop, and a button does it, so a mail scanner opening the link changes nothing. The link works once and lasts sixty days, and mail clients can offer it as their own unsubscribe button. Turning email off for a kind, even after something was made, stops it being sent. Mail goes only to an address you have confirmed. Names, titles and comments are put into the email as plain single lines, so nothing anyone writes can pass as part of the email itself.',
+    feature: {
+      name: 'Notification email',
+      where:
+        'Your inbox; the Email column on your account page; the link at the foot of each email',
+      layers: [
+        'Screen: an Email column in the notification settings, and a page that stops emails from a link',
+        'API: unsubscribe.preview and unsubscribe.confirm, which need only the link’s token',
+        'Data: notifications.email_due and emailed_at, email_digests (one a person a day) and unsubscribe_tokens (hashed, used once)',
+      ],
+    },
+    checked:
+      'Nineteen new tests: a mention is emailed at once with its issue, its words and a way to stop, but not with mentions off by email nor to an address never confirmed; past ten an hour, mentions wait for the summary; the summary waits for its hour, sends one email a day, carries later news the next day, never repeats a mention already mailed, and leaves out a kind turned off since; a digest job retried three times sends one email; an unsubscribe link says what it stops, works without signing in, turns off email alone, works once, and a made-up one does nothing; a kind turned off everywhere makes no inbox entry and no email at once or in the summary; and the email text keeps names, titles and comments on one line, without control or direction-changing characters, so none can forge the footer, with no line breaks reaching a header. In headless Chrome on the rebuilt stack, a mention reached the mail server with an unsubscribe link; signed out, the link’s page named Mentions, its button stopped them, the token left the address and a second visit said the link was spent; and the account showed mentions off by email and still on in the app.',
+  },
+  {
+    date: '2026-11-18',
+    area: 'Product',
     title: 'Choose what you hear about',
     brief:
       'Turn each kind of notification on or off from your account, and hear when you are given an issue, someone comments on yours, or a meeting you are in moves.',
