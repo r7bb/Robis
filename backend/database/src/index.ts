@@ -16,6 +16,7 @@ export * from './errors.ts';
 export * from './events.ts';
 export * from './files.ts';
 export * from './mail-jobs.ts';
+export * from './notify.ts';
 export * from './pagination.ts';
 export * from './presence-bus.ts';
 export * from './queries.ts';

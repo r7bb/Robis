@@ -7304,6 +7304,20 @@
                               "role": {
                                 "type": "string"
                               },
+                              "meetingId": {
+                                "type": "string"
+                              },
+                              "startsAt": {
+                                "type": "string"
+                              },
+                              "change": {
+                                "type": "string",
+                                "enum": [
+                                  "moved",
+                                  "changed",
+                                  "canceled"
+                                ]
+                              },
                               "title": {
                                 "type": "string"
                               },
@@ -7514,6 +7528,181 @@
                   },
                   "required": [
                     "marked"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/notification-settings": {
+      "get": {
+        "operationId": "notificationSettings.get",
+        "summary": "Your notification settings: each kind, on or off in the app, by email and by push.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "settings": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "mention",
+                              "assignment",
+                              "issue_comment",
+                              "meeting",
+                              "nudge"
+                            ]
+                          },
+                          "channels": {
+                            "type": "object",
+                            "properties": {
+                              "inApp": {
+                                "type": "boolean"
+                              },
+                              "email": {
+                                "type": "boolean"
+                              },
+                              "push": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "inApp",
+                              "email",
+                              "push"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "channels"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "settings"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "notificationSettings.set",
+        "summary": "Turn one kind on or off in one channel; returns every setting.",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "mention",
+                      "assignment",
+                      "issue_comment",
+                      "meeting",
+                      "nudge"
+                    ]
+                  },
+                  "channel": {
+                    "type": "string",
+                    "enum": [
+                      "in_app",
+                      "email",
+                      "push"
+                    ]
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "channel",
+                  "enabled"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "settings": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "mention",
+                              "assignment",
+                              "issue_comment",
+                              "meeting",
+                              "nudge"
+                            ]
+                          },
+                          "channels": {
+                            "type": "object",
+                            "properties": {
+                              "inApp": {
+                                "type": "boolean"
+                              },
+                              "email": {
+                                "type": "boolean"
+                              },
+                              "push": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "inApp",
+                              "email",
+                              "push"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "channels"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "settings"
                   ],
                   "additionalProperties": false
                 }

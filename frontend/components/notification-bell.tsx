@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { call, type NotificationItem } from '../lib/api.ts';
+import { describeNotification, notificationHref } from '../lib/notification-text.ts';
 
 /**
  * Where a notification takes you.
@@ -23,11 +24,7 @@ function hrefFor(item: NotificationItem): string {
   // Not a member yet: the answer is on the workspaces page.
   if (item.kind === 'invitation') return '/workspaces';
 
-  if (item.payload.issueId && item.workspaceId) {
-    return `/workspaces/${item.workspaceId}/issues/${item.payload.issueId}`;
-  }
-
-  return item.workspaceId ? `/workspaces/${item.workspaceId}` : '/workspaces';
+  return notificationHref(item);
 }
 
 function headlineFor(item: NotificationItem) {
@@ -42,11 +39,16 @@ function headlineFor(item: NotificationItem) {
     );
   }
 
+  // A mention, a comment on your issue, an assignment or a meeting change (C3).
+  const { actor, did, subject } = describeNotification(item);
+  const isIssue = item.kind !== 'meeting';
   return (
     <>
-      <span className="font-medium">{item.actorName ?? 'Someone'}</span> mentioned you
-      {item.payload.issueKey && (
-        <span className="ml-1 font-mono text-xs text-faint">{item.payload.issueKey}</span>
+      <span className="font-medium">{actor}</span> {did}
+      {subject && (
+        <span className={isIssue ? 'ml-1 font-mono text-xs text-faint' : 'ml-1 font-medium'}>
+          {subject}
+        </span>
       )}
     </>
   );
@@ -54,7 +56,7 @@ function headlineFor(item: NotificationItem) {
 
 function bodyFor(item: NotificationItem): string | undefined {
   if (item.kind === 'invitation') return 'Accept or decline it on your workspaces page.';
-  return item.kind === 'nudge' ? item.payload.body : item.payload.excerpt;
+  return item.kind === 'nudge' ? item.payload.body : describeNotification(item).body;
 }
 
 /** Poll interval for the inbox. Notifications arrive via a worker, so there is

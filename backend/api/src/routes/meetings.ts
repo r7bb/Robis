@@ -1,7 +1,13 @@
 import {
   type Database,
+  type Executor,
+  enqueue,
+  type MeetingChange,
+  type MeetingJob,
   meetingAttendees,
   meetings,
+  NOTIFY_MEETING_JOB,
+  noticeWindow,
   publishEvent,
   recordAudit,
   users,
@@ -37,6 +43,8 @@ type MeetingRow = {
   id: string;
   title: string;
   startsAt: Date;
+  durationMinutes: number;
+  joinUrl: string | null;
   organizerId: string | null;
   canceledAt: Date | null;
 };
@@ -53,6 +61,8 @@ async function loadMeeting(
       id: meetings.id,
       title: meetings.title,
       startsAt: meetings.startsAt,
+      durationMinutes: meetings.durationMinutes,
+      joinUrl: meetings.joinUrl,
       organizerId: meetings.organizerId,
       canceledAt: meetings.canceledAt,
     })
@@ -76,6 +86,39 @@ function assertCanManage(meeting: MeetingRow, userId: string, role: Parameters<t
   const allowed = isOrganizer ? can(role, 'meeting:manage_own') : can(role, 'meeting:manage_any');
 
   if (!allowed) throw ApiError.forbidden();
+}
+
+type Shape = Pick<MeetingRow, 'title' | 'startsAt' | 'durationMinutes' | 'joinUrl'>;
+
+/**
+ * What an edit did, as attendees would care (C3): a new time or length moved
+ * it, a new title or link changed it. An agenda edit, or a save that left
+ * everything as it was, is no news.
+ */
+function meetingChange(before: Shape, after: Shape): MeetingChange | null {
+  if (
+    before.startsAt.getTime() !== after.startsAt.getTime() ||
+    before.durationMinutes !== after.durationMinutes
+  ) {
+    return 'moved';
+  }
+  return before.title !== after.title || before.joinUrl !== after.joinUrl ? 'changed' : null;
+}
+
+/**
+ * Tell the attendees a meeting moved, changed or was called off (C3). Edits
+ * of one kind inside one notice window are one notice (`noticeWindow`), so a
+ * meeting moved ten times in a minute tells people once, at its last time.
+ */
+async function queueMeetingNotice(
+  tx: Executor,
+  meetingId: string,
+  change: MeetingChange,
+  actorId: string,
+) {
+  const when = change === 'canceled' ? 'once' : noticeWindow();
+  const job: MeetingJob = { meetingId, change, actorId, eventId: `${meetingId}:${change}:${when}` };
+  await enqueue(tx, NOTIFY_MEETING_JOB, job);
 }
 
 export async function meetingRoutes(app: FastifyInstance, opts: { db: Database }) {
@@ -294,6 +337,9 @@ export async function meetingRoutes(app: FastifyInstance, opts: { db: Database }
             );
         }
 
+        const change = meetingChange(meeting, row);
+        if (change) await queueMeetingNotice(tx, meetingId, change, user.id);
+
         await recordAudit(tx, auditActor(request), {
           workspaceId,
           entityType: 'meeting',
@@ -356,6 +402,7 @@ export async function meetingRoutes(app: FastifyInstance, opts: { db: Database }
 
         // A repeat cancel changed nothing, so it records nothing.
         if (canceled.length === 0) return;
+        await queueMeetingNotice(tx, meetingId, 'canceled', user.id);
 
         await recordAudit(tx, auditActor(request), {
           workspaceId,

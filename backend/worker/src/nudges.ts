@@ -2,7 +2,7 @@ import {
   type Database,
   documents,
   issues,
-  notifications,
+  notify,
   projects,
   users,
   workspaceMembers,
@@ -173,9 +173,9 @@ export async function deliverNudge(
 ): Promise<boolean> {
   // A nudge with no workspace still needs one for the row; use the user's own
   // id as the entity so the column stays meaningful.
-  const inserted = await db
-    .insert(notifications)
-    .values({
+  // Through `notify`, so a nudge turned off is never made (C3).
+  const inserted = await notify(db, [
+    {
       workspaceId: nudge.workspaceId ?? null,
       userId,
       actorId: null,
@@ -183,10 +183,9 @@ export async function deliverNudge(
       entityType: 'nudge',
       entityId: null,
       dedupeKey: dedupeKeyFor(nudge, now),
-      payload: JSON.stringify({ title: nudge.title, body: nudge.body, nudge: nudge.kind }),
-    })
-    .onConflictDoNothing({ target: [notifications.userId, notifications.dedupeKey] })
-    .returning({ id: notifications.id });
+      payload: { title: nudge.title, body: nudge.body, nudge: nudge.kind },
+    },
+  ]);
 
   return inserted.length > 0;
 }

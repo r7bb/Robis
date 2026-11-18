@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-18',
     area: 'Product',
+    title: 'Choose what you hear about',
+    brief:
+      'Turn each kind of notification on or off from your account, and hear when you are given an issue, someone comments on yours, or a meeting you are in moves.',
+    summary:
+      'Your account page now has a Notifications section listing every kind of notification, each with its own switch: mentions, issues given to you, comments on your issues, meeting changes and suggestions. Three of those are new. You now hear when someone else makes you an issue’s assignee, when anyone but you comments on an issue you filed or are assigned, and when a meeting you are in is moved, retitled or called off. Turning a kind off means it is never made, and a change is saved as you make it. Some things are told once rather than many times: an issue handed back and forth, or a meeting moved again and again, tells you once every ten minutes, and a save that changes nothing, or only the agenda, tells nobody. Someone mentioned in a comment on their own issue hears once, as the mention. A comment written by an agent (the triage agent writes one on every new issue) tells only the people it mentions, and agents are never told anything, having no inbox to read. Invitations to a workspace always reach you. Email and push come next, and will follow the same switches.',
+    feature: {
+      name: 'Notification settings',
+      where: 'Your account page, under Notifications; new kinds show in the inbox',
+      layers: [
+        'Screen: a switch for each kind on the account page, and inbox entries for assignments, comments on your issues and meeting changes',
+        'API: notificationSettings.get and notificationSettings.set; the inbox leaves out kinds turned off in the app',
+        'Data: notification_settings (what each person turned off) and notifications.in_app; every notification goes through one gate that reads them',
+      ],
+    },
+    checked:
+      'Twenty-seven new tests: every kind starts on everywhere, one channel of one kind turns off and on again and is yours alone, and an unknown kind or channel is refused; being given an issue, or filed one already assigned, is a notification while taking it yourself is not, and a job run three times tells you once; a comment tells the issue’s filer and assignee but not its writer, once if they were mentioned, still when mentions are off, and not at all when an agent wrote it; moving or retitling a meeting tells its attendees but not the mover, cancelling does too, and a save that changes nothing or only the agenda tells nobody; an issue handed back and forth five times tells its assignee once; a kind off everywhere makes nothing, one off in the app stays out of the inbox and its count, and one off leaves the others alone; the inbox wording and links for each kind; and hidden notifications are pruned after 90 days. In headless Chrome on the rebuilt stack, the account page listed all five kinds, a switch turned off survived a reload, an issue given to another account reached its inbox as “gave you”, and the settings fit a phone with no sideways scroll.',
+  },
+  {
+    date: '2026-11-18',
+    area: 'Product',
     title: 'The board by keyboard',
     brief:
       'Run the whole board from the keyboard: single keys to file, move between, change, select and delete issues, and a list of them on the question mark key.',

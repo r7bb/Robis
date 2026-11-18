@@ -13,6 +13,7 @@ import { bulkIssueContracts } from './issues-bulk.ts';
 import { labelContracts } from './labels.ts';
 import { meetingContracts } from './meetings.ts';
 import { memberContracts } from './members.ts';
+import { notificationSettingContracts } from './notification-settings.ts';
 import { notificationContracts } from './notifications.ts';
 import { overviewContracts } from './overview.ts';
 import { projectContracts } from './projects.ts';
@@ -50,6 +51,7 @@ export const contracts = {
   ...channelContracts,
   ...meetingContracts,
   ...notificationContracts,
+  ...notificationSettingContracts,
   ...auditContracts,
   ...overviewContracts,
   ...attachmentContracts,

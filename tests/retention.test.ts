@@ -109,4 +109,22 @@ describe('notifications', () => {
       .orderBy(sql`1`);
     expect(left.map((row) => row.key)).toEqual(['old-unread', 'recent-read']);
   });
+
+  test('one never shown in the inbox goes 90 days after it was made (C3)', async () => {
+    const actor = await createActor('Reader');
+    const { ownerDb } = await getHarness();
+    const base = { userId: actor.id, kind: 'nudge', entityType: 'user', payload: '{}' };
+    await ownerDb.insert(notifications).values([
+      { ...base, dedupeKey: 'old-hidden', createdAt: daysAgo(91), inApp: false },
+      { ...base, dedupeKey: 'new-hidden', createdAt: daysAgo(10), inApp: false },
+    ]);
+
+    await runCleanup();
+
+    const left = await ownerDb
+      .select({ key: notifications.dedupeKey })
+      .from(notifications)
+      .where(eq(notifications.userId, actor.id));
+    expect(left.map((row) => row.key)).toEqual(['new-hidden']);
+  });
 });

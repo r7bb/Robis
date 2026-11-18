@@ -34,6 +34,7 @@ import { bulkIssueRoutes } from './routes/issues-bulk.ts';
 import { labelRoutes } from './routes/labels.ts';
 import { meetingRoutes } from './routes/meetings.ts';
 import { memberRoutes } from './routes/members.ts';
+import { notificationSettingRoutes } from './routes/notification-settings.ts';
 import { notificationRoutes } from './routes/notifications.ts';
 import { overviewRoutes } from './routes/overview.ts';
 import { projectRoutes } from './routes/projects.ts';
@@ -256,6 +257,7 @@ export function buildApp({
   app.register(channelRoutes, { db });
   app.register(meetingRoutes, { db });
   app.register(notificationRoutes, { db });
+  app.register(notificationSettingRoutes, { db });
   app.register(auditRoutes, { db, limits });
   app.register(accountEventRoutes, { db, limits });
   app.register(avatarRoutes, { db, storage });

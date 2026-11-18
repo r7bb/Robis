@@ -24,7 +24,9 @@ export async function notificationRoutes(app: FastifyInstance, opts: { db: Datab
     async (request, { query: { unread } }) => {
       const user = currentUser(request);
 
-      const filters = [eq(notifications.userId, user.id)];
+      // Not the ones whose kind is off in the app (C3): those exist only for
+      // the email or push still on.
+      const filters = [eq(notifications.userId, user.id), eq(notifications.inApp, true)];
       if (unread === '1' || unread === 'true') filters.push(isNull(notifications.readAt));
 
       const rows = await db
@@ -119,7 +121,13 @@ export async function notificationRoutes(app: FastifyInstance, opts: { db: Datab
       const updated = await db
         .update(notifications)
         .set({ readAt: new Date() })
-        .where(and(eq(notifications.userId, user.id), isNull(notifications.readAt)))
+        .where(
+          and(
+            eq(notifications.userId, user.id),
+            eq(notifications.inApp, true),
+            isNull(notifications.readAt),
+          ),
+        )
         .returning({ id: notifications.id });
 
       return { marked: updated.length };

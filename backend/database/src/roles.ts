@@ -226,6 +226,11 @@ export const WORKER_GRANTS: TableGrants = {
   documents: ['select'],
   // Delete: read notifications past their retention (stage 3, item 30).
   notifications: ['select', 'insert', 'delete'],
+  // What each person turned off, read before anything is sent (C3).
+  notification_settings: ['select'],
+  // Who is told when a meeting moves or is called off (C3).
+  meetings: ['select'],
+  meeting_attendees: ['select'],
   sessions: ['select', 'delete'],
   // Idempotency keys past their replay window (stage 3, item 30).
   mutations: ['select', 'delete'],

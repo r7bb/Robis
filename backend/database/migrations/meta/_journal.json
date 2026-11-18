@@ -302,6 +302,13 @@
       "when": 1794948736193,
       "tag": "0042_due_dates_and_sub_issues",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1795030371262,
+      "tag": "0043_notification_settings",
+      "breakpoints": true
     }
   ]
 }

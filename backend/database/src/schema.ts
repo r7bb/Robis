@@ -961,6 +961,12 @@ export const notifications = pgTable(
      */
     dedupeKey: text('dedupe_key').notNull(),
     payload: text('payload').notNull().default(sql`'{}'`),
+    /**
+     * Shown in the inbox (C3). False when its kind is off in the app but on
+     * in another channel: the row is still what an email or a push is made
+     * from, so it is kept, but the inbox never lists it.
+     */
+    inApp: boolean('in_app').notNull().default(true),
     readAt: timestamp('read_at', { withTimezone: true }),
     createdAt: createdAt(),
   },
@@ -968,6 +974,33 @@ export const notifications = pgTable(
     // Unread-first inbox for one user, which is the only way this is read.
     index('notifications_user_created_idx').on(t.userId, t.createdAt),
     uniqueIndex('notifications_dedupe_key').on(t.userId, t.dedupeKey),
+  ],
+);
+
+/**
+ * What someone has turned off (C3), by kind and channel. Everything starts
+ * on, so a row is written only for a choice, and `enabled` says which way:
+ * turning a channel back on writes true rather than deleting, so the row
+ * says when the choice was last made.
+ */
+export const notificationSettings = pgTable(
+  'notification_settings',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),
+    channel: text('channel').notNull(),
+    enabled: boolean('enabled').notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.kind, t.channel] }),
+    check(
+      'notification_settings_kind',
+      sql`${t.kind} in ('mention', 'assignment', 'issue_comment', 'meeting', 'nudge')`,
+    ),
+    check('notification_settings_channel', sql`${t.channel} in ('in_app', 'email', 'push')`),
   ],
 );
 

@@ -10,7 +10,7 @@ const notificationParams = z.object({ notificationId: z.string() });
  * anything else it carries passes through, so a new kind needs no change here.
  */
 const payload = z.looseObject({
-  /** Mentions. */
+  /** Mentions, comments on your issue and assignments. */
   issueId: z.string().optional(),
   issueKey: z.string().nullable().optional(),
   issueTitle: z.string().nullable().optional(),
@@ -18,6 +18,10 @@ const payload = z.looseObject({
   /** Invitations. */
   workspaceName: z.string().nullable().optional(),
   role: z.string().optional(),
+  /** Meeting changes (C3). */
+  meetingId: z.string().optional(),
+  startsAt: z.string().optional(),
+  change: z.enum(['moved', 'changed', 'canceled']).optional(),
   /** Nudges. */
   title: z.string().optional(),
   body: z.string().optional(),

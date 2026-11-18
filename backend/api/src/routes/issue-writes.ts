@@ -1,9 +1,13 @@
 import {
+  type AssignmentJob,
   type AuditActor,
   attachments,
   type Executor,
+  enqueue,
   ISSUE_FIELDS,
   issues,
+  NOTIFY_ASSIGNMENT_JOB,
+  noticeWindow,
   queueAttachmentPurge,
   recordAgentChanges,
   recordAudit,
@@ -65,6 +69,26 @@ export type IssueUpdate = {
 };
 
 /**
+ * Tell someone they were given an issue (C3), in the transaction that gave
+ * it: not when they took it themselves, and not when it was taken away.
+ */
+export async function queueAssignment(
+  tx: Executor,
+  actor: AuditActor,
+  issueId: string,
+  assigneeId: string | null | undefined,
+) {
+  if (!assigneeId || assigneeId === actor.id) return;
+  const job: AssignmentJob = {
+    issueId,
+    assigneeId,
+    actorId: actor.id,
+    eventId: `${issueId}:${assigneeId}:${noticeWindow()}`,
+  };
+  await enqueue(tx, NOTIFY_ASSIGNMENT_JOB, job);
+}
+
+/**
  * Apply an edit and record it, in the caller's transaction.
  *
  * The status being moved *from* is read again here, under a row lock: a copy
@@ -77,7 +101,7 @@ export type IssueUpdate = {
 export async function applyIssueUpdate(tx: Tx, actor: AuditActor, update: IssueUpdate) {
   const { workspaceId, issueId, input } = update;
   const [current] = await tx
-    .select({ status: issues.status })
+    .select({ status: issues.status, assigneeId: issues.assigneeId })
     .from(issues)
     .where(and(eq(issues.id, issueId), eq(issues.workspaceId, workspaceId)))
     .for('update');
@@ -109,6 +133,9 @@ export async function applyIssueUpdate(tx: Tx, actor: AuditActor, update: IssueU
   });
 
   if (!row) throw ApiError.notFound('Issue not found');
+  if (input.assigneeId !== current.assigneeId) {
+    await queueAssignment(tx, actor, issueId, input.assigneeId);
+  }
 
   // What an agent changed, with the value before, so a person's later undo
   // can be told from an edit (B6).

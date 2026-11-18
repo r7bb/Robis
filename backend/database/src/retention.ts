@@ -1,4 +1,4 @@
-import { and, isNotNull, lt } from 'drizzle-orm';
+import { and, eq, isNotNull, lt, or } from 'drizzle-orm';
 import type { Executor } from './index.ts';
 import { agentTokens, mutations, notifications } from './schema.ts';
 
@@ -30,12 +30,21 @@ export async function pruneIdempotencyLedger(db: Executor, now = new Date()): Pr
   return removed.length;
 }
 
-/** Remove notifications read more than the retention period ago. Returns how many. */
+/**
+ * Remove notifications read more than the retention period ago, and those
+ * never shown in the inbox (C3) once as old: nobody can read one of those,
+ * so its age is its only clock. Returns how many.
+ */
 export async function pruneReadNotifications(db: Executor, now = new Date()): Promise<number> {
   const before = new Date(now.getTime() - NOTIFICATION_RETENTION_DAYS * DAY_MS);
   const removed = await db
     .delete(notifications)
-    .where(and(isNotNull(notifications.readAt), lt(notifications.readAt, before)))
+    .where(
+      or(
+        and(isNotNull(notifications.readAt), lt(notifications.readAt, before)),
+        and(eq(notifications.inApp, false), lt(notifications.createdAt, before)),
+      ),
+    )
     .returning({ id: notifications.id });
   return removed.length;
 }

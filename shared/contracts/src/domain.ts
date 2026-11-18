@@ -28,3 +28,20 @@ export type TriageJob = { workspaceId: string; issueId: string };
  */
 export const LABEL_COLOURS = ['slate', 'sky', 'emerald', 'amber', 'rose', 'violet'] as const;
 export type LabelColour = (typeof LABEL_COLOURS)[number];
+
+/**
+ * What someone can be told about (C3), each switched on or off by channel.
+ * An invitation is not here: it is always shown, being the way in.
+ */
+export const NOTIFICATION_KINDS = [
+  'mention',
+  'assignment',
+  'issue_comment',
+  'meeting',
+  'nudge',
+] as const;
+export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
+
+/** Where a notification can reach someone (C3). */
+export const NOTIFICATION_CHANNELS = ['in_app', 'email', 'push'] as const;
+export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];

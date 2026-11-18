@@ -37,7 +37,13 @@ import {
 import { withIdempotency } from '../plugins/idempotency.ts';
 import type { SuggestionClient } from '../suggestions.ts';
 import { assertParentAllowed, loadRelatives } from './issue-tree.ts';
-import { applyIssueUpdate, assertAssignable, delegateOf, deleteIssueRow } from './issue-writes.ts';
+import {
+  applyIssueUpdate,
+  assertAssignable,
+  delegateOf,
+  deleteIssueRow,
+  queueAssignment,
+} from './issue-writes.ts';
 import { loadProject } from './projects.ts';
 
 /** Tenant-scoped issue lookup. See the note on `loadProject`. */
@@ -149,6 +155,7 @@ async function fileIssue(
     payload: { key: `${bumped.key}-${bumped.number}`, title: created!.title },
   });
   await queueTriage(tx, { workspaceId, issueId: created!.id }, user.id);
+  await queueAssignment(tx, actor, created!.id, created!.assigneeId);
   if (user.kind === 'agent') {
     await recordAgentChanges(tx, [
       {
