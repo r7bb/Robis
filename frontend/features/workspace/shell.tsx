@@ -10,7 +10,8 @@ import {
 } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { NotificationBell } from '../../components/notification-bell.tsx';
 import { PresenceBar } from '../../components/presence.tsx';
 import { SearchBox } from '../../components/search-box.tsx';
@@ -23,12 +24,14 @@ import {
   SectionLabel,
 } from '../../components/ui/primitives.tsx';
 import { ApiError, call, type Me, type Member } from '../../lib/api.ts';
+import { CHANNEL_PARAM } from '../../lib/links.ts';
 import { type ConnectionState, useRealtime } from '../../lib/realtime.ts';
 import { lastTheme, rememberTheme, useApplyTheme } from '../../lib/theme.ts';
 import { useRequireAvatar } from '../../lib/use-require-avatar.ts';
 import { ChannelList } from '../chat/channel-list.tsx';
 import { ChatView } from '../chat/chat-view.tsx';
 import { useChannels, useCreateChannel } from '../chat/use-chat.ts';
+import { PaletteButton } from '../command/palette-button.tsx';
 import { SidePanel } from './side-panel.tsx';
 
 /** Breadcrumb, search, presence, notifications, and the way out to /account. */
@@ -83,7 +86,10 @@ function TopBar({
       </nav>
 
       <div className="col-span-2 col-start-1 row-start-2 md:col-span-1 md:col-start-2 md:row-start-1">
-        <SearchBox workspaceId={workspaceId} />
+        <SearchBox
+          workspaceId={workspaceId}
+          trailing={<PaletteButton className="hidden md:flex" />}
+        />
       </div>
 
       <div className="col-start-2 row-start-1 flex min-w-0 items-center justify-end gap-3 md:col-start-3">
@@ -223,6 +229,14 @@ function shellScopes(channelId: string | null): Scope[] {
  */
 export function WorkspaceShell({ workspaceId }: { workspaceId: string }) {
   const [channelId, setChannelId] = useState<string | null>(null);
+  // A channel named in the address (the palette's channels, C2), taken once
+  // it is known to be one of this workspace's rooms. The address then drops
+  // it, as the sidebar does not keep one, so choosing it again works and a
+  // reload opens where you were rather than where you came in.
+  const asked = useSearchParams().get(CHANNEL_PARAM);
+  const taken = useRef<string | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
 
   const workspace = useQuery({
     queryKey: ['workspace', workspaceId],
@@ -264,6 +278,13 @@ export function WorkspaceShell({ workspaceId }: { workspaceId: string }) {
    */
   useEffect(() => {
     if (rooms.length === 0) return;
+    if (!asked) taken.current = null;
+    else if (asked !== taken.current && rooms.some((room) => room.id === asked)) {
+      taken.current = asked;
+      setChannelId(asked);
+      router.replace(pathname, { scroll: false });
+      return;
+    }
     if (channelId && rooms.some((room) => room.id === channelId)) return;
 
     // Prefer the room every workspace is created with. The list is sorted by
@@ -271,7 +292,7 @@ export function WorkspaceShell({ workspaceId }: { workspaceId: string }) {
     // channel called `#api` would quietly become the front page.
     const fallback = rooms.find((room) => room.name === 'general') ?? rooms[0]!;
     setChannelId(fallback.id);
-  }, [rooms, channelId]);
+  }, [rooms, channelId, asked, router, pathname]);
 
   // Fall back to the last theme seen so navigating between workspaces does
   // not flash the default while this one loads.

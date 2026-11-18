@@ -1,10 +1,14 @@
 import { type Database, searchWorkspace } from '@robis/database';
 import { contracts } from '@robis/shared';
+import { sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import type { RateLimits } from '../app.ts';
 import { serve } from '../contract.ts';
 import { currentMembership, requireAuth, requireMembership } from '../plugins/authz.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
+
+/** Long enough for any real search; a query still running then is stopped. */
+const SEARCH_TIMEOUT = '3s';
 
 /**
  * Search within one workspace.
@@ -34,9 +38,11 @@ export async function searchRoutes(
     async (request, { query: { q, type, limit } }) => {
       const { workspaceId } = currentMembership(request);
 
-      const results = await searchWorkspace(db, workspaceId, (q ?? '').slice(0, 200), {
-        type,
-        limit,
+      // Typed into on every pause (C2): a query that runs long is stopped
+      // rather than left holding a connection.
+      const results = await db.transaction(async (tx) => {
+        await tx.execute(sql.raw(`set local statement_timeout = '${SEARCH_TIMEOUT}'`));
+        return searchWorkspace(tx, workspaceId, (q ?? '').slice(0, 200), { type, limit });
       });
 
       return { query: q ?? '', results };

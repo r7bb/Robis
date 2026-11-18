@@ -1,6 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { WorkspaceShell } from '../../../features/workspace/shell.tsx';
 
 /**
@@ -14,5 +15,10 @@ import { WorkspaceShell } from '../../../features/workspace/shell.tsx';
 export default function WorkspacePage() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
 
-  return <WorkspaceShell workspaceId={workspaceId} />;
+  // The shell reads the channel to open from the address, which needs a boundary.
+  return (
+    <Suspense fallback={<div className="h-dvh bg-surface" />}>
+      <WorkspaceShell workspaceId={workspaceId} />
+    </Suspense>
+  );
 }

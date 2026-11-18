@@ -148,15 +148,15 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **A command palette.** Press Ctrl K or Cmd K anywhere in a workspace to
+  find an issue, a document, a channel or a person, or to file an issue,
+  open a board or change the open issue’s status.
 - **Due dates and sub-issues.** Give an issue a day it is due, shown on its
   card as it nears and once it passes, and break an issue into sub-issues in
   the same project.
 - **A page of search results.** Press Enter in the search box for every
   match on its own page, narrowed to issues, documents or comments, with the
   matched words marked.
-- **Change many issues at once.** Pick cards on the board and move,
-  prioritise, assign, label or delete them together; anything you may not
-  change is left alone and named.
 
 <!-- latest:end -->
 

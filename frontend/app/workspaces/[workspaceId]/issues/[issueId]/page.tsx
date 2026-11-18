@@ -3,7 +3,6 @@
 import {
   BOARD_COLUMNS,
   type BodyOf,
-  can,
   contracts,
   ISSUE_PRIORITIES,
   type IssuePriority,
@@ -17,11 +16,14 @@ import { CommentThread } from '../../../../../components/comment-thread.tsx';
 import { DeleteButton } from '../../../../../components/delete-button.tsx';
 import { PresenceBar } from '../../../../../components/presence.tsx';
 import { AgentBadge, ErrorState } from '../../../../../components/ui/primitives.tsx';
+import { useCommands } from '../../../../../features/command/command-provider.tsx';
 import { IssueAttachments } from '../../../../../features/issues/attachments.tsx';
 import { DueField } from '../../../../../features/issues/due-field.tsx';
 import { ParentPicker, SubIssues } from '../../../../../features/issues/issue-tree.tsx';
 import { LabelPicker } from '../../../../../features/issues/label-picker.tsx';
 import { call } from '../../../../../lib/api.ts';
+import { issueCommands } from '../../../../../lib/page-commands.ts';
+import { may } from '../../../../../lib/permissions.ts';
 import { useCoalesced, useRealtime } from '../../../../../lib/realtime.ts';
 import { concernsIssue } from '../../../../../lib/realtime-events.ts';
 import { lastTheme, useApplyTheme } from '../../../../../lib/theme.ts';
@@ -96,12 +98,23 @@ export default function IssuePage() {
     },
   });
 
-  if (issue.isError) return <ErrorState message={(issue.error as Error).message} />;
-
   const data = issue.data?.issue;
   const role = workspace.data?.workspace.role;
-  const canEdit = role !== undefined && role !== 'GUEST';
-  const canDelete = role !== undefined && can(role, 'issue:delete');
+  // The same checks the palette makes for its commands (C2).
+  const canEdit = may(role, 'editIssue');
+  const canDelete = may(role, 'deleteIssue');
+  useCommands(
+    data
+      ? issueCommands({
+          issueKey: data.key,
+          status: data.status,
+          statusLabel: (status) => STATUS_LABELS[status],
+          setStatus: (status) => update.mutate({ status }),
+        })
+      : [],
+  );
+
+  if (issue.isError) return <ErrorState message={(issue.error as Error).message} />;
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-12">
@@ -256,7 +269,7 @@ export default function IssuePage() {
             issueId={issueId}
             parent={data.parent}
             items={data.children}
-            canEdit={canEdit}
+            canEdit={may(role, 'newIssue')}
           />
 
           <IssueAttachments workspaceId={workspaceId} issueId={issueId} role={role} />

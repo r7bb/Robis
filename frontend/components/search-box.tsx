@@ -4,7 +4,7 @@ import { contracts } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { call, type SearchHit } from '../lib/api.ts';
 import { hitHref, searchHref } from '../lib/search-links.ts';
 import { Highlight } from './ui/highlight.tsx';
@@ -18,7 +18,14 @@ const KIND_LABELS: Record<SearchHit['kind'], string> = {
   comment: 'Comment',
 };
 
-export function SearchBox({ workspaceId }: { workspaceId: string }) {
+/** `trailing` sits inside the field's right edge: the shell puts the palette's shortcut there. */
+export function SearchBox({
+  workspaceId,
+  trailing,
+}: {
+  workspaceId: string;
+  trailing?: ReactNode;
+}) {
   const [input, setInput] = useState('');
   const [query, setQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -86,8 +93,11 @@ export function SearchBox({ workspaceId }: { workspaceId: string }) {
         }}
         placeholder="Search issues, docs and comments…"
         aria-label="Search this workspace"
-        className="w-full text-ellipsis rounded-md border border-line bg-surface py-2 pl-9 pr-3 text-sm text-content outline-none transition placeholder:text-faint focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60 [&::-webkit-search-cancel-button]:hidden"
+        className={`w-full text-ellipsis rounded-md border border-line bg-surface py-2 pl-9 ${trailing ? 'pr-16' : 'pr-3'} text-sm text-content outline-none transition placeholder:text-faint focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60 [&::-webkit-search-cancel-button]:hidden`}
       />
+      {trailing && (
+        <div className="absolute right-1.5 top-[1.125rem] -translate-y-1/2">{trailing}</div>
+      )}
 
       {/* The live region is always mounted. One that appears together with
           its content is often not announced at all. */}

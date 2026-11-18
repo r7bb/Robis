@@ -4,7 +4,6 @@ import {
   type Avatar as AvatarRef,
   BOARD_COLUMNS,
   type BoardFilter,
-  can,
   contracts,
   type IssuePriority,
   type IssueStatus,
@@ -29,6 +28,7 @@ import { useBoardDrag } from '../../../../../features/board/board-drag.ts';
 import { BoardFilters } from '../../../../../features/board/board-filters.tsx';
 import { BulkBar } from '../../../../../features/board/bulk-bar.tsx';
 import { useSelection } from '../../../../../features/board/use-selection.ts';
+import { useCommands } from '../../../../../features/command/command-provider.tsx';
 import { DuplicateHints } from '../../../../../features/issues/duplicate-hints.tsx';
 import { PriorityHint } from '../../../../../features/issues/priority-hint.tsx';
 import { call } from '../../../../../lib/api.ts';
@@ -38,6 +38,9 @@ import {
   isFiltered,
   matchesFilter,
 } from '../../../../../lib/board-filter.ts';
+import { COMPOSE_PARAM } from '../../../../../lib/links.ts';
+import { boardCommands } from '../../../../../lib/page-commands.ts';
+import { may } from '../../../../../lib/permissions.ts';
 import { useCoalesced, useRealtime } from '../../../../../lib/realtime.ts';
 import { concernsBoard } from '../../../../../lib/realtime-events.ts';
 import { lastTheme, useApplyTheme } from '../../../../../lib/theme.ts';
@@ -62,7 +65,8 @@ function Board() {
   // issue is already on the device, so narrowing it needs no request.
   const router = useRouter();
   const pathname = usePathname();
-  const filter = filterFromParams(useSearchParams());
+  const params = useSearchParams();
+  const filter = filterFromParams(params);
   const setFilter = (next: BoardFilter) => {
     const query = filterToQuery(next);
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
@@ -73,6 +77,8 @@ function Board() {
   const selection = useSelection();
   // Where focus goes once a bulk change is done and its picks are gone.
   const selectToggle = useRef<HTMLButtonElement>(null);
+  // The new issue field, which the palette's New issue (C2) jumps to.
+  const titleField = useRef<HTMLInputElement>(null);
   const labels = useQuery({
     queryKey: ['labels', workspaceId],
     queryFn: () => call(contracts['labels.list'], { params: { workspaceId } }),
@@ -108,6 +114,42 @@ function Board() {
 
   useApplyTheme(workspace.data?.workspace.theme ?? lastTheme());
 
+  const role = workspace.data?.workspace.role;
+  // The same checks the palette makes for its commands (C2).
+  const canCreate = may(role, 'newIssue');
+  const canEdit = may(role, 'editIssue');
+  const canDelete = may(role, 'deleteIssue');
+
+  const projects = useQuery({
+    queryKey: ['projects', workspaceId],
+    queryFn: () => call(contracts['projects.list'], { params: { workspaceId } }),
+  });
+  const projectName = projects.data?.projects.find((p) => p.id === projectId)?.name ?? 'this board';
+  const compose = () => {
+    titleField.current?.scrollIntoView({ block: 'nearest' });
+    titleField.current?.focus();
+  };
+  useCommands(
+    boardCommands({
+      projectName,
+      compose,
+      selecting: selection.on,
+      toggleSelecting: selection.toggleOn,
+      filtered: isFiltered(filter),
+      clearFilters: () => setFilter({}),
+    }),
+  );
+
+  // Arrived from the palette's New issue elsewhere: straight to the field,
+  // then the address loses the flag so a reload does not do it again.
+  const composing = params.get(COMPOSE_PARAM) !== null;
+  useEffect(() => {
+    if (!composing || !canCreate) return;
+    titleField.current?.focus();
+    const query = filterToQuery(filterFromParams(new URLSearchParams(window.location.search)));
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }, [composing, canCreate, router, pathname]);
+
   // Reconnecting means we may have missed events while the socket was down.
   const { refresh } = board;
   useEffect(() => {
@@ -125,10 +167,6 @@ function Board() {
     setChosen(null);
     void board.createIssue({ title: trimmed, ...(priority ? { priority } : {}) });
   }
-
-  const role = workspace.data?.workspace.role;
-  const canEdit = role !== undefined && role !== 'GUEST';
-  const canDelete = role !== undefined && can(role, 'issue:delete');
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">
@@ -153,10 +191,12 @@ function Board() {
         <PresenceBar users={presence} state={realtimeState} here={projectId} />
       </div>
 
-      {canEdit && (
+      {canCreate && (
         <div className="mt-6">
           <form onSubmit={onCreate} className="flex gap-2">
             <input
+              ref={titleField}
+              aria-label="New issue title"
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               placeholder="What needs doing?"
@@ -189,7 +229,7 @@ function Board() {
         projectId={projectId}
         filter={filter}
         onChange={setFilter}
-        canEdit={canEdit}
+        canEdit={may(role, 'saveView')}
         labels={labels.data?.labels ?? []}
       />
 

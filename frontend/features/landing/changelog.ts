@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-18',
     area: 'Product',
+    title: 'A command palette',
+    brief:
+      'Press Ctrl K or Cmd K anywhere in a workspace to find an issue, a document, a channel or a person, or to file an issue, open a board or change the open issue’s status.',
+    summary:
+      'Every workspace page now has a command palette. Press Ctrl K, or Cmd K on a Mac, or the shortcut shown in the search field, and start typing. It finds issues and documents by what they say, boards, channels and people by name, and lists what you can do from where you are: file a new issue, open a board, and on an issue’s page move it to another status. Arrows move through the list, Enter chooses, and Escape steps back or closes. A person leads to the issues assigned to them, on the board you are on or one you pick. Each action makes the same check as its button, so it is only offered to someone who may take it: a guest sees no New issue and no Change status. Search now matches the word you are still typing from its third letter, so “pipe” already finds “pipeline”, in the palette and the search box alike.',
+    feature: {
+      name: 'Command palette',
+      where: 'Ctrl K or Cmd K on any workspace page, or the shortcut in the top bar’s search field',
+      layers: [
+        'Screen: a palette over the page with grouped results, second lists for choices, and the keys it answers to',
+        'API: search.workspace matches the last word typed as the start of a word, and stops a search that runs long',
+        'Data: no new tables; one table of actions to permissions is shared by the buttons and the palette',
+      ],
+    },
+    checked:
+      'Fifty-one new tests: what was typed picks and orders commands, every word must appear and accents do not matter; a command is shown to a role exactly when its button is, for every role and action, and a guest files, changes and deletes nothing; boards, channels, people and search results each lead to the right address; and search matches a word still being typed but not a finished one, an earlier one, one inside an open quote or an exclusion, or one under three letters, keeps an “or” meaning or, and drops a NUL rather than failing. In headless Chrome on the rebuilt stack, with the keyboard only: Ctrl K opened the palette with focus in its field; “authen” found the Safari authentication issue and Enter opened it; its status was changed to Done and back, once by typing and once through the list of statuses, with Escape stepping back out of that list first; a channel opened from the palette, and the first one again after another, the address left clean each time; New issue focused the board’s field, and from the workspace page opened a board ready to type; and the palette fits a phone with no sideways scroll.',
+  },
+  {
+    date: '2026-11-18',
+    area: 'Product',
     title: 'Due dates and sub-issues',
     brief:
       'Give an issue a day it is due, shown on its card as it nears and once it passes, and break an issue into sub-issues in the same project.',

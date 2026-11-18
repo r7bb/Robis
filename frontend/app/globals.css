@@ -575,3 +575,27 @@ body {
     transform: none;
   }
 }
+
+/*
+ * The command palette (C2) settles in from just above, its backdrop fading
+ * in behind it; with reduced motion it is simply there.
+ */
+@keyframes palette-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.985);
+  }
+}
+@keyframes palette-backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .palette[open] {
+    animation: palette-in var(--micro) var(--ease);
+  }
+  .palette[open]::backdrop {
+    animation: palette-backdrop-in var(--micro) var(--ease);
+  }
+}

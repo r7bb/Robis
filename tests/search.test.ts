@@ -276,6 +276,97 @@ describe('finding things', () => {
   });
 });
 
+/**
+ * The command palette (C2) searches on every pause in typing, so the word
+ * still being typed has to find something: the last word matches as a
+ * prefix. Only that word, and only when it is plain letters and digits.
+ */
+describe('as you type', () => {
+  test('the last word matches as the start of a word', async () => {
+    const { owner, workspace } = await workspaceWithIssues(['Deploy pipeline', 'Unrelated']);
+
+    for (const query of ['pipe', 'Deploy pip', 'deplo']) {
+      const { results } = await search(owner, workspace.id, query);
+      expect(
+        results.map((r: { title: string }) => r.title),
+        query,
+      ).toEqual(['Deploy pipeline']);
+    }
+  });
+
+  test('only the last word: an earlier one must be whole', async () => {
+    const { owner, workspace } = await workspaceWithIssues(['Deploy pipeline']);
+
+    expect((await search(owner, workspace.id, 'dep pipeline')).results).toEqual([]);
+  });
+
+  test('a space after the word ends it', async () => {
+    const { owner, workspace } = await workspaceWithIssues(['Deploy pipeline']);
+
+    expect((await search(owner, workspace.id, 'pipe ')).results).toEqual([]);
+  });
+
+  test('not inside a quoted phrase, and never an exclusion', async () => {
+    const { owner, workspace } = await workspaceWithIssues(['refresh token rotation']);
+
+    // An open quote: the phrase is still being typed, and is a phrase.
+    expect((await search(owner, workspace.id, '"refresh tok')).results).toEqual([]);
+    // `-rot` excludes the word "rot", not every word starting with it.
+    const { results } = await search(owner, workspace.id, 'refresh -rot');
+    expect(results).toHaveLength(1);
+  });
+
+  test('the marked excerpt shows the word it matched', async () => {
+    const { owner, workspace } = await workspaceWithIssues(
+      ['Pipeline'],
+      ['The pipeline stalls on large uploads'],
+    );
+
+    const [hit] = (await search(owner, workspace.id, 'stal')).results;
+    expect(
+      hit.parts.filter((p: { match: boolean }) => p.match).map((p: { text: string }) => p.text),
+    ).toEqual(['stalls']);
+  });
+
+  test('anything else typed last is left to the ordinary parser', async () => {
+    const { owner, workspace } = await workspaceWithIssues(['Ordinary issue']);
+
+    for (const query of ["ordin'", 'ordin\\', 'ordin:*', 'ordin|', 'ordinary or']) {
+      const response = await request(
+        `/workspaces/${workspace.id}/search?q=${encodeURIComponent(query)}`,
+        { actor: owner },
+      );
+      expect(response.statusCode, query).toBe(200);
+    }
+  });
+
+  test('a word too short to narrow much must be whole', async () => {
+    const { owner, workspace } = await workspaceWithIssues(['Deploy pipeline']);
+
+    // Two letters would walk most of the index; three is where a prefix starts.
+    expect((await search(owner, workspace.id, 'pi')).results).toEqual([]);
+    expect((await search(owner, workspace.id, 'pip')).results).toHaveLength(1);
+  });
+
+  test('an "or" keeps its meaning', async () => {
+    const { owner, workspace } = await workspaceWithIssues(['deploy the api', 'rotate the keys']);
+
+    // Without a prefix the or stands; "rot" is not a whole word, so only the deploy matches.
+    const { results } = await search(owner, workspace.id, 'deploy or rot');
+    expect(results.map((r: { title: string }) => r.title)).toEqual(['deploy the api']);
+  });
+
+  test('a NUL in the query is dropped, not a server error', async () => {
+    const { owner, workspace } = await workspaceWithIssues(['Deploy pipeline']);
+
+    const response = await request(`/workspaces/${workspace.id}/search?q=deploy%00`, {
+      actor: owner,
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json().results).toHaveLength(1);
+  });
+});
+
 describe('the index stays in step', () => {
   /** A generated column is the reason there is nothing to remember here. */
   test('a new issue is findable immediately', async () => {

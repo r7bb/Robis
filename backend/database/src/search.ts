@@ -55,12 +55,41 @@ export type SearchHit = {
   projectId: string | null;
 };
 
+/** The last word, plain letters and digits, right at the end of what was typed. */
+const TYPED_WORD = /(^|\s)([\p{L}\p{N}]+)$/u;
+/**
+ * Shorter than this, a prefix would walk most of the index (every word
+ * starting "a") for little narrowing; such a word must be typed whole.
+ */
+const MIN_PREFIX = 3;
+/** An "or" anywhere: the parser joins its neighbours, and an appended prefix would undo that. */
+const OR_WORD = /(^|\s)or(\s|$)/i;
+
+/**
+ * Split off the word still being typed (C2), so it can match as a prefix:
+ * searches run on every pause, and "pipe" should already find "pipeline".
+ * Only plain letters and digits, so nothing typed becomes a tsquery
+ * operator; not after a space (the word is finished), inside an open quote
+ * (a phrase is being typed), after a minus (an exclusion is exact), in a
+ * query with "or" in it, or for a word under three letters.
+ */
+function typedPrefix(query: string): { head: string; prefix: string | null } {
+  const whole = { head: query.trim(), prefix: null };
+  const word = TYPED_WORD.exec(query.trimStart())?.[2];
+  if (!word || word.length < MIN_PREFIX || OR_WORD.test(query)) return whole;
+  const head = query.trimStart().slice(0, -word.length).trim();
+  const openQuote = (head.match(/"/g)?.length ?? 0) % 2 === 1;
+  return openQuote ? whole : { head, prefix: word };
+}
+
 /**
  * Turn user input into a tsquery.
  *
  * `websearch_to_tsquery` is the right parser for a search box: it accepts
  * quoted phrases, `or`, and leading `-` for exclusion, and -- unlike
  * `to_tsquery` -- it never throws on punctuation a user happens to type.
+ * The word still being typed is added as a prefix (`typedPrefix`); it is
+ * letters and digits only, so `to_tsquery` cannot throw on it either.
  */
 export async function searchWorkspace(
   db: Executor,
@@ -68,8 +97,11 @@ export async function searchWorkspace(
   query: string,
   { limit = 20, type }: { limit?: number; type?: SearchKind } = {},
 ): Promise<SearchHit[]> {
-  const trimmed = query.trim();
+  // Postgres refuses a NUL in text; nobody means one.
+  const typed = query.replaceAll('\u0000', '');
+  const trimmed = typed.trim();
   if (trimmed.length === 0) return [];
+  const { head, prefix } = typedPrefix(typed);
 
   /*
    * One UNION rather than three round trips, so ranking is comparable across
@@ -86,7 +118,12 @@ export async function searchWorkspace(
     issue_id: string | null;
     project_id: string | null;
   }>(sql`
-    with q as (select websearch_to_tsquery('english', ${trimmed}) as query,
+    with q as (select (case
+                         when ${prefix}::text is null then websearch_to_tsquery('english', ${trimmed})
+                         when ${head}::text = '' then to_tsquery('english', ${prefix}::text || ':*')
+                         else websearch_to_tsquery('english', ${head}::text)
+                              && to_tsquery('english', ${prefix}::text || ':*')
+                       end) as query,
                       ${HEADLINE_OPTIONS}::text as options,
                       ${START + STOP}::text as marks,
                       ${type ?? null}::text as only),
