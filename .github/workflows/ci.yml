@@ -232,6 +232,12 @@ jobs:
       - name: Browser smoke test under the security policy
         run: bun run scripts/smoke/browser.ts
 
+      # C2's done-when: every board action, by keys alone. A fresh account
+      # files, moves, selects, filters, saves a view, deletes and opens
+      # issues with key events only; nothing clicks.
+      - name: Every board action without a mouse
+        run: bun run scripts/smoke/keyboard.ts
+
       # Health is checked at start-up by `--wait`; this checks it again
       # after real traffic, so a service that fell over during the smoke
       # test fails the job too.

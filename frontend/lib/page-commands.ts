@@ -41,7 +41,7 @@ export function issueCommands({
   ];
 }
 
-/** The board on screen: file an issue here, select several, drop the filter. */
+/** The board on screen: file an issue here, select several, drop the filter, see its keys. */
 export function boardCommands({
   projectName,
   compose,
@@ -49,6 +49,7 @@ export function boardCommands({
   toggleSelecting,
   filtered,
   clearFilters,
+  showShortcuts,
 }: {
   projectName: string;
   compose: () => void;
@@ -56,6 +57,7 @@ export function boardCommands({
   toggleSelecting: () => void;
   filtered: boolean;
   clearFilters: () => void;
+  showShortcuts: () => void;
 }): Command[] {
   return [
     {
@@ -64,6 +66,7 @@ export function boardCommands({
       group: 'Actions',
       action: 'newIssue',
       keywords: ['create', 'add', 'file'],
+      hint: 'C',
       run: compose,
     },
     {
@@ -72,7 +75,16 @@ export function boardCommands({
       group: 'Actions',
       action: 'editIssue',
       keywords: ['bulk', 'several', 'many'],
+      hint: 'X',
       run: toggleSelecting,
+    },
+    {
+      id: 'board-shortcuts',
+      title: 'Keyboard shortcuts',
+      group: 'Actions',
+      keywords: ['keys', 'help', 'hotkeys'],
+      hint: '?',
+      run: showShortcuts,
     },
     ...(filtered
       ? [

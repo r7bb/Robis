@@ -12,25 +12,13 @@
  * repository's CDP helper, which itself imports only Node built-ins.
  */
 
-import { findChrome, listTargets, Page, type Target } from '../capture/cdp.ts';
+import type { Page } from '../capture/cdp.ts';
+import { signUpInBrowser, startChrome, WEB } from './browser-session.ts';
 import { PageTrouble } from './page-trouble.ts';
 
-// The API as the web app was built to reach it: the only one its policy allows.
-const WEB_API = process.env.SMOKE_WEB_API_URL ?? '/api';
-const MAIL = process.env.SMOKE_MAIL_URL ?? 'http://127.0.0.1:8025';
-const WEB_PORT = process.env.STACK_WEB_PORT ?? 3000;
-// `localhost`, as the stack's WEB_ORIGIN names it; Chrome is told it means
-// 127.0.0.1 so another program on [::1] cannot answer instead.
-const WEB = process.env.SMOKE_WEB_URL ?? `http://localhost:${WEB_PORT}`;
 const PORT = Number(process.env.SMOKE_CDP_PORT ?? 9487);
-// From this script (not the page): the proxy, by address, so nothing else on
-// [::1] answers for localhost.
-const API = process.env.SMOKE_API_URL ?? `http://127.0.0.1:${WEB_PORT}/api`;
-const MAIL_WAIT_MS = 30_000;
 /** Long enough for a signed-in page to fetch its data and open its socket. */
 const SETTLE_MS = 3_000;
-/** Polls of 200 ms each for Chrome's debugging port: a minute in all. */
-const CHROME_START_POLLS = 300;
 
 const PUBLIC_PAGES = ['/', '/login', '/start', '/how-it-works', '/whats-new', '/signup'];
 
@@ -143,104 +131,11 @@ async function injectInto(page: Page, paused: FetchPaused) {
   });
 }
 
-async function mailedLink(email: string) {
-  const deadline = Date.now() + MAIL_WAIT_MS;
-  while (Date.now() < deadline) {
-    const { messages } = (await (await fetch(`${MAIL}/messages`)).json()) as {
-      messages: { to: string[]; text: string }[];
-    };
-    const text = messages.find((m) => m.to.includes(email))?.text;
-    const link = text && /https?:\/\/\S+\/signup\?token=\S+/.exec(text)?.[0];
-    if (link) return link;
-    await Bun.sleep(500);
-  }
-  throw new Error(`no sign-up mail for ${email}`);
-}
-
-/** Sign up through the API, from the page, so the session cookie is the browser's. */
-async function signUpInBrowser(page: Page) {
-  const run = Date.now().toString(36);
-  const email = `browser-${run}@robis.test`;
-  const started = await fetch(`${API}/auth/signup`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ email }),
-  });
-  if (started.status !== 202) throw new Error(`sign-up start: ${started.status}`);
-  const token = new URL(await mailedLink(email)).searchParams.get('token');
-
-  const call = (path: string, method: string, body: unknown) =>
-    page.eval<number | string>(`fetch(${JSON.stringify(`${WEB_API}${path}`)}, {
-      method: ${JSON.stringify(method)}, credentials: 'include',
-      headers: { 'content-type': 'application/json' },
-      body: ${JSON.stringify(JSON.stringify(body))},
-    }).then((r) => r.status, (e) => 'failed: ' + e.message)`);
-  const registered = await call('/auth/register', 'POST', {
-    token,
-    name: 'Browser Test',
-    username: `browser_${run}`,
-    password: `browser-password-${run}`,
-    ageConfirmed: true,
-  });
-  if (registered !== 201) throw new Error(`register: ${registered}`);
-  const me = await page.eval<{ user: { consent: { current: string } } }>(
-    `fetch(${JSON.stringify(`${WEB_API}/auth/me`)}, { credentials: 'include' }).then((r) => r.json())`,
-  );
-  await call('/auth/me/consent', 'POST', {
-    termsVersion: me.user.consent.current,
-    ageConfirmed: true,
-  });
-  await call('/auth/me/avatar/generated', 'PUT', { seed: run });
-  const workspace = await page.eval<{ workspace: { id: string } }>(`fetch(${JSON.stringify(
-    `${WEB_API}/workspaces`,
-  )}, { method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' },
-     body: JSON.stringify({ name: 'Browser', slug: 'browser-${run}' }) }).then((r) => r.json())`);
-  return workspace.workspace.id;
-}
-
 async function main() {
   process.stdout.write(`Browser smoke test against ${WEB}\n`);
-  const chrome = Bun.spawn(
-    [
-      findChrome(),
-      '--headless=new',
-      `--remote-debugging-port=${PORT}`,
-      `--user-data-dir=${process.env.TMPDIR ?? '/tmp'}/robis-browser-smoke-${Date.now()}`,
-      '--host-resolver-rules=MAP localhost 127.0.0.1',
-      '--no-first-run',
-      // WebGL in a headless runner with no GPU.
-      '--enable-unsafe-swiftshader',
-      ...(process.env.CI ? ['--no-sandbox'] : []),
-      // The production-mode CI stack serves a throwaway certificate.
-      ...(process.env.SMOKE_IGNORE_CERT_ERRORS === '1' ? ['--ignore-certificate-errors'] : []),
-      'about:blank',
-    ],
-    { stdout: 'ignore', stderr: 'pipe' },
-  );
-  // Read as it comes, so a full pipe never stalls Chrome; shown if it fails.
-  const chromeLog = new Response(chrome.stderr).text();
+  const { page, stop } = await startChrome(PORT, 'browser-smoke');
 
   try {
-    let target: Target | undefined;
-    // A cold start on a CI runner can take a while.
-    for (let i = 0; i < CHROME_START_POLLS && !target && chrome.exitCode === null; i++) {
-      await Bun.sleep(200);
-      target = await listTargets(PORT)
-        .then((all) => all.find((t) => t.type === 'page'))
-        .catch(() => undefined);
-    }
-    if (!target) {
-      chrome.kill();
-      const output = await chromeLog;
-      throw new Error(`Chrome did not start (exit ${chrome.exitCode}):\n${output.slice(-2000)}`);
-    }
-    const page = await Page.attach(target, {
-      port: PORT,
-      shotsDir: `${process.env.TMPDIR ?? '/tmp'}/`,
-      width: 1280,
-      height: 860,
-      scale: 1,
-    });
     await page.send('Page.addScriptToEvaluateOnNewDocument', { source: RECORD_VIOLATIONS });
     const trouble = new PageTrouble(page);
 
@@ -303,7 +198,7 @@ async function main() {
     // Signed in: the workspace loads data from the API and joins the gateway.
     // From an ordinary page, not the rewritten one.
     await page.goto(`${WEB}/login`);
-    const workspaceId = await signUpInBrowser(page);
+    const workspaceId = await signUpInBrowser(page, 'browser');
     // The signed-in home: the field, the overview and a live connection per workspace.
     await page.send('Runtime.evaluate', { expression: 'window.__violations = []' });
     await visit(page, '/workspaces', trouble);
@@ -332,7 +227,7 @@ async function main() {
     check('the workspace page shows the workspace', shown);
     page.close();
   } finally {
-    chrome.kill();
+    stop();
   }
 
   if (failures > 0) {

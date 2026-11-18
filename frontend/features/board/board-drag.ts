@@ -11,7 +11,8 @@ import { dropPosition } from '../../lib/board-order.ts';
  *
  * By keyboard: focus a card's Move button, press Space or Enter to lift it,
  * the arrow keys to move it (up and down within a column, left and right
- * between columns), Space or Enter to drop it, Escape to put it back.
+ * between columns), Space or Enter to drop it, Escape to put it back. The
+ * board's M key (C2) lifts the focused card the same way.
  */
 
 type Card = { id: string; key: string; status: IssueStatus; position: string | null };
@@ -91,6 +92,17 @@ export function useBoardDrag(
     }
   }
 
+  /**
+   * Put a lifted card back where it was: when focus leaves its Move button,
+   * a lift left hanging would drop it later somewhere stale, and the
+   * board's other keys would act on a card mid-move.
+   */
+  function putBack(card: Card) {
+    if (lifted?.id !== card.id) return;
+    setLifted(null);
+    setSaid(`${card.key} put back.`);
+  }
+
   /** What a card needs to be dragged by pointer. */
   function cardProps(id: string, index: number, canMove: boolean) {
     return {
@@ -110,5 +122,5 @@ export function useBoardDrag(
     return lifted?.id === id ? 'ring-2 ring-accent-soft' : '';
   }
 
-  return { dragging, lifted, said, onDrop, onKeyDown, cardProps, cardState };
+  return { dragging, lifted, said, lift, putBack, onDrop, onKeyDown, cardProps, cardState };
 }

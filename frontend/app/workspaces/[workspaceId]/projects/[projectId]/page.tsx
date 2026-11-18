@@ -23,12 +23,15 @@ import {
   statusLabel,
 } from '../../../../../components/ui/badges.tsx';
 import { DueChip } from '../../../../../components/ui/due-chip.tsx';
+import { Kbd } from '../../../../../components/ui/kbd.tsx';
 import { ErrorState } from '../../../../../components/ui/primitives.tsx';
 import { useBoardDrag } from '../../../../../features/board/board-drag.ts';
 import { BoardFilters } from '../../../../../features/board/board-filters.tsx';
 import { BulkBar } from '../../../../../features/board/bulk-bar.tsx';
+import { ShortcutHelp } from '../../../../../features/board/shortcut-help.tsx';
+import { useBoardKeyboard } from '../../../../../features/board/use-board-keyboard.ts';
 import { useSelection } from '../../../../../features/board/use-selection.ts';
-import { useCommands } from '../../../../../features/command/command-provider.tsx';
+import { useCommands, useOpenPalette } from '../../../../../features/command/command-provider.tsx';
 import { DuplicateHints } from '../../../../../features/issues/duplicate-hints.tsx';
 import { PriorityHint } from '../../../../../features/issues/priority-hint.tsx';
 import { call } from '../../../../../lib/api.ts';
@@ -129,6 +132,7 @@ function Board() {
     titleField.current?.scrollIntoView({ block: 'nearest' });
     titleField.current?.focus();
   };
+  const [helpOpen, setHelpOpen] = useState(false);
   useCommands(
     boardCommands({
       projectName,
@@ -137,8 +141,30 @@ function Board() {
       toggleSelecting: selection.toggleOn,
       filtered: isFiltered(filter),
       clearFilters: () => setFilter({}),
+      showShortcuts: () => setHelpOpen(true),
     }),
   );
+
+  // The board's single keys (C2), each gated as its button is.
+  const { keepFocusOn } = useBoardKeyboard({
+    role,
+    columns: columns.map((column) => shown.filter((i) => i.status === column).map((i) => i.id)),
+    cards: shown,
+    compose,
+    setStatus: (id, status) => void board.updateIssue(id, { status }),
+    lift: drag.lift,
+    select: (id) => {
+      if (!selection.on) selection.toggleOn();
+      selection.toggle(id);
+    },
+    openPalette: useOpenPalette(),
+    openHelp: () => setHelpOpen(true),
+    selecting: selection.on,
+    stopSelecting: () => {
+      selection.toggleOn();
+      selectToggle.current?.focus();
+    },
+  });
 
   // Arrived from the palette's New issue elsewhere: straight to the field,
   // then the address loses the flag so a reload does not do it again.
@@ -197,6 +223,12 @@ function Board() {
             <input
               ref={titleField}
               aria-label="New issue title"
+              // Escape leaves the field (keeping what was typed), back to the board's keys (C2).
+              onKeyDown={(event) => {
+                if (event.key === 'Escape' && !event.nativeEvent.isComposing) {
+                  event.currentTarget.blur();
+                }
+              }}
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               placeholder="What needs doing?"
@@ -238,18 +270,28 @@ function Board() {
         <p className="min-h-4 text-xs text-faint" aria-live="polite">
           {filterSummary(filter, shown.length, board.issues.length)}
         </p>
-        {canEdit && (
+        <span className="flex items-center gap-3">
           <button
             type="button"
-            ref={selectToggle}
-            aria-pressed={selection.on}
-            onClick={selection.toggleOn}
-            className="rounded px-1.5 py-0.5 text-xs text-muted transition-colors hover:text-content focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-soft"
+            onClick={() => setHelpOpen(true)}
+            className="flex items-center gap-1.5 rounded px-1.5 py-0.5 text-xs text-muted transition-colors hover:text-content focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-soft"
           >
-            {selection.on ? 'Done selecting' : 'Select issues'}
+            Shortcuts <Kbd>?</Kbd>
           </button>
-        )}
+          {canEdit && (
+            <button
+              type="button"
+              ref={selectToggle}
+              aria-pressed={selection.on}
+              onClick={selection.toggleOn}
+              className="rounded px-1.5 py-0.5 text-xs text-muted transition-colors hover:text-content focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-soft"
+            >
+              {selection.on ? 'Done selecting' : 'Select issues'}
+            </button>
+          )}
+        </span>
       </div>
+      {helpOpen && <ShortcutHelp role={role} onClose={() => setHelpOpen(false)} />}
 
       {selection.on && (
         <BulkBar
@@ -291,8 +333,18 @@ function Board() {
                   <li
                     key={issue.id}
                     {...drag.cardProps(issue.id, index, canEdit)}
+                    // Focused whole by the J, K, H and L keys (C2); Enter on it opens it.
+                    data-card={issue.id}
+                    tabIndex={-1}
+                    aria-label={`${issue.key} ${issue.title}`}
+                    onKeyDown={(event) => {
+                      if (event.key !== 'Enter' || event.target !== event.currentTarget) return;
+                      if (issue.pending) return;
+                      event.preventDefault();
+                      router.push(`/workspaces/${workspaceId}/issues/${issue.id}`);
+                    }}
                     className={[
-                      'rounded-md border bg-raised p-3 transition-[opacity,box-shadow] duration-[var(--micro)]',
+                      'rounded-md border bg-raised p-3 outline-none transition-[opacity,box-shadow] duration-[var(--micro)] focus-visible:ring-2 focus-visible:ring-accent-soft',
                       issue.pending ? 'border-amber-500/40' : 'border-line',
                       drag.cardState(issue.id),
                     ].join(' ')}
@@ -302,7 +354,16 @@ function Board() {
                       canEdit={canEdit}
                       canDelete={canDelete}
                       lifted={drag.lifted?.id === issue.id}
-                      onMoveKey={(event) => drag.onKeyDown(event, issue)}
+                      onMoveKey={(event) => {
+                        // Dropped into another column, the card is drawn anew; focus follows it.
+                        const lifted = drag.lifted;
+                        const dropping = event.key === ' ' || event.key === 'Enter';
+                        if (dropping && lifted?.id === issue.id && lifted.status !== issue.status) {
+                          keepFocusOn(issue.id, 'move');
+                        }
+                        drag.onKeyDown(event, issue);
+                      }}
+                      onMoveBlur={() => drag.putBack(issue)}
                       onDelete={() => board.deleteIssue(issue.id)}
                       selecting={selection.on}
                       selected={selection.has(issue.id)}
@@ -395,6 +456,7 @@ function CardHeader({
   canDelete,
   lifted,
   onMoveKey,
+  onMoveBlur,
   onDelete,
   selecting,
   selected,
@@ -405,6 +467,7 @@ function CardHeader({
   canDelete: boolean;
   lifted: boolean;
   onMoveKey: (event: KeyboardEvent<HTMLButtonElement>) => void;
+  onMoveBlur: () => void;
   onDelete: () => void;
   selecting: boolean;
   selected: boolean;
@@ -423,7 +486,9 @@ function CardHeader({
           />
         )}
         <span className="font-mono text-[10px] text-faint">{issue.key}</span>
-        {canEdit && <MoveButton label={issue.key} lifted={lifted} onKeyDown={onMoveKey} />}
+        {canEdit && (
+          <MoveButton label={issue.key} lifted={lifted} onKeyDown={onMoveKey} onBlur={onMoveBlur} />
+        )}
       </span>
       <span className="flex items-center gap-1">
         {issue.pending ? (
@@ -455,15 +520,20 @@ function MoveButton({
   label,
   lifted,
   onKeyDown,
+  onBlur,
 }: {
   label: string;
   lifted: boolean;
   onKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => void;
+  /** Leaving the button puts a lifted card back. */
+  onBlur: () => void;
 }) {
   return (
     <button
       type="button"
+      data-move
       onKeyDown={onKeyDown}
+      onBlur={onBlur}
       aria-label={`Move ${label}: Space to lift, arrow keys to move, Space to drop`}
       aria-pressed={lifted}
       className="cursor-grab rounded px-1 text-[10px] text-faint transition-colors hover:text-content focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-soft"

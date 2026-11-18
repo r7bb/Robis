@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **The board by keyboard** (2026-11-18). Run the whole board from the
+  keyboard: single keys to file, move between, change, select and delete
+  issues, and a list of them on the question mark key.
 - **A command palette** (2026-11-18). Press Ctrl K or Cmd K anywhere in a
   workspace to find an issue, a document, a channel or a person, or to file
   an issue, open a board or change the open issue’s status.

@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-18',
     area: 'Product',
+    title: 'The board by keyboard',
+    brief:
+      'Run the whole board from the keyboard: single keys to file, move between, change, select and delete issues, and a list of them on the question mark key.',
+    summary:
+      'The board now answers to single keys. C files an issue, J and K move down and up a column, H and L across, and Enter opens the card you are on. 1 to 4 move it to Todo, In Progress, In Review or Done, M picks it up to move by arrow keys, X selects it for a change to several, and Delete or Backspace asks to delete it. F jumps to the filters, V to saved views (or the filters while there are none), the slash key opens the command palette, and the question mark shows every key on one page. Each key is offered only to someone who may use the button it stands for, so a guest can move around, open and filter but not change anything, and the help lists only what you can do. Keys rest while you type in a field and while a dialog is open, a held key does not repeat a change, a card picked up is put back if you move away from it, and Escape leaves the new issue field. A test in the build now does every board action with the keyboard alone.',
+    feature: {
+      name: 'Board keyboard shortcuts',
+      where: 'Any board: press ? for the list, or Shortcuts beside Select issues',
+      layers: [
+        'Screen: cards that take focus, single-key shortcuts, and a help dialog of them',
+        'API: no change; every key reaches the same endpoints as its button',
+        'Data: no change; the shortcuts table shares the buttons’ permission checks',
+      ],
+    },
+    checked:
+      'Eleven new tests: which key means what in either case, none with Ctrl, Cmd or Alt held; moving between cards down, up and across, skipping empty columns and stopping at the ends; and the help lists a key for a role exactly when its button shows, a guest keeping only moving, opening, filtering and help. A new keyboard-only browser test, run in the build against the containers, signs up a fresh account and, with key events alone: files three issues; moves between them; moves one to In Progress and back to Todo by lifting it; selects two and moves both to Done in one change; filters by status; saves a view, picks it and deletes it; clears the filter from the command palette; deletes an issue after confirming; opens one and comes back with Ctrl K; and opens and closes the help. All 41 of its checks passed on the rebuilt stack, and the browser smoke test still passes.',
+  },
+  {
+    date: '2026-11-18',
+    area: 'Product',
     title: 'A command palette',
     brief:
       'Press Ctrl K or Cmd K anywhere in a workspace to find an issue, a document, a channel or a person, or to file an issue, open a board or change the open issue’s status.',

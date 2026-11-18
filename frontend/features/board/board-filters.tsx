@@ -74,6 +74,7 @@ export function BoardFilters({
       />
       <FilterSelect
         label="Status"
+        shortcut="filter"
         any="Any status"
         value={filter.status}
         options={statuses}
@@ -111,12 +112,15 @@ export function BoardFilters({
 
 function FilterSelect({
   label,
+  shortcut,
   any,
   value,
   options,
   onChange,
 }: {
   label: string;
+  /** The board key (C2) that jumps here. */
+  shortcut?: string;
   any: string;
   value: string | undefined;
   options: readonly Option[];
@@ -127,6 +131,7 @@ function FilterSelect({
       value={value ?? ''}
       onChange={(event) => onChange(event.target.value)}
       aria-label={label}
+      data-shortcut={shortcut}
       className={[FIELD_CLASS, value ? 'border-accent/60 text-content' : ''].join(' ')}
     >
       <option value="">{any}</option>
@@ -198,6 +203,7 @@ function SavedViews({
             onChange(view ? view.filter : {});
           }}
           aria-label="Saved view"
+          data-shortcut="views"
           className={[FIELD_CLASS, current ? 'border-accent/60 text-content' : ''].join(' ')}
         >
           <option value="">
@@ -249,7 +255,13 @@ function SaveView({
 
   if (!open) {
     return (
-      <button type="button" onClick={() => setOpen(true)} className={QUIET_BUTTON}>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        // The board's V key (C2) lands here when there is no view to pick yet.
+        data-shortcut="views"
+        className={QUIET_BUTTON}
+      >
         Save view…
       </button>
     );

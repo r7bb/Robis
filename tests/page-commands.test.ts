@@ -55,19 +55,26 @@ describe('the board', () => {
     toggleSelecting: () => undefined,
     filtered: false,
     clearFilters: () => undefined,
+    showShortcuts: () => undefined,
   };
 
-  test('new issue here and select issues, for those who may', () => {
+  test('new issue here and select issues, for those who may; the shortcuts for all', () => {
     expect(allowedCommands(boardCommands(base), 'MEMBER').map((c) => c.title)).toEqual([
       'New issue in Release',
       'Select issues',
+      'Keyboard shortcuts',
     ]);
-    expect(allowedCommands(boardCommands(base), 'GUEST')).toEqual([]);
+    expect(allowedCommands(boardCommands(base), 'GUEST').map((c) => c.title)).toEqual([
+      'Keyboard shortcuts',
+    ]);
   });
 
   test('clearing filters only when there are some, for anyone', () => {
     const commands = boardCommands({ ...base, filtered: true, selecting: true });
-    expect(allowedCommands(commands, 'GUEST').map((c) => c.title)).toEqual(['Clear filters']);
+    expect(allowedCommands(commands, 'GUEST').map((c) => c.title)).toEqual([
+      'Keyboard shortcuts',
+      'Clear filters',
+    ]);
     expect(commands.map((c) => c.title)).toContain('Stop selecting issues');
   });
 });
