@@ -17,6 +17,7 @@ import { notificationSettingContracts, unsubscribeContracts } from './notificati
 import { notificationContracts } from './notifications.ts';
 import { overviewContracts } from './overview.ts';
 import { projectContracts } from './projects.ts';
+import { pushContracts } from './push.ts';
 import { savedViewContracts } from './saved-views.ts';
 import { workspaceContracts } from './workspaces.ts';
 
@@ -53,6 +54,7 @@ export const contracts = {
   ...notificationContracts,
   ...notificationSettingContracts,
   ...unsubscribeContracts,
+  ...pushContracts,
   ...auditContracts,
   ...overviewContracts,
   ...attachmentContracts,

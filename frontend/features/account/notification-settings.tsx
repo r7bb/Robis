@@ -9,6 +9,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { call } from '../../lib/api.ts';
 import { NOTIFICATION_KIND_NAMES } from '../../lib/notification-kinds.ts';
+import { PushDevice } from './push-device.tsx';
 
 /**
  * Your notification settings (C3): each kind on or off, by channel. A
@@ -18,14 +19,16 @@ import { NOTIFICATION_KIND_NAMES } from '../../lib/notification-kinds.ts';
 
 type Settings = ResponseOf<(typeof contracts)['notificationSettings.get']>;
 
-/** The channels that deliver today; push joins when it does. */
-const CHANNELS: readonly {
-  id: NotificationChannel;
-  name: string;
-  field: 'inApp' | 'email' | 'push';
-}[] = [
+type Channel = { id: NotificationChannel; name: string; field: 'inApp' | 'email' | 'push' };
+
+const IN_APP_AND_EMAIL: readonly Channel[] = [
   { id: 'in_app', name: 'In the app', field: 'inApp' },
   { id: 'email', name: 'Email', field: 'email' },
+];
+/** Push is a column only where the server can send it. */
+const ALL_CHANNELS: readonly Channel[] = [
+  ...IN_APP_AND_EMAIL,
+  { id: 'push', name: 'Push', field: 'push' },
 ];
 
 const KEY = ['notification-settings'];
@@ -36,6 +39,13 @@ export function NotificationSettings() {
     queryKey: KEY,
     queryFn: () => call(contracts['notificationSettings.get']),
   });
+  const push = useQuery({
+    queryKey: ['push-key'],
+    queryFn: () => call(contracts['push.key']),
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+  const publicKey = push.data?.publicKey ?? null;
+  const CHANNELS = publicKey ? ALL_CHANNELS : IN_APP_AND_EMAIL;
   const save = useMutation({
     mutationFn: (body: {
       kind: NotificationKind;
@@ -118,6 +128,7 @@ export function NotificationSettings() {
           'Mentions are emailed as they happen; everything else comes in one summary a day. Invitations to a workspace always reach you.'
         )}
       </p>
+      {publicKey && <PushDevice publicKey={publicKey} />}
     </div>
   );
 }

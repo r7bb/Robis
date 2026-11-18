@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Push notifications** (2026-11-18). Turn on push for a device from your
+  account page, and get a prompt to open Robis when something new arrives,
+  with nothing about it on the lock screen.
 - **Notifications by email** (2026-11-18). Get mentions by email as they
   happen and everything else in one summary a day, each with a link that
   stops it without signing in.

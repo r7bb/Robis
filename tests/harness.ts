@@ -42,6 +42,11 @@ import postgres from 'postgres';
 
 const ADMIN_URL = process.env.TEST_ADMIN_URL ?? 'postgres://robis:robis@localhost:5433/postgres';
 const TEST_DB = 'robis_test';
+/** Shaped as a P-256 public key, which is all the API checks of it; no private half exists. */
+const TEST_PUSH_PUBLIC_KEY = Buffer.concat([Buffer.from([4]), Buffer.alloc(64, 7)]).toString(
+  'base64url',
+);
+
 export const TEST_URL =
   process.env.TEST_DATABASE_URL ?? `postgres://robis:robis@localhost:5433/${TEST_DB}`;
 
@@ -272,6 +277,9 @@ export async function getHarness() {
     DATABASE_URL: TEST_URL,
     NODE_ENV: 'test',
     WEB_ORIGIN: 'http://localhost:3000',
+    // Push is on, so devices can subscribe (C3). The API only hands this to
+    // browsers; the push suite signs with a key pair of its own.
+    VAPID_PUBLIC_KEY: TEST_PUSH_PUBLIC_KEY,
   } as NodeJS.ProcessEnv);
 
   // Generous budgets: the other suites create hundreds of actors from one
@@ -300,6 +308,7 @@ export async function getHarness() {
     rateLimits: {
       authPerMinute: 100_000,
       searchPerMinute: 100_000,
+      pushDevicesPerMinute: 100_000,
       // The reset suite asserts this limit with its own small budget; the
       // other suites must not trip over it.
       passwordForgotPerHourPerAddress: 3,

@@ -19,6 +19,8 @@ const envSchema = z.object({
    */
   TRUST_PROXY: z.string().default(''),
   WEB_ORIGIN: z.string().default(''),
+  /** Web push (C3): the public half of the VAPID pair; empty turns push off. */
+  VAPID_PUBLIC_KEY: z.string().default(''),
   /**
    * Whether session cookies are HTTPS-only outside production. In production
    * they always are, whatever this says (see `auth.ts`); this only lets local

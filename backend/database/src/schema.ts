@@ -975,6 +975,8 @@ export const notifications = pgTable(
     emailDue: text('email_due'),
     /** When it went by email, or was passed over because its email was turned off. */
     emailedAt: timestamp('emailed_at', { withTimezone: true }),
+    /** When it was pushed to its person's devices (C3); a retry after that pushes nothing. */
+    pushedAt: timestamp('pushed_at', { withTimezone: true }),
     readAt: timestamp('read_at', { withTimezone: true }),
     createdAt: createdAt(),
   },
@@ -987,6 +989,28 @@ export const notifications = pgTable(
       .on(t.userId)
       .where(sql`${t.emailDue} = 'digest' and ${t.emailedAt} is null`),
     check('notifications_email_due', sql`${t.emailDue} in ('now', 'digest')`),
+  ],
+);
+
+/**
+ * A browser that takes web pushes for someone (C3). Only its endpoint is
+ * kept: a push carries nothing, so the keys a browser offers for encrypting
+ * one are not needed and not stored. The endpoint is unique, as it names
+ * one browser; signing in as someone else there moves it to them.
+ */
+export const pushSubscriptions = pgTable(
+  'push_subscriptions',
+  {
+    id: id(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    endpoint: text('endpoint').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex('push_subscriptions_endpoint_key').on(t.endpoint),
+    index('push_subscriptions_user_idx').on(t.userId),
   ],
 );
 

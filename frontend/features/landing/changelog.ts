@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-18',
     area: 'Product',
+    title: 'Push notifications',
+    brief:
+      'Turn on push for a device from your account page, and get a prompt to open Robis when something new arrives, with nothing about it on the lock screen.',
+    summary:
+      'Notifications can now reach a phone or a computer as a push, following the same switches as the app and email, which gain a Push column. Turn it on for each device from your account page; the browser asks first. A push says only that something new is waiting, never what, who or where: the server sends it empty, so a lock screen and the push service in between learn nothing but that it happened. A second push replaces the first rather than piling up, and tapping it opens Robis. Signing out stops pushes to that browser, an account keeps at most ten devices, and a device the push service has let go is forgotten. Pushes are sent only to the browsers’ own push services, never to any other address. A server without push keys offers no push at all.',
+    feature: {
+      name: 'Web push',
+      where: 'Your account page, under Notifications: a Push column and a switch for this device',
+      layers: [
+        'Screen: the device switch, a Push column, and the service worker’s fixed prompt',
+        'API: push.key, pushSubscriptions.add and pushSubscriptions.remove',
+        'Data: push_subscriptions (an endpoint per browser, no keys) and notifications.pushed_at; signed with VAPID, no push library',
+      ],
+    },
+    checked:
+      'Eighteen new tests: only the browsers’ own push services are taken, over https, with no look-alike host, address or port; the VAPID signature names the service, expires within a day and verifies with the public key, and halves of two different pairs are caught at start-up; a device is added once, removed only by its owner, moves to whoever subscribes it next, and an account keeps at most ten; a notification pings each device with no content at all and a Topic that folds waiting pings into one; a job run again after it went pings nobody twice; a device the service calls gone or malformed is forgotten, a refusal of the server’s own key keeps it and is not retried, and a service that is down is tried again with an error that never names the device; push off for a kind sends nothing; and a kind off everywhere makes nothing on any channel. In headless Chrome on the stack rebuilt with a throwaway key pair, the account page showed the Push column and the device switch, turning it on subscribed the browser, a push handed to the service worker showed only “Something new is waiting for you”, a second replaced the first, a reload kept it on, and signing out unsubscribed the browser.',
+  },
+  {
+    date: '2026-11-18',
+    area: 'Product',
     title: 'Notifications by email',
     brief:
       'Get mentions by email as they happen and everything else in one summary a day, each with a link that stops it without signing in.',

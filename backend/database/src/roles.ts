@@ -226,7 +226,9 @@ export const WORKER_GRANTS: TableGrants = {
   documents: ['select'],
   // Delete: read notifications past their retention (stage 3, item 30).
   // Update: marking one emailed (C3).
-  notifications: ['select', 'insert', 'update (emailed_at)', 'delete'],
+  notifications: ['select', 'insert', 'update (emailed_at, pushed_at)', 'delete'],
+  // Devices to push to; one the push service says is gone is removed (C3).
+  push_subscriptions: ['select', 'delete'],
   // One summary a day, written before it is sent (C3).
   email_digests: ['select', 'insert', 'update (sent_at)', 'delete'],
   // Made for each email, pruned once expired; the API redeems them (C3).

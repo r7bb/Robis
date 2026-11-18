@@ -38,6 +38,7 @@ import { notificationSettingRoutes } from './routes/notification-settings.ts';
 import { notificationRoutes } from './routes/notifications.ts';
 import { overviewRoutes } from './routes/overview.ts';
 import { projectRoutes } from './routes/projects.ts';
+import { pushKey, pushRoutes } from './routes/push.ts';
 import { savedViewRoutes } from './routes/saved-views.ts';
 import { searchRoutes } from './routes/search.ts';
 import { signupRoutes } from './routes/signup.ts';
@@ -80,11 +81,14 @@ export type RateLimits = {
    * from the first event: the expensive form, so far fewer of them.
    */
   auditFullVerifyPerMinute: number;
+  /** Push devices turned on or off, per address (C3): rare for a person. */
+  pushDevicesPerMinute: number;
 };
 
 export const DEFAULT_RATE_LIMITS: RateLimits = {
   authPerMinute: 10,
   searchPerMinute: 60,
+  pushDevicesPerMinute: 20,
   passwordForgotPerHourPerAddress: 3,
   auditVerifyPerMinute: 10,
   auditFullVerifyPerMinute: 2,
@@ -258,6 +262,7 @@ export function buildApp({
   app.register(meetingRoutes, { db });
   app.register(notificationRoutes, { db });
   app.register(notificationSettingRoutes, { db, limits });
+  app.register(pushRoutes, { db, limits, publicKey: pushKey(env.VAPID_PUBLIC_KEY) });
   app.register(auditRoutes, { db, limits });
   app.register(accountEventRoutes, { db, limits });
   app.register(avatarRoutes, { db, storage });

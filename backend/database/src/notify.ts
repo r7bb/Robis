@@ -7,7 +7,8 @@ import {
 import { and, eq, gt, inArray, sql } from 'drizzle-orm';
 import type { Executor } from './index.ts';
 import { queueNotificationMail } from './mail-jobs.ts';
-import { notificationSettings, notifications } from './schema.ts';
+import { enqueue } from './queue.ts';
+import { notificationSettings, notifications, pushSubscriptions } from './schema.ts';
 
 /**
  * Telling people things (C3), through one door. Every kind of notification
@@ -129,6 +130,20 @@ async function mentionsMailedRecently(db: Executor, userIds: readonly string[]) 
   return new Map(rows.map((row) => [row.userId, row.count]));
 }
 
+/** Push one notification to its person's devices (C3). The job names the row only. */
+export const PUSH_NOTIFICATION_JOB = 'push.notification';
+export type PushJob = { notificationId: string };
+
+/** Of these people, those with a device that takes pushes. */
+async function withDevices(db: Executor, userIds: readonly string[]): Promise<Set<string>> {
+  if (userIds.length === 0) return new Set();
+  const rows = await db
+    .selectDistinct({ userId: pushSubscriptions.userId })
+    .from(pushSubscriptions)
+    .where(inArray(pushSubscriptions.userId, [...userIds]));
+  return new Set(rows.map((row) => row.userId));
+}
+
 export type NotificationInput = {
   userId: string;
   workspaceId: string | null;
@@ -176,6 +191,10 @@ export async function notify(
           wanted.map((w) => w.userId),
         )
       : new Map<string, number>();
+  const subscribed = await withDevices(
+    db,
+    wanted.filter((w) => channels.get(w.userId)?.push).map((w) => w.userId),
+  );
   return db.transaction(async (tx) => {
     const made = await tx
       .insert(notifications)
@@ -197,6 +216,10 @@ export async function notify(
       });
     for (const row of made) {
       if (row.emailDue === 'now') await queueNotificationMail(tx, row.id);
+      if (subscribed.has(row.userId)) {
+        const job: PushJob = { notificationId: row.id };
+        await enqueue(tx, PUSH_NOTIFICATION_JOB, job);
+      }
     }
     return made.map((row) => ({
       id: row.id,

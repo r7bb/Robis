@@ -19,6 +19,7 @@ import { call, type WorkspaceSummary } from '../../lib/api.ts';
 import { getSyncEngine } from '../../lib/sync.ts';
 import { useRequireAvatar } from '../../lib/use-require-avatar.ts';
 import './home.css';
+import { forgetThisDevice } from '../../features/account/push-device.tsx';
 
 /**
  * Workspaces kept live on the home, each with its own gateway connection.
@@ -70,6 +71,8 @@ export default function WorkspacesPage() {
 
   const signOut = useMutation({
     mutationFn: async () => {
+      // While still signed in, so the server will take it (C3).
+      await forgetThisDevice();
       await call(contracts['auth.logout']);
       // A shared or borrowed computer must not keep this account's cached
       // issues, queued edits or waiting images for the next person.

@@ -132,6 +132,9 @@ services:
       AUDIT_HMAC_KEYS: stack:cm9iaXMtc3RhY2stYXVkaXQta2V5LW5vdC1hLXNlY3JldA==
       ML_SERVICE_URL: http://ml:8000
       ML_SERVICE_TOKEN: robis-stack-ml-token
+      # Web push (C3), only when the shell running compose has keys (made
+      # with `bun run push:keys`); empty leaves it off. Never written here.
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       # One hop: the edge proxy, which sets X-Forwarded-For. Rate limits key
       # on the client's address, not the proxy's.
       TRUST_PROXY: '1'
@@ -179,6 +182,10 @@ services:
       MAIL_FROM: Robis <no-reply@robis.test>
       # The triage agent works through the MCP server (B5).
       MCP_URL: http://mcp:4002
+      # Web push (C3): the same pair as the API's public key, from the shell.
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-}
     depends_on:
       migrate: { condition: service_completed_successfully }
       mail: { condition: service_healthy }

@@ -316,6 +316,13 @@
       "when": 1795031919613,
       "tag": "0044_notification_email",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1795037257760,
+      "tag": "0045_push_subscriptions",
+      "breakpoints": true
     }
   ]
 }

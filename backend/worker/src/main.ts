@@ -13,6 +13,7 @@ import { auditStreamConfig, httpSink, streamAuditEvents } from './audit-stream.t
 import { handlers } from './handlers.ts';
 import { DEFAULT_HEARTBEAT_FILE, heartbeat } from './heartbeat.ts';
 import { mailHandlers } from './mail.ts';
+import { checkVapidKeys, pushHandlers, vapidFromEnv } from './push.ts';
 import { Runner } from './runner.ts';
 import { storagePurgeHandler, workerStorage } from './storage-purge.ts';
 import { providerSummarizer } from './summary-provider.ts';
@@ -90,6 +91,14 @@ const reschedule = <T extends keyof typeof handlers>(
  * to start rather than quietly print reset links into its log.
  */
 Object.assign(handlers, mailHandlers({ mailer: mailerFromEnv(process.env), webOrigin }));
+
+// Web push (C3), when keys are set. Without them nobody can subscribe (the
+// API offers no key), so no push job is ever queued.
+const vapid = vapidFromEnv(process.env);
+if (vapid) {
+  await checkVapidKeys(vapid.keys);
+  Object.assign(handlers, pushHandlers(vapid));
+} else console.warn('VAPID keys are not set: web push is off.');
 
 // Files left behind by deleted issues, comments and workspaces.
 handlers[STORAGE_PURGE_JOB] = storagePurgeHandler(workerStorage(process.env));

@@ -138,3 +138,34 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(cacheFirst(request));
   }
 });
+
+/*
+ * Web push (C3).
+ *
+ * A push carries nothing: the server sends no title, no text and no ids,
+ * the same rule its realtime events follow, so there is nothing here to
+ * read or to leak from a lock screen. Every push shows the same prompt,
+ * and the app says what is new once it is open. One tag, so a second
+ * prompt replaces the first rather than stacking up.
+ */
+self.addEventListener('push', (event) => {
+  event.waitUntil(
+    self.registration.showNotification('Robis', {
+      body: 'Something new is waiting for you. Open Robis to see it.',
+      tag: 'robis',
+      // Replacing the last prompt still tells you, rather than changing it silently.
+      renotify: true,
+    }),
+  );
+});
+
+/** Tapping the prompt brings an open Robis forward, or opens one. */
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+      const open = windows.find((client) => new URL(client.url).origin === self.location.origin);
+      return open ? open.focus() : self.clients.openWindow('/workspaces');
+    }),
+  );
+});

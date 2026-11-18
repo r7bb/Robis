@@ -9,6 +9,7 @@
     "./heartbeat": "./src/heartbeat.ts",
     "./mail": "./src/mail.ts",
     "./nudges": "./src/nudges.ts",
+    "./push": "./src/push.ts",
     "./runner": "./src/runner.ts",
     "./storage-purge": "./src/storage-purge.ts",
     "./summary-provider": "./src/summary-provider.ts",

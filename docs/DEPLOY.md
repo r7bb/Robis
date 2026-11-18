@@ -138,6 +138,14 @@ point it at Postgres directly.
   provider, a paid third-party service; without the key nothing is sent.
   Whether that is acceptable for a given workspace's data is for whoever
   runs it to decide.
+- Optionally web push: `VAPID_PUBLIC_KEY` on the API and the worker, and
+  `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` (a `mailto:` or `https:` address
+  the push services can reach you at) on the worker. Make a pair with
+  `bun run push:keys`; keep the private key in a secret store. Without the
+  keys the account page offers no push and none is sent. A push carries no
+  content, only a prompt to open the app, so the browsers' push services
+  (Google, Mozilla, Apple, Microsoft) see that something happened and when,
+  never what. The worker sends only to those services' own hosts.
 
 The full list, and what each refuses without, is in
 [GETTING_STARTED.md](GETTING_STARTED.md) and
