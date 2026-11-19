@@ -144,32 +144,40 @@ export function CommentThread({
       <ul className="mt-3 space-y-3">
         {items.map((comment) => (
           <li key={comment.id} className="rounded-lg border border-line bg-raised p-4">
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="flex items-center gap-2">
+            {/* Centred, not on the baseline: the Agent badge's own box moved
+                an agent's line, and the time with it, out of step with the rest. */}
+            <div className="flex items-center justify-between gap-3">
+              <span className="flex min-w-0 items-center gap-2">
                 <Avatar
                   name={comment.authorName}
                   seed={comment.authorId}
                   avatar={avatars.get(comment.authorId) ?? null}
                   size="sm"
                 />
-                <span className="text-sm font-medium text-content">{comment.authorName}</span>
+                <span className="truncate text-sm font-medium text-content">
+                  {comment.authorName}
+                </span>
                 {comment.authorKind === 'agent' && <AgentBadge />}
               </span>
 
-              <span className="flex items-center gap-3">
+              <span className="flex shrink-0 items-center gap-3">
                 <time className="text-xs text-faint" dateTime={comment.createdAt}>
                   {new Date(comment.createdAt).toLocaleString()}
                 </time>
 
                 {/* Own comments only; the API also refuses others unless you
-                    are an admin, so this just avoids offering a dead control. */}
-                <DeleteButton
-                  allowed={me.data?.user.id === comment.authorId}
-                  kind="comment"
-                  name={preview(comment.body)}
-                  onConfirm={() => remove.mutateAsync(comment.id)}
-                  className="-my-1"
-                />
+                    are an admin, so this just avoids offering a dead control.
+                    The slot stays when the button does not, so every time
+                    ends in the same place. */}
+                <span className="flex w-6 justify-end">
+                  <DeleteButton
+                    allowed={me.data?.user.id === comment.authorId}
+                    kind="comment"
+                    name={preview(comment.body)}
+                    onConfirm={() => remove.mutateAsync(comment.id)}
+                    className="-my-1"
+                  />
+                </span>
               </span>
             </div>
 

@@ -74,19 +74,26 @@ export function ActivityFeed({ workspaceId }: { workspaceId: string }) {
 
       <ul className="mt-3 divide-y divide-line rounded-lg border border-line bg-raised empty:hidden">
         {events.slice(0, 20).map((event) => (
-          <li key={event.id} className="flex items-baseline gap-2 px-4 py-2.5 text-sm">
-            <span className="font-medium text-content">{event.actorName ?? 'Someone'}</span>
-            {event.actorKind === 'agent' && <AgentBadge />}
-            <span className="min-w-0 flex-1 text-muted">
-              {describeEvent(event.eventType, event.payload)}
-            </span>
-            <time
-              dateTime={event.createdAt}
-              title={new Date(event.createdAt).toLocaleString()}
-              className="shrink-0 text-xs text-faint"
-            >
-              {ago(event.createdAt)}
-            </time>
+          // Who and when on the first line, what on the second. On one line
+          // a name with an Agent badge left the words a column a few letters
+          // wide in the side panel, and they ran under the time.
+          <li key={event.id} className="px-4 py-2.5 text-sm">
+            <div className="flex items-center justify-between gap-3">
+              <span className="flex min-w-0 items-center gap-2">
+                <span className="truncate font-medium text-content">
+                  {event.actorName ?? 'Someone'}
+                </span>
+                {event.actorKind === 'agent' && <AgentBadge />}
+              </span>
+              <time
+                dateTime={event.createdAt}
+                title={new Date(event.createdAt).toLocaleString()}
+                className="shrink-0 text-xs text-faint"
+              >
+                {ago(event.createdAt)}
+              </time>
+            </div>
+            <p className="mt-0.5 text-muted">{describeEvent(event.eventType, event.payload)}</p>
           </li>
         ))}
       </ul>
