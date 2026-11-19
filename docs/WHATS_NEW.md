@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Issue peek** (2026-11-19). Open an issue over the board without leaving
+  it: click a card or press Enter, and Escape or Back takes you straight
+  back.
 - **The home on one screen** (2026-11-19). The home after signing in now
   fits on one screen on a laptop or larger, with no scrolling: the greeting,
   what needs you, the live feed and your workspaces.

@@ -202,6 +202,7 @@ export function CommentThread({
         <form onSubmit={onSubmit} className="mt-4">
           <textarea
             value={body}
+            data-unsaved={body.trim() ? 'true' : undefined}
             onChange={(event) => setBody(event.target.value)}
             onPaste={onPasteImage}
             placeholder="Leave a comment. Use @name to notify someone, or paste a screenshot."

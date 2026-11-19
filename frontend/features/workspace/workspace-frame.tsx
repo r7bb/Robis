@@ -2,14 +2,16 @@
 
 import { contracts, resolveTheme, type Scope, type ServerEvent } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
-import { useParams, usePathname } from 'next/navigation';
+import { useParams, usePathname, useSearchParams } from 'next/navigation';
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ErrorState } from '../../components/ui/primitives.tsx';
 import { call, type Member } from '../../lib/api.ts';
+import { PEEK_PARAM } from '../../lib/links.ts';
 import { useRealtime } from '../../lib/realtime.ts';
 import { lastTheme, rememberTheme, useApplyTheme } from '../../lib/theme.ts';
 import { useRequireAvatar } from '../../lib/use-require-avatar.ts';
 import { useChannels } from '../chat/use-chat.ts';
+import { IssuePeek } from '../issues/issue-peek.tsx';
 import { ChatPanel } from './chat-panel.tsx';
 import { type Live, LiveProvider } from './live.tsx';
 import { Sidebar } from './sidebar.tsx';
@@ -28,11 +30,16 @@ import { useOpenRoom } from './use-open-room.ts';
  */
 
 /** What the frame shows: the workspace, the board on show and the open room. */
-function frameScopes(projectId: string | null, channelId: string | null): Scope[] {
+function frameScopes(
+  projectId: string | null,
+  channelId: string | null,
+  issueId: string | null,
+): Scope[] {
   return [
     { kind: 'workspace' },
     ...(projectId ? [{ kind: 'project' as const, projectId }] : []),
     ...(channelId ? [{ kind: 'channel' as const, channelId }] : []),
+    ...(issueId ? [{ kind: 'issue' as const, issueId }] : []),
   ];
 }
 
@@ -41,7 +48,12 @@ function avatarsOf(members: Member[] | undefined) {
 }
 
 /** The one live connection, and a way for the board to hear it. */
-function useFrameLive(workspaceId: string, projectId: string | null, channelId: string | null) {
+function useFrameLive(
+  workspaceId: string,
+  projectId: string | null,
+  channelId: string | null,
+  issueId: string | null,
+) {
   const listeners = useRef(new Set<(event: ServerEvent) => void>());
   const { presence, state } = useRealtime(
     workspaceId,
@@ -49,7 +61,7 @@ function useFrameLive(workspaceId: string, projectId: string | null, channelId: 
     (event) => {
       for (const listener of listeners.current) listener(event);
     },
-    { scopes: frameScopes(projectId, channelId) },
+    { scopes: frameScopes(projectId, channelId, issueId) },
   );
   const subscribe = useCallback((listener: (event: ServerEvent) => void) => {
     listeners.current.add(listener);
@@ -85,7 +97,9 @@ export function WorkspaceFrame({ children }: { children: ReactNode }) {
   const channels = useChannels(workspaceId);
   const rooms = channels.data?.channels ?? [];
   const { channelId, choose, askedAt } = useOpenRoom(rooms);
-  const live = useFrameLive(workspaceId, projectId, channelId);
+  // The issue open in the peek, if any, so its changes reach it live.
+  const peeked = useSearchParams().get(PEEK_PARAM);
+  const live = useFrameLive(workspaceId, projectId, channelId, peeked);
 
   const chat = useChatPanel();
   const { setOpen: setChatOpen } = chat;
@@ -148,13 +162,17 @@ export function WorkspaceFrame({ children }: { children: ReactNode }) {
             onClose={() => setMenuOpen(false)}
           />
 
-          <main
-            id="main"
-            tabIndex={-1}
-            className="min-h-0 min-w-0 flex-1 overflow-auto outline-none"
-          >
-            {children}
-          </main>
+          {/* The peek sits over the right of the middle, not over the chat. */}
+          <div className="relative flex min-h-0 min-w-0 flex-1">
+            <main
+              id="main"
+              tabIndex={-1}
+              className="min-h-0 min-w-0 flex-1 overflow-auto outline-none"
+            >
+              {children}
+            </main>
+            <IssuePeek />
+          </div>
 
           {role ? (
             <ChatPanel

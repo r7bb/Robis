@@ -34,6 +34,7 @@ import { useMemberAvatars } from '../../lib/use-member-avatars.ts';
 import { useOfflineBoard } from '../../lib/use-offline-board.ts';
 import { useCommands, useOpenPalette } from '../command/command-provider.tsx';
 import { DuplicateHints } from '../issues/duplicate-hints.tsx';
+import { usePeek } from '../issues/issue-peek.tsx';
 import { PriorityHint } from '../issues/priority-hint.tsx';
 import { useLive, useLiveEvents } from '../workspace/live.tsx';
 import { useBoardDrag } from './board-drag.ts';
@@ -81,6 +82,7 @@ export function ProjectBoard({
   const columns = BOARD_COLUMNS.filter((column) => !filter.status || column === filter.status);
   const drag = useBoardDrag(shown, columns, board.updateIssue);
   const selection = useSelection();
+  const peek = usePeek();
   // Where focus goes once a bulk change is done and its picks are gone.
   const selectToggle = useRef<HTMLButtonElement>(null);
   // The new issue field, which the palette's New issue (C2) jumps to.
@@ -334,7 +336,7 @@ export function ProjectBoard({
                       if (event.key !== 'Enter' || event.target !== event.currentTarget) return;
                       if (issue.pending) return;
                       event.preventDefault();
-                      router.push(`/workspaces/${workspaceId}/issues/${issue.id}`);
+                      peek.open(issue.id);
                     }}
                     className={[
                       'group rounded-md border bg-raised p-3 outline-none transition-[opacity,box-shadow] duration-[var(--micro)] focus-visible:ring-2 focus-visible:ring-accent-soft',
@@ -370,6 +372,21 @@ export function ProjectBoard({
                     ) : (
                       <Link
                         href={`/workspaces/${workspaceId}/issues/${issue.id}`}
+                        // A plain click peeks; Cmd, Ctrl or a middle click
+                        // still opens the issue's own page, as a link does.
+                        onClick={(event) => {
+                          if (
+                            event.metaKey ||
+                            event.ctrlKey ||
+                            event.shiftKey ||
+                            event.button !== 0
+                          ) {
+                            return;
+                          }
+                          event.preventDefault();
+                          peek.open(issue.id);
+                        }}
+                        aria-current={peek.peeked === issue.id ? 'true' : undefined}
                         className="mt-1 block text-sm text-content hover:text-content hover:underline"
                       >
                         {issue.title}

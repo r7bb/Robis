@@ -321,11 +321,26 @@ async function deleteAndOpen(page: Page, boardName: string) {
   );
 
   await press(page, 'j');
+  const card = await page.eval<string>('document.activeElement?.getAttribute("data-card") ?? ""');
   await press(page, 'Enter');
   check(
-    'Enter on a card opens it',
-    await waitUntil(page, 'location.pathname.includes("/issues/")'),
+    'Enter on a card opens it over the board',
+    await waitUntil(
+      page,
+      `location.search.includes("issue=") && !!document.querySelector('[role=dialog][aria-label=Issue] h1')`,
+    ),
   );
+  await press(page, 'Escape');
+  check(
+    'Escape closes it, back on the card',
+    await waitUntil(
+      page,
+      `!document.querySelector('[role=dialog][aria-label=Issue]') && document.activeElement?.getAttribute('data-card') === ${JSON.stringify(card)}`,
+    ),
+  );
+  // From the issue's own page, the palette finds the way back to the board.
+  const board = await page.eval<string>('location.pathname');
+  await page.goto(`${WEB}${board.replace(/\/projects\/.*$/, '')}/issues/${card}`);
   await waitUntil(page, 'document.querySelector("h1")');
   await press(page, 'k', CTRL);
   await typeText(page, boardName);

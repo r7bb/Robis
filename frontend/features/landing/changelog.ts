@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-19',
     area: 'Product',
+    title: 'Issue peek',
+    brief:
+      'Open an issue over the board without leaving it: click a card or press Enter, and Escape or Back takes you straight back.',
+    summary:
+      'Clicking a card’s title, or pressing Enter on a card, opens the issue in a sheet over the right of the board, with everything its own page has: the fields, labels, description, sub-issues, images and comments. The board stays where it was beside it, so choosing another card shows that one instead. The issue is in the address, so a peek is a link, a reload keeps it open and Back closes it. Escape or the close button shuts it and puts focus back on the card; Escape inside a confirmation or a picture closes only that. A comment not yet sent or a description being edited is asked about before the peek moves on. An issue deleted by someone else closes its peek. Open as page, or a Cmd or Ctrl click, still opens the issue on its own page, which shares the same parts.',
+    feature: {
+      name: 'Issue peek',
+      where: 'Any board: click a card, or focus one and press Enter',
+      layers: [
+        'Screen: a sheet over the board with the issue’s whole detail, shared with its page',
+        'Client: the issue in the address as ?issue=, live changes through the frame’s one connection',
+        'Server: no API or data change',
+      ],
+    },
+    checked:
+      'The keyboard-only board test gained two checks (Enter on a card opens it over the board; Escape closes it with focus back on the card) and passed with all the rest. In headless Chrome on the rebuilt stack: a click peeked without leaving the board; another card switched it; Back went to the first, and again closed it; an unsent comment was asked about before switching, and saying no stayed; Escape in the delete confirmation left the peek open. A code review approved; its Escape, unsaved writing and deleted-elsewhere points fixed.',
+  },
+  {
+    date: '2026-11-19',
+    area: 'Product',
     title: 'The home on one screen',
     brief:
       'The home after signing in now fits on one screen on a laptop or larger, with no scrolling: the greeting, what needs you, the live feed and your workspaces.',

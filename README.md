@@ -148,15 +148,14 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Issue peek.** Open an issue over the board without leaving it: click a
+  card or press Enter, and Escape or Back takes you straight back.
 - **The home on one screen.** The home after signing in now fits on one
   screen on a laptop or larger, with no scrolling: the greeting, what needs
   you, the live feed and your workspaces.
 - **Quieter cards.** Board cards drop their status menu and show a label
   dot, the due date and the assignee’s face, with Move and Delete appearing
   on hover.
-- **One place for each thing.** Chat moves to the right of the board, and
-  everything in a workspace now shows in one place only: boards and docs on
-  the left, rooms and people at the top of the chat.
 
 <!-- latest:end -->
 

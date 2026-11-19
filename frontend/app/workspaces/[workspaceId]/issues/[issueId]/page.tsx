@@ -1,54 +1,30 @@
 'use client';
 
-import {
-  BOARD_COLUMNS,
-  type BodyOf,
-  contracts,
-  ISSUE_PRIORITIES,
-  type IssuePriority,
-  type IssueStatus,
-} from '@robis/shared';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { contracts } from '@robis/shared';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { type FormEvent, useState } from 'react';
-import { CommentThread } from '../../../../../components/comment-thread.tsx';
-import { DeleteButton } from '../../../../../components/delete-button.tsx';
 import { PresenceBar } from '../../../../../components/presence.tsx';
-import { AgentBadge, ErrorState } from '../../../../../components/ui/primitives.tsx';
-import { useCommands } from '../../../../../features/command/command-provider.tsx';
-import { IssueAttachments } from '../../../../../features/issues/attachments.tsx';
-import { DueField } from '../../../../../features/issues/due-field.tsx';
-import { ParentPicker, SubIssues } from '../../../../../features/issues/issue-tree.tsx';
-import { LabelPicker } from '../../../../../features/issues/label-picker.tsx';
+import { IssueDetail } from '../../../../../features/issues/issue-detail.tsx';
 import { call } from '../../../../../lib/api.ts';
-import { issueCommands } from '../../../../../lib/page-commands.ts';
-import { may } from '../../../../../lib/permissions.ts';
 import { useCoalesced, useRealtime } from '../../../../../lib/realtime.ts';
 import { concernsIssue } from '../../../../../lib/realtime-events.ts';
 import { lastTheme, useApplyTheme } from '../../../../../lib/theme.ts';
 
-const STATUS_LABELS: Record<IssueStatus, string> = {
-  TODO: 'Todo',
-  IN_PROGRESS: 'In Progress',
-  IN_REVIEW: 'In Review',
-  DONE: 'Done',
-  CANCELED: 'Canceled',
-};
-
+/**
+ * One issue as a page of its own, with a way back to its workspace and
+ * board. The same issue opens over the board as a peek (see `IssuePeek`).
+ */
 export default function IssuePage() {
   const { workspaceId, issueId } = useParams<{ workspaceId: string; issueId: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [title, setTitle] = useState<string | null>(null);
-
-  const issueKey = ['issue', workspaceId, issueId] as const;
 
   // Refresh when something happens to this issue (an edit, a comment, an
   // image), so a field someone else changed does not sit stale on screen;
   // other events in the workspace leave it alone, and a burst is one refresh.
   const refreshIssue = useCoalesced(() => {
-    queryClient.invalidateQueries({ queryKey: issueKey });
+    queryClient.invalidateQueries({ queryKey: ['issue', workspaceId, issueId] });
     queryClient.invalidateQueries({ queryKey: ['comments', workspaceId, issueId] });
   });
   const { presence, state: realtimeState } = useRealtime(
@@ -65,56 +41,12 @@ export default function IssuePage() {
     queryKey: ['workspace', workspaceId],
     queryFn: () => call(contracts['workspaces.get'], { params: { workspaceId } }),
   });
-
   useApplyTheme(workspace.data?.workspace.theme ?? lastTheme());
-
   const issue = useQuery({
-    queryKey: issueKey,
+    queryKey: ['issue', workspaceId, issueId],
     queryFn: () => call(contracts['issues.get'], { params: { workspaceId, issueId } }),
   });
-
-  const members = useQuery({
-    queryKey: ['members', workspaceId],
-    queryFn: () => call(contracts['members.list'], { params: { workspaceId } }),
-  });
-
-  const update = useMutation({
-    mutationFn: (patch: BodyOf<(typeof contracts)['issues.update']>) =>
-      call(contracts['issues.update'], { params: { workspaceId, issueId }, body: patch }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: issueKey }),
-  });
-
-  const remove = useMutation({
-    mutationFn: () => call(contracts['issues.delete'], { params: { workspaceId, issueId } }),
-    onSuccess: () => {
-      // This page is about to 404, so leave before invalidating.
-      const projectId = issue.data?.issue.projectId;
-      router.replace(
-        projectId
-          ? `/workspaces/${workspaceId}/projects/${projectId}`
-          : `/workspaces/${workspaceId}`,
-      );
-      queryClient.invalidateQueries({ queryKey: ['issue', workspaceId] });
-    },
-  });
-
   const data = issue.data?.issue;
-  const role = workspace.data?.workspace.role;
-  // The same checks the palette makes for its commands (C2).
-  const canEdit = may(role, 'editIssue');
-  const canDelete = may(role, 'deleteIssue');
-  useCommands(
-    data
-      ? issueCommands({
-          issueKey: data.key,
-          status: data.status,
-          statusLabel: (status) => STATUS_LABELS[status],
-          setStatus: (status) => update.mutate({ status }),
-        })
-      : [],
-  );
-
-  if (issue.isError) return <ErrorState message={(issue.error as Error).message} />;
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-12">
@@ -141,344 +73,20 @@ export default function IssuePage() {
         <span className="font-mono text-muted">{data?.key ?? '…'}</span>
       </nav>
 
-      <div className="mt-4 flex items-center justify-end gap-3">
-        <PresenceBar users={presence} state={realtimeState} here={issueId} />
-
-        {data && (
-          <DeleteButton
-            allowed={canDelete}
-            kind="issue"
-            name={`${data.key} · ${data.title}`}
-            cascade="Comments on this issue are deleted with it."
-            onConfirm={() => remove.mutateAsync()}
-          />
-        )}
+      <div className="mt-4">
+        <IssueDetail
+          workspaceId={workspaceId}
+          issueId={issueId}
+          toolbar={<PresenceBar users={presence} state={realtimeState} here={issueId} />}
+          onDeleted={(projectId) =>
+            router.replace(
+              projectId
+                ? `/workspaces/${workspaceId}/projects/${projectId}`
+                : `/workspaces/${workspaceId}`,
+            )
+          }
+        />
       </div>
-
-      {data && (
-        <>
-          <EditableTitle
-            title={data.title}
-            draft={title}
-            canEdit={canEdit}
-            onStart={() => setTitle(data.title)}
-            onChange={setTitle}
-            onSave={(next) => {
-              if (next && next !== data.title) update.mutate({ title: next });
-              setTitle(null);
-            }}
-          />
-
-          <dl className="mt-6 grid gap-4 sm:grid-cols-3">
-            <Field label="Status">
-              <Select
-                value={data.status}
-                disabled={!canEdit}
-                onChange={(value) => update.mutate({ status: value as IssueStatus })}
-                options={BOARD_COLUMNS.map((status) => ({
-                  value: status,
-                  label: STATUS_LABELS[status],
-                }))}
-              />
-            </Field>
-
-            <Field label="Priority">
-              <Select
-                value={data.priority}
-                disabled={!canEdit}
-                onChange={(value) => update.mutate({ priority: value as IssuePriority })}
-                options={ISSUE_PRIORITIES.map((priority) => ({
-                  value: priority,
-                  label: priority === 'NONE' ? 'None' : priority.toLowerCase(),
-                }))}
-              />
-            </Field>
-
-            <Field label="Assignee">
-              <Select
-                value={data.assigneeId ?? ''}
-                disabled={!canEdit}
-                onChange={(value) => update.mutate({ assigneeId: value || null })}
-                options={[
-                  { value: '', label: 'Unassigned' },
-                  // A person answers for the work; an agent is its delegate at most.
-                  ...(members.data?.members ?? [])
-                    .filter((member) => member.kind === 'human')
-                    .map((member) => ({ value: member.userId, label: member.name })),
-                ]}
-              />
-            </Field>
-
-            <Field label="Due">
-              <DueField
-                dueOn={data.dueOn}
-                finished={data.status === 'DONE' || data.status === 'CANCELED'}
-                canEdit={canEdit}
-                onChange={(dueOn) => update.mutate({ dueOn })}
-              />
-            </Field>
-
-            <Field label="Part of">
-              <ParentPicker
-                workspaceId={workspaceId}
-                projectId={data.projectId}
-                issueId={issueId}
-                parent={data.parent}
-                subIssues={data.children}
-                canEdit={canEdit}
-                onChange={(parentId) => update.mutate({ parentId })}
-              />
-            </Field>
-
-            {data.delegateId && (
-              <Field label="Delegate">
-                <span className="flex items-center gap-2 py-1.5 text-sm text-content">
-                  {members.data?.members.find((m) => m.userId === data.delegateId)?.name ??
-                    'A removed agent'}
-                  <AgentBadge />
-                </span>
-              </Field>
-            )}
-          </dl>
-
-          <div className="mt-4">
-            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-faint">Labels</p>
-            <LabelPicker
-              workspaceId={workspaceId}
-              issueId={issueId}
-              current={data.labelIds}
-              canEdit={canEdit}
-            />
-          </div>
-
-          {update.isError && (
-            <p role="alert" className="mt-3 text-sm text-danger-soft">
-              {(update.error as Error).message}
-            </p>
-          )}
-
-          <Description
-            value={data.description}
-            canEdit={canEdit}
-            onSave={(next) => update.mutate({ description: next })}
-          />
-
-          <SubIssues
-            workspaceId={workspaceId}
-            projectId={data.projectId}
-            issueId={issueId}
-            parent={data.parent}
-            items={data.children}
-            canEdit={may(role, 'newIssue')}
-          />
-
-          <IssueAttachments workspaceId={workspaceId} issueId={issueId} role={role} />
-
-          <CommentThread
-            workspaceId={workspaceId}
-            issueId={issueId}
-            canComment={role !== undefined}
-          />
-        </>
-      )}
     </main>
-  );
-}
-
-/**
- * Click-to-edit heading.
- *
- * Extracted from the page because the two states plus the permission check
- * are most of its branching, and a heading that is sometimes a button and
- * sometimes a form reads better named than inlined.
- */
-function EditableTitle({
-  title,
-  draft,
-  canEdit,
-  onStart,
-  onChange,
-  onSave,
-}: {
-  title: string;
-  /** Null when not editing; the in-progress text otherwise. */
-  draft: string | null;
-  canEdit: boolean;
-  onStart: () => void;
-  onChange: (value: string) => void;
-  onSave: (value: string) => void;
-}) {
-  if (draft === null) {
-    return (
-      <h1
-        className={[
-          'mt-4 text-2xl font-semibold tracking-tight text-content',
-          canEdit ? 'cursor-text rounded px-1 -mx-1 hover:bg-raised' : '',
-        ].join(' ')}
-        onClick={() => canEdit && onStart()}
-        onKeyDown={(event) => {
-          if (canEdit && event.key === 'Enter') onStart();
-        }}
-        // Only interactive when editable, so a guest gets a plain heading.
-        {...(canEdit ? { role: 'button', tabIndex: 0 } : {})}
-      >
-        {title}
-      </h1>
-    );
-  }
-
-  const save = (event: FormEvent) => {
-    event.preventDefault();
-    onSave(draft.trim());
-  };
-
-  return (
-    <form onSubmit={save} className="mt-4">
-      <input
-        // biome-ignore lint/a11y/noAutofocus: this input only exists because the user just clicked the title to edit it, so focus is where they are already looking.
-        autoFocus
-        value={draft}
-        onChange={(event) => onChange(event.target.value)}
-        onBlur={save}
-        aria-label="Issue title"
-        className="w-full rounded-md border border-line bg-raised px-3 py-2 text-2xl font-semibold text-content outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
-      />
-    </form>
-  );
-}
-
-/**
- * The issue description.
- *
- * Explicit Save and Cancel rather than the title's save-on-blur. A title is a
- * line you retype; a description is paragraphs, and losing them because focus
- * moved is a different class of mistake. Ctrl/Cmd+Enter saves and Escape
- * cancels, so the mouse is optional either way.
- *
- * Text is stored and rendered verbatim -- no Markdown. Claiming to render
- * Markdown and then only handling some of it is worse than plainly not doing
- * it, and the one thing people actually rely on, line breaks, is preserved.
- */
-function Description({
-  value,
-  canEdit,
-  onSave,
-}: {
-  value: string | null;
-  canEdit: boolean;
-  onSave: (value: string | null) => void;
-}) {
-  const [draft, setDraft] = useState<string | null>(null);
-
-  if (draft === null) {
-    const empty = !value?.trim();
-
-    // Nothing to show and no right to add it: render nothing rather than an
-    // empty box a guest cannot act on.
-    if (empty && !canEdit) return null;
-
-    return (
-      <section className="mt-8">
-        <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-faint">Description</h2>
-
-        <button
-          type="button"
-          disabled={!canEdit}
-          onClick={() => setDraft(value ?? '')}
-          className={[
-            'block w-full rounded-md px-3 py-2 text-left text-sm',
-            canEdit ? 'cursor-text hover:bg-raised' : 'cursor-default',
-            empty ? 'text-faint' : 'whitespace-pre-wrap text-muted',
-          ].join(' ')}
-        >
-          {empty ? 'Add a description…' : value}
-        </button>
-      </section>
-    );
-  }
-
-  const commit = () => {
-    const trimmed = draft.trim();
-    // An emptied description is null, not "", so the column holds one
-    // representation of "absent" rather than two that sort differently.
-    onSave(trimmed === '' ? null : trimmed);
-    setDraft(null);
-  };
-
-  return (
-    <section className="mt-8">
-      <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-faint">Description</h2>
-
-      <textarea
-        // biome-ignore lint/a11y/noAutofocus: the textarea exists only because the reader just clicked the description to edit it.
-        autoFocus
-        value={draft}
-        rows={6}
-        onChange={(event) => setDraft(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === 'Escape') setDraft(null);
-          if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) commit();
-        }}
-        aria-label="Issue description"
-        placeholder="What needs doing, and what does done look like?"
-        className="w-full resize-y rounded-md border border-line bg-raised px-3 py-2 text-sm text-content outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
-      />
-
-      <div className="mt-2 flex items-center gap-2">
-        <button
-          type="button"
-          onClick={commit}
-          className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-accent-contrast hover:bg-accent-hover"
-        >
-          Save
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setDraft(null)}
-          className="rounded-md px-3 py-1.5 text-sm text-muted hover:text-content"
-        >
-          Cancel
-        </button>
-
-        <span className="text-xs text-faint">⌘↵ to save · Esc to cancel</span>
-      </div>
-    </section>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <dt className="mb-1 text-xs font-medium uppercase tracking-wide text-faint">{label}</dt>
-      <dd>{children}</dd>
-    </div>
-  );
-}
-
-function Select({
-  value,
-  options,
-  onChange,
-  disabled,
-}: {
-  value: string;
-  options: { value: string; label: string }[];
-  onChange: (value: string) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <select
-      value={value}
-      disabled={disabled}
-      onChange={(event) => onChange(event.target.value)}
-      className="w-full rounded-md border border-line bg-raised px-2 py-1.5 text-sm capitalize text-content outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60 disabled:opacity-60"
-    >
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
   );
 }

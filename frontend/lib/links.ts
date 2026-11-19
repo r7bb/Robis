@@ -10,6 +10,22 @@ import { filterToQuery } from './board-filter.ts';
 export const COMPOSE_PARAM = 'new';
 /** On the workspace page: the channel to open. */
 export const CHANNEL_PARAM = 'channel';
+/** On a board: the issue open in the peek over it. */
+export const PEEK_PARAM = 'issue';
+
+/** This address with one parameter set, or taken out when `value` is null; the rest kept. */
+export function withParam(
+  pathname: string,
+  search: string,
+  name: string,
+  value: string | null,
+): string {
+  const params = new URLSearchParams(search);
+  if (value === null) params.delete(name);
+  else params.set(name, value);
+  const query = params.toString();
+  return query ? `${pathname}?${query}` : pathname;
+}
 
 /** A project's board, filtered or not, and ready to file an issue or not. */
 export function boardHref(
