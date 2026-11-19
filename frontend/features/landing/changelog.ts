@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-19',
     area: 'Product',
+    title: 'Undo an agent’s change',
+    brief:
+      'The agents page lists what each agent changed, in plain words, with Undo while nobody has changed it since.',
+    summary:
+      'Admins now see what the workspace’s agents changed, newest first, each as a sentence: “Triage bot set the priority on REL-4 from none to high”, “Activity bot commented on REL-9”, linked to the issue. While a change is as the agent left it, Undo puts it back: a field returns to what it was, and a comment the agent wrote is removed. It goes through the same paths a person’s own edit takes, so the audit trail records it under the admin who pressed it, and the change counts as reverted in the agent’s record. Once someone has changed the thing since, Undo is not offered and is refused, so it never overwrites a person’s later work; a new issue an agent made is removed from its own page instead.',
+    feature: {
+      name: 'Agent undo',
+      where: 'A workspace’s agents page, under What they changed',
+      layers: [
+        'Screen: each change as a sentence, linked to its issue, with Undo or why not',
+        'API: agents.changes and agents.undoChange, for admins, through the idempotency ledger',
+        'Data: no change; the values before and after an agent’s change were already kept',
+      ],
+    },
+    checked:
+      'Fourteen new tests. Ten against the API: a change listed with its issue, values and Undo on offer; a parent put back refused when it would make the tree go round; a change from another workspace not found; a field put back and then shown as undone; a second undo refused; never over a person’s later change; a comment the agent wrote removed; an issue the agent made left to its page; the undo in the audit trail under the person; a member who is not an admin refused and a stranger answered 404. Four on the wording. In headless Chrome on the rebuilt stack the agents page listed the triage agent’s comments with Undo and its status changes as changed since, and one Undo took that change off the list of undoable ones.',
+  },
+  {
+    date: '2026-11-19',
+    area: 'Product',
     title: 'Warmer greys',
     brief:
       'The default Midnight theme moves from a blue slate to softer, warmer greys, so the work reads first.',

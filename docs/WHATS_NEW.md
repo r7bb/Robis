@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Undo an agent’s change** (2026-11-19). The agents page lists what each
+  agent changed, in plain words, with Undo while nobody has changed it
+  since.
 - **Warmer greys** (2026-11-19). The default Midnight theme moves from a
   blue slate to softer, warmer greys, so the work reads first.
 - **Priority and Other in the inbox** (2026-11-19). The inbox opens on

@@ -14,7 +14,7 @@ Written to be checkable. Every row names a file you can open.
 | --- | --- |
 | Services | 5 (web, API, realtime gateway, worker, MCP server for agents) plus an optional ML service |
 | Database tables | 18 |
-| HTTP endpoints | 109 |
+| HTTP endpoints | 111 |
 | Tests | Counted in [docs/ROADMAP.md](docs/ROADMAP.md), the one place they are kept |
 | Screenshots | 28, all captured from the running app |
 | Measured throughput | ~3,600 req/s, zero errors |
@@ -72,7 +72,7 @@ second "consumed" state to get wrong.
 | Emails shown only to admins; teammates see usernames | `backend/api/src/routes/members.ts` |
 | No workspace access, over HTTP or the live feed, until a picture is chosen | `backend/api/src/plugins/authz.ts`, `backend/realtime/src/gateway.ts` |
 | Agents marked wherever they appear (team list, members, comments, activity, an issue's delegate); admins manage agents and tokens from the Team panel, a token shown once | `frontend/components/agent-list.tsx`, `frontend/components/ui/primitives.tsx` |
-| Watching agents: every agent call recorded as a step of a run (tool, outcome, time, never what was sent), changes judged kept, edited or reverted after seven days, MCP tool metrics, and an admin page of runs and counts | `frontend/features/agents/`, `backend/database/src/agent-runs.ts`, `agent-changes.ts`, `backend/mcp/src/metrics.ts` |
+| Watching agents: every agent call recorded as a step of a run (tool, outcome, time, never what was sent), changes judged kept, edited or reverted after seven days, MCP tool metrics, an admin page of runs and counts, and one-click undo of an agent’s change while nobody has changed it since | `frontend/features/agents/`, `backend/database/src/agent-runs.ts`, `agent-changes.ts`, `backend/mcp/src/metrics.ts` |
 | Hint feedback: using or setting aside a duplicate or priority hint counted with no person named, beside the offline evaluation | `backend/api/src/routes/feedback.ts`, `frontend/features/issues/` |
 | A scripted triage agent: on each new issue it comments suggested duplicates and a priority with their scores, through the MCP server with a five-minute token, and changes nothing | `backend/worker/src/triage.ts` |
 | An MCP server for agents at `/mcp/<workspace id>`: search, suggest, list projects, read, create and update issues, comment; it holds no authority and calls the API with the agent's own token | `backend/mcp/` |

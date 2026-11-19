@@ -22,7 +22,12 @@ import { pushContracts } from './push.ts';
 import { savedViewContracts } from './saved-views.ts';
 import { workspaceContracts } from './workspaces.ts';
 
-export { RUN_STEPS_SHOWN, RUNS_SHOWN } from './agents.ts';
+export {
+  AGENT_CHANGE_STATES,
+  AGENT_CHANGES_SHOWN,
+  RUN_STEPS_SHOWN,
+  RUNS_SHOWN,
+} from './agents.ts';
 export { SEARCH_KINDS, SEARCH_LIMIT_MAX } from './audit.ts';
 export * from './contract.ts';
 export { DISCUSSION_LIMIT, DISCUSSION_PREVIEW_CHARS } from './discussion.ts';

@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { AgentBadge } from '../../components/ui/primitives.tsx';
 import { call } from '../../lib/api.ts';
+import { ChangeTrail } from './change-trail.tsx';
 
 type Activity = ResponseOf<(typeof contracts)['agents.activity']>;
 type Stats = ResponseOf<(typeof contracts)['suggestions.stats']>;
@@ -50,6 +51,7 @@ export function ActivityView({ workspaceId }: { workspaceId: string }) {
   return (
     <div className="mt-8 space-y-12">
       <Kept agents={activity.data.agents} />
+      <ChangeTrail workspaceId={workspaceId} />
       <Runs activity={activity.data} />
       {stats.data && <Hints stats={stats.data} />}
     </div>

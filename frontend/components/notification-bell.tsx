@@ -243,12 +243,22 @@ function InboxTabs({
       aria-label="Notifications"
       className="flex gap-1 border-b border-line px-3 pt-2"
       onKeyDown={(event) => {
-        if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+        const step = { ArrowRight: 1, ArrowLeft: -1, Home: 0, End: 0 }[event.key];
+        if (step === undefined) return;
         event.preventDefault();
-        const next = INBOX_TABS[(INBOX_TABS.indexOf(current) + 1) % INBOX_TABS.length]!;
+        // Kept now: the event's target is gone by the time the frame runs.
+        const list = event.currentTarget;
+        const at = INBOX_TABS.indexOf(current);
+        const index =
+          event.key === 'Home'
+            ? 0
+            : event.key === 'End'
+              ? INBOX_TABS.length - 1
+              : (at + step + INBOX_TABS.length) % INBOX_TABS.length;
+        const next = INBOX_TABS[index]!;
         onChoose(next);
         requestAnimationFrame(() =>
-          event.currentTarget.querySelector<HTMLElement>(`[data-tab="${next}"]`)?.focus(),
+          list.querySelector<HTMLElement>(`[data-tab="${next}"]`)?.focus(),
         );
       }}
     >

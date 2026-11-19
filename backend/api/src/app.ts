@@ -17,6 +17,7 @@ import { recordAgentSteps } from './plugins/agent-steps.ts';
 import { attachUser } from './plugins/authz.ts';
 import { accountDeletionRoutes } from './routes/account-deletion.ts';
 import { accountEventRoutes } from './routes/account-events.ts';
+import { agentUndoRoutes } from './routes/agent-undo.ts';
 import { agentRoutes } from './routes/agents.ts';
 import { attachmentRoutes } from './routes/attachments.ts';
 import { auditRoutes } from './routes/audit.ts';
@@ -259,6 +260,7 @@ export function buildApp({
   app.register(projectRoutes, { db });
   app.register(issueRoutes, { db, suggestions: suggest });
   app.register(discussionRoutes, { db });
+  app.register(agentUndoRoutes, { db });
   app.register(myMeetingRoutes, { db });
   app.register(commentRoutes, { db });
   app.register(documentRoutes, { db });

@@ -71,7 +71,53 @@ export const RUN_STEPS_SHOWN = 50;
 /** How many of the latest runs the activity view shows. */
 export const RUNS_SHOWN = 20;
 
+/** What an agent's change has come to, and so whether Undo is offered. */
+export const AGENT_CHANGE_STATES = ['undoable', 'undone', 'changed', 'gone', 'manual'] as const;
+/** The latest agent changes the agents page lists. */
+export const AGENT_CHANGES_SHOWN = 50;
+
+const changeParams = workspaceParams.extend({ changeId: z.string() });
+
 export const agentContracts = {
+  'agents.changes': contract({
+    method: 'GET',
+    path: '/workspaces/:workspaceId/agents/changes',
+    summary:
+      "The agents' latest changes, newest first: what each set from what to what, and whether it can be undone.",
+    params: workspaceParams,
+    response: z.object({
+      changes: z.array(
+        z.object({
+          id: uuid,
+          agentId: uuid,
+          agentName: z.string(),
+          entityType: z.enum(['issue', 'comment']),
+          entityId: uuid,
+          /** The issue it is on (a comment's issue), while it exists. */
+          issueId: uuid.nullable(),
+          issueKey: z.string().nullable(),
+          field: z.string(),
+          before: z.unknown(),
+          after: z.unknown(),
+          at: timestamp,
+          /**
+           * undoable: as the agent left it; undone: put back (by Undo or by
+           * hand); changed: someone has changed it since; gone: deleted;
+           * manual: a new issue, which is removed from its page instead.
+           */
+          state: z.enum(AGENT_CHANGE_STATES),
+        }),
+      ),
+    }),
+  }),
+  'agents.undoChange': contract({
+    method: 'POST',
+    path: '/workspaces/:workspaceId/agents/changes/:changeId/undo',
+    summary:
+      "Undo an agent's change: put a field back, or remove a comment it wrote; refused once someone has changed it since.",
+    params: changeParams,
+    response: z.object({ ok: z.literal(true) }),
+  }),
   'agents.activity': contract({
     method: 'GET',
     path: '/workspaces/:workspaceId/agents/activity',
