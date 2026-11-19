@@ -148,13 +148,13 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Two-factor sign-in.** Turn on two-factor sign-in from your account page:
+  after your password, Robis asks for a code from an authenticator app, or
+  one of ten recovery codes.
 - **Undo an agent’s change.** The agents page lists what each agent changed,
   in plain words, with Undo while nobody has changed it since.
 - **Warmer greys.** The default Midnight theme moves from a blue slate to
   softer, warmer greys, so the work reads first.
-- **Priority and Other in the inbox.** The inbox opens on Priority, what
-  asks something of you, with everything else under Other, each with its
-  unread count.
 
 <!-- latest:end -->
 

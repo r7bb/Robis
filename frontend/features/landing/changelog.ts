@@ -45,6 +45,26 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-19',
+    area: 'Security',
+    title: 'Two-factor sign-in',
+    brief:
+      'Turn on two-factor sign-in from your account page: after your password, Robis asks for a code from an authenticator app, or one of ten recovery codes.',
+    summary:
+      'Your account page can now turn on two-factor sign-in. Give your password, scan the QR code with an authenticator app (or type its key by hand), and type the first code it shows. You get ten recovery codes, shown once, for when the phone is lost. From then on, signing in asks for your password and then a code: each code works once, within its thirty seconds and one either side for a clock a little out, and each recovery code works once. Five wrong codes and the sign-in starts again from the password, a new sign-in replaces a half-done one, ten wrong codes in fifteen minutes make the account wait a few minutes wherever they come from, and changing or resetting the password ends any half-done sign-in. Making new recovery codes or turning it off asks for your password and a code, so a session left open on a borrowed computer cannot undo it. Each step is in your sign-in history. The authenticator secret is sealed with a key the server keeps outside the database, so a copy of the database alone does not give it away; recovery codes are kept only as hashes.',
+    feature: {
+      name: 'Two-factor sign-in',
+      where: 'Your account page, under Two-factor sign-in; then the sign-in page asks for a code',
+      layers: [
+        'Screen: set-up with a QR code, recovery codes shown once, and a code step after the password',
+        'API: twoFactor.state, setup, enable, recoveryCodes and disable, and auth.loginTwoFactor',
+        'Data: two_factor (the sealed secret and the last step used), recovery_codes (hashes), sign_in_challenges (hashed, five minutes, five tries)',
+      ],
+    },
+    checked:
+      'Twenty-nine new tests. Twelve on the parts: the codes match the RFC 4226 and RFC 6238 test values, a code is taken one step either side of now and no further, only six digits count, a sealed secret opens only with its key and account and not once altered, and recovery codes are ten distinct, read loosely and refused when they are not codes. Sixteen against the API: set-up needs the password and gives a key and an address naming the username; a wrong first code turns nothing on; the password alone gives a challenge and no session; a code works once within its window and not outside it; each recovery code works once; five wrong codes end the challenge; a made-up challenge is refused; an account without it signs in as before; new codes need the password and a code and replace the old; turning it off needs both; each is in the account’s history; a new sign-in replaces the half-done one; ten wrong codes make the account wait even with the right code; and a changed password ends a half-done sign-in. One on the settings: a production API refuses the local stack’s key. A security review found no way in on a password alone; its high point, guessing codes with the password known, was answered by the per-account wait, one challenge at a time and each try counted before the code is checked. In headless Chrome on the rebuilt stack: a new account turned it on from the account page by its QR code’s key, kept ten recovery codes, signed out, was asked for a code after its password, and signed in with the next code.',
+  },
+  {
+    date: '2026-11-19',
     area: 'Product',
     title: 'Undo an agent’s change',
     brief:

@@ -330,6 +330,13 @@
       "when": 1795070969314,
       "tag": "0046_messages_workspace_index",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1795075233127,
+      "tag": "0047_two_factor",
+      "breakpoints": true
     }
   ]
 }

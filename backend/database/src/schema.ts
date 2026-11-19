@@ -282,6 +282,66 @@ export const sessions = pgTable(
 );
 
 /**
+ * Two-factor sign-in with an authenticator app (C4), one row per account.
+ * The secret is sealed with `TWO_FACTOR_KEY` (see `sealSecret`), never kept
+ * plain: unlike a password it cannot be hashed, since checking a code needs
+ * it. Until `confirmed_at` the row is a setup in progress and asks nothing
+ * at sign-in. `last_step` is the time step of the last code taken, and a
+ * code is taken only for a later step, so each works once.
+ */
+export const twoFactor = pgTable('two_factor', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  secretSealed: text('secret_sealed').notNull(),
+  confirmedAt: timestamp('confirmed_at', { withTimezone: true }),
+  lastStep: bigint('last_step', { mode: 'number' }),
+  createdAt: createdAt(),
+});
+
+/**
+ * Recovery codes (C4), stored as hashes and spent by setting `used_at`, so
+ * the account page can say how many are left. A new set replaces the old.
+ */
+export const recoveryCodes = pgTable(
+  'recovery_codes',
+  {
+    id: id(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    codeHash: text('code_hash').notNull(),
+    usedAt: timestamp('used_at', { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('recovery_codes_user_hash_key').on(t.userId, t.codeHash)],
+);
+
+/**
+ * A sign-in halfway done (C4): the password was right and the second step
+ * is owed. Short-lived, held as a hash, and good for a few wrong codes
+ * before it is gone and the password must be given again.
+ */
+export const signInChallenges = pgTable(
+  'sign_in_challenges',
+  {
+    id: id(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    tokenHash: text('token_hash').notNull(),
+    attempts: integer('attempts').notNull().default(0),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex('sign_in_challenges_token_hash_key').on(t.tokenHash),
+    index('sign_in_challenges_user_id_idx').on(t.userId),
+    index('sign_in_challenges_expires_at_idx').on(t.expiresAt),
+  ],
+);
+
+/**
  * The keys an agent acts with (B5): each scoped to one workspace, shown once
  * when issued and stored only as a hash, like a session. Revoking one sets
  * `revoked_at`, and the next request carrying it is refused, since every

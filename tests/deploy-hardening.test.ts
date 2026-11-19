@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
 import { join } from 'node:path';
 import { buildApp } from '@robis/api/app';
-import { loadEnv } from '@robis/api/env';
+import { loadEnv, STACK_TWO_FACTOR_KEY } from '@robis/api/env';
 import { serveMetrics } from '@robis/api/metrics';
 import { sessions } from '@robis/database';
 import { TERMS_VERSION } from '@robis/shared';
@@ -66,6 +66,24 @@ describe('NODE_ENV', () => {
     expect(production({ DATABASE_URL: TEST_URL, WEB_ORIGIN: 'http://robis.example' })).toThrow(
       /https/,
     );
+  });
+
+  test('in production, the local stack’s two-factor key is refused, and a malformed one anywhere', () => {
+    const settings = {
+      MEDIA_DIR: MEDIA_ROOT,
+      DATABASE_URL: TEST_URL,
+      WEB_ORIGIN: 'https://robis.example',
+    };
+    expect(() =>
+      loadEnv({
+        NODE_ENV: 'production',
+        TWO_FACTOR_KEY: STACK_TWO_FACTOR_KEY,
+        ...settings,
+      } as NodeJS.ProcessEnv),
+    ).toThrow(/local stack key/);
+    expect(() =>
+      loadEnv({ NODE_ENV: 'test', TWO_FACTOR_KEY: 'too short', ...settings } as NodeJS.ProcessEnv),
+    ).toThrow(/32 bytes/);
   });
 
   test('set to something else, it refuses too', () => {

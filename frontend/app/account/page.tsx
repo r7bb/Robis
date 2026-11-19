@@ -8,6 +8,7 @@ import { type FormEvent, useEffect, useId, useState } from 'react';
 import { ACCOUNT_EVENTS_KEY, AccountActivity } from '../../features/account/account-activity.tsx';
 import { DeleteAccount } from '../../features/account/delete-account.tsx';
 import { NotificationSettings } from '../../features/account/notification-settings.tsx';
+import { TwoFactorSettings } from '../../features/account/two-factor.tsx';
 import { UsernameField } from '../../features/account/username-field.tsx';
 import { ApiError, call, type Me } from '../../lib/api.ts';
 import { lastTheme, useApplyTheme } from '../../lib/theme.ts';
@@ -57,6 +58,9 @@ export default function AccountPage() {
 
       <ProfileSection user={me.data.user} onSaved={() => queryClient.invalidateQueries()} />
       <PasswordSection />
+      <Section title="Two-factor sign-in">
+        <TwoFactorSettings />
+      </Section>
       <SessionsSection />
       <Section title="Notifications">
         <NotificationSettings />

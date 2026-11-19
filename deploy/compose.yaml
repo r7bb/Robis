@@ -135,6 +135,11 @@ services:
       # Web push (C3), only when the shell running compose has keys (made
       # with `bun run push:keys`); empty leaves it off. Never written here.
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      # Two-factor sign-in (C4) seals authenticator secrets with this. The
+      # default is for this local stack only, like the audit key above, and
+      # is not a secret; a real deployment sets its own (`bun run
+      # two-factor:key`) from a secret store.
+      TWO_FACTOR_KEY: ${TWO_FACTOR_KEY:-cm9iaXMtc3RhY2stMmZhLWtleS1ub3QtYS1zZWNyZXQ}
       # One hop: the edge proxy, which sets X-Forwarded-For. Rate limits key
       # on the client's address, not the proxy's.
       TRUST_PROXY: '1'

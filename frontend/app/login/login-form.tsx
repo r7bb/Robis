@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 import { ApiError, call } from '../../lib/api.ts';
 import { getSyncEngine } from '../../lib/sync.ts';
+import { CodeStep } from './code-step.tsx';
 
 export type Mode = 'login' | 'register';
 
@@ -32,6 +33,31 @@ export function LoginForm({ initialMode }: { initialMode: Mode }) {
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  /** The password was right and the account asks for a code too (C4). */
+  const [challenge, setChallenge] = useState<string | null>(null);
+
+  /** Signed in: the same next steps whether it took one step or two. */
+  async function enter(userId: string) {
+    // Offline data left by a different account on this browser must not be
+    // shown to this person, or sent under their session.
+    await getSyncEngine().claimFor(userId);
+
+    // The session cookie changed, so anything cached under the old identity
+    // is stale.
+    await queryClient.invalidateQueries();
+    router.replace('/workspaces');
+  }
+
+  /** The password step: in, or on to the code when the account asks for one. */
+  async function withPassword() {
+    const signedIn = await call(contracts['auth.login'], { body: { email, password } });
+    if ('twoFactor' in signedIn) {
+      setChallenge(signedIn.twoFactor.challenge);
+      setPassword('');
+      return;
+    }
+    await enter(signedIn.user.id);
+  }
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -44,21 +70,32 @@ export function LoginForm({ initialMode }: { initialMode: Mode }) {
         setSentTo(email.trim());
         return;
       }
-      const signedIn = await call(contracts['auth.login'], { body: { email, password } });
-
-      // Offline data left by a different account on this browser must not be
-      // shown to this person, or sent under their session.
-      await getSyncEngine().claimFor(signedIn.user.id);
-
-      // The session cookie changed, so anything cached under the old identity
-      // is stale.
-      await queryClient.invalidateQueries();
-      router.replace('/workspaces');
+      await withPassword();
     } catch (cause) {
       setError(cause instanceof ApiError ? cause.message : 'Something went wrong');
     } finally {
       setSubmitting(false);
     }
+  }
+
+  // The password was right and a code is owed: that is all the page asks.
+  if (challenge) {
+    return (
+      <main className="grid min-h-[100dvh] place-items-center px-4 py-10">
+        <div className="w-full max-w-sm">
+          <h1 className="text-2xl font-semibold tracking-tight text-content">Robis</h1>
+          <p className="mt-1 text-sm text-muted">One more step to sign in.</p>
+          <CodeStep
+            challenge={challenge}
+            onSignedIn={enter}
+            onRestart={(why) => {
+              setChallenge(null);
+              setError(why);
+            }}
+          />
+        </div>
+      </main>
+    );
   }
 
   return (
@@ -70,20 +107,7 @@ export function LoginForm({ initialMode }: { initialMode: Mode }) {
         </p>
 
         {mode === 'register' && sentTo ? (
-          <div role="status" className="mt-6 rounded-md border border-line bg-raised px-4 py-3">
-            <p className="text-sm font-medium text-content">Check your inbox</p>
-            <p className="mt-1 text-sm text-muted">
-              If {sentTo} can be used for a new account, a link to finish signing up is on its way.
-              It works once, for 24 hours. Nothing arrived? Check spam, or send it again.
-            </p>
-            <button
-              type="button"
-              onClick={() => setSentTo(null)}
-              className="mt-3 text-sm text-muted underline-offset-4 hover:text-content hover:underline"
-            >
-              Use a different address
-            </button>
-          </div>
+          <SentPanel to={sentTo} onAgain={() => setSentTo(null)} />
         ) : (
           <form onSubmit={onSubmit} className="mt-6 space-y-3">
             <Field
@@ -177,5 +201,25 @@ export function Field({
         className="w-full rounded-md border border-line bg-raised px-3 py-2 text-sm text-content outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
       />
     </label>
+  );
+}
+
+/** After an address is given for a new account: where the link went, and a way back. */
+function SentPanel({ to, onAgain }: { to: string; onAgain: () => void }) {
+  return (
+    <div role="status" className="mt-6 rounded-md border border-line bg-raised px-4 py-3">
+      <p className="text-sm font-medium text-content">Check your inbox</p>
+      <p className="mt-1 text-sm text-muted">
+        If {to} can be used for a new account, a link to finish signing up is on its way. It works
+        once, for 24 hours. Nothing arrived? Check spam, or send it again.
+      </p>
+      <button
+        type="button"
+        onClick={onAgain}
+        className="mt-3 text-sm text-muted underline-offset-4 hover:text-content hover:underline"
+      >
+        Use a different address
+      </button>
+    </div>
   );
 }

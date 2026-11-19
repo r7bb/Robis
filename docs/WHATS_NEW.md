@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Two-factor sign-in** (2026-11-19). Turn on two-factor sign-in from your
+  account page: after your password, Robis asks for a code from an
+  authenticator app, or one of ten recovery codes.
 - **Undo an agent’s change** (2026-11-19). The agents page lists what each
   agent changed, in plain words, with Undo while nobody has changed it
   since.

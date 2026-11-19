@@ -14,7 +14,7 @@ Written to be checkable. Every row names a file you can open.
 | --- | --- |
 | Services | 5 (web, API, realtime gateway, worker, MCP server for agents) plus an optional ML service |
 | Database tables | 18 |
-| HTTP endpoints | 111 |
+| HTTP endpoints | 117 |
 | Tests | Counted in [docs/ROADMAP.md](docs/ROADMAP.md), the one place they are kept |
 | Screenshots | 28, all captured from the running app |
 | Measured throughput | ~3,600 req/s, zero errors |
@@ -33,6 +33,7 @@ Written to be checkable. Every row names a file you can open.
 | Security headers: nonce-based Content-Security-Policy, no framing, HSTS in production, camera for this origin only | `frontend/middleware.ts`, `frontend/lib/security-headers.ts`, `scripts/smoke/browser.ts` |
 | Opaque server-side sessions (SHA-256 token hash) | `backend/auth/src/sessions.ts` |
 | Login timing equalisation | `backend/api/src/routes/auth.ts` |
+| Two-factor sign-in with an authenticator app: QR set-up, codes that work once in their window, ten recovery codes kept only as hashes, secrets sealed with a key outside the database | `backend/auth/src/totp.ts`, `backend/auth/src/two-factor.ts`, `backend/api/src/routes/two-factor.ts`, `frontend/features/account/two-factor.tsx` |
 | Password reset by email, single-use token | `backend/api/src/routes/auth-recovery.ts` |
 | Email verification | same |
 | Change name, username or password | `backend/api/src/routes/auth.ts` |

@@ -20,6 +20,7 @@ import { overviewContracts } from './overview.ts';
 import { projectContracts } from './projects.ts';
 import { pushContracts } from './push.ts';
 import { savedViewContracts } from './saved-views.ts';
+import { twoFactorContracts } from './two-factor.ts';
 import { workspaceContracts } from './workspaces.ts';
 
 export {
@@ -68,6 +69,7 @@ export const contracts = {
   ...overviewContracts,
   ...attachmentContracts,
   ...authContracts,
+  ...twoFactorContracts,
   ...accountContracts,
 } as const satisfies Record<string, Contract>;
 

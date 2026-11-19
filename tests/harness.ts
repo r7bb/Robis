@@ -43,6 +43,8 @@ import postgres from 'postgres';
 const ADMIN_URL = process.env.TEST_ADMIN_URL ?? 'postgres://robis:robis@localhost:5433/postgres';
 const TEST_DB = 'robis_test';
 /** Shaped as a P-256 public key, which is all the API checks of it; no private half exists. */
+/** Seals authenticator secrets in the tests (C4); 32 bytes, never a real key. */
+export const TEST_TWO_FACTOR_KEY = Buffer.alloc(32, 9).toString('base64url');
 const TEST_PUSH_PUBLIC_KEY = Buffer.concat([Buffer.from([4]), Buffer.alloc(64, 7)]).toString(
   'base64url',
 );
@@ -280,6 +282,8 @@ export async function getHarness() {
     // Push is on, so devices can subscribe (C3). The API only hands this to
     // browsers; the push suite signs with a key pair of its own.
     VAPID_PUBLIC_KEY: TEST_PUSH_PUBLIC_KEY,
+    // Two-factor sign-in is on (C4), with a key made for the tests alone.
+    TWO_FACTOR_KEY: TEST_TWO_FACTOR_KEY,
   } as NodeJS.ProcessEnv);
 
   // Generous budgets: the other suites create hundreds of actors from one

@@ -61,6 +61,31 @@ export function resetRateLimits() {
 }
 
 /**
+ * Strikes against one subject (an account), counted in the same buckets as
+ * the request limits, so tests clear both together. `strike` adds one and
+ * says how many there are; `strikes` only looks. Both forget after the
+ * window.
+ */
+export function strike(name: string, subject: string, windowMs: number): number {
+  const now = Date.now();
+  sweep(now);
+  const key = `${name}:${subject}`;
+  const existing = buckets.get(key);
+  const bucket =
+    existing && existing.resetAt > now ? existing : { count: 0, resetAt: now + windowMs };
+  bucket.count++;
+  buckets.set(key, bucket);
+  return bucket.count;
+}
+
+export function strikes(name: string, subject: string): { count: number; resetInSeconds: number } {
+  const now = Date.now();
+  const bucket = buckets.get(`${name}:${subject}`);
+  if (!bucket || bucket.resetAt <= now) return { count: 0, resetInSeconds: 0 };
+  return { count: bucket.count, resetInSeconds: Math.ceil((bucket.resetAt - now) / 1000) };
+}
+
+/**
  * Identify the caller.
  *
  * A signed-in user is limited per account, so sharing an office IP does not

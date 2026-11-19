@@ -45,6 +45,7 @@ import { pushKey, pushRoutes } from './routes/push.ts';
 import { savedViewRoutes } from './routes/saved-views.ts';
 import { searchRoutes } from './routes/search.ts';
 import { signupRoutes } from './routes/signup.ts';
+import { twoFactorRoutes } from './routes/two-factor.ts';
 import { workspaceRoutes } from './routes/workspaces.ts';
 import { createSuggestionClient, type SuggestionClient } from './suggestions.ts';
 
@@ -234,6 +235,7 @@ export function buildApp({
   app.get('/health', async () => ({ status: 'ok' }));
 
   app.register(authRoutes, { db, env, limits });
+  app.register(twoFactorRoutes, { db, env, limits });
   app.register(authRecoveryRoutes, { db, env, limits });
   app.register(signupRoutes, { db, limits, floorMs: signupFloorMs });
   app.register(workspaceRoutes, { db });

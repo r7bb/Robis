@@ -50,6 +50,13 @@ public domain), flagged here because it is not a conventional licence.
 Card positions use `fractional-indexing` 4.0.0, pinned exactly, released
 under CC0-1.0 (a dedication to the public domain), with no dependencies.
 
+## Two-factor QR code
+
+The account page draws the QR code an authenticator app scans with
+`qrcode-generator` 2.0.4 by Kazuhiko Arase, pinned exactly, released under the
+MIT licence, with no dependencies. The authenticator codes themselves are
+computed by Robis (RFC 6238, `backend/auth/src/totp.ts`), with no library.
+
 ## Mail
 
 `nodemailer` 10.0.12 sends mail over SMTP from the worker, and `smtp-server`

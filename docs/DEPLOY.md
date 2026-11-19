@@ -138,6 +138,19 @@ point it at Postgres directly.
   provider, a paid third-party service; without the key nothing is sent.
   Whether that is acceptable for a given workspace's data is for whoever
   runs it to decide.
+- Two-factor sign-in: `TWO_FACTOR_KEY` on the API, 32 random bytes in
+  base64, made with `bun run two-factor:key` and kept in a secret store. It
+  seals each account's authenticator secret in the database (AES-256-GCM),
+  so a copy of the database alone holds no usable secrets. Without it the
+  account page cannot turn two-factor on, and an account that already has
+  it is refused at sign-in rather than let in on its password alone, so set
+  it before anyone turns two-factor on, and do not change or lose it
+  afterwards: a new key cannot open the secrets sealed with the old one,
+  and recovery codes do not help, as signing in with one also needs the key.
+  There is no re-keying tool or admin reset yet; those accounts could not sign
+  in until the old key is back. A production API refuses the compose stack's
+  fixed key. A malformed key stops the
+  API at start-up. The compose stack carries a fixed key for local use only.
 - Optionally web push: `VAPID_PUBLIC_KEY` on the API and the worker, and
   `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` (a `mailto:` or `https:` address
   the push services can reach you at) on the worker. Make a pair with

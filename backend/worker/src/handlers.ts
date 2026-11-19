@@ -1,4 +1,8 @@
-import { deleteExpiredAuthTokens, deleteExpiredSessions } from '@robis/auth';
+import {
+  deleteExpiredAuthTokens,
+  deleteExpiredChallenges,
+  deleteExpiredSessions,
+} from '@robis/auth';
 import {
   type Database,
   deleteExpiredUsernameHolds,
@@ -30,6 +34,8 @@ export const cleanupSessions = async (_payload: unknown, { db }: { db: Database 
   // Reset and verification tokens expire the same way sessions do, and there
   // is no reason to run a second timer for the same kind of housekeeping.
   await deleteExpiredAuthTokens(db);
+  // And sign-ins left at the second step (C4).
+  await deleteExpiredChallenges(db);
   // So do username holds, once their 90 days are up.
   await deleteExpiredUsernameHolds(db);
   // And sign-ups nobody finished, which would otherwise name an address forever.

@@ -1,4 +1,9 @@
-import { consumeAuthToken, hashPassword, revokeAllSessions } from '@robis/auth';
+import {
+  consumeAuthToken,
+  hashPassword,
+  revokeAllSessions,
+  revokeSignInChallenges,
+} from '@robis/auth';
 import { type Database, queuePasswordResetMail, recordAccountEvent, users } from '@robis/database';
 import { contracts } from '@robis/shared';
 import { and, eq, isNull } from 'drizzle-orm';
@@ -158,6 +163,8 @@ export async function authRecoveryRoutes(app: FastifyInstance, opts: RecoveryDep
         // Whoever did this may be recovering from a compromise, so every session
         // goes, including one an attacker is holding.
         await revokeAllSessions(tx, userId);
+        // And any half-done sign-in made with the old password (C4).
+        await revokeSignInChallenges(tx, userId);
         await recordAccountEvent(tx, userId, 'auth.password_reset', { requestId: request.id });
         return true;
       });

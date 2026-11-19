@@ -1,7 +1,11 @@
 import { isAbsolute } from 'node:path';
+import { parseSecretKey } from '@robis/auth';
 import { NODE_ENVS } from '@robis/shared';
 import { loadConfig } from '@robis/shared/config';
 import { z } from 'zod';
+
+/** The fixed key in deploy/compose.yaml, for the local stack only; refused in production. */
+export const STACK_TWO_FACTOR_KEY = 'cm9iaXMtc3RhY2stMmZhLWtleS1ub3QtYS1zZWNyZXQ';
 
 const envSchema = z.object({
   // Checked by `loadConfig` first, with its production rules; see below.
@@ -21,6 +25,12 @@ const envSchema = z.object({
   WEB_ORIGIN: z.string().default(''),
   /** Web push (C3): the public half of the VAPID pair; empty turns push off. */
   VAPID_PUBLIC_KEY: z.string().default(''),
+  /**
+   * Seals authenticator secrets at rest (C4): 32 bytes of base64, made with
+   * `bun run two-factor:key`. Unset, two-factor sign-in cannot be set up, and
+   * an account that has it is refused rather than let in on a password alone.
+   */
+  TWO_FACTOR_KEY: z.string().default(''),
   /**
    * Whether session cookies are HTTPS-only outside production. In production
    * they always are, whatever this says (see `auth.ts`); this only lets local
@@ -100,6 +110,21 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     WEB_ORIGIN: shared.webOrigin,
     METRICS_HOST: shared.metricsHost,
   };
+
+  // A key that is set but malformed would turn every code into a refusal;
+  // saying so at start-up beats locking out everyone who turned it on.
+  if (env.TWO_FACTOR_KEY && !parseSecretKey(env.TWO_FACTOR_KEY)) {
+    throw new Error(
+      'TWO_FACTOR_KEY must be 32 bytes of base64; make one with bun run two-factor:key.',
+    );
+  }
+  // The compose stack's key is written in the repository: fine on a laptop,
+  // never for real accounts.
+  if (env.NODE_ENV === 'production' && env.TWO_FACTOR_KEY === STACK_TWO_FACTOR_KEY) {
+    throw new Error(
+      'TWO_FACTOR_KEY is the local stack key; make a real one with bun run two-factor:key.',
+    );
+  }
 
   // A half-configured object store would fail on the first upload, in front
   // of a user; refusing to start says so to whoever deployed it instead.

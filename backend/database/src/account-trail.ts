@@ -30,6 +30,12 @@ export const ACCOUNT_EVENT_TYPES = [
   'auth.username_changed',
   'auth.username_confirmed',
   'auth.terms_accepted',
+  // Two-factor sign-in (C4).
+  'auth.two_factor_enabled',
+  'auth.two_factor_disabled',
+  'auth.two_factor_failed',
+  'auth.recovery_codes_replaced',
+  'auth.recovery_code_used',
 ] as const;
 
 export type AccountEventType = (typeof ACCOUNT_EVENT_TYPES)[number];

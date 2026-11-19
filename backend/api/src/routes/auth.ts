@@ -1,13 +1,15 @@
 import { randomBytes } from 'node:crypto';
 import {
-  createSession,
+  createSignInChallenge,
   hashPassword,
   hashSessionToken,
+  hasTwoFactor,
   listSessions,
   revokeAllSessions,
   revokeAuthTokens,
   revokeOtherSessions,
   revokeSession,
+  revokeSignInChallenges,
   verifyPassword,
 } from '@robis/auth';
 import {
@@ -39,6 +41,8 @@ import { ApiError } from '../errors.ts';
 import { avatarOf } from '../media/avatars.ts';
 import { currentUser, requireAuth, sessionToken } from '../plugins/authz.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
+import { sessionCookieOptions, startSession } from '../session-cookie.ts';
+import { twoFactorKeyOf, twoFactorUnavailable } from '../two-factor-key.ts';
 
 /** Failed sign-ins for one account within this window are one history entry. */
 const FAILED_SIGN_IN_WINDOW_MS = 5 * 60_000;
@@ -61,6 +65,7 @@ export async function authRoutes(
   opts: { db: Database; env: Env; limits: RateLimits },
 ) {
   const { db, env, limits } = opts;
+  const twoFactorKey = twoFactorKeyOf(env);
 
   /**
    * Verified when no user matches, so a login attempt costs the same whether or
@@ -169,14 +174,7 @@ export async function authRoutes(
     }
   }
 
-  const cookieOptions = {
-    httpOnly: true,
-    sameSite: 'lax' as const,
-    // Always in production, whatever COOKIE_SECURE says; it only relaxes
-    // local development over plain http.
-    secure: env.NODE_ENV === 'production' || env.COOKIE_SECURE,
-    path: '/',
-  };
+  const cookieOptions = sessionCookieOptions(env);
 
   /*
    * Credential endpoints are throttled per address. Argon2 makes each attempt
@@ -282,8 +280,7 @@ export async function authRoutes(
       // that does not fit is a 500 with no cookie, not a 500 with one.
       const answer = contracts['auth.register'].response.parse({ user });
 
-      const { token, expiresAt } = await createSession(db, user.id, request.headers['user-agent']);
-      reply.setCookie(app.sessionCookieName, token, { ...cookieOptions, expires: expiresAt });
+      await startSession(db, env, request, reply, user.id);
 
       return answer;
     },
@@ -314,13 +311,20 @@ export async function authRoutes(
         throw ApiError.unauthorized('Invalid email or password');
       }
 
+      // With two-factor on, the password is only the first half: no session
+      // until a code is given (C4).
+      if (await hasTwoFactor(db, user.id)) {
+        if (!twoFactorKey) throw twoFactorUnavailable();
+        const { token: challenge, expiresAt } = await createSignInChallenge(db, user.id);
+        return { twoFactor: { challenge, expiresAt } };
+      }
+
       // Checked before the session exists, as on register.
       const answer = contracts['auth.login'].response.parse({
         user: { id: user.id, email: user.email, name: user.name, username: user.username },
       });
 
-      const { token, expiresAt } = await createSession(db, user.id, request.headers['user-agent']);
-      reply.setCookie(app.sessionCookieName, token, { ...cookieOptions, expires: expiresAt });
+      await startSession(db, env, request, reply, user.id);
       await recordAccountEventSafely(user.id, 'auth.signed_in', { requestId: request.id });
 
       return answer;
@@ -536,14 +540,15 @@ export async function authRoutes(
         .where(eq(users.id, user.id));
 
       await revokeAllSessions(db, user.id);
+      // A half-done sign-in, made with the old password, goes too.
+      await revokeSignInChallenges(db, user.id);
 
       // Someone changing their password because their mailbox was exposed
       // still has a live reset link until it expires. Retire it here, or the
       // change they just made can be undone by an old email.
       await revokeAuthTokens(db, user.id, 'password_reset');
 
-      const { token, expiresAt } = await createSession(db, user.id, request.headers['user-agent']);
-      reply.setCookie(app.sessionCookieName, token, { ...cookieOptions, expires: expiresAt });
+      await startSession(db, env, request, reply, user.id);
       await recordAccountEventSafely(user.id, 'auth.password_changed', {
         requestId: request.id,
       });

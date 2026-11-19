@@ -52,8 +52,28 @@ export const authContracts = {
   'auth.login': contract({
     method: 'POST',
     path: '/auth/login',
-    summary: 'Sign in; the session is a cookie.',
+    summary:
+      'Sign in; the session is a cookie. With two-factor on, a challenge comes back instead.',
     body: loginSchema,
+    response: z.union([
+      z.object({ user: publicUser }),
+      z.object({
+        /**
+         * The password was right and a second step is owed (C4): no session
+         * yet. The challenge is finished at `/auth/login/two-factor`.
+         */
+        twoFactor: z.object({ challenge: z.string(), expiresAt: timestamp }),
+      }),
+    ]),
+  }),
+  'auth.loginTwoFactor': contract({
+    method: 'POST',
+    path: '/auth/login/two-factor',
+    summary: 'Finish a sign-in with a code from the app or a recovery code.',
+    body: z.object({
+      challenge: z.string().min(1).max(100),
+      code: z.string().trim().min(1).max(40),
+    }),
     response: z.object({ user: publicUser }),
   }),
   'auth.logout': contract({

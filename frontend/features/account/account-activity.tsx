@@ -27,6 +27,14 @@ const LABELS: Record<string, Label> = {
         ? `Agreed to the terms of ${payload.termsVersion}`
         : 'Agreed to the terms',
   },
+  'auth.two_factor_enabled': { text: () => 'Two-factor sign-in turned on' },
+  'auth.two_factor_disabled': { text: () => 'Two-factor sign-in turned off', flag: true },
+  'auth.two_factor_failed': {
+    text: () => 'Someone had the password but gave a wrong code',
+    flag: true,
+  },
+  'auth.recovery_codes_replaced': { text: () => 'New recovery codes made' },
+  'auth.recovery_code_used': { text: () => 'Signed in with a recovery code', flag: true },
   'auth.sessions_revoked': {
     text: (payload) => {
       const count = typeof payload.count === 'number' ? payload.count : 0;

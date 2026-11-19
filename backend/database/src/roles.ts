@@ -242,6 +242,8 @@ export const WORKER_GRANTS: TableGrants = {
   // Idempotency keys past their replay window (stage 3, item 30).
   mutations: ['select', 'delete'],
   auth_tokens: ['select', 'insert', 'update', 'delete'],
+  // Sign-ins left at the second step, swept once expired (C4).
+  sign_in_challenges: ['select', 'delete'],
   username_history: ['select', 'delete'],
   signups: ['select', 'update', 'delete'],
   // The audit stream: it reads the trail, never changes it, and keeps its
