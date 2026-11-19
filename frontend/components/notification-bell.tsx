@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { call, type NotificationItem } from '../lib/api.ts';
+import { INBOX_TAB_NAMES, INBOX_TABS, type InboxTab, splitInbox } from '../lib/inbox-tabs.ts';
 import { describeNotification, notificationHref } from '../lib/notification-text.ts';
 import { useInbox } from '../lib/use-inbox.ts';
 
@@ -69,6 +70,7 @@ function bodyFor(item: NotificationItem): string | undefined {
 export function NotificationBell() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<InboxTab>('priority');
   const containerRef = useRef<HTMLDivElement>(null);
 
   const inbox = useInbox();
@@ -112,8 +114,9 @@ export function NotificationBell() {
   // Signed out, or the API is unreachable: show nothing rather than an error.
   if (inbox.isError) return null;
 
-  const items = inbox.data?.notifications ?? [];
   const unread = inbox.data?.unreadCount ?? 0;
+  const split = splitInbox(inbox.data?.notifications ?? []);
+  const items = split[tab].items;
 
   return (
     <div ref={containerRef} className="relative">
@@ -150,8 +153,14 @@ export function NotificationBell() {
             )}
           </div>
 
+          <InboxTabs current={tab} split={split} onChoose={setTab} />
+
           {items.length === 0 ? (
-            <p className="px-4 py-6 text-center text-sm text-faint">Nothing here yet.</p>
+            <p className="px-4 py-6 text-center text-sm text-faint">
+              {tab === 'priority'
+                ? 'Nothing needs you. Mentions, issues given to you, invitations and meeting changes land here.'
+                : 'Nothing else yet. Comments on your issues and suggestions land here.'}
+            </p>
           ) : (
             <ul className="max-h-96 divide-y divide-line overflow-y-auto">
               {items.map((item) => (
@@ -211,6 +220,61 @@ export function NotificationBell() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Priority and Other, as a tab strip: the arrow keys move between them and
+ * only the chosen one is in the Tab order. Each shows its unread count.
+ */
+function InboxTabs({
+  current,
+  split,
+  onChoose,
+}: {
+  current: InboxTab;
+  split: ReturnType<typeof splitInbox>;
+  onChoose: (tab: InboxTab) => void;
+}) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Notifications"
+      className="flex gap-1 border-b border-line px-3 pt-2"
+      onKeyDown={(event) => {
+        if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+        event.preventDefault();
+        const next = INBOX_TABS[(INBOX_TABS.indexOf(current) + 1) % INBOX_TABS.length]!;
+        onChoose(next);
+        requestAnimationFrame(() =>
+          event.currentTarget.querySelector<HTMLElement>(`[data-tab="${next}"]`)?.focus(),
+        );
+      }}
+    >
+      {INBOX_TABS.map((tab) => {
+        const selected = tab === current;
+        const unread = split[tab].unread;
+        return (
+          <button
+            key={tab}
+            type="button"
+            role="tab"
+            data-tab={tab}
+            aria-selected={selected}
+            tabIndex={selected ? 0 : -1}
+            onClick={() => onChoose(tab)}
+            className={`-mb-px border-b-2 px-2 pb-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft ${
+              selected
+                ? 'border-accent text-content'
+                : 'border-transparent text-faint hover:text-muted'
+            }`}
+          >
+            {INBOX_TAB_NAMES[tab]}
+            {unread > 0 ? <span className="ml-1.5 text-faint">{unread}</span> : null}
+          </button>
+        );
+      })}
     </div>
   );
 }

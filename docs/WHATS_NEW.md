@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Priority and Other in the inbox** (2026-11-19). The inbox opens on
+  Priority, what asks something of you, with everything else under Other,
+  each with its unread count.
 - **Today on the home** (2026-11-19). The home after signing in opens on
   Today: the issues assigned to you, where you were mentioned, and today’s
   meetings across every workspace.

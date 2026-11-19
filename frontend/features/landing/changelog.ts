@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-19',
     area: 'Product',
+    title: 'Priority and Other in the inbox',
+    brief:
+      'The inbox opens on Priority, what asks something of you, with everything else under Other, each with its unread count.',
+    summary:
+      'The inbox now has two tabs. Priority holds what asks something of you: where you were mentioned, an issue given to you, an invitation, and a change to a meeting you are in. Other holds what is good to know: comments on your issues and suggestions. It opens on Priority, each tab shows how many are unread, the arrow keys move between them, and Mark all read still clears both. A new kind of notification lands in Other until it is given a place, so nothing new jumps the queue.',
+    checked:
+      'Four new tests: the four kinds that ask something of you are Priority; comments, suggestions and any kind not yet named are Other; every kind with a setting lands in a tab; and the split keeps the order and counts each tab’s unread. In headless Chrome on the rebuilt stack, Alex’s inbox opened on Priority with his two mentions and two issues given to him, and Other showed the rest.',
+  },
+  {
+    date: '2026-11-19',
+    area: 'Product',
     title: 'Today on the home',
     brief:
       'The home after signing in opens on Today: the issues assigned to you, where you were mentioned, and today’s meetings across every workspace.',
