@@ -148,14 +148,14 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Discuss an issue in chat.** Discuss on an issue starts a chat message
+  about it, issue keys in chat open the issue, and each issue lists where it
+  was talked about.
 - **Issue peek.** Open an issue over the board without leaving it: click a
   card or press Enter, and Escape or Back takes you straight back.
 - **The home on one screen.** The home after signing in now fits on one
   screen on a laptop or larger, with no scrolling: the greeting, what needs
   you, the live feed and your workspaces.
-- **Quieter cards.** Board cards drop their status menu and show a label
-  dot, the due date and the assignee’s face, with Move and Delete appearing
-  on hover.
 
 <!-- latest:end -->
 

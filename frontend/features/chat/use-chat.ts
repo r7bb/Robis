@@ -81,6 +81,8 @@ export function useSendMessage(workspaceId: string, channelId: string | null) {
     onSuccess: () => {
       if (!channelId) return;
       queryClient.invalidateQueries({ queryKey: messagesKey(workspaceId, channelId) });
+      // A message may name an issue; its In chat list is read again.
+      queryClient.invalidateQueries({ queryKey: ['discussion', workspaceId] });
     },
   });
 }

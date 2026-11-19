@@ -19,6 +19,7 @@ import { may } from '../../lib/permissions.ts';
 import { useCommands } from '../command/command-provider.tsx';
 import { IssueAttachments } from './attachments.tsx';
 import { DueField } from './due-field.tsx';
+import { IssueInChat } from './issue-in-chat.tsx';
 import { ParentPicker, SubIssues } from './issue-tree.tsx';
 import { LabelPicker } from './label-picker.tsx';
 
@@ -248,6 +249,8 @@ export function IssueDetail({
             issueId={issueId}
             canComment={role !== undefined}
           />
+
+          <IssueInChat workspaceId={workspaceId} issueId={issueId} issueKey={data.key} />
         </>
       )}
     </>

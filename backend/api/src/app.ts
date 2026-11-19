@@ -26,6 +26,7 @@ import { avatarRoutes } from './routes/avatars.ts';
 import { channelRoutes } from './routes/channels.ts';
 import { commentRoutes } from './routes/comments.ts';
 import { consentRoutes } from './routes/consent.ts';
+import { discussionRoutes } from './routes/discussion.ts';
 import { documentRoutes } from './routes/documents.ts';
 import { feedbackRoutes } from './routes/feedback.ts';
 import { invitationRoutes } from './routes/invitations.ts';
@@ -256,6 +257,7 @@ export function buildApp({
   app.register(consentRoutes, { db });
   app.register(projectRoutes, { db });
   app.register(issueRoutes, { db, suggestions: suggest });
+  app.register(discussionRoutes, { db });
   app.register(commentRoutes, { db });
   app.register(documentRoutes, { db });
   app.register(channelRoutes, { db });

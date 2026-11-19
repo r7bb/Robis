@@ -1199,6 +1199,9 @@ export const messages = pgTable(
      */
     index('messages_channel_created_idx').on(t.channelId, t.createdAt, t.id),
     index('messages_search_idx').using('gin', t.searchVector),
+    // One workspace's messages, newest first: where an issue's key is
+    // looked for (its In chat list), so the scan never leaves the workspace.
+    index('messages_workspace_created_idx').on(t.workspaceId, t.createdAt.desc(), t.id.desc()),
   ],
 );
 

@@ -1,8 +1,9 @@
 'use client';
 
 import { MESSAGE_MAX_LENGTH } from '@robis/shared/limits';
-import { type FormEvent, type KeyboardEvent, useRef, useState } from 'react';
+import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { Button, InlineError } from '../../components/ui/primitives.tsx';
+import type { ChatDraft } from '../workspace/chat-controls.tsx';
 
 /** Show the remaining-characters hint only when it is nearly relevant. */
 const COUNTER_VISIBLE_FROM = MESSAGE_MAX_LENGTH - 200;
@@ -23,15 +24,41 @@ export function Composer({
   sending,
   error,
   onSend,
+  draft = null,
+  onDraftUsed,
 }: {
   channelName: string;
   disabled: boolean;
   sending: boolean;
   error: string | null;
   onSend: (body: string) => void;
+  /** Text to put in the box, from a Discuss button; a new `at` puts it again. */
+  draft?: ChatDraft | null;
+  /** Called once the draft is in the box, so it is not put in again. */
+  onDraftUsed?: () => void;
 }) {
   const [body, setBody] = useState('');
   const textarea = useRef<HTMLTextAreaElement>(null);
+
+  // Asked to start a message: the text goes in, ahead of anything typed,
+  // and the cursor at its end, ready to finish. Each ask is used once: the
+  // ref covers an effect run twice, and handing it back covers a remount.
+  const used = useRef<number | null>(null);
+  useEffect(() => {
+    if (!draft || used.current === draft.at) return;
+    used.current = draft.at;
+    onDraftUsed?.();
+    setBody((typed) => {
+      if (typed.startsWith(draft.text)) return typed;
+      return typed.trim() ? `${draft.text}${typed}` : draft.text;
+    });
+    requestAnimationFrame(() => {
+      const element = textarea.current;
+      if (!element) return;
+      element.focus();
+      element.setSelectionRange(element.value.length, element.value.length);
+    });
+  }, [draft, onDraftUsed]);
 
   function resize() {
     const element = textarea.current;

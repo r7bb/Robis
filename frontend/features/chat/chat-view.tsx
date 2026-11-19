@@ -3,6 +3,7 @@
 import type { Avatar as AvatarRef } from '@robis/shared';
 import { can, type Role } from '@robis/shared';
 import { ApiError } from '../../lib/api.ts';
+import type { ChatDraft } from '../workspace/chat-controls.tsx';
 import { Composer } from './composer.tsx';
 import { MessageList } from './message-list.tsx';
 import type { ChannelSummary } from './types.ts';
@@ -30,6 +31,8 @@ export function ChatView({
   currentUserId,
   avatars,
   showHeader = true,
+  draft = null,
+  onDraftUsed,
 }: {
   workspaceId: string;
   channel: ChannelSummary | null;
@@ -39,6 +42,9 @@ export function ChatView({
   avatars?: ReadonlyMap<string, AvatarRef>;
   /** Off in the dock, whose own bar already names the room. */
   showHeader?: boolean;
+  /** Text put in the message box from elsewhere (Discuss). */
+  draft?: ChatDraft | null;
+  onDraftUsed?: () => void;
 }) {
   const channelId = channel?.id ?? null;
 
@@ -69,6 +75,7 @@ export function ChatView({
         </div>
       ) : (
         <MessageList
+          workspaceId={workspaceId}
           messages={messages}
           currentUserId={currentUserId}
           avatars={avatars}
@@ -86,6 +93,8 @@ export function ChatView({
         sending={send.isPending}
         error={messageFor(send.error)}
         onSend={(body) => send.mutate(body)}
+        draft={draft}
+        onDraftUsed={onDraftUsed}
       />
     </section>
   );

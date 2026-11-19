@@ -11,6 +11,7 @@ import { PeopleStack } from '../chat/people-stack.tsx';
 import { RoomPicker } from '../chat/room-picker.tsx';
 import type { ChannelSummary } from '../chat/types.ts';
 import { useCreateChannel } from '../chat/use-chat.ts';
+import type { ChatDraft } from './chat-controls.tsx';
 import { CHAT_MIN_WIDTH, CHAT_STEP, isChatShortcut, type useChatPanel } from './use-chat-panel.ts';
 
 type Panel = ReturnType<typeof useChatPanel>;
@@ -106,6 +107,8 @@ export function ChatPanel({
   avatars,
   members,
   onlineIds,
+  draft,
+  onDraftUsed,
 }: {
   workspaceId: string;
   panel: Panel;
@@ -117,6 +120,8 @@ export function ChatPanel({
   avatars: ReadonlyMap<string, AvatarRef>;
   members: Member[];
   onlineIds: Set<string>;
+  draft: ChatDraft | null;
+  onDraftUsed: () => void;
 }) {
   const body = useRef<HTMLDivElement>(null);
   const aside = useRef<HTMLElement>(null);
@@ -202,6 +207,8 @@ export function ChatPanel({
           currentUserId={currentUserId}
           avatars={avatars}
           showHeader={false}
+          draft={draft}
+          onDraftUsed={onDraftUsed}
         />
       </div>
     </aside>

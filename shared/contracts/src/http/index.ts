@@ -6,6 +6,7 @@ import { auditContracts } from './audit.ts';
 import { authContracts } from './auth.ts';
 import { channelContracts } from './channels.ts';
 import { type Contract, statusesOf } from './contract.ts';
+import { discussionContracts } from './discussion.ts';
 import { documentContracts } from './documents.ts';
 import { feedbackContracts } from './feedback.ts';
 import { issueContracts } from './issues.ts';
@@ -24,6 +25,7 @@ import { workspaceContracts } from './workspaces.ts';
 export { RUN_STEPS_SHOWN, RUNS_SHOWN } from './agents.ts';
 export { SEARCH_KINDS, SEARCH_LIMIT_MAX } from './audit.ts';
 export * from './contract.ts';
+export { DISCUSSION_LIMIT, DISCUSSION_PREVIEW_CHARS } from './discussion.ts';
 export {
   OFFLINE_DUPLICATE_EVALUATION,
   SUGGESTION_ACTIONS,
@@ -47,6 +49,7 @@ export const contracts = {
   ...labelContracts,
   ...savedViewContracts,
   ...issueContracts,
+  ...discussionContracts,
   ...bulkIssueContracts,
   ...documentContracts,
   ...channelContracts,

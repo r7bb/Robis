@@ -1,12 +1,16 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
+import { contracts } from '@robis/shared';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef } from 'react';
+import { call } from '../../lib/api.ts';
+import { discussDraft } from '../../lib/issue-keys.ts';
 import { PEEK_PARAM, withParam } from '../../lib/links.ts';
 import { useCoalesced } from '../../lib/realtime.ts';
 import { concernsIssue } from '../../lib/realtime-events.ts';
+import { useChatControls } from '../workspace/chat-controls.tsx';
 import { useLiveEvents } from '../workspace/live.tsx';
 import { IssueDetail } from './issue-detail.tsx';
 
@@ -126,6 +130,7 @@ export function IssuePeek() {
           showKey
           toolbar={
             <>
+              <DiscussButton issueId={peeked} />
               <Link
                 href={`/workspaces/${workspaceId}/issues/${peeked}`}
                 className="rounded-md px-1.5 py-1 text-xs text-muted transition-colors hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
@@ -146,5 +151,27 @@ export function IssuePeek() {
         />
       </div>
     </section>
+  );
+}
+
+/** Start a message about the peeked issue in the chat beside it. */
+function DiscussButton({ issueId }: { issueId: string }) {
+  const { workspaceId } = useParams<{ workspaceId: string }>();
+  const chat = useChatControls();
+  // The same query the detail below makes, so this costs nothing extra.
+  const issue = useQuery({
+    queryKey: ['issue', workspaceId, issueId],
+    queryFn: () => call(contracts['issues.get'], { params: { workspaceId, issueId } }),
+  });
+  const key = issue.data?.issue.key;
+  if (!chat || !key) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => chat.discuss(discussDraft(key))}
+      className="rounded-md border border-line px-2.5 py-1 text-xs text-muted transition-colors hover:bg-raised hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+    >
+      Discuss
+    </button>
   );
 }

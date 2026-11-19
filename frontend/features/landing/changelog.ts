@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-19',
     area: 'Product',
+    title: 'Discuss an issue in chat',
+    brief:
+      'Discuss on an issue starts a chat message about it, issue keys in chat open the issue, and each issue lists where it was talked about.',
+    summary:
+      'An issue and the chat are now joined by its key. Discuss, at the top of the peek and beside In chat on the issue, opens the chat with the issue’s key already in the message box, ready to finish and send. Any issue key written in a message, such as REL-4, becomes a link that opens that issue over its board; only the workspace’s own project keys count, so other words with a hyphen and a number stay plain text, and a key whose issue has gone is shown struck through. Each issue lists the newest ten messages that name it, with who wrote them, in which room and when, and choosing one opens that room. Nothing new is stored: a message names an issue simply by its key, so messages written before this count too.',
+    feature: {
+      name: 'Discuss in chat',
+      where: 'Discuss at the top of an issue’s peek; In chat on every issue; issue keys in chat',
+      layers: [
+        'Screen: a Discuss button, an In chat list on the issue, and issue keys in messages as links',
+        'API: issues.discussion (messages naming the key, behind the right to read rooms) and issues.byKey',
+        'Data: no change; a message is matched by the key as a whole word, newest first, within the workspace',
+      ],
+    },
+    checked:
+      'Sixteen new tests. Nine against the API: messages naming the key found newest first with their rooms; a key written with leading zeros counted as the same; a longer key or a key inside a word not matched; another workspace’s rooms never searched; a stranger and an unknown issue answered 404; a long message cut to a preview; a key found in any case; an unknown or malformed key answered 404; a guest may look one up and a stranger may not. Seven on reading keys from text: only the workspace’s own project keys, whole words only, several to a message, leading zeros. In headless Chrome on the rebuilt stack: Discuss put REL-13 in the message box with the cursor ready; the message sent showed REL-13 as a link; the issue listed it under In chat with its room; and the key in chat opened the issue over its board.',
+  },
+  {
+    date: '2026-11-19',
+    area: 'Product',
     title: 'Issue peek',
     brief:
       'Open an issue over the board without leaving it: click a card or press Enter, and Escape or Back takes you straight back.',

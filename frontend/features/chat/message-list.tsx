@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 import { Avatar } from '../../components/ui/avatar.tsx';
 import { EmptyState } from '../../components/ui/primitives.tsx';
 import { formatDaySeparator, formatExact, formatTime, isSameDay } from '../../lib/time.ts';
+import { MessageBody } from './message-body.tsx';
 import type { ChatMessage } from './types.ts';
 
 /**
@@ -29,6 +30,7 @@ function groupsWith(message: ChatMessage, previous: ChatMessage | undefined): bo
 }
 
 export function MessageList({
+  workspaceId,
   messages,
   currentUserId,
   avatars,
@@ -38,6 +40,7 @@ export function MessageList({
   hasOlder,
   loadingOlder,
 }: {
+  workspaceId: string;
   messages: ChatMessage[];
   currentUserId: string | null;
   avatars?: ReadonlyMap<string, AvatarRef>;
@@ -111,6 +114,7 @@ export function MessageList({
                 {newDay ? <DaySeparator at={message.createdAt} /> : null}
 
                 <MessageRow
+                  workspaceId={workspaceId}
                   message={message}
                   avatar={avatars?.get(message.authorId) ?? null}
                   grouped={grouped}
@@ -141,12 +145,14 @@ function DaySeparator({ at }: { at: string }) {
 }
 
 function MessageRow({
+  workspaceId,
   message,
   avatar,
   grouped,
   deletable,
   onDelete,
 }: {
+  workspaceId: string;
   message: ChatMessage;
   avatar: AvatarRef;
   grouped: boolean;
@@ -196,7 +202,7 @@ function MessageRow({
          * URL from widening the column past the viewport.
          */}
         <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-muted">
-          {message.body}
+          <MessageBody workspaceId={workspaceId} body={message.body} />
         </p>
       </div>
 

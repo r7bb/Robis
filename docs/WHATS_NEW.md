@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Discuss an issue in chat** (2026-11-19). Discuss on an issue starts a
+  chat message about it, issue keys in chat open the issue, and each issue
+  lists where it was talked about.
 - **Issue peek** (2026-11-19). Open an issue over the board without leaving
   it: click a card or press Enter, and Escape or Back takes you straight
   back.
