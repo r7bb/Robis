@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-19',
     area: 'Product',
+    title: 'Focus mode',
+    brief:
+      'Press the backslash key, or Focus in the top bar, to put the side panels away and leave only the board.',
+    summary:
+      'Focus mode puts the left rail and the chat away, so the board, or whatever page is in the middle, has the whole width. The backslash key turns it on and off from anywhere in a workspace, except while typing or with a dialog open; so do the Focus button in the top bar and Focus mode in the command palette. It is remembered on the device. The chat is put away rather than shut: Chat in the top bar, Discuss on an issue or a room opened from the palette brings everything back. On a phone, Menu still opens the left side.',
+    checked:
+      'Three new tests: only the backslash with nothing held turns it, the palette names it for the way it will go with its key, and the palette finds it by focus, hide sidebar or zen. In headless Chrome on the rebuilt stack: backslash hid the rail and the chat, a reload kept them hidden, backslash again brought both back, a backslash typed into the new issue field was just typed, the Focus button turned it on, and Chat left focus mode and showed the chat. The keyboard-only board test passed with the shared key check.',
+  },
+  {
+    date: '2026-11-19',
+    area: 'Product',
     title: 'Discuss an issue in chat',
     brief:
       'Discuss on an issue starts a chat message about it, issue keys in chat open the issue, and each issue lists where it was talked about.',

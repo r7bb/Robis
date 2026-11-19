@@ -18,6 +18,7 @@ import { type Live, LiveProvider } from './live.tsx';
 import { Sidebar } from './sidebar.tsx';
 import { TopBar } from './top-bar.tsx';
 import { useChatPanel } from './use-chat-panel.ts';
+import { useFocusMode } from './use-focus-mode.ts';
 import { useOpenRoom } from './use-open-room.ts';
 
 /**
@@ -104,10 +105,14 @@ export function WorkspaceFrame({ children }: { children: ReactNode }) {
 
   const chat = useChatPanel();
   const { setOpen: setChatOpen } = chat;
+  const focus = useFocusMode();
+  const { leave: leaveFocus } = focus;
   // A room asked for (the palette, or chosen in the chat) is shown.
   useEffect(() => {
-    if (askedAt) setChatOpen(true);
-  }, [askedAt, setChatOpen]);
+    if (!askedAt) return;
+    leaveFocus();
+    setChatOpen(true);
+  }, [askedAt, setChatOpen, leaveFocus]);
 
   // What the middle asks of the chat (Discuss, a room to show).
   const [draft, setDraft] = useState<ChatDraft | null>(null);
@@ -115,11 +120,12 @@ export function WorkspaceFrame({ children }: { children: ReactNode }) {
     () => ({
       discuss: (text) => {
         setDraft({ text, at: Date.now() });
+        leaveFocus();
         setChatOpen(true);
       },
       openRoom: choose,
     }),
-    [choose, setChatOpen],
+    [choose, setChatOpen, leaveFocus],
   );
   const clearDraft = useCallback(() => setDraft(null), []);
 
@@ -162,21 +168,34 @@ export function WorkspaceFrame({ children }: { children: ReactNode }) {
             userName={me.data?.user.name ?? null}
             userId={me.data?.user.id ?? null}
             userAvatar={me.data?.user.avatar ?? null}
-            chatOpen={chat.open}
-            onToggleChat={() => chat.setOpen(!chat.open)}
+            chatOpen={chat.open && !focus.on}
+            onToggleChat={() => {
+              // In focus mode the chat is put away, not shut: leave it and show the chat.
+              if (focus.on) {
+                focus.leave();
+                chat.setOpen(true);
+                return;
+              }
+              chat.setOpen(!chat.open);
+            }}
+            focusOn={focus.on}
+            onToggleFocus={focus.toggle}
             menuOpen={menuOpen}
             onOpenMenu={() => setMenuOpen(true)}
           />
 
           <div className="flex min-h-0 flex-1">
-            <Sidebar
-              workspaceId={workspaceId}
-              projectId={projectId}
-              role={role}
-              theme={theme}
-              open={menuOpen}
-              onClose={() => setMenuOpen(false)}
-            />
+            {/* In focus mode only the phone's drawer, if asked for, shows the rail. */}
+            {focus.on && !menuOpen ? null : (
+              <Sidebar
+                workspaceId={workspaceId}
+                projectId={projectId}
+                role={role}
+                theme={theme}
+                open={menuOpen}
+                onClose={() => setMenuOpen(false)}
+              />
+            )}
 
             {/* The peek sits over the right of the middle, not over the chat. */}
             <div className="relative flex min-h-0 min-w-0 flex-1">
@@ -190,7 +209,7 @@ export function WorkspaceFrame({ children }: { children: ReactNode }) {
               <IssuePeek />
             </div>
 
-            {role ? (
+            {role && !focus.on ? (
               <ChatPanel
                 workspaceId={workspaceId}
                 panel={chat}

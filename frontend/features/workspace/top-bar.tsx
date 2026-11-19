@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { NotificationBell } from '../../components/notification-bell.tsx';
 import { SearchBox } from '../../components/search-box.tsx';
 import { Avatar } from '../../components/ui/avatar.tsx';
+import { Kbd } from '../../components/ui/kbd.tsx';
 import { RoleBadge } from '../../components/ui/primitives.tsx';
 import type { Me } from '../../lib/api.ts';
 import { PaletteButton } from '../command/palette-button.tsx';
@@ -21,6 +22,8 @@ export function TopBar({
   onToggleChat,
   menuOpen,
   onOpenMenu,
+  focusOn,
+  onToggleFocus,
 }: {
   workspaceId: string;
   workspaceName: string;
@@ -34,6 +37,9 @@ export function TopBar({
   /** On a phone: the left rail as a drawer, and the way to open it. */
   menuOpen: boolean;
   onOpenMenu: () => void;
+  /** Focus mode: the rails put away; the backslash key turns it too. */
+  focusOn: boolean;
+  onToggleFocus: () => void;
 }) {
   return (
     /*
@@ -94,6 +100,18 @@ export function TopBar({
       <div className="col-start-2 row-start-1 flex min-w-0 items-center justify-end gap-3 md:col-start-3">
         {/* Who is here is shown once, at the top of the chat; this only
             brings the chat back when it is hidden. */}
+        <button
+          type="button"
+          onClick={onToggleFocus}
+          aria-pressed={focusOn}
+          title={focusOn ? 'Leave focus mode (\\)' : 'Focus mode: hide the side panels (\\)'}
+          className={`hidden items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft md:inline-flex ${
+            focusOn ? 'bg-accent/15 text-content' : 'text-muted hover:bg-surface hover:text-content'
+          }`}
+        >
+          Focus
+          <Kbd>{'\\'}</Kbd>
+        </button>
         {chatOpen ? null : (
           <button
             type="button"
