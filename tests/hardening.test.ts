@@ -93,7 +93,7 @@ describe('request ids', () => {
 });
 
 describe('pages that carry a token in the URL', () => {
-  test.each(['/reset-password', '/verify-email'])(
+  test.each(['/reset-password', '/verify-email', '/not-me'])(
     '%s sends no referrer and is never cached',
     async (path) => {
       const rules = (await config.headers?.()) ?? [];

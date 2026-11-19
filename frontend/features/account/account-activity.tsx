@@ -35,6 +35,11 @@ const LABELS: Record<string, Label> = {
   },
   'auth.recovery_codes_replaced': { text: () => 'New recovery codes made' },
   'auth.recovery_code_used': { text: () => 'Signed in with a recovery code', flag: true },
+  'auth.new_device': { text: () => 'Signed in from a new browser, and told by email' },
+  'auth.not_me': {
+    text: () => 'Not me: signed out everywhere from the new-browser email',
+    flag: true,
+  },
   'auth.sessions_revoked': {
     text: (payload) => {
       const count = typeof payload.count === 'number' ? payload.count : 0;

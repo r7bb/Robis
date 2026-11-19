@@ -198,7 +198,12 @@ export const signups = pgTable(
 );
 
 /** What a one-time token is for. Narrow, so the column cannot drift. */
-export const AUTH_TOKEN_PURPOSES = ['password_reset', 'email_verification'] as const;
+export const AUTH_TOKEN_PURPOSES = [
+  'password_reset',
+  'email_verification',
+  // The "this was not me" link in a new-device alert (C4).
+  'not_me',
+] as const;
 export type AuthTokenPurpose = (typeof AUTH_TOKEN_PURPOSES)[number];
 
 export const authTokenPurposeEnum = pgEnum('auth_token_purpose', AUTH_TOKEN_PURPOSES);
@@ -322,6 +327,32 @@ export const recoveryCodes = pgTable(
  * is owed. Short-lived, held as a hash, and good for a few wrong codes
  * before it is gone and the password must be given again.
  */
+/**
+ * The browsers a person has signed in from (C4), each known by a random
+ * cookie of its own, kept here only as its hash. A sign-in from one not
+ * listed, on an account that has signed in before, mails an alert. Nothing
+ * else about the browser is kept here: the alert reads it from the session.
+ */
+export const knownDevices = pgTable(
+  'known_devices',
+  {
+    id: id(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    deviceHash: text('device_hash').notNull(),
+    createdAt: createdAt(),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('known_devices_user_device_key').on(t.userId, t.deviceHash),
+    // Whether a cookie was ever given out, by any account (see noteDevice).
+    index('known_devices_device_hash_idx').on(t.deviceHash),
+    // For removing devices not seen in over a year.
+    index('known_devices_last_seen_idx').on(t.lastSeenAt),
+  ],
+);
+
 export const signInChallenges = pgTable(
   'sign_in_challenges',
   {

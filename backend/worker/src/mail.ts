@@ -3,11 +3,14 @@ import {
   type AccountMailPayload,
   type InvitationMailPayload,
   MAIL_EMAIL_VERIFICATION_JOB,
+  MAIL_NEW_DEVICE_JOB,
   MAIL_PASSWORD_RESET_JOB,
   MAIL_SIGNUP_EXISTING_JOB,
   MAIL_SIGNUP_JOB,
   MAIL_WORKSPACE_INVITATION_JOB,
+  type NewDeviceMailPayload,
   type SignupMailPayload,
+  sessions,
   signups,
   users,
   workspaceInvitations,
@@ -16,6 +19,7 @@ import {
 import {
   linkFor,
   type Mailer,
+  newDeviceMail,
   passwordResetMail,
   signupExistingMail,
   signupMail,
@@ -66,6 +70,35 @@ export function mailHandlers(deps: { mailer: Mailer; webOrigin: string }): Handl
           user.email,
           linkFor(webOrigin, '/reset-password', token),
           ttlMinutesFor('password_reset'),
+        ),
+      );
+    },
+
+    // A sign-in from a new browser (C4). Read from the session it started:
+    // gone already (signed out, or ended from "this was not me"), there is
+    // nothing left to warn about.
+    [MAIL_NEW_DEVICE_JOB]: async (payload, { db }) => {
+      const { sessionId } = payload as NewDeviceMailPayload;
+      const [sign] = await db
+        .select({
+          userId: sessions.userId,
+          browser: sessions.userAgent,
+          at: sessions.createdAt,
+          email: users.email,
+        })
+        .from(sessions)
+        .innerJoin(users, eq(users.id, sessions.userId))
+        .where(eq(sessions.id, sessionId))
+        .limit(1);
+      if (!sign) return;
+
+      const { token } = await issueAuthToken(db, sign.userId, 'not_me');
+      await mailer.send(
+        newDeviceMail(
+          sign.email,
+          { browser: sign.browser, at: sign.at },
+          linkFor(webOrigin, '/not-me', token),
+          ttlMinutesFor('not_me'),
         ),
       );
     },

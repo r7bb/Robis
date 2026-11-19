@@ -22,7 +22,7 @@ if (local.length > 0) {
 const DEV_API = process.env.DEV_API_ORIGIN ?? 'http://localhost:4000';
 
 /** Pages whose URL carries a single-use token. */
-const TOKEN_PAGES = ['/reset-password', '/verify-email', '/signup'];
+const TOKEN_PAGES = ['/reset-password', '/verify-email', '/signup', '/not-me'];
 
 const config: NextConfig = {
   /*

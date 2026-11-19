@@ -2,6 +2,7 @@ import {
   deleteExpiredAuthTokens,
   deleteExpiredChallenges,
   deleteExpiredSessions,
+  deleteStaleDevices,
 } from '@robis/auth';
 import {
   type Database,
@@ -36,6 +37,8 @@ export const cleanupSessions = async (_payload: unknown, { db }: { db: Database 
   await deleteExpiredAuthTokens(db);
   // And sign-ins left at the second step (C4).
   await deleteExpiredChallenges(db);
+  // And browsers not seen for longer than their cookie lives (C4).
+  await deleteStaleDevices(db);
   // So do username holds, once their 90 days are up.
   await deleteExpiredUsernameHolds(db);
   // And sign-ups nobody finished, which would otherwise name an address forever.

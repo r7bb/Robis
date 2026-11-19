@@ -1,5 +1,6 @@
 import {
   consumeAuthToken,
+  forgetDevices,
   hashPassword,
   revokeAllSessions,
   revokeSignInChallenges,
@@ -184,6 +185,34 @@ export async function authRecoveryRoutes(app: FastifyInstance, opts: RecoveryDep
       // Deliberately no session cookie: holding a mailed link is not the same
       // proof of identity as knowing the password, so the next step is signing in
       // with the new one.
+      return { ok: true as const };
+    },
+  );
+
+  /*
+   * "This was not me", from a new-device alert (C4). The link is only a
+   * page; this is the button on it. Every session ends, the intruder's with
+   * the rest, and every browser is forgotten, so the next sign-in anywhere
+   * is a new device again and mails another alert. The password stays as
+   * it is: the page goes on to the reset, which needs the mailbox.
+   */
+  serve(
+    app,
+    contracts['auth.notMe'],
+    { preHandler: perCaller('not-me') },
+    async (request, { body: input }) => {
+      const ended = await db.transaction(async (tx) => {
+        const userId = await consumeAuthToken(tx, input.token, 'not_me');
+        if (!userId) return false;
+        await revokeAllSessions(tx, userId);
+        await revokeSignInChallenges(tx, userId);
+        await forgetDevices(tx, userId);
+        await recordAccountEvent(tx, userId, 'auth.not_me', { requestId: request.id });
+        return true;
+      });
+      if (!ended) {
+        throw ApiError.badRequest('That link is not valid any more', 'invalid_token');
+      }
       return { ok: true as const };
     },
   );

@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **An email when you sign in from a new browser** (2026-11-19). A sign-in
+  from a browser your account has not used mails you, with a link that signs
+  you out everywhere if it was not you.
 - **Growing waits after wrong passwords** (2026-11-19). The fifth wrong
   password for an address from one place starts a 30 second wait there, and
   each one after doubles it, up to a quarter of an hour.

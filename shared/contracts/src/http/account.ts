@@ -42,6 +42,14 @@ export const accountContracts = {
     body: resetPasswordSchema,
     response: ok,
   }),
+  'auth.notMe': contract({
+    method: 'POST',
+    path: '/auth/not-me',
+    summary:
+      'From a new-device alert: it was not me. Every session ends and every browser is forgotten.',
+    body: z.object({ token: z.string().min(1).max(500) }),
+    response: ok,
+  }),
   'auth.verifyEmail': contract({
     method: 'POST',
     path: '/auth/email/verify',

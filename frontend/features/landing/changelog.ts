@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-19',
     area: 'Security',
+    title: 'An email when you sign in from a new browser',
+    brief:
+      'A sign-in from a browser your account has not used mails you, with a link that signs you out everywhere if it was not you.',
+    summary:
+      'Each browser you sign in from keeps a random cookie of its own, kept by Robis only as a hash. Signing in from one your account has not used, when it has used others, sends you an email saying which browser and when, in UTC. If it was you there is nothing to do. If not, its link opens a page with one button, Sign out everywhere: every session ends, the stranger’s with the rest, every browser is forgotten, so the very next sign-in anywhere mails you again, and the page goes on to a new password, since whoever signed in knows the old one. Opening the link alone changes nothing, so a mail scanner that follows it does no harm. The link works once, for 7 days. The browser you signed up in, and accounts from before this, are never mailed about the browser they already use. A cookie value Robis never gave out is replaced rather than trusted, and at most three alerts are mailed an hour, however often a stranger signs in. Both the alert and the sign-out are in your account’s history.',
+    feature: {
+      name: 'New-browser alert',
+      where: 'Your inbox after a sign-in from a new browser, and the page its link opens',
+      layers: [
+        'Screen: /not-me, which asks before it signs out everywhere, then points to a password reset',
+        'API: every sign-in notes its browser; auth.notMe ends every session and forgets every browser',
+        'Data: known_devices (a hash of the browser’s cookie and when it was last seen); a one-time not_me link',
+      ],
+    },
+    checked:
+      'Nine new tests: a browser already used mails nothing, and its cookie is httpOnly and kept; one new to the account mails its owner once, naming the browser and the time, with a link that works for 7 days, and the account history says so; a made-up device cookie counts as new and is replaced rather than trusted; at most three alerts are mailed an hour; browsers not seen for over a year are removed; the link ends every session, the owner’s and the stranger’s, works once, and makes every browser new again, so the very next sign-in, even from the browser that was known, mails once; an unknown link is refused the same as a spent one; the browser names read for Chrome, Firefox and Safari, and say so when they cannot; and /not-me, like the other pages carrying a token, sends no referrer and is never cached. The full suite, lint, typecheck and smoke:stack, and in headless Chrome on the rebuilt stack: signing in from a second browser mailed the alert, and its link signed out everywhere.',
+  },
+  {
+    date: '2026-11-19',
+    area: 'Security',
     title: 'Growing waits after wrong passwords',
     brief:
       'The fifth wrong password for an address from one place starts a 30 second wait there, and each one after doubles it, up to a quarter of an hour.',

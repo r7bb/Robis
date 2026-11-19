@@ -517,6 +517,12 @@ export async function createActor(
 
   const user = response.json().user as { id: string };
 
+  // The browser it signed up in, as a cookie of its own (C4): a later
+  // sign-in that sends it back is from a browser already known.
+  const all = Array.isArray(setCookie) ? setCookie : [setCookie ?? ''];
+  const device = all.find((c) => c.startsWith('robis_device='))?.split(';')[0] ?? '';
+  knownBrowserOf.set(email.toLowerCase(), device);
+
   const actor = { id: user.id, email, name, username, cookie: raw.split(';')[0]! };
 
   if (unconfirmed) {
@@ -546,6 +552,14 @@ export async function createActor(
   return actor;
 }
 
+/** Each test account's sign-up browser cookie, by address. */
+const knownBrowserOf = new Map<string, string>();
+
+/** The cookie of the browser an account signed up in, for a sign-in from it again. */
+export function knownBrowser(email: string): string {
+  return knownBrowserOf.get(email.toLowerCase()) ?? '';
+}
+
 type RequestOptions = {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   payload?: unknown;
@@ -562,7 +576,14 @@ export async function request(url: string, options: RequestOptions = {}) {
     url,
     payload: options.payload as never,
     headers: {
-      ...(options.actor ? { cookie: options.actor.cookie } : {}),
+      // As a browser would: the session, and the browser's own cookie (C4).
+      ...(options.actor
+        ? {
+            cookie: [options.actor.cookie, knownBrowser(options.actor.email)]
+              .filter(Boolean)
+              .join('; '),
+          }
+        : {}),
       ...options.headers,
     },
   });

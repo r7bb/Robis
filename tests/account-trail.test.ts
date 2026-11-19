@@ -7,6 +7,7 @@ import {
   createActor,
   getHarness,
   getMailer,
+  knownBrowser,
   refusal,
   request,
   resetDatabase,
@@ -36,8 +37,13 @@ const types = async (userId: string) => (await trailOf(userId)).map((event) => e
 /** Every account's trail starts with agreeing to the terms at sign-up. */
 const SIGNED_UP = ['auth.terms_accepted'];
 
+/** From the browser the account signed up in, so no new-browser alert joins the trail. */
 const login = (email: string, password: string) =>
-  request('/auth/login', { method: 'POST', payload: { email, password } });
+  request('/auth/login', {
+    method: 'POST',
+    payload: { email, password },
+    headers: { cookie: knownBrowser(email) },
+  });
 
 /** A failed sign-in is written after the reply, so wait for it to land. */
 async function eventually(check: () => Promise<boolean>) {

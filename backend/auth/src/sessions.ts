@@ -44,18 +44,21 @@ export async function createSession(
   db: Executor,
   userId: string,
   userAgent: string | undefined,
-): Promise<{ token: string; expiresAt: Date }> {
+): Promise<{ id: string; token: string; expiresAt: Date }> {
   const token = generateSessionToken();
   const expiresAt = sessionExpiry();
 
-  await db.insert(sessions).values({
-    userId,
-    tokenHash: hashSessionToken(token),
-    expiresAt,
-    userAgent: userAgent?.slice(0, 500) ?? null,
-  });
+  const [made] = await db
+    .insert(sessions)
+    .values({
+      userId,
+      tokenHash: hashSessionToken(token),
+      expiresAt,
+      userAgent: userAgent?.slice(0, 500) ?? null,
+    })
+    .returning({ id: sessions.id });
 
-  return { token, expiresAt };
+  return { id: made!.id, token, expiresAt };
 }
 
 export async function resolveSession(

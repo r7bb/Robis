@@ -344,6 +344,20 @@
       "when": 1795078925326,
       "tag": "0048_workspace_two_factor",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1795081411182,
+      "tag": "0049_known_devices",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1795081748395,
+      "tag": "0050_known_devices_trim",
+      "breakpoints": true
     }
   ]
 }

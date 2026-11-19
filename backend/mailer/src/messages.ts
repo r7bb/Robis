@@ -26,8 +26,82 @@ function humanDuration(minutes: number): string {
 
   const hours = minutes / 60;
   if (!Number.isInteger(hours)) return `${minutes} minutes`;
+  // Two days or more, in whole days, reads as days: "7 days", not "168 hours".
+  if (hours >= 48 && hours % 24 === 0) return `${hours / 24} days`;
 
   return hours === 1 ? '1 hour' : `${hours} hours`;
+}
+
+const BROWSERS: readonly [RegExp, string][] = [
+  [/Edg\//, 'Edge'],
+  [/OPR\/|Opera/, 'Opera'],
+  [/Firefox\//, 'Firefox'],
+  [/Chrome\/|CriOS\//, 'Chrome'],
+  [/Safari\//, 'Safari'],
+];
+const SYSTEMS: readonly [RegExp, string][] = [
+  [/iPhone|iPad|iPod/, 'iOS'],
+  [/Android/, 'Android'],
+  [/Mac OS X|Macintosh/, 'macOS'],
+  [/Windows/, 'Windows'],
+  [/CrOS/, 'ChromeOS'],
+  [/Linux/, 'Linux'],
+];
+
+/** "Chrome on macOS", from what the browser said of itself, as far as it can be read. */
+export function describeBrowser(userAgent: string | null): string {
+  if (!userAgent) return 'An unknown browser';
+  const browser = BROWSERS.find(([pattern]) => pattern.test(userAgent))?.[1];
+  const system = SYSTEMS.find(([pattern]) => pattern.test(userAgent))?.[1];
+  if (browser && system) return `${browser} on ${system}`;
+  return browser ?? (system ? `A browser on ${system}` : 'An unknown browser');
+}
+
+/** "19 November 2026 at 04:50 UTC": one zone for everyone, said plainly. */
+function whenInUtc(at: Date): string {
+  const day = at.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+  const time = at.toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'UTC',
+  });
+  return `${day} at ${time} UTC`;
+}
+
+/**
+ * A sign-in from a browser the account had not used (C4), with a link that
+ * signs out everywhere if it was not them. The link leads to a page that
+ * asks first, so a mail scanner opening it changes nothing.
+ */
+export function newDeviceMail(
+  to: string,
+  sign: { browser: string | null; at: Date },
+  notMeLink: string,
+  expiresInMinutes: number,
+): Mail {
+  return {
+    to,
+    subject: 'New sign-in to your Robis account',
+    text: [
+      'Your Robis account was just signed in to from a browser it had not used before:',
+      '',
+      `  ${describeBrowser(sign.browser)}, ${whenInUtc(sign.at)}`,
+      '',
+      'If that was you, there is nothing to do.',
+      '',
+      'If it was not, open this link to sign out of Robis everywhere:',
+      notMeLink,
+      '',
+      `The link works once, for ${humanDuration(expiresInMinutes)}. Then reset your`,
+      'password, as whoever signed in knows it.',
+    ].join('\n'),
+  };
 }
 
 /**

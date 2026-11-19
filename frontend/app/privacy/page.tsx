@@ -14,7 +14,9 @@ export default function PrivacyPage() {
         password hash. Accounts that existed before usernames were given one made from the start of
         their email address; it can be changed in Account. The password itself is never stored.
         Sessions record when they were used and the browser's user agent, so you can see and revoke
-        them in Account.
+        them in Account. Each browser you sign in from also keeps a random cookie of its own, stored
+        here only as a hash, so that a sign-in from a browser you have not used before can be
+        emailed to you. A browser not seen for 400 days is forgotten.
       </p>
       <h2>Inside a workspace</h2>
       <p>

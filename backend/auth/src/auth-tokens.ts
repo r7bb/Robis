@@ -23,9 +23,16 @@ export const PASSWORD_RESET_TTL_MS = PASSWORD_RESET_TTL_MINUTES * 60_000;
 /** Longer: a welcome message can reasonably sit unread for a day. */
 export const EMAIL_VERIFICATION_TTL_MS = EMAIL_VERIFICATION_TTL_MINUTES * 60_000;
 
+/**
+ * A week: the "this was not me" link in a new-device alert (C4) only ends
+ * sessions, so it can wait for someone back from a trip.
+ */
+export const NOT_ME_TTL_MS = 7 * 24 * 60 * 60_000;
+
 const TTL_BY_PURPOSE: Record<AuthTokenPurpose, number> = {
   password_reset: PASSWORD_RESET_TTL_MS,
   email_verification: EMAIL_VERIFICATION_TTL_MS,
+  not_me: NOT_ME_TTL_MS,
 };
 
 export function ttlFor(purpose: AuthTokenPurpose): number {

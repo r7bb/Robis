@@ -36,6 +36,9 @@ export const ACCOUNT_EVENT_TYPES = [
   'auth.two_factor_failed',
   'auth.recovery_codes_replaced',
   'auth.recovery_code_used',
+  // A sign-in from a new browser, and its owner saying it was not them (C4).
+  'auth.new_device',
+  'auth.not_me',
 ] as const;
 
 export type AccountEventType = (typeof ACCOUNT_EVENT_TYPES)[number];

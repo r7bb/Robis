@@ -221,6 +221,8 @@ export const WORKER_GRANTS: TableGrants = {
   // As the gateway's: no mail or push from a workspace that requires
   // two-factor to someone without it (C4).
   two_factor: ['select (user_id, confirmed_at)'],
+  // Browsers not seen in over a year are removed (C4).
+  known_devices: ['select', 'delete'],
   workspaces: ['select'],
   workspace_members: ['select'],
   workspace_invitations: ['select'],

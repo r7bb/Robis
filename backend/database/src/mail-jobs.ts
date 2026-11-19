@@ -26,6 +26,8 @@ export const MAIL_SIGNUP_EXISTING_JOB = 'mail.signup_existing';
 export const MAIL_NOTIFICATION_JOB = 'mail.notification';
 /** One person's summary for one day (C3). */
 export const MAIL_DIGEST_JOB = 'mail.digest';
+/** A sign-in from a browser the account had not used (C4). */
+export const MAIL_NEW_DEVICE_JOB = 'mail.new_device';
 
 export const MAIL_JOBS = [
   MAIL_PASSWORD_RESET_JOB,
@@ -35,6 +37,7 @@ export const MAIL_JOBS = [
   MAIL_SIGNUP_EXISTING_JOB,
   MAIL_NOTIFICATION_JOB,
   MAIL_DIGEST_JOB,
+  MAIL_NEW_DEVICE_JOB,
 ] as const;
 
 /** A sign-up waiting for its link: the job names the row, never the address. */
@@ -50,6 +53,8 @@ export type NotificationMailPayload = { notificationId: string };
 
 /** A day's summary for one person: the day is a UTC date, `YYYY-MM-DD`. */
 export type DigestMailPayload = { userId: string; day: string };
+/** The session the new browser started: its browser and time are read from it. */
+export type NewDeviceMailPayload = { sessionId: string };
 
 /**
  * Retries with backoff, then a dead letter: a dead provider is visible, not
@@ -76,6 +81,21 @@ async function queueAccountMail(db: Executor, kind: string, userId: string) {
 
 export function queuePasswordResetMail(db: Executor, userId: string) {
   return queueAccountMail(db, MAIL_PASSWORD_RESET_JOB, userId);
+}
+
+/** Tell an account's owner about a sign-in from a new browser (C4). */
+export async function queueNewDeviceMail(db: Executor, sessionId: string) {
+  const payload: NewDeviceMailPayload = { sessionId };
+  await db
+    .insert(jobs)
+    .values({
+      kind: MAIL_NEW_DEVICE_JOB,
+      payload: JSON.stringify(payload),
+      runAt: new Date(),
+      maxAttempts: MAIL_ATTEMPTS,
+    })
+    .onConflictDoNothing();
+  await wakeWorkers(db, MAIL_NEW_DEVICE_JOB);
 }
 
 export function queueVerificationMail(db: Executor, userId: string) {
