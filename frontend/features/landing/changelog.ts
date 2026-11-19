@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-19',
     area: 'Security',
+    title: 'Growing waits after wrong passwords',
+    brief:
+      'The fifth wrong password for an address from one place starts a 30 second wait there, and each one after doubles it, up to a quarter of an hour.',
+    summary:
+      'The first four wrong passwords for an address cost nothing. The fifth from one place starts a 30 second wait before the next try from there, and each one after doubles it, up to 15 minutes, and a try made during the wait is refused without the password being checked at all, right or wrong. Trying a long list of likely passwords on one account then takes years rather than hours, at about a hundred tries a day, while the account’s owner, signing in from somewhere else, is not held up by it. An IPv6 address counts by its /64, the block one home or server is usually given, so moving to a fresh address for each guess gains nothing. Guesses spread over many machines meet a looser cap: past a hundred wrong passwords for one address in an hour, every try for it waits for the hour to turn. Someone with that many machines could keep an address waiting that way; a password reset lets its owner straight back in. Each try is counted before its password is checked, so a burst sent all at once cannot slip in before the first is counted. The counts are kept for the address as typed, whether or not an account has it, so a wait says nothing about who is registered. Signing in with the right password starts the counts again, and so does a password reset, since the mailed link proves the address. The sign-in page says how long to wait, and that a reset is the way round it.',
+    feature: {
+      name: 'Sign-in waits',
+      where: 'The sign-in page, after several wrong passwords for one address',
+      layers: [
+        'Screen: the sign-in form says how long to wait, and that a password reset is the way round it',
+        'API: auth.login refuses with 429 and Retry-After during a wait; auth.resetPassword clears it',
+        'Data: none stored; counts are kept in the API’s memory, capped, as the request limits are',
+      ],
+    },
+    checked:
+      'Thirteen new tests: no wait for the first four, then 30 seconds at the fifth, doubling and never past 15 minutes; a wait runs from the last failure and is the same however the address is typed; wrong passwords from one place do not hold up the owner from another; past the hourly cap from many places, every place waits, and the cap starts afresh each hour so it never goes stale; IPv6 addresses in one /64 count as one place; failures are forgotten after an hour, the count starting again; after five wrong passwords the right one is refused too, with the wait and Retry-After; an address with no account waits just the same; ten tries sent at once give five refusals of the password and five waits; the right password before the wait starts the count again; one address waiting does not hold up another; and a password reset clears the wait. The full suite, lint, typecheck and smoke:stack on the rebuilt stack.',
+  },
+  {
+    date: '2026-11-19',
+    area: 'Security',
     title: 'Workspaces that require two-factor',
     brief:
       'An admin can require two-factor sign-in of everyone in a workspace; a member without it is told why, and how to turn it on.',

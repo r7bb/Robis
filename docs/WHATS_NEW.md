@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Growing waits after wrong passwords** (2026-11-19). The fifth wrong
+  password for an address from one place starts a 30 second wait there, and
+  each one after doubles it, up to a quarter of an hour.
 - **Workspaces that require two-factor** (2026-11-19). An admin can require
   two-factor sign-in of everyone in a workspace; a member without it is told
   why, and how to turn it on.

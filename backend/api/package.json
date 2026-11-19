@@ -12,6 +12,7 @@
     "./hardening": "./src/hardening.ts",
     "./metrics": "./src/metrics.ts",
     "./rate-limit": "./src/plugins/rate-limit.ts",
+    "./sign-in-waits": "./src/plugins/sign-in-waits.ts",
     "./suggestions": "./src/suggestions.ts"
   },
   "dependencies": {

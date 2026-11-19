@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest, preHandlerHookHandler } from 'fastify';
 import { ApiError } from '../errors.ts';
+import { resetSignInWaits } from './sign-in-waits.ts';
 
 /**
  * Fixed-window rate limiting, in process memory.
@@ -57,6 +58,7 @@ function sweep(now: number) {
 /** Exported for tests, which need a clean slate between cases. */
 export function resetRateLimits() {
   buckets.clear();
+  resetSignInWaits();
   lastSweep = Date.now();
 }
 

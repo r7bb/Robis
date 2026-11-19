@@ -61,6 +61,7 @@ second "consumed" state to get wrong.
 | Invitations the invited person accepts or declines; joining needs a confirmed email | `backend/api/src/routes/invitations.ts`, `frontend/components/my-invitations.tsx` |
 | Email invitations that answer the same whether or not the address has an account; cap per sender | `backend/api/src/routes/invitation-helpers.ts`, `backend/worker/src/mail.ts` |
 | A workspace can require two-factor sign-in of everyone: members without it are refused on every workspace route and the live feed (open tabs are cut off within 30 seconds), its notices, meetings, mail and pushes are held back from them, and its admins keep their own two-factor on | `backend/api/src/plugins/authz.ts`, `backend/realtime/src/gateway.ts`, `frontend/features/workspace/two-factor-policy.tsx` |
+| Growing waits after wrong passwords: per address and network address the fifth starts a 30 second wait, doubling to 15 minutes, with a looser hourly cap per address from anywhere; counted before the password is checked, alike for addresses with and without an account, cleared by a right password or a reset | `backend/api/src/plugins/sign-in-waits.ts`, `backend/api/src/routes/auth.ts` |
 | Four roles (OWNER, ADMIN, MEMBER, GUEST) | `shared/contracts/src/rbac.ts` |
 | One declarative permission matrix, 30+ permissions | same |
 | 404-not-403 for non-members | `backend/api/src/plugins/authz.ts` |

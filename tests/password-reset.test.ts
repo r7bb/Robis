@@ -135,6 +135,15 @@ describe('spending a link', () => {
     expect((await login(actor.email, NEW_PASSWORD)).statusCode).toBe(200);
   });
 
+  test('clears a wait from wrong passwords, as the link proves the address (C4)', async () => {
+    const { actor, token } = await requested();
+    for (let i = 0; i < 5; i++) await login(actor.email, 'wrong-password-here');
+    expect((await login(actor.email, PASSWORD)).statusCode).toBe(429);
+
+    expect((await reset(token)).statusCode).toBe(200);
+    expect((await login(actor.email, NEW_PASSWORD)).statusCode).toBe(200);
+  });
+
   test('works exactly once', async () => {
     const { token } = await requested();
 

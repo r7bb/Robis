@@ -32,7 +32,7 @@ import {
 } from '@robis/database';
 import { contracts, MAX_USERNAME_HOLDS, TERMS_VERSION, usernameProblem } from '@robis/shared';
 import { and, eq, gt, sql } from 'drizzle-orm';
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyReply } from 'fastify';
 import type { RateLimits } from '../app.ts';
 import { serve } from '../contract.ts';
 import { assertPasswordAllowed, isRefusedDemoPassword } from '../demo-password.ts';
@@ -41,6 +41,11 @@ import { ApiError } from '../errors.ts';
 import { avatarOf } from '../media/avatars.ts';
 import { currentUser, requireAuth, sessionToken } from '../plugins/authz.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
+import {
+  clearSignInFailures,
+  recordSignInAttempt,
+  signInWaitFor,
+} from '../plugins/sign-in-waits.ts';
 import { sessionCookieOptions, startSession } from '../session-cookie.ts';
 import { twoFactorKeyOf, twoFactorUnavailable } from '../two-factor-key.ts';
 
@@ -58,6 +63,30 @@ class RegistrationRefused extends Error {
   ) {
     super(`registration refused: ${reason}`);
   }
+}
+
+/**
+ * Let a sign-in try through, counted, or refuse it while its address is
+ * waiting after wrong passwords from here (C4). Refused before the password
+ * is even looked at: a guess made during the wait is not checked at all,
+ * right or wrong.
+ */
+function admitSignInTry(email: string, place: string, reply: FastifyReply) {
+  const waitMs = signInWaitFor(email, place);
+  if (waitMs === 0) {
+    // Counted now, before the password is checked: tries sent all at once
+    // are counted one by one, not all let through as the first (C4).
+    recordSignInAttempt(email, place);
+    return;
+  }
+  const seconds = Math.ceil(waitMs / 1000);
+  reply.header('retry-after', String(seconds));
+  const when = seconds < 90 ? `${seconds} seconds` : `${Math.ceil(seconds / 60)} minutes`;
+  throw new ApiError(
+    429,
+    'sign_in_wait',
+    `Too many wrong passwords for this address. Try again in ${when}, or reset your password.`,
+  );
 }
 
 export async function authRoutes(
@@ -291,6 +320,7 @@ export async function authRoutes(
     contracts['auth.login'],
     { preHandler: credentialLimit },
     async (request, { body: input }, reply) => {
+      admitSignInTry(input.email, request.ip, reply);
       const [user] = await db
         .select({ ...PUBLIC_USER, passwordHash: users.passwordHash })
         .from(users)
@@ -310,6 +340,7 @@ export async function authRoutes(
         if (user) recordFailedSignInLater(user.id, request.id);
         throw ApiError.unauthorized('Invalid email or password');
       }
+      clearSignInFailures(input.email);
 
       // With two-factor on, the password is only the first half: no session
       // until a code is given (C4).

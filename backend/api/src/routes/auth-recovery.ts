@@ -15,6 +15,7 @@ import type { Env } from '../env.ts';
 import { ApiError } from '../errors.ts';
 import { currentUser, requireAuth } from '../plugins/authz.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
+import { clearSignInFailures } from '../plugins/sign-in-waits.ts';
 import { createVerificationSender } from '../verification.ts';
 
 /**
@@ -156,7 +157,7 @@ export async function authRecoveryRoutes(app: FastifyInstance, opts: RecoveryDep
 
       const changed = await db.transaction(async (tx) => {
         const userId = await consumeAuthToken(tx, input.token, 'password_reset');
-        if (!userId) return false;
+        if (!userId) return null;
 
         await tx.update(users).set({ passwordHash }).where(eq(users.id, userId));
 
@@ -166,12 +167,19 @@ export async function authRecoveryRoutes(app: FastifyInstance, opts: RecoveryDep
         // And any half-done sign-in made with the old password (C4).
         await revokeSignInChallenges(tx, userId);
         await recordAccountEvent(tx, userId, 'auth.password_reset', { requestId: request.id });
-        return true;
+        const [person] = await tx
+          .select({ email: users.email })
+          .from(users)
+          .where(eq(users.id, userId));
+        return person ?? null;
       });
 
       if (!changed) {
         throw ApiError.badRequest('That reset link is not valid any more', 'invalid_token');
       }
+      // The mailed link proves the address: any wait on it from wrong
+      // passwords goes (C4).
+      clearSignInFailures(changed.email);
 
       // Deliberately no session cookie: holding a mailed link is not the same
       // proof of identity as knowing the password, so the next step is signing in
