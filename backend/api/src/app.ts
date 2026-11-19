@@ -35,6 +35,7 @@ import { bulkIssueRoutes } from './routes/issues-bulk.ts';
 import { labelRoutes } from './routes/labels.ts';
 import { meetingRoutes } from './routes/meetings.ts';
 import { memberRoutes } from './routes/members.ts';
+import { myMeetingRoutes } from './routes/my-meetings.ts';
 import { notificationSettingRoutes } from './routes/notification-settings.ts';
 import { notificationRoutes } from './routes/notifications.ts';
 import { overviewRoutes } from './routes/overview.ts';
@@ -258,6 +259,7 @@ export function buildApp({
   app.register(projectRoutes, { db });
   app.register(issueRoutes, { db, suggestions: suggest });
   app.register(discussionRoutes, { db });
+  app.register(myMeetingRoutes, { db });
   app.register(commentRoutes, { db });
   app.register(documentRoutes, { db });
   app.register(channelRoutes, { db });

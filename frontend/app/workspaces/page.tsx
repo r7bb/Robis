@@ -9,9 +9,11 @@ import { MyInvitations } from '../../components/my-invitations.tsx';
 import { NotificationBell } from '../../components/notification-bell.tsx';
 import type { RiverSeries } from '../../features/home/activity-river.tsx';
 import { HomeHero } from '../../features/home/home-hero.tsx';
-import { LiveFeed } from '../../features/home/live-feed.tsx';
+import { LiveStrip } from '../../features/home/live-feed.tsx';
+import { MentionsCard } from '../../features/home/mentions-card.tsx';
 import { NeedsYou } from '../../features/home/needs-you.tsx';
 import { NewWorkspace } from '../../features/home/new-workspace.tsx';
+import { TodayMeetings } from '../../features/home/today-meetings.tsx';
 import { useHomeLive } from '../../features/home/use-home-live.ts';
 import { OVERVIEW_KEY, useOverview } from '../../features/home/use-overview.ts';
 import { WorkspaceGrid } from '../../features/home/workspace-grid.tsx';
@@ -151,17 +153,21 @@ export default function WorkspacesPage() {
 
       {/* Positioned, so it paints above the hero it overlaps. */}
       <div className="relative mx-auto -mt-6 w-full max-w-6xl px-4 sm:px-6 fit:flex fit:min-h-0 fit:flex-1 fit:flex-col">
-        <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr] fit:min-h-0 fit:flex-1">
+        <LiveStrip
+          accentBy={accentBy}
+          items={live.feed}
+          connected={live.connected}
+          everConnected={live.everConnected}
+        />
+
+        {/* Today: what is yours to do, where you were named, and what is on. */}
+        <div className="mt-4 grid gap-4 lg:grid-cols-3 xl:grid-cols-[1.25fr_1fr_1fr] fit:min-h-0 fit:flex-1">
           <div className="min-w-0 space-y-4 fit:flex fit:min-h-0 fit:flex-col">
             <NeedsYou issues={overview.data?.assigned ?? []} loading={overview.isPending} />
             <MyInvitations me={me.data} focusAfter="workspaces-heading" />
           </div>
-          <LiveFeed
-            accentBy={accentBy}
-            items={live.feed}
-            connected={live.connected}
-            everConnected={live.everConnected}
-          />
+          <MentionsCard />
+          <TodayMeetings />
         </div>
 
         {overview.isError && (

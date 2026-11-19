@@ -37,6 +37,7 @@ export {
   type BulkChange,
 } from './issues-bulk.ts';
 export { ISSUE_LABELS_MAX } from './labels.ts';
+export { MY_MEETINGS_LIMIT, MY_MEETINGS_MAX_HOURS } from './meetings.ts';
 export { SAVED_VIEWS_PER_PROJECT } from './saved-views.ts';
 
 /** Every route the API serves through a contract, by name. */

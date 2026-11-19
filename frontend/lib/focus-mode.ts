@@ -6,7 +6,11 @@ import type { Command } from './commands.ts';
 const FOCUS_KEY = '\\';
 
 export function isFocusKey(event: Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'altKey'>) {
-  return event.key === FOCUS_KEY && !event.ctrlKey && !event.metaKey && !event.altKey;
+  if (event.key !== FOCUS_KEY || event.metaKey) return false;
+  // On German or Nordic keyboards the backslash is AltGr, which arrives as
+  // Ctrl and Alt together; either alone is someone else's shortcut.
+  const altGr = event.ctrlKey && event.altKey;
+  return altGr || (!event.ctrlKey && !event.altKey);
 }
 
 /** The palette's entry for it, worded for the way it will go. */

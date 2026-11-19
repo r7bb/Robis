@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Today on the home** (2026-11-19). The home after signing in opens on
+  Today: the issues assigned to you, where you were mentioned, and today’s
+  meetings across every workspace.
 - **Focus mode** (2026-11-19). Press the backslash key, or Focus in the top
   bar, to put the side panels away and leave only the board.
 - **Discuss an issue in chat** (2026-11-19). Discuss on an issue starts a

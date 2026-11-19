@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-19',
     area: 'Product',
+    title: 'Today on the home',
+    brief:
+      'The home after signing in opens on Today: the issues assigned to you, where you were mentioned, and today’s meetings across every workspace.',
+    summary:
+      'The first thing after signing in is now your day. Under the greeting, three cards side by side: the open issues assigned to you, where you were mentioned (newest first, unread marked, and opening one marks it read), and today’s meetings in every workspace you are in, soonest first, with the time, the workspace, how long it is and your answer. A meeting’s Join link appears ten minutes before it starts and stays until it ends; meetings already over drop off, and today is the day where you are. The live feed becomes one line above the cards with the newest thing to happen, still live, and the ones before it under Earlier. It all still fits on one screen on a laptop or larger.',
+    feature: {
+      name: 'Today',
+      where: 'The home after signing in, under the greeting',
+      layers: [
+        'Screen: Assigned to you, Mentions and Today’s meetings cards, and a one-line live strip',
+        'API: meetings.mine, your meetings in a window of at most two days across the workspaces you are in',
+        'Data: no change; meetings you are invited to or organise, left out once called off or once you leave the workspace',
+      ],
+    },
+    checked:
+      'Nine new tests. Six against the API: the meetings you are in from every workspace, soonest first, with the workspace and your answer; the organiser’s own, already yes; one under way counted, one outside the window or called off not; nothing from a workspace you have left; a window backwards, longer than two days or not a date refused; and 401 when signed out. Three on the day itself: midnight to midnight where the browser is, across a month and a year end, and a meeting later, soon in its last ten minutes, then under way until it ends. In headless Chrome on the rebuilt stack: the home measured one screen at 1440 by 900 and 1280 by 800, Today’s meetings showed two meetings with Join on the one about to start, and Alex’s mentions showed two unread.',
+  },
+  {
+    date: '2026-11-19',
+    area: 'Product',
     title: 'Focus mode',
     brief:
       'Press the backslash key, or Focus in the top bar, to put the side panels away and leave only the board.',

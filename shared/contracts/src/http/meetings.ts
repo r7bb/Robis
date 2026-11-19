@@ -32,7 +32,33 @@ const attendee = z.object({
   response: z.enum(['pending', 'yes', 'no', 'maybe']),
 });
 
+/** The longest window `meetings.mine` answers for: a day and a day's grace. */
+export const MY_MEETINGS_MAX_HOURS = 48;
+export const MY_MEETINGS_LIMIT = 20;
+
 export const meetingContracts = {
+  'meetings.mine': contract({
+    method: 'GET',
+    path: '/me/meetings',
+    summary:
+      'Your meetings in a window (at most two days), in every workspace you are in, soonest first; called-off ones left out.',
+    // The window comes from the browser, which knows where its day begins.
+    query: z.object({
+      from: z.iso.datetime({ offset: true }),
+      to: z.iso.datetime({ offset: true }),
+    }),
+    response: z.object({
+      meetings: z.array(
+        meeting
+          .pick({ id: true, title: true, startsAt: true, durationMinutes: true, joinUrl: true })
+          .extend({
+            workspaceId: uuid,
+            workspaceName: z.string(),
+            myResponse: z.enum(['pending', 'yes', 'no', 'maybe']),
+          }),
+      ),
+    }),
+  }),
   'meetings.list': contract({
     method: 'GET',
     path: '/workspaces/:workspaceId/meetings',

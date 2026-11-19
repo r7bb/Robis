@@ -16,6 +16,8 @@ describe('focus mode', () => {
     expect(isFocusKey(key('\\', { ctrlKey: true }))).toBe(false);
     expect(isFocusKey(key('\\', { metaKey: true }))).toBe(false);
     expect(isFocusKey(key('\\', { altKey: true }))).toBe(false);
+    // AltGr, as German and Nordic keyboards type a backslash.
+    expect(isFocusKey(key('\\', { ctrlKey: true, altKey: true }))).toBe(true);
     expect(isFocusKey(key('/'))).toBe(false);
     expect(isFocusKey(key('f'))).toBe(false);
   });

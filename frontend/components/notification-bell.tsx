@@ -1,11 +1,12 @@
 'use client';
 
 import { contracts } from '@robis/shared';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { call, type NotificationItem } from '../lib/api.ts';
 import { describeNotification, notificationHref } from '../lib/notification-text.ts';
+import { useInbox } from '../lib/use-inbox.ts';
 
 /**
  * Where a notification takes you.
@@ -59,10 +60,6 @@ function bodyFor(item: NotificationItem): string | undefined {
   return item.kind === 'nudge' ? item.payload.body : describeNotification(item).body;
 }
 
-/** Poll interval for the inbox. Notifications arrive via a worker, so there is
- * no realtime event to key off -- the job may land seconds after the comment. */
-const POLL_MS = 20_000;
-
 /**
  * Inbox for the signed-in user.
  *
@@ -74,12 +71,7 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const inbox = useQuery({
-    queryKey: ['notifications'],
-    queryFn: () => call(contracts['notifications.list']),
-    refetchInterval: POLL_MS,
-    retry: false,
-  });
+  const inbox = useInbox();
 
   const markRead = useMutation({
     mutationFn: (id: string) =>

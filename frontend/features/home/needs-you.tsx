@@ -21,7 +21,7 @@ export function NeedsYou({
       className="min-w-0 rounded-2xl border border-line bg-raised p-5 shadow-[0_12px_40px_rgb(8_9_12/0.45)] fit:flex fit:min-h-0 fit:flex-1 fit:flex-col"
     >
       <h2 id="home-needs-you" className="text-sm font-semibold text-content">
-        Needs you
+        Assigned to you
       </h2>
 
       {loading ? (
