@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-19',
     area: 'Product',
+    title: 'Quieter cards',
+    brief:
+      'Board cards drop their status menu and show a label dot, the due date and the assignee’s face, with Move and Delete appearing on hover.',
+    summary:
+      'Cards on the board say less, so the board reads at a glance. The status menu on every card is gone: a card changes column by dragging, by its Move button, or by the 1 to 4 keys. Labels show as a coloured dot each and the assignee as their face, on one line of the same height on every card, so nothing moves as the pointer passes; the names are in the dots’ and the face’s tooltips, read aloud to screen readers, and written out on the issue itself. Move and Delete appear when the pointer is over a card or it has focus, and always on a touch screen, where there is no hover.',
+    checked:
+      'In headless Chrome on the rebuilt stack, cards showed the key, title, priority, a dot per label and the assignee’s face, and Move and Delete appeared on hover. The keyboard-only board test (41 checks) passed, now reading a card’s column from the card rather than from its menu. Lint and typecheck clean.',
+  },
+  {
+    date: '2026-11-19',
+    area: 'Product',
     title: 'One place for each thing',
     brief:
       'Chat moves to the right of the board, and everything in a workspace now shows in one place only: boards and docs on the left, rooms and people at the top of the chat.',

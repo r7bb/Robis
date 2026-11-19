@@ -91,6 +91,28 @@ const LABEL_STYLES: Record<string, string> = {
   violet: 'border-violet-400/35 bg-violet-400/10 text-violet-300',
 };
 
+/** The same palette as a dot, for a card that only hints at its labels. */
+const LABEL_DOTS: Record<string, string> = {
+  slate: 'bg-slate-400',
+  sky: 'bg-sky-400',
+  emerald: 'bg-emerald-400',
+  amber: 'bg-amber-400',
+  rose: 'bg-rose-400',
+  violet: 'bg-violet-400',
+};
+
+export function LabelDot({ name, colour }: { name: string; colour: string }) {
+  return (
+    <span title={name} className="inline-flex">
+      <span
+        aria-hidden="true"
+        className={`h-2 w-2 rounded-full ${LABEL_DOTS[colour] ?? LABEL_DOTS.slate}`}
+      />
+      <span className="sr-only">{name}</span>
+    </span>
+  );
+}
+
 export function LabelChip({ name, colour }: { name: string; colour: string }) {
   return (
     <span

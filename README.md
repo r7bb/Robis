@@ -148,15 +148,15 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Quieter cards.** Board cards drop their status menu and show a label
+  dot, the due date and the assignee’s face, with Move and Delete appearing
+  on hover.
 - **One place for each thing.** Chat moves to the right of the board, and
   everything in a workspace now shows in one place only: boards and docs on
   the left, rooms and people at the top of the chat.
 - **The board at the centre.** A workspace now opens on its board, with chat
   docked underneath like a terminal that you can resize, hide and bring back
   with Ctrl `.
-- **Push notifications.** Turn on push for a device from your account page,
-  and get a prompt to open Robis when something new arrives, with nothing
-  about it on the lock screen.
 
 <!-- latest:end -->
 

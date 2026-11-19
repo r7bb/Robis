@@ -90,7 +90,7 @@ const cards = (page: Page) =>
   page.eval<Card[]>(`[...document.querySelectorAll('[data-card]')].map((li) => ({
     id: li.getAttribute('data-card'),
     title: li.getAttribute('aria-label'),
-    status: li.querySelector('select[aria-label^="Status for"]')?.value ?? '',
+    status: li.getAttribute('data-status') ?? '',
     checked: !!li.querySelector('input[type=checkbox]')?.checked,
     synced: !li.textContent.includes('Unsynced'),
   }))`);
@@ -167,7 +167,7 @@ async function changeStatus(page: Page, id: string) {
     '2 moves it to In Progress',
     await waitUntil(
       page,
-      `document.querySelector(${cardSelector(id)})?.querySelector('select')?.value === 'IN_PROGRESS'`,
+      `document.querySelector(${cardSelector(id)})?.getAttribute('data-status') === 'IN_PROGRESS'`,
     ),
   );
   check('and focus follows it', (await focusedCard(page)) === id, String(await focusedCard(page)));
@@ -194,7 +194,7 @@ async function changeStatus(page: Page, id: string) {
     'arrow and Space put it back in Todo',
     await waitUntil(
       page,
-      `document.querySelector(${cardSelector(id)})?.querySelector('select')?.value === 'TODO'`,
+      `document.querySelector(${cardSelector(id)})?.getAttribute('data-status') === 'TODO'`,
     ),
     String(await statusOf(page, id)),
   );
@@ -213,7 +213,7 @@ async function bulkChange(page: Page) {
   await typeAhead(page, 'do');
   const done = await waitUntil(
     page,
-    `[...document.querySelectorAll('[data-card]')].filter((li) => li.querySelector('select')?.value === 'DONE').length === 2`,
+    `[...document.querySelectorAll('[data-card]')].filter((li) => li.getAttribute('data-status') === 'DONE').length === 2`,
   );
   check('both moved to Done in one change', done, JSON.stringify(await cards(page)));
   await press(page, 'Escape');

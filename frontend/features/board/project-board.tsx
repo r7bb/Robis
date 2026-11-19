@@ -6,7 +6,6 @@ import {
   type BoardFilter,
   contracts,
   type IssuePriority,
-  type IssueStatus,
 } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
@@ -15,12 +14,7 @@ import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from 
 import { DeleteButton } from '../../components/delete-button.tsx';
 import { SyncStatus } from '../../components/sync-status.tsx';
 import { Avatar } from '../../components/ui/avatar.tsx';
-import {
-  LabelChip,
-  PriorityBadge,
-  StatusHeading,
-  statusLabel,
-} from '../../components/ui/badges.tsx';
+import { LabelDot, PriorityBadge, StatusHeading } from '../../components/ui/badges.tsx';
 import { DueChip } from '../../components/ui/due-chip.tsx';
 import { Kbd } from '../../components/ui/kbd.tsx';
 import { ErrorState } from '../../components/ui/primitives.tsx';
@@ -333,6 +327,7 @@ export function ProjectBoard({
                     {...drag.cardProps(issue.id, index, canEdit)}
                     // Focused whole by the J, K, H and L keys (C2); Enter on it opens it.
                     data-card={issue.id}
+                    data-status={issue.status}
                     tabIndex={-1}
                     aria-label={`${issue.key} ${issue.title}`}
                     onKeyDown={(event) => {
@@ -342,7 +337,7 @@ export function ProjectBoard({
                       router.push(`/workspaces/${workspaceId}/issues/${issue.id}`);
                     }}
                     className={[
-                      'rounded-md border bg-raised p-3 outline-none transition-[opacity,box-shadow] duration-[var(--micro)] focus-visible:ring-2 focus-visible:ring-accent-soft',
+                      'group rounded-md border bg-raised p-3 outline-none transition-[opacity,box-shadow] duration-[var(--micro)] focus-visible:ring-2 focus-visible:ring-accent-soft',
                       issue.pending ? 'border-amber-500/40' : 'border-line',
                       drag.cardState(issue.id),
                     ].join(' ')}
@@ -381,39 +376,7 @@ export function ProjectBoard({
                       </Link>
                     )}
 
-                    <CardLabels ids={issue.labelIds} labels={labelById} />
-
-                    {issue.dueOn && (
-                      <p className="mt-2">
-                        <DueChip
-                          dueOn={issue.dueOn}
-                          finished={issue.status === 'DONE' || issue.status === 'CANCELED'}
-                        />
-                      </p>
-                    )}
-
-                    {issue.assigneeName && (
-                      <Assignee name={issue.assigneeName} id={issue.assigneeId} avatars={avatars} />
-                    )}
-
-                    {canEdit && (
-                      <select
-                        value={issue.status}
-                        onChange={(event) =>
-                          void board.updateIssue(issue.id, {
-                            status: event.target.value as IssueStatus,
-                          })
-                        }
-                        aria-label={`Status for ${issue.key}`}
-                        className="mt-3 w-full rounded border border-line bg-surface px-2 py-1 text-xs text-muted outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
-                      >
-                        {BOARD_COLUMNS.map((status) => (
-                          <option key={status} value={status}>
-                            {statusLabel(status)}
-                          </option>
-                        ))}
-                      </select>
-                    )}
+                    <CardFooter issue={issue} labels={labelById} avatars={avatars} />
                   </li>
                 ))}
               </ul>
@@ -425,24 +388,12 @@ export function ProjectBoard({
   );
 }
 
-/** Who a card is assigned to: their picture and name, quietly. */
-function Assignee({
-  name,
-  id,
-  avatars,
-}: {
-  name: string;
-  id: string | null;
-  avatars: ReadonlyMap<string, AvatarRef>;
-}) {
-  const avatar = id ? (avatars.get(id) ?? null) : null;
-  return (
-    <p className="mt-2 flex items-center gap-1.5 text-xs text-faint">
-      <Avatar name={name} seed={id ?? undefined} avatar={avatar} size="sm" />
-      {name}
-    </p>
-  );
-}
+/**
+ * Card controls that wait for the pointer or for focus, on a screen with a
+ * pointer; on a touch screen there is no hover, so they always show.
+ */
+const QUIET =
+  'transition-opacity duration-[var(--micro)] [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-focus-within:opacity-100';
 
 /**
  * A card's top line: its pick box while selecting, its key and Move on the
@@ -483,9 +434,16 @@ function CardHeader({
             className="accent-accent"
           />
         )}
-        <span className="font-mono text-[10px] text-faint">{issue.key}</span>
+        <span className="whitespace-nowrap font-mono text-[10px] text-faint">{issue.key}</span>
         {canEdit && (
-          <MoveButton label={issue.key} lifted={lifted} onKeyDown={onMoveKey} onBlur={onMoveBlur} />
+          <span className={lifted ? '' : QUIET}>
+            <MoveButton
+              label={issue.key}
+              lifted={lifted}
+              onKeyDown={onMoveKey}
+              onBlur={onMoveBlur}
+            />
+          </span>
         )}
       </span>
       <span className="flex items-center gap-1">
@@ -501,13 +459,15 @@ function CardHeader({
         )}
         {/* Deleting goes through the same offline queue as every other
             board write, so it works with no connection. */}
-        <DeleteButton
-          allowed={canDelete}
-          kind="issue"
-          name={issue.pending ? issue.title : `${issue.key} · ${issue.title}`}
-          onConfirm={onDelete}
-          className="-my-1 -mr-1"
-        />
+        <span className={QUIET}>
+          <DeleteButton
+            allowed={canDelete}
+            kind="issue"
+            name={issue.pending ? issue.title : `${issue.key} · ${issue.title}`}
+            onConfirm={onDelete}
+            className="-my-1 -mr-1"
+          />
+        </span>
       </span>
     </div>
   );
@@ -541,25 +501,58 @@ function MoveButton({
   );
 }
 
-/** A card's labels, as chips; nothing at all for a card with none. */
-function CardLabels({
-  ids,
+/**
+ * A card's last line, the same height on every card: a dot for each label
+ * and the due date on the left, the assignee's face on the right. The names
+ * are in the dots' and the face's titles and read aloud, and written out in
+ * full in the issue itself.
+ */
+function CardFooter({
+  issue,
   labels,
+  avatars,
 }: {
-  ids: readonly string[] | undefined;
+  issue: {
+    labelIds?: readonly string[];
+    dueOn?: string | null;
+    status: string;
+    assigneeName?: string | null;
+    assigneeId?: string | null;
+  };
   labels: ReadonlyMap<string, { name: string; colour: string }>;
+  avatars: ReadonlyMap<string, AvatarRef>;
 }) {
-  const shown = (ids ?? []).flatMap((id) => {
+  const shown = (issue.labelIds ?? []).flatMap((id) => {
     const label = labels.get(id);
     return label ? [{ id, ...label }] : [];
   });
-  if (shown.length === 0) return null;
+  if (shown.length === 0 && !issue.dueOn && !issue.assigneeName) return null;
+  const finished = issue.status === 'DONE' || issue.status === 'CANCELED';
+
   return (
-    <p className="mt-2 flex flex-wrap gap-1">
-      {shown.map((label) => (
-        <LabelChip key={label.id} name={label.name} colour={label.colour} />
-      ))}
-    </p>
+    <div className="mt-2 flex min-h-6 items-center justify-between gap-2">
+      <span className="flex min-w-0 items-center gap-2">
+        {shown.length > 0 ? (
+          <span className="flex items-center gap-1">
+            {shown.map((label) => (
+              <LabelDot key={label.id} name={label.name} colour={label.colour} />
+            ))}
+          </span>
+        ) : null}
+        {issue.dueOn ? <DueChip dueOn={issue.dueOn} finished={finished} /> : null}
+      </span>
+      {issue.assigneeName ? (
+        <span title={issue.assigneeName} className="shrink-0">
+          <Avatar
+            name={issue.assigneeName}
+            seed={issue.assigneeId ?? undefined}
+            avatar={issue.assigneeId ? (avatars.get(issue.assigneeId) ?? null) : null}
+            size="sm"
+          />
+          <span className="sr-only">Assigned to {issue.assigneeName}</span>
+        </span>
+      ) : null}
+    </div>
   );
 }
 

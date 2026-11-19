@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Quieter cards** (2026-11-19). Board cards drop their status menu and
+  show a label dot, the due date and the assignee’s face, with Move and
+  Delete appearing on hover.
 - **One place for each thing** (2026-11-19). Chat moves to the right of the
   board, and everything in a workspace now shows in one place only: boards
   and docs on the left, rooms and people at the top of the chat.
