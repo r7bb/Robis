@@ -337,6 +337,13 @@
       "when": 1795075233127,
       "tag": "0047_two_factor",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1795078925326,
+      "tag": "0048_workspace_two_factor",
+      "breakpoints": true
     }
   ]
 }

@@ -7,9 +7,11 @@ import {
   loadUpdate,
   publishDocumentUpdate,
   publishPresence,
+  requiresTwoFactor,
   subscribeToDocumentUpdates,
   subscribeToEvents,
   subscribeToPresence,
+  twoFactor,
   users,
 } from '@robis/database';
 import { Registry } from '@robis/metrics';
@@ -25,7 +27,7 @@ import {
   scopesSchema,
   TERMS_VERSION,
 } from '@robis/shared';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNotNull } from 'drizzle-orm';
 import type postgres from 'postgres';
 import * as Y from 'yjs';
 import { DocumentRooms, documentInWorkspace } from './documents.ts';
@@ -64,13 +66,25 @@ const CLIENT_MESSAGE_TYPES: ReadonlySet<string> = new Set<ClientMessage['type']>
  * comfortably below PRESENCE_TTL_MS so peers never expire a live connection. */
 const REANNOUNCE_INTERVAL_MS = 15_000;
 const SWEEP_INTERVAL_MS = 10_000;
+/**
+ * How often every joined feed is looked at again (C4): a member removed, or
+ * a workspace that has come to require two-factor of someone without it,
+ * stops hearing it within this long, open tab or not.
+ */
+const RECHECK_INTERVAL_MS = 30_000;
+/** Closing a connection whose feed was cut off: a policy refusal (4000s are ours). */
+const REFUSED_CLOSE_CODE = 4403;
 
 /**
  * Why an account cannot join a workspace feed yet, or null if it can: the
  * same order the API asks in (the current terms, then a picture), read
  * fresh each time.
  */
-async function notReadyBecause(db: Database, userId: string): Promise<string | null> {
+async function notReadyBecause(
+  db: Database,
+  userId: string,
+  workspaceId: string,
+): Promise<string | null> {
   const [row] = await db
     .select({ kind: users.avatarKind, ref: users.avatarRef, terms: users.termsVersion })
     .from(users)
@@ -78,6 +92,17 @@ async function notReadyBecause(db: Database, userId: string): Promise<string | n
     .limit(1);
   if (row?.terms !== TERMS_VERSION) return 'Agree to the current terms before you continue';
   if (!(row.kind && row.ref)) return 'Add a picture before you start';
+  // A workspace that requires two-factor (C4), as the API asks it.
+  if (await requiresTwoFactor(db, workspaceId)) {
+    const [on] = await db
+      .select({ userId: twoFactor.userId })
+      .from(twoFactor)
+      .where(and(eq(twoFactor.userId, userId), isNotNull(twoFactor.confirmedAt)))
+      .limit(1);
+    if (!on) {
+      return 'This workspace asks everyone to use two-factor sign-in. Turn it on from your account page to continue.';
+    }
+  }
   return null;
 }
 
@@ -112,6 +137,8 @@ export type GatewayOptions = {
    * Left out, metrics are not served at all.
    */
   metrics?: { port: number; hostname: string };
+  /** How often joined feeds are checked again; see RECHECK_INTERVAL_MS. */
+  recheckIntervalMs?: number;
 };
 
 function readCookie(header: string | null, name: string): string | null {
@@ -323,15 +350,7 @@ export async function createGateway(options: GatewayOptions) {
          * workspace on the socket, and is rejected. Chaining keeps the observable
          * order the same as the wire order.
          */
-        const queue = pendingWork.get(socket) ?? Promise.resolve();
-
-        const next = queue
-          .then(() => dispatch(socket, message))
-          .catch((error) => {
-            console.error('gateway: message handler failed', error);
-          });
-
-        pendingWork.set(socket, next);
+        enqueue(socket, () => dispatch(socket, message));
       },
 
       async close(socket) {
@@ -341,24 +360,79 @@ export async function createGateway(options: GatewayOptions) {
         // being applied is not dropped on the floor.
         await pendingWork.get(socket)?.catch(() => {});
 
-        const { workspaceId, connectionId, openDocuments } = socket.data;
-
-        // Leaving the last seat in a room flushes its pending writes, so a
-        // closed tab does not strand unsaved edits.
-        for (const documentId of openDocuments) {
-          const room = await rooms.leave(documentId, connectionId);
-          if (room) broadcastAwareness(documentId);
-        }
-        openDocuments.clear();
-
-        if (!workspaceId) return;
-
-        presence.remove(connectionId);
-        broadcastPresence(workspaceId);
-        await publishPresence(db, { kind: 'remove', instanceId, connectionId, workspaceId });
+        await leaveFeed(socket);
       },
     },
   });
+
+  /** Run work for one connection after what it already has queued. */
+  function enqueue(socket: Bun.ServerWebSocket<SocketData>, work: () => unknown) {
+    const next = (pendingWork.get(socket) ?? Promise.resolve())
+      .then(async () => {
+        await work();
+      })
+      .catch((error) => {
+        console.error('gateway: message handler failed', error);
+      });
+    pendingWork.set(socket, next);
+    return next;
+  }
+
+  /** Give up a connection's documents and its place in a workspace's roster. */
+  async function leaveFeed(socket: Bun.ServerWebSocket<SocketData>) {
+    const { workspaceId, connectionId, openDocuments } = socket.data;
+    // Off the feed and out of its documents first, so nothing more is heard
+    // or written while the rooms are let go.
+    socket.data.workspaceId = null;
+    socket.data.location = null;
+    socket.data.scopes = null;
+    const documents = [...openDocuments];
+    openDocuments.clear();
+
+    // Leaving the last seat in a room flushes its pending writes, so a
+    // closed tab does not strand unsaved edits.
+    for (const documentId of documents) {
+      const room = await rooms.leave(documentId, connectionId);
+      if (room) broadcastAwareness(documentId);
+    }
+
+    if (!workspaceId) return;
+
+    presence.remove(connectionId);
+    broadcastPresence(workspaceId);
+    await publishPresence(db, { kind: 'remove', instanceId, connectionId, workspaceId });
+  }
+
+  /** Why someone may not watch a workspace now, or null when they may. */
+  async function refusalOf(userId: string, workspaceId: string) {
+    if (!(await findMembership(db, workspaceId, userId))) {
+      return 'You are no longer a member of that workspace';
+    }
+    return notReadyBecause(db, userId, workspaceId);
+  }
+
+  /**
+   * Look at every joined feed again (C4). The check at subscribe alone would
+   * let an open tab keep hearing a workspace after its member was removed,
+   * or after it came to require two-factor of someone without it. Each
+   * connection is looked at in its own turn, so a verdict is never older
+   * than the subscribe before it. A connection cut off is told why and
+   * closed, so the page shows it is no longer live.
+   */
+  async function recheckFeeds() {
+    const checks = [...sockets].map((socket) =>
+      enqueue(socket, async () => {
+        const { userId, workspaceId } = socket.data;
+        if (!workspaceId) return;
+        const reason = await refusalOf(userId, workspaceId);
+        if (!reason || socket.data.workspaceId !== workspaceId) return;
+        await leaveFeed(socket);
+        send(socket, { type: 'error', message: reason });
+        socket.close(REFUSED_CLOSE_CODE, 'Refused');
+      }),
+    );
+    await Promise.all(checks);
+  }
 
   /** One handler per message type, so the switch stays flat as kinds are added. */
   function dispatch(socket: Bun.ServerWebSocket<SocketData>, message: ClientMessage) {
@@ -400,7 +474,7 @@ export async function createGateway(options: GatewayOptions) {
     // and documents open only through a joined feed. Read now rather than
     // at connect, so an answer given in another tab counts without
     // reconnecting.
-    const reason = await notReadyBecause(db, socket.data.userId);
+    const reason = await notReadyBecause(db, socket.data.userId, workspaceId);
     if (reason) return send(socket, { type: 'error', message: reason });
 
     const previous = socket.data.workspaceId;
@@ -630,6 +704,18 @@ export async function createGateway(options: GatewayOptions) {
     for (const workspaceId of presence.sweep()) broadcastPresence(workspaceId);
   }, SWEEP_INTERVAL_MS);
 
+  // One pass at a time: a slow database skips a tick rather than piling up.
+  let rechecking = false;
+  const recheck = setInterval(() => {
+    if (rechecking) return;
+    rechecking = true;
+    void recheckFeeds()
+      .catch((error) => console.error('gateway: recheck failed', error))
+      .finally(() => {
+        rechecking = false;
+      });
+  }, options.recheckIntervalMs ?? RECHECK_INTERVAL_MS);
+
   // Not on the public port, where sockets and /health are.
   const metricsServer = options.metrics
     ? Bun.serve({
@@ -649,10 +735,12 @@ export async function createGateway(options: GatewayOptions) {
     metricsPort: metricsServer?.port ?? null,
     instanceId,
     presence,
+    recheckFeeds,
 
     async close() {
       clearInterval(reannounce);
       clearInterval(sweeper);
+      clearInterval(recheck);
 
       // Tell peers to drop our entries immediately rather than waiting for TTL.
       await publishPresence(db, { kind: 'bye', instanceId }).catch(() => {});

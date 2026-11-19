@@ -1,4 +1,11 @@
-import { type Executor, sessions, users, workspaceMembers } from '@robis/database';
+import {
+  type Executor,
+  sessions,
+  twoFactor,
+  users,
+  workspaceMembers,
+  workspaces,
+} from '@robis/database';
 import { isUuid, type Role, TERMS_VERSION, type UserKind } from '@robis/shared';
 import { and, desc, eq, gt, lt, ne, sql } from 'drizzle-orm';
 import {
@@ -26,6 +33,8 @@ export type AuthenticatedUser = {
    * Workspaces are closed until it is; see `assertHasAgreed`.
    */
   hasAgreed: boolean;
+  /** Whether two-factor sign-in is on (C4); a workspace may require it. */
+  hasTwoFactor: boolean;
 };
 
 /** Only refresh `last_used_at` once an hour, to keep reads from becoming writes. */
@@ -65,7 +74,7 @@ export async function resolveSessionIn(
   db: Executor,
   token: string,
   workspaceId: string,
-): Promise<{ user: AuthenticatedUser; role: Role | null } | null> {
+): Promise<{ user: AuthenticatedUser; role: Role | null; requireTwoFactor: boolean } | null> {
   return lookUpSession(db, token, isUuid(workspaceId) ? workspaceId : null);
 }
 
@@ -73,7 +82,7 @@ async function lookUpSession(
   db: Executor,
   token: string,
   workspaceId: string | null,
-): Promise<{ user: AuthenticatedUser; role: Role | null } | null> {
+): Promise<{ user: AuthenticatedUser; role: Role | null; requireTwoFactor: boolean } | null> {
   const tokenHash = hashSessionToken(token);
 
   const base = db
@@ -87,17 +96,21 @@ async function lookUpSession(
       avatarKind: users.avatarKind,
       avatarRef: users.avatarRef,
       termsVersion: users.termsVersion,
+      hasTwoFactor: sql<boolean>`exists (select 1 from ${twoFactor} where ${twoFactor.userId} = ${users.id} and ${twoFactor.confirmedAt} is not null)`,
       role: workspaceId ? workspaceMembers.role : sql<null>`null`,
+      requireTwoFactor: workspaceId ? workspaces.requireTwoFactor : sql<null>`null`,
     })
     .from(sessions)
     // Sessions are for people. An agent never signs in, so a session row
     // naming one (none should exist) resolves to nobody.
     .innerJoin(users, and(eq(users.id, sessions.userId), eq(users.kind, 'human')));
   const joined = workspaceId
-    ? base.leftJoin(
-        workspaceMembers,
-        and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, users.id)),
-      )
+    ? base
+        .leftJoin(
+          workspaceMembers,
+          and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, users.id)),
+        )
+        .leftJoin(workspaces, eq(workspaces.id, workspaceId))
     : base;
 
   const [row] = await joined
@@ -129,8 +142,10 @@ async function lookUpSession(
       // Both halves, so a row left half-written can never count as a picture.
       hasAvatar: row.avatarKind !== null && row.avatarRef !== null,
       hasAgreed: row.termsVersion === TERMS_VERSION,
+      hasTwoFactor: Boolean(row.hasTwoFactor),
     },
     role: row.role ?? null,
+    requireTwoFactor: Boolean(row.requireTwoFactor),
   };
 }
 

@@ -36,6 +36,8 @@ const me = publicUser.extend({
   /** Whether the address has been confirmed. Joining a workspace needs it. */
   emailVerified: z.boolean(),
   emailVerifiedAt: timestamp.nullable(),
+  /** Whether two-factor sign-in is on (C4): a workspace may require it. */
+  twoFactorEnabled: z.boolean(),
 });
 
 const ok = z.object({ ok: z.literal(true) });

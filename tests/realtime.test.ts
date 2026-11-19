@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test';
-import { users } from '@robis/database';
+import { users, workspaces } from '@robis/database';
 import { createGateway } from '@robis/realtime/gateway';
 import type { ServerMessage } from '@robis/shared';
 import { eq } from 'drizzle-orm';
@@ -204,6 +204,25 @@ describe('connection', () => {
     client.close();
   });
 
+  test('refuses a member without two-factor when the workspace requires it', async () => {
+    const owner = await createActor('Owner');
+    const workspace = await createWorkspace(owner);
+    const { db } = await getHarness();
+    await db
+      .update(workspaces)
+      .set({ requireTwoFactor: true })
+      .where(eq(workspaces.id, workspace.id));
+
+    const client = await TestClient.connect(owner);
+    client.send({ type: 'subscribe', workspaceId: workspace.id });
+
+    const error = await client.waitFor(isError);
+    expect(error.message).toContain('two-factor');
+    expect(client.messages.some((m) => m.type === 'ready')).toBe(false);
+
+    client.close();
+  });
+
   test('refuses a member who has not agreed to the current terms', async () => {
     const owner = await createActor('Owner');
     const workspace = await createWorkspace(owner);
@@ -217,6 +236,83 @@ describe('connection', () => {
     expect(error.message).toContain('terms');
     expect(client.messages.some((m) => m.type === 'ready')).toBe(false);
 
+    client.close();
+  });
+});
+
+describe('feeds already open (C4)', () => {
+  test('stop hearing a workspace once it requires two-factor of them', async () => {
+    const owner = await createActor('Owner');
+    const member = await createActor('Member');
+    const workspace = await createWorkspace(owner);
+    await addMember(owner, workspace.id, member, 'MEMBER');
+    const project = await createProject(owner, workspace.id);
+
+    const memberClient = await TestClient.connect(member);
+    await memberClient.subscribe(workspace.id);
+    let ownerClient = await TestClient.connect(owner);
+    await ownerClient.subscribe(workspace.id);
+
+    const { db } = await getHarness();
+    await db
+      .update(workspaces)
+      .set({ requireTwoFactor: true })
+      .where(eq(workspaces.id, workspace.id));
+    // The owner has no two-factor either, so both feeds are cut.
+    await gateway.recheckFeeds();
+
+    const error = await memberClient.waitFor(isError);
+    expect(error.message).toContain('two-factor');
+
+    await db
+      .update(workspaces)
+      .set({ requireTwoFactor: false })
+      .where(eq(workspaces.id, workspace.id));
+    // Cut off, the owner's socket was closed too; a new one is let in again.
+    await ownerClient.waitFor(isError);
+    ownerClient.close();
+    ownerClient = await TestClient.connect(owner);
+    await ownerClient.subscribe(workspace.id);
+    await request(`/workspaces/${workspace.id}/projects/${project.id}/issues`, {
+      method: 'POST',
+      payload: { title: 'After the cut' },
+      actor: owner,
+    });
+    // The owner, back in, hears it; the cut feed does not.
+    await ownerClient.waitFor(isEvent('issue.created'));
+    expect(memberClient.messages.filter((m) => m.type === 'event')).toHaveLength(0);
+
+    memberClient.close();
+    ownerClient.close();
+  });
+
+  test('stop hearing a workspace once they are no longer in it', async () => {
+    const owner = await createActor('Owner');
+    const member = await createActor('Member');
+    const workspace = await createWorkspace(owner);
+    await addMember(owner, workspace.id, member, 'MEMBER');
+
+    const client = await TestClient.connect(member);
+    await client.subscribe(workspace.id);
+    const left = await request(`/workspaces/${workspace.id}/members/me`, {
+      method: 'DELETE',
+      actor: member,
+    });
+    expect(left.statusCode).toBeLessThan(300);
+    await gateway.recheckFeeds();
+
+    const error = await client.waitFor(isError);
+    expect(error.message).toContain('no longer a member');
+    client.close();
+  });
+
+  test('leave a feed that is still allowed alone', async () => {
+    const owner = await createActor('Owner');
+    const workspace = await createWorkspace(owner);
+    const client = await TestClient.connect(owner);
+    await client.subscribe(workspace.id);
+    await gateway.recheckFeeds();
+    expect(client.messages.some(isError)).toBe(false);
     client.close();
   });
 });

@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useParams, usePathname, useSearchParams } from 'next/navigation';
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ErrorState } from '../../components/ui/primitives.tsx';
-import { call, type Member } from '../../lib/api.ts';
+import { ApiError, call, type Member } from '../../lib/api.ts';
 import { PEEK_PARAM } from '../../lib/links.ts';
 import { useRealtime } from '../../lib/realtime.ts';
 import { lastTheme, rememberTheme, useApplyTheme } from '../../lib/theme.ts';
@@ -17,6 +17,7 @@ import { ChatPanel } from './chat-panel.tsx';
 import { type Live, LiveProvider } from './live.tsx';
 import { Sidebar } from './sidebar.tsx';
 import { TopBar } from './top-bar.tsx';
+import { TwoFactorNeeded } from './two-factor-needed.tsx';
 import { useChatPanel } from './use-chat-panel.ts';
 import { useFocusMode } from './use-focus-mode.ts';
 import { useOpenRoom } from './use-open-room.ts';
@@ -72,6 +73,14 @@ function useFrameLive(
     };
   }, []);
   return useMemo<Live>(() => ({ presence, state, subscribe }), [presence, state, subscribe]);
+}
+
+/** The workspace would not open: two-factor owed (C4), or anything else. */
+function FrameError({ error }: { error: unknown }) {
+  if (error instanceof ApiError && error.code === 'two_factor_required') {
+    return <TwoFactorNeeded message={error.message} />;
+  }
+  return <ErrorState message={(error as Error).message} />;
 }
 
 export function WorkspaceFrame({ children }: { children: ReactNode }) {
@@ -145,7 +154,7 @@ export function WorkspaceFrame({ children }: { children: ReactNode }) {
     [live.presence],
   );
 
-  if (workspace.isError) return <ErrorState message={(workspace.error as Error).message} />;
+  if (workspace.isError) return <FrameError error={workspace.error} />;
 
   const role = workspace.data?.workspace.role;
 

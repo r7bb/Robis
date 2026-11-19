@@ -3,6 +3,7 @@ import {
   claimDigest,
   type DigestMailPayload,
   type Executor,
+  heldByTwoFactor,
   issueUnsubscribeToken,
   MAIL_DIGEST_JOB,
   MAIL_NOTIFICATION_JOB,
@@ -110,7 +111,13 @@ async function stillWanted(db: Executor, userId: string, rows: readonly Row[]): 
     const channels = await channelsFor(db, [userId], kind as NotificationKind);
     on.set(kind, channels.get(userId)?.email ?? false);
   }
-  return rows.filter((row) => on.get(row.kind));
+  const wanted = rows.filter((row) => on.get(row.kind));
+  // None from a workspace that requires two-factor while they have none (C4).
+  const held = new Map<string, boolean>();
+  for (const id of new Set(wanted.flatMap((row) => (row.workspaceId ? [row.workspaceId] : [])))) {
+    held.set(id, await heldByTwoFactor(db, userId, id));
+  }
+  return wanted.filter((row) => !(row.workspaceId && held.get(row.workspaceId)));
 }
 
 export function notificationMailHandlers(deps: { mailer: Mailer; webOrigin: string }): Handlers {

@@ -369,7 +369,7 @@ export async function authRoutes(
       .where(eq(users.id, user.id))
       .limit(1);
 
-    const { hasAvatar: _picture, hasAgreed: _agreed, ...profile } = user;
+    const { hasAvatar: _picture, hasAgreed: _agreed, hasTwoFactor: _twoFactor, ...profile } = user;
     return {
       user: {
         ...profile,
@@ -382,6 +382,7 @@ export async function authRoutes(
         usernameConfirmed: Boolean(row?.usernameConfirmedAt),
         emailVerified: Boolean(row?.emailVerifiedAt),
         emailVerifiedAt: row?.emailVerifiedAt ?? null,
+        twoFactorEnabled: user.hasTwoFactor,
         // Null until a picture is chosen, which is what the app's welcome
         // step checks before letting someone in.
         avatar: row ? avatarOf({ id: user.id, ...row }) : null,

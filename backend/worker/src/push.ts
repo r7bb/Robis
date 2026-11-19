@@ -1,6 +1,7 @@
 import {
   channelsFor,
   type Executor,
+  heldByTwoFactor,
   notifications,
   PUSH_NOTIFICATION_JOB,
   type PushJob,
@@ -198,6 +199,7 @@ export function pushHandlers(deps: {
       const [row] = await db
         .select({
           userId: notifications.userId,
+          workspaceId: notifications.workspaceId,
           kind: notifications.kind,
           pushedAt: notifications.pushedAt,
         })
@@ -208,6 +210,8 @@ export function pushHandlers(deps: {
       // Push turned off for this kind since it was made: stop here too.
       const channels = await channelsFor(db, [row.userId], row.kind as NotificationKind);
       if (!channels.get(row.userId)?.push) return;
+      // Nor from a workspace that requires two-factor while they have none (C4).
+      if (await heldByTwoFactor(db, row.userId, row.workspaceId)) return;
 
       const devices = await db
         .select({ id: pushSubscriptions.id, endpoint: pushSubscriptions.endpoint })

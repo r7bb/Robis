@@ -65,6 +65,10 @@ const PHRASES: Record<string, (payload: Payload) => string> = {
   'project.deleted': (p) => named('deleted the project', text(p, 'name')),
   'workspace.created': () => 'created this workspace',
   'workspace.updated': () => 'updated the workspace',
+  'workspace.two_factor_required': (p) =>
+    p.required === true
+      ? 'required two-factor sign-in of everyone'
+      : 'stopped requiring two-factor sign-in',
   'audit.keyed': () => 'started signing this audit trail',
   'audit.read': () => 'read the audit trail',
   'audit.exported': () => 'exported part of the audit trail',

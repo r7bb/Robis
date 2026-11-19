@@ -46,6 +46,27 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-19',
     area: 'Security',
+    title: 'Workspaces that require two-factor',
+    brief:
+      'An admin can require two-factor sign-in of everyone in a workspace; a member without it is told why, and how to turn it on.',
+    summary:
+      'A workspace’s People page now has a switch for admins: require two-factor sign-in. Turning it on needs two-factor on the admin’s own account first, so nobody turns it on and finds themselves outside. Once on, a member without two-factor is refused at every part of the workspace and on its live feed, a tab already open included, and opening it shows why, with a button to their account page to turn it on; once they have, they are let in. Until then the home, the inbox and their meetings leave that workspace out, and no email or push is sent them from it. An owner or admin of such a workspace cannot turn their own two-factor off, so it never ends up asking for what nobody running it has. Someone outside the workspace still gets not found, never the reason. Agents, which act with tokens and never sign in, are not asked, and a member can still leave. Each change is in the workspace’s audit trail.',
+    feature: {
+      name: 'Require two-factor',
+      where:
+        'A workspace’s People page, for admins; members without it see the reason on opening it',
+      layers: [
+        'Screen: a switch on the People page, and a page saying why and linking to the account page',
+        'API: workspaces.setTwoFactorRequired, and every workspace route and the live feed refuse a member without it',
+        'Data: workspaces.require_two_factor; whether a person has two-factor comes with their session',
+      ],
+    },
+    checked:
+      'Twenty new tests: an admin without two-factor cannot turn it on and is told why; with it, it turns on and the workspace says so; a member without it is refused with a clear message on the workspace, its projects, issues and channels; once they turn it on they are let in; a stranger still gets 404; a member may still leave; an agent with its token is not asked; the home, the inbox and my meetings show nothing of the workspace to the member; no mail or push is due them from it while the owner’s is, and mail already waiting for the digest is not sent either; an owner cannot turn their own off while it is required; turned off again they are let back in, and both changes are audited; a member who is not an admin may not change it; your account knows whether you have it; and the live feed refuses a member without it, and cuts off one already open, telling it why and closing it, as it now does for a member removed, while a feed still allowed is left alone. In headless Chrome on the rebuilt stack: an admin turned the switch on, and a member without two-factor opening the workspace saw the reason and the way to fix it.',
+  },
+  {
+    date: '2026-11-19',
+    area: 'Security',
     title: 'Two-factor sign-in',
     brief:
       'Turn on two-factor sign-in from your account page: after your password, Robis asks for a code from an authenticator app, or one of ten recovery codes.',

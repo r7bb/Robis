@@ -72,12 +72,20 @@ export async function overviewRoutes(app: FastifyInstance, opts: { db: Database 
     async (request) => {
       const user = currentUser(request);
 
-      const mine = await db
-        .select({ id: workspaces.id, name: workspaces.name, role: workspaceMembers.role })
+      const joined = await db
+        .select({
+          id: workspaces.id,
+          name: workspaces.name,
+          role: workspaceMembers.role,
+          requireTwoFactor: workspaces.requireTwoFactor,
+        })
         .from(workspaceMembers)
         .innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
         .where(eq(workspaceMembers.userId, user.id))
         .orderBy(workspaces.createdAt);
+      // A workspace that requires two-factor of someone without it shows
+      // nothing of what is in it here either (C4).
+      const mine = joined.filter((w) => !w.requireTwoFactor || user.hasTwoFactor);
       if (mine.length === 0) return { workspaces: [], assigned: [], assignedTotal: 0 };
       const ids = mine.map((w) => w.id);
 

@@ -6,6 +6,7 @@ import {
   notifications,
   scanDigests,
   users,
+  workspaces,
 } from '@robis/database';
 import type { Mail, Mailer } from '@robis/mailer';
 import { handlers } from '@robis/worker/handlers';
@@ -151,6 +152,21 @@ describe('a mention', () => {
     const { ownerDb } = await getHarness();
     await ownerDb.update(users).set({ emailVerifiedAt: null }).where(eq(users.id, bob.id));
     await mention(alice, bob, workspace.id, project.id);
+    expect(await mailTo(bob)).toEqual([]);
+  });
+});
+
+describe('a workspace that requires two-factor (C4)', () => {
+  test('mails nothing from it to someone without it, even mail already waiting', async () => {
+    const { alice, bob, workspace, project } = await team();
+    await giveIssue(alice, bob, workspace.id, project.id);
+    const { ownerDb } = await getHarness();
+    await ownerDb
+      .update(workspaces)
+      .set({ requireTwoFactor: true })
+      .where(eq(workspaces.id, workspace.id));
+
+    await digestAt(at(DAY, DIGEST_HOUR_UTC));
     expect(await mailTo(bob)).toEqual([]);
   });
 });

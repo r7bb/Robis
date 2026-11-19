@@ -6,6 +6,7 @@ import {
   type Executor,
   queueAttachmentPurge,
   recordAudit,
+  twoFactor,
   users,
   workspaceMembers,
   workspaces,
@@ -15,7 +16,7 @@ import { contracts, slugify } from '@robis/shared';
 /** The room every new workspace is born with. */
 const DEFAULT_CHANNEL_NAME = 'general';
 
-import { and, desc, eq, notLike } from 'drizzle-orm';
+import { and, desc, eq, isNotNull, notLike } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { confirmPassword } from '../confirm-password.ts';
 import { serve } from '../contract.ts';
@@ -51,6 +52,25 @@ async function availableSlug(db: Executor, base: string): Promise<string> {
   }
 
   throw ApiError.conflict('Could not derive a unique slug; please supply one', 'slug_exhausted');
+}
+
+/**
+ * The admin's own two-factor, read in the transaction that turns the
+ * requirement on and held there (C4): one turned off at the same moment
+ * cannot leave the workspace requiring what nobody running it has.
+ */
+async function assertOwnTwoFactorHeld(tx: Executor, userId: string) {
+  const [held] = await tx
+    .select({ userId: twoFactor.userId })
+    .from(twoFactor)
+    .where(and(eq(twoFactor.userId, userId), isNotNull(twoFactor.confirmedAt)))
+    .for('share');
+  if (!held) {
+    throw ApiError.conflict(
+      'Turn on two-factor sign-in for your own account first, from your account page.',
+      'two_factor_needed_first',
+    );
+  }
 }
 
 export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database }) {
@@ -188,6 +208,45 @@ export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database
         return row;
       });
 
+      return { workspace: updated };
+    },
+  );
+
+  /*
+   * Two-factor for everyone (C4): an admin's choice, recorded. Turning it on
+   * needs it on the admin's own account, so nobody turns it on and finds
+   * themselves outside.
+   */
+  serve(
+    app,
+    contracts['workspaces.setTwoFactorRequired'],
+    { preHandler: [requireAuth, requireMembership(db, 'workspace:update')] },
+    async (request, { body: { required } }) => {
+      const { workspaceId } = currentMembership(request);
+      if (required && !currentUser(request).hasTwoFactor) {
+        throw ApiError.conflict(
+          'Turn on two-factor sign-in for your own account first, from your account page.',
+          'two_factor_needed_first',
+        );
+      }
+      const updated = await db.transaction(async (tx) => {
+        // Read again under a lock, so turning theirs off meanwhile waits.
+        if (required) await assertOwnTwoFactorHeld(tx, currentUser(request).id);
+        const [row] = await tx
+          .update(workspaces)
+          .set({ requireTwoFactor: required, updatedAt: new Date() })
+          .where(eq(workspaces.id, workspaceId))
+          .returning();
+        if (!row) throw ApiError.notFound('Workspace not found');
+        await recordAudit(tx, auditActor(request), {
+          workspaceId,
+          entityType: 'workspace',
+          entityId: workspaceId,
+          eventType: 'workspace.two_factor_required',
+          payload: { required },
+        });
+        return row;
+      });
       return { workspace: updated };
     },
   );

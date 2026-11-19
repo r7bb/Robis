@@ -151,6 +151,13 @@ point it at Postgres directly.
   in until the old key is back. A production API refuses the compose stack's
   fixed key. A malformed key stops the
   API at start-up. The compose stack carries a fixed key for local use only.
+  A workspace can require two-factor of everyone in it; its owners and
+  admins cannot then turn their own off. If the only one who could change
+  the setting loses both phone and recovery codes, there is no in-app way
+  back yet: an operator with database access can set
+  `workspaces.require_two_factor` to false for that workspace, after
+  checking who is asking, and the change is not in the workspace's audit
+  trail, so record it elsewhere.
 - Optionally web push: `VAPID_PUBLIC_KEY` on the API and the worker, and
   `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` (a `mailto:` or `https:` address
   the push services can reach you at) on the worker. Make a pair with

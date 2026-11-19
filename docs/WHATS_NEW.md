@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Workspaces that require two-factor** (2026-11-19). An admin can require
+  two-factor sign-in of everyone in a workspace; a member without it is told
+  why, and how to turn it on.
 - **Two-factor sign-in** (2026-11-19). Turn on two-factor sign-in from your
   account page: after your password, Robis asks for a code from an
   authenticator app, or one of ten recovery codes.

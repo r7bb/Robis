@@ -148,13 +148,14 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Workspaces that require two-factor.** An admin can require two-factor
+  sign-in of everyone in a workspace; a member without it is told why, and
+  how to turn it on.
 - **Two-factor sign-in.** Turn on two-factor sign-in from your account page:
   after your password, Robis asks for a code from an authenticator app, or
   one of ten recovery codes.
 - **Undo an agent’s change.** The agents page lists what each agent changed,
   in plain words, with Undo while nobody has changed it since.
-- **Warmer greys.** The default Midnight theme moves from a blue slate to
-  softer, warmer greys, so the work reads first.
 
 <!-- latest:end -->
 

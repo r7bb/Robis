@@ -227,12 +227,22 @@ export async function spendSecondFactor(
 }
 
 /** Turn two-factor off: the secret and every recovery code go. */
-export async function disableTwoFactor(db: Database, userId: string): Promise<boolean> {
+export async function disableTwoFactor(
+  db: Database,
+  userId: string,
+  /**
+   * Run after the delete, before the commit: a check that throws keeps it
+   * on. The deleted row stays locked meanwhile, so the check sees anything
+   * that was waiting on it.
+   */
+  beforeCommit?: (tx: Executor) => Promise<void>,
+): Promise<boolean> {
   return db.transaction(async (tx) => {
     const removed = await tx
       .delete(twoFactor)
       .where(and(eq(twoFactor.userId, userId), isNotNull(twoFactor.confirmedAt)))
       .returning({ userId: twoFactor.userId });
+    await beforeCommit?.(tx);
     await tx.delete(recoveryCodes).where(eq(recoveryCodes.userId, userId));
     await tx.delete(signInChallenges).where(eq(signInChallenges.userId, userId));
     return removed.length > 0;

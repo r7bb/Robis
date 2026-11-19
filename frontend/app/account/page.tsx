@@ -58,7 +58,7 @@ export default function AccountPage() {
 
       <ProfileSection user={me.data.user} onSaved={() => queryClient.invalidateQueries()} />
       <PasswordSection />
-      <Section title="Two-factor sign-in">
+      <Section title="Two-factor sign-in" id="two-factor">
         <TwoFactorSettings />
       </Section>
       <SessionsSection />
@@ -391,9 +391,18 @@ function describeAgent(agent: string | null): string {
   return platform ? `${browser} on ${platform}` : browser;
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  id,
+  children,
+}: {
+  title: string;
+  /** For a link straight to it, as the two-factor ones are. */
+  id?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <section className="mt-10">
+    <section id={id} className="mt-10 scroll-mt-6">
       <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-faint">{title}</h2>
       {children}
     </section>

@@ -1,4 +1,4 @@
-import { type Database, notifications, users } from '@robis/database';
+import { type Database, notifications, outsideTwoFactorWorkspaces, users } from '@robis/database';
 import { contracts, isUuid } from '@robis/shared';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
@@ -28,6 +28,9 @@ export async function notificationRoutes(app: FastifyInstance, opts: { db: Datab
       // the email or push still on.
       const filters = [eq(notifications.userId, user.id), eq(notifications.inApp, true)];
       if (unread === '1' || unread === 'true') filters.push(isNull(notifications.readAt));
+      // Nothing from a workspace that requires two-factor until they have it (C4).
+      if (!user.hasTwoFactor)
+        filters.push(outsideTwoFactorWorkspaces(db, notifications.workspaceId));
 
       const rows = await db
         .select({
@@ -126,6 +129,10 @@ export async function notificationRoutes(app: FastifyInstance, opts: { db: Datab
             eq(notifications.userId, user.id),
             eq(notifications.inApp, true),
             isNull(notifications.readAt),
+            // Only those they can see (C4): the hidden wait, unread.
+            user.hasTwoFactor
+              ? undefined
+              : outsideTwoFactorWorkspaces(db, notifications.workspaceId),
           ),
         )
         .returning({ id: notifications.id });

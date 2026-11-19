@@ -17,7 +17,9 @@ import {
 import {
   type AccountEventType,
   type Database,
+  type Executor,
   recordAccountEventNow,
+  twoFactorWorkspacesRunBy,
   users,
 } from '@robis/database';
 import { contracts } from '@robis/shared';
@@ -52,6 +54,20 @@ const STRIKES = 'two-factor-wrong-codes';
  * replacing the codes asks for a code too, so an open session on a borrowed
  * computer cannot undo it.
  */
+/**
+ * An owner or admin of a workspace that requires two-factor keeps theirs
+ * (C4): without it they could no longer open the workspace to turn the
+ * requirement off, and nor could anyone else in the same place.
+ */
+async function assertNotRunningStrictWorkspace(db: Executor, userId: string) {
+  const names = await twoFactorWorkspacesRunBy(db, userId);
+  if (names.length === 0) return;
+  throw ApiError.conflict(
+    `You run ${names.join(', ')}, which requires two-factor sign-in. Turn that requirement off there first, then turn yours off here.`,
+    'two_factor_required_where_you_admin',
+  );
+}
+
 export async function twoFactorRoutes(
   app: FastifyInstance,
   opts: { db: Database; env: Env; limits: RateLimits },
@@ -209,13 +225,14 @@ export async function twoFactorRoutes(
     if (!(await hasTwoFactor(db, user.id))) {
       throw ApiError.conflict('Two-factor sign-in is not on', 'not_on');
     }
+    await assertNotRunningStrictWorkspace(db, user.id);
     if (!(await spend(user.id, body.code))) {
       await record(request, user.id, 'auth.two_factor_failed', {
         coalesceWithinMs: FAILED_CODE_WINDOW_MS,
       });
       throw ApiError.badRequest('That code did not work', 'bad_code');
     }
-    await disableTwoFactor(db, user.id);
+    await disableTwoFactor(db, user.id, (tx) => assertNotRunningStrictWorkspace(tx, user.id));
     await record(request, user.id, 'auth.two_factor_disabled');
     return { ok: true as const };
   });

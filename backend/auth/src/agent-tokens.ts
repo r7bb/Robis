@@ -126,6 +126,8 @@ export async function resolveAgentToken(
       // nothing: the admin who added it answers for it.
       hasAvatar: true,
       hasAgreed: true,
+      // Agents act with tokens, never sign in; a workspace's two-factor rule is for people.
+      hasTwoFactor: false,
     },
     role: sameWorkspace ? (row.role ?? null) : null,
     token: { id: row.tokenId, perRun: row.tokenExpiresAt !== null },

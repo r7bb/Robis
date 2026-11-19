@@ -4,7 +4,7 @@ import {
   resolveSession,
   resolveSessionIn,
 } from '@robis/auth';
-import { type AuditActor, type Database, findMembership } from '@robis/database';
+import { type AuditActor, type Database, findMembership, requiresTwoFactor } from '@robis/database';
 import { can, type Permission, type Role } from '@robis/shared';
 import type { FastifyReply, FastifyRequest, preHandlerHookHandler } from 'fastify';
 import { ApiError } from '../errors.ts';
@@ -20,7 +20,7 @@ declare module 'fastify' {
      * Set by `attachUser` on a workspace route: the role (null for none) that
      * came with the session, so `requireMembership` need not ask again.
      */
-    resolvedRole?: { workspaceId: string; role: Role | null };
+    resolvedRole?: { workspaceId: string; role: Role | null; requireTwoFactor: boolean };
     /** Set by `requireMembership`; the actor's role in the workspace on the path. */
     membership?: { workspaceId: string; role: Role };
     /** Set for a request made with an agent token (B6): which token. */
@@ -67,6 +67,41 @@ export function assertHasAgreed(user: AuthenticatedUser) {
   if (!user.hasAgreed) {
     throw new ApiError(403, 'terms_required', 'Agree to the current terms before you continue');
   }
+}
+
+/**
+ * A workspace that requires two-factor sign-in (C4) refuses a person
+ * without it, with the reason and the way to fix it. Agents act with
+ * tokens and are not asked. Leaving the workspace never needs it.
+ */
+function assertTwoFactorIfRequired(user: AuthenticatedUser, required: boolean) {
+  if (required && user.kind === 'human' && !user.hasTwoFactor) {
+    throw new ApiError(
+      403,
+      'two_factor_required',
+      'This workspace asks everyone to use two-factor sign-in. Turn it on from your account page to continue.',
+    );
+  }
+}
+
+/**
+ * The terms, a picture, and two-factor where the workspace requires it:
+ * what a member settles before going in. The requirement comes with the
+ * session when it can, and is looked up otherwise.
+ */
+async function assertSettledIn(
+  db: Database,
+  request: FastifyRequest,
+  user: AuthenticatedUser,
+  workspaceId: string,
+) {
+  assertReady(user);
+  const resolved = request.resolvedRole;
+  const required =
+    resolved?.workspaceId === workspaceId
+      ? resolved.requireTwoFactor
+      : await requiresTwoFactor(db, workspaceId);
+  assertTwoFactorIfRequired(user, required);
 }
 
 /** Everything a person settles before using a workspace, in the order asked. */
@@ -126,7 +161,11 @@ export function attachUser(db: Database): preHandlerHookHandler {
       const resolved = await resolveSessionIn(db, token, workspaceId);
       if (!resolved) return;
       request.user = resolved.user;
-      request.resolvedRole = { workspaceId, role: resolved.role };
+      request.resolvedRole = {
+        workspaceId,
+        role: resolved.role,
+        requireTwoFactor: resolved.requireTwoFactor,
+      };
       return;
     }
 
@@ -149,7 +188,7 @@ async function attachAgent(db: Database, request: FastifyRequest) {
   const resolved = await resolveAgentToken(db, secret, workspaceId);
   if (!resolved) return;
   request.user = resolved.user;
-  request.resolvedRole = { workspaceId, role: resolved.role };
+  request.resolvedRole = { workspaceId, role: resolved.role, requireTwoFactor: false };
   request.agentToken = resolved.token;
 }
 
@@ -197,7 +236,7 @@ export function requireMembership(
     if (!member) throw ApiError.notFound('Workspace not found');
     // After the membership check, so a stranger still learns nothing: only a
     // member is told why they cannot go in yet.
-    if (!allowUnsettled) assertReady(user);
+    if (!allowUnsettled) await assertSettledIn(db, request, user, workspaceId);
     if (!can(member.role, permission)) throw ApiError.forbidden();
 
     request.membership = { workspaceId, role: member.role };

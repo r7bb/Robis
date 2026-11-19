@@ -7,8 +7,9 @@ import {
 import { and, eq, gt, inArray, sql } from 'drizzle-orm';
 import type { Executor } from './index.ts';
 import { queueNotificationMail } from './mail-jobs.ts';
+import { withTwoFactor } from './queries.ts';
 import { enqueue } from './queue.ts';
-import { notificationSettings, notifications, pushSubscriptions } from './schema.ts';
+import { notificationSettings, notifications, pushSubscriptions, workspaces } from './schema.ts';
 
 /**
  * Telling people things (C3), through one door. Every kind of notification
@@ -144,6 +145,31 @@ async function withDevices(db: Executor, userIds: readonly string[]): Promise<Se
   return new Set(rows.map((row) => row.userId));
 }
 
+/**
+ * Of these notices, those for someone a workspace requiring two-factor
+ * (C4) would refuse. Mail and pushes say what a notice says, so none is
+ * sent for these; the row is kept, and listed once they turn it on.
+ */
+async function heldBack(
+  db: Executor,
+  items: readonly NotificationInput[],
+): Promise<Set<NotificationInput>> {
+  const ids = [...new Set(items.flatMap((item) => (item.workspaceId ? [item.workspaceId] : [])))];
+  if (ids.length === 0) return new Set();
+  const requiring = await db
+    .select({ id: workspaces.id })
+    .from(workspaces)
+    .where(and(inArray(workspaces.id, ids), eq(workspaces.requireTwoFactor, true)));
+  if (requiring.length === 0) return new Set();
+  const strict = new Set(requiring.map((row) => row.id));
+  const asked = items.filter((item) => item.workspaceId && strict.has(item.workspaceId));
+  const on = await withTwoFactor(
+    db,
+    asked.map((item) => item.userId),
+  );
+  return new Set(asked.filter((item) => !on.has(item.userId)));
+}
+
 export type NotificationInput = {
   userId: string;
   workspaceId: string | null;
@@ -191,9 +217,10 @@ export async function notify(
           wanted.map((w) => w.userId),
         )
       : new Map<string, number>();
+  const held = await heldBack(db, wanted);
   const subscribed = await withDevices(
     db,
-    wanted.filter((w) => channels.get(w.userId)?.push).map((w) => w.userId),
+    wanted.filter((w) => channels.get(w.userId)?.push && !held.has(w)).map((w) => w.userId),
   );
   return db.transaction(async (tx) => {
     const made = await tx
@@ -203,7 +230,9 @@ export async function notify(
           ...item,
           payload: JSON.stringify(item.payload),
           inApp: channels.get(item.userId)?.in_app ?? true,
-          emailDue: emailDueFor(kind, channels.get(item.userId), recent.get(item.userId) ?? 0),
+          emailDue: held.has(item)
+            ? null
+            : emailDueFor(kind, channels.get(item.userId), recent.get(item.userId) ?? 0),
         })),
       )
       // Idempotency: a redelivered job must not notify twice. The unique index

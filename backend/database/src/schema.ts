@@ -401,6 +401,12 @@ export const workspaces = pgTable(
      * and description are sent to a third-party service.
      */
     triageSummaries: boolean('triage_summaries').notNull().default(false),
+    /**
+     * Whether everyone here must sign in with two-factor (C4). An admin who
+     * turns it on must have it; a member without it is refused at every
+     * workspace route and on the live feed, with a way to turn it on.
+     */
+    requireTwoFactor: boolean('require_two_factor').notNull().default(false),
     createdBy: uuid('created_by')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict' }),

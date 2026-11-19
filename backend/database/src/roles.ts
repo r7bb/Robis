@@ -201,6 +201,9 @@ type TableGrants = Readonly<Record<string, readonly Right[]>>;
 export const GATEWAY_GRANTS: TableGrants = {
   sessions: ['select', 'update'],
   users: ['select'],
+  // Whether a person has two-factor on, for a workspace that requires it
+  // (C4): never the sealed secret.
+  two_factor: ['select (user_id, confirmed_at)'],
   workspaces: ['select'],
   workspace_members: ['select'],
   documents: ['select', 'update'],
@@ -215,6 +218,9 @@ export const GATEWAY_GRANTS: TableGrants = {
 export const WORKER_GRANTS: TableGrants = {
   jobs: ['select', 'insert', 'update', 'delete'],
   users: ['select'],
+  // As the gateway's: no mail or push from a workspace that requires
+  // two-factor to someone without it (C4).
+  two_factor: ['select (user_id, confirmed_at)'],
   workspaces: ['select'],
   workspace_members: ['select'],
   workspace_invitations: ['select'],

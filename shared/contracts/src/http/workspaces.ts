@@ -19,6 +19,8 @@ const workspace = z.object({
   name: z.string(),
   slug: z.string(),
   theme: z.string(),
+  /** Everyone here must sign in with two-factor (C4); defaults off. */
+  requireTwoFactor: z.boolean().default(false),
   createdBy: uuid,
   createdAt: timestamp,
   updatedAt: timestamp,
@@ -76,6 +78,15 @@ export const workspaceContracts = {
     summary: 'Rename a workspace or change its theme.',
     params: workspaceParams,
     body: updateWorkspaceSchema,
+    response: z.object({ workspace }),
+  }),
+  'workspaces.setTwoFactorRequired': contract({
+    method: 'PUT',
+    path: '/workspaces/:workspaceId/two-factor-required',
+    summary:
+      'Require two-factor sign-in of everyone in the workspace, or stop; turning it on needs it on your own account.',
+    params: workspaceParams,
+    body: z.object({ required: z.boolean() }),
     response: z.object({ workspace }),
   }),
   'workspaces.delete': contract({

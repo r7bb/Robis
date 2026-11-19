@@ -141,6 +141,10 @@
                         "theme": {
                           "type": "string"
                         },
+                        "requireTwoFactor": {
+                          "default": false,
+                          "type": "boolean"
+                        },
                         "createdBy": {
                           "type": "string",
                           "format": "uuid",
@@ -187,6 +191,7 @@
                         "name",
                         "slug",
                         "theme",
+                        "requireTwoFactor",
                         "createdBy",
                         "createdAt",
                         "updatedAt",
@@ -248,6 +253,10 @@
                         "theme": {
                           "type": "string"
                         },
+                        "requireTwoFactor": {
+                          "default": false,
+                          "type": "boolean"
+                        },
                         "createdBy": {
                           "type": "string",
                           "format": "uuid",
@@ -294,6 +303,7 @@
                         "name",
                         "slug",
                         "theme",
+                        "requireTwoFactor",
                         "createdBy",
                         "createdAt",
                         "updatedAt",
@@ -382,6 +392,10 @@
                         "theme": {
                           "type": "string"
                         },
+                        "requireTwoFactor": {
+                          "default": false,
+                          "type": "boolean"
+                        },
                         "createdBy": {
                           "type": "string",
                           "format": "uuid",
@@ -419,6 +433,7 @@
                         "name",
                         "slug",
                         "theme",
+                        "requireTwoFactor",
                         "createdBy",
                         "createdAt",
                         "updatedAt"
@@ -475,6 +490,127 @@
         "responses": {
           "204": {
             "description": "No content"
+          }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/two-factor-required": {
+      "put": {
+        "operationId": "workspaces.setTwoFactorRequired",
+        "summary": "Require two-factor sign-in of everyone in the workspace, or stop; turning it on needs it on your own account.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "required": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "required"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "workspace": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "slug": {
+                          "type": "string"
+                        },
+                        "theme": {
+                          "type": "string"
+                        },
+                        "requireTwoFactor": {
+                          "default": false,
+                          "type": "boolean"
+                        },
+                        "createdBy": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "createdAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                            }
+                          ]
+                        },
+                        "updatedAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "slug",
+                        "theme",
+                        "requireTwoFactor",
+                        "createdBy",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "workspace"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
           }
         }
       }
@@ -10035,6 +10171,9 @@
                               "type": "null"
                             }
                           ]
+                        },
+                        "twoFactorEnabled": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -10046,7 +10185,8 @@
                         "consent",
                         "usernameConfirmed",
                         "emailVerified",
-                        "emailVerifiedAt"
+                        "emailVerifiedAt",
+                        "twoFactorEnabled"
                       ],
                       "additionalProperties": false
                     }

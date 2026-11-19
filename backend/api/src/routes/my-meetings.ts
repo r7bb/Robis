@@ -62,6 +62,8 @@ export async function myMeetingRoutes(app: FastifyInstance, opts: { db: Database
         .where(
           and(
             eq(meetingAttendees.userId, user.id),
+            // Nothing from a workspace that requires two-factor until they have it (C4).
+            user.hasTwoFactor ? undefined : eq(workspaces.requireTwoFactor, false),
             isNull(meetings.canceledAt),
             lt(meetings.startsAt, to),
             // Under way counts: it has not ended by the window's start.
