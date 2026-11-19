@@ -39,6 +39,9 @@ export const ACCOUNT_EVENT_TYPES = [
   // A sign-in from a new browser, and its owner saying it was not them (C4).
   'auth.new_device',
   'auth.not_me',
+  // Passkeys (C4).
+  'auth.passkey_added',
+  'auth.passkey_removed',
 ] as const;
 
 export type AccountEventType = (typeof ACCOUNT_EVENT_TYPES)[number];

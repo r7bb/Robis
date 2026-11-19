@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Passkeys** (2026-11-19). Sign in with your phone, laptop or a security
+  key instead of a password: no address to type, nothing a fake site can
+  use.
 - **An email when you sign in from a new browser** (2026-11-19). A sign-in
   from a browser your account has not used mails you, with a link that signs
   you out everywhere if it was not you.

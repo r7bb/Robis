@@ -8,6 +8,7 @@ import { type FormEvent, useEffect, useId, useState } from 'react';
 import { ACCOUNT_EVENTS_KEY, AccountActivity } from '../../features/account/account-activity.tsx';
 import { DeleteAccount } from '../../features/account/delete-account.tsx';
 import { NotificationSettings } from '../../features/account/notification-settings.tsx';
+import { PasskeySettings } from '../../features/account/passkeys.tsx';
 import { TwoFactorSettings } from '../../features/account/two-factor.tsx';
 import { UsernameField } from '../../features/account/username-field.tsx';
 import { ApiError, call, type Me } from '../../lib/api.ts';
@@ -60,6 +61,9 @@ export default function AccountPage() {
       <PasswordSection />
       <Section title="Two-factor sign-in" id="two-factor">
         <TwoFactorSettings />
+      </Section>
+      <Section title="Passkeys" id="passkeys">
+        <PasskeySettings />
       </Section>
       <SessionsSection />
       <Section title="Notifications">

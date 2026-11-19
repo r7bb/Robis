@@ -57,6 +57,23 @@ The account page draws the QR code an authenticator app scans with
 MIT licence, with no dependencies. The authenticator codes themselves are
 computed by Robis (RFC 6238, `backend/auth/src/totp.ts`), with no library.
 
+## Passkeys
+
+Passkeys are checked on the server with `@simplewebauthn/server` 14.0.3 and
+started in the browser with `@simplewebauthn/browser` 14.0.0, both by Matthew
+Miller, pinned exactly, released under the MIT licence. The server package
+brings in, all at the versions in `bun.lock`:
+
+- MIT: `@peculiar/x509`, `@peculiar/asn1-*` and `@peculiar/utils`,
+  `@hexagon/base64`, `@levischuck/tiny-cbor`, `pvtsutils`, `pvutils` and
+  `tsyringe`.
+- Apache-2.0: `reflect-metadata` 0.2.2 (Microsoft). Its licence and notice
+  ask to be kept with any copy that is passed on.
+- BSD-3-Clause: `asn1js` 3.1.0 (Peculiar Ventures, GMO GlobalSign). Its
+  copyright notice, conditions and disclaimer ask to be kept with any copy
+  that is passed on.
+- 0BSD: `tslib` 1.14.1 and 2.8.1 (Microsoft), which asks for nothing.
+
 ## Mail
 
 `nodemailer` 10.0.12 sends mail over SMTP from the worker, and `smtp-server`

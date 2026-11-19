@@ -8,6 +8,7 @@ import { type FormEvent, useState } from 'react';
 import { ApiError, call } from '../../lib/api.ts';
 import { getSyncEngine } from '../../lib/sync.ts';
 import { CodeStep } from './code-step.tsx';
+import { PasskeyButton } from './passkey-button.tsx';
 
 export type Mode = 'login' | 'register';
 
@@ -148,6 +149,8 @@ export function LoginForm({ initialMode }: { initialMode: Mode }) {
             </button>
           </form>
         )}
+
+        {mode === 'login' && <PasskeyButton onSignedIn={enter} onError={setError} />}
 
         {mode === 'login' && (
           <Link

@@ -14,7 +14,7 @@ Written to be checkable. Every row names a file you can open.
 | --- | --- |
 | Services | 5 (web, API, realtime gateway, worker, MCP server for agents) plus an optional ML service |
 | Database tables | 18 |
-| HTTP endpoints | 119 |
+| HTTP endpoints | 125 |
 | Tests | Counted in [docs/ROADMAP.md](docs/ROADMAP.md), the one place they are kept |
 | Screenshots | 28, all captured from the running app |
 | Measured throughput | ~3,600 req/s, zero errors |
@@ -63,6 +63,7 @@ second "consumed" state to get wrong.
 | A workspace can require two-factor sign-in of everyone: members without it are refused on every workspace route and the live feed (open tabs are cut off within 30 seconds), its notices, meetings, mail and pushes are held back from them, and its admins keep their own two-factor on | `backend/api/src/plugins/authz.ts`, `backend/realtime/src/gateway.ts`, `frontend/features/workspace/two-factor-policy.tsx` |
 | Growing waits after wrong passwords: per address and network address the fifth starts a 30 second wait, doubling to 15 minutes, with a looser hourly cap per address from anywhere; counted before the password is checked, alike for addresses with and without an account, cleared by a right password or a reset | `backend/api/src/plugins/sign-in-waits.ts`, `backend/api/src/routes/auth.ts` |
 | An email on a sign-in from a new browser (a random per-browser cookie, kept as a hash), with a one-time link to a page that signs out everywhere and forgets every browser | `backend/auth/src/devices.ts`, `backend/api/src/session-cookie.ts`, `backend/worker/src/mail.ts`, `frontend/app/not-me/page.tsx` |
+| Passkeys: add from the account page, sign in without a password or address; user verification required, so a passkey sign-in counts as two factors; @simplewebauthn 14.0.x | `backend/api/src/routes/passkeys.ts`, `backend/auth/src/passkeys.ts`, `frontend/features/account/passkeys.tsx`, `frontend/app/login/passkey-button.tsx` |
 | Four roles (OWNER, ADMIN, MEMBER, GUEST) | `shared/contracts/src/rbac.ts` |
 | One declarative permission matrix, 30+ permissions | same |
 | 404-not-403 for non-members | `backend/api/src/plugins/authz.ts` |

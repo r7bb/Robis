@@ -36,8 +36,13 @@ const LABELS: Record<string, Label> = {
   'auth.recovery_codes_replaced': { text: () => 'New recovery codes made' },
   'auth.recovery_code_used': { text: () => 'Signed in with a recovery code', flag: true },
   'auth.new_device': { text: () => 'Signed in from a new browser, and told by email' },
+  'auth.passkey_added': {
+    text: (payload) =>
+      typeof payload.name === 'string' ? `Passkey added: ${payload.name}` : 'Passkey added',
+  },
+  'auth.passkey_removed': { text: () => 'Passkey removed' },
   'auth.not_me': {
-    text: () => 'Not me: signed out everywhere from the new-browser email',
+    text: () => 'Not me: signed out everywhere and passkeys removed, from the new-browser email',
     flag: true,
   },
   'auth.sessions_revoked': {

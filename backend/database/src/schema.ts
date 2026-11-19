@@ -353,6 +353,55 @@ export const knownDevices = pgTable(
   ],
 );
 
+/**
+ * Passkeys (C4): a credential on a phone, laptop or security key, for
+ * signing in without a password. Only the public half is here; the private
+ * half never leaves the device. `counter` is the authenticator's own count
+ * of uses, which must keep rising where it is kept at all.
+ */
+export const passkeys = pgTable(
+  'passkeys',
+  {
+    id: id(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** The credential's id, base64url, as the browser sends it back. */
+    credentialId: text('credential_id').notNull(),
+    /** The COSE public key, base64url. */
+    publicKey: text('public_key').notNull(),
+    counter: bigint('counter', { mode: 'number' }).notNull().default(0),
+    /** How the browser can reach it (internal, usb, hybrid...), as JSON. */
+    transports: text('transports'),
+    /** What its owner called it, to tell several apart. */
+    name: text('name').notNull(),
+    createdAt: createdAt(),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex('passkeys_credential_id_key').on(t.credentialId),
+    index('passkeys_user_id_idx').on(t.userId),
+  ],
+);
+
+/**
+ * A WebAuthn challenge waiting for its answer (C4), spent once. A sign-in's
+ * has no person yet: whoever's passkey answers it is the one signing in.
+ */
+export const passkeyChallenges = pgTable(
+  'passkey_challenges',
+  {
+    id: id(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+    /** 'register' or 'sign_in'. */
+    purpose: text('purpose').notNull(),
+    challenge: text('challenge').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index('passkey_challenges_expires_at_idx').on(t.expiresAt)],
+);
+
 export const signInChallenges = pgTable(
   'sign_in_challenges',
   {

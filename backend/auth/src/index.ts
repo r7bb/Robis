@@ -1,6 +1,7 @@
 export * from './agent-tokens.ts';
 export * from './auth-tokens.ts';
 export * from './devices.ts';
+export * from './passkeys.ts';
 export * from './password.ts';
 export * from './recovery-codes.ts';
 export * from './secret-box.ts';

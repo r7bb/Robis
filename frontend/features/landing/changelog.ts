@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-19',
     area: 'Security',
+    title: 'Passkeys',
+    brief:
+      'Sign in with your phone, laptop or a security key instead of a password: no address to type, nothing a fake site can use.',
+    summary:
+      'Your account page has a Passkeys section: name one, give your password (and a code from your authenticator app, if two-factor is on, so a stolen session and password cannot add a way round the code), and your device asks for your fingerprint, face or PIN to make it. The sign-in page then has Sign in with a passkey, which asks for no address at all, as the passkey says whose it is. Every passkey must check who is holding the device as well as that someone is, so a passkey sign-in is two factors in itself and goes straight in, with no code after it. A passkey answers only for this site, so a look-alike page cannot borrow it. Robis keeps only its public half, the name you gave it, and when it was added and last used; the private half never leaves the device. Each challenge is answered once, a passkey whose own count of uses goes backwards is refused, an account holds up to ten, and removing one stops it at once. A workspace that requires two-factor still asks for the authenticator app: a passkey alone does not count there yet. Adding and removing them, and signing in with one, are in your account’s history, and “this was not me” from a new-browser email removes them all, as one may be the stranger’s.',
+    feature: {
+      name: 'Passkeys',
+      where: 'Account, Passkeys; and Sign in with a passkey on the sign-in page',
+      layers: [
+        'Screen: a Passkeys section to add, list and remove them, and a button on the sign-in page',
+        'API: passkeys.list, registerOptions, register and remove, and auth.passkeyOptions and passkeyLogin, checked with @simplewebauthn/server',
+        'Data: passkeys (public key, name, use count, dates) and passkey_challenges, each spent once',
+      ],
+    },
+    checked:
+      'Sixteen new tests against a software authenticator with a real P-256 key and real signatures, so the verifier checks what a device would send: adding one needs the password and is listed without its key; with two-factor on it needs a right code too; one made without the user verified, or for another site, is refused; one account cannot finish on another’s challenge; an account stops at ten; a passkey lets its owner in with a session and the history says so; it goes straight in with two-factor on; each challenge is answered once; a sign-in without the user verified, from another site, or with its count gone back is refused; an unknown passkey, one naming another account or none, and an answer after its challenge ran out are refused; a removed passkey stops working and another account cannot remove it; and “this was not me” removes them all. The full suite, lint, typecheck and smoke:stack, and in headless Chrome with a virtual authenticator: a passkey was added from the account page, the person signed out, and Sign in with a passkey let them back in.',
+  },
+  {
+    date: '2026-11-19',
+    area: 'Security',
     title: 'An email when you sign in from a new browser',
     brief:
       'A sign-in from a browser your account has not used mails you, with a link that signs you out everywhere if it was not you.',

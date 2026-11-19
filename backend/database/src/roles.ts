@@ -223,6 +223,8 @@ export const WORKER_GRANTS: TableGrants = {
   two_factor: ['select (user_id, confirmed_at)'],
   // Browsers not seen in over a year are removed (C4).
   known_devices: ['select', 'delete'],
+  // Passkey challenges nobody answered are removed (C4).
+  passkey_challenges: ['select', 'delete'],
   workspaces: ['select'],
   workspace_members: ['select'],
   workspace_invitations: ['select'],

@@ -43,9 +43,9 @@ const FAILED_CODE_WINDOW_MS = 5 * 60_000;
  * waits: per account, as the address can be changed and the code cannot be
  * guessed faster than this. A wait, not a lock: it ends on its own.
  */
-const WRONG_CODES_ALLOWED = 10;
-const WRONG_CODE_WINDOW_MS = 15 * 60_000;
-const STRIKES = 'two-factor-wrong-codes';
+export const WRONG_CODES_ALLOWED = 10;
+export const WRONG_CODE_WINDOW_MS = 15 * 60_000;
+export const STRIKES = 'two-factor-wrong-codes';
 
 /**
  * Two-factor sign-in with an authenticator app (C4): set up, turned on with

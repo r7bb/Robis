@@ -10,7 +10,7 @@ import { avatar } from './common.ts';
 import { contract, timestamp } from './contract.ts';
 
 /** Who an account is, as it is shown back to its owner. */
-const publicUser = z.object({
+export const publicUser = z.object({
   id: uuid,
   email: z.string(),
   name: z.string(),

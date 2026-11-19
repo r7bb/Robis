@@ -2,6 +2,7 @@ import {
   consumeAuthToken,
   forgetDevices,
   hashPassword,
+  removeAllPasskeys,
   revokeAllSessions,
   revokeSignInChallenges,
 } from '@robis/auth';
@@ -207,6 +208,8 @@ export async function authRecoveryRoutes(app: FastifyInstance, opts: RecoveryDep
         await revokeAllSessions(tx, userId);
         await revokeSignInChallenges(tx, userId);
         await forgetDevices(tx, userId);
+        // A passkey may be the stranger's, added with the password they had.
+        await removeAllPasskeys(tx, userId);
         await recordAccountEvent(tx, userId, 'auth.not_me', { requestId: request.id });
         return true;
       });
