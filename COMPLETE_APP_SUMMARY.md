@@ -90,7 +90,7 @@ they need rather than in the matrix.
 | Projects with generated keys (`REL-41`) | `backend/api/src/routes/projects.ts` |
 | Issues: status, priority, assignee, description | `backend/api/src/routes/issues.ts` |
 | Per-project issue numbering | same |
-| Board view by status | `frontend/app/workspaces/[workspaceId]/projects/` |
+| Board view by status | `frontend/features/board/project-board.tsx` |
 | Comment threads with `@mentions` | `backend/api/src/routes/comments.ts` |
 | Images on issues and comments: upload, camera, paste, members only | `backend/api/src/routes/attachments.ts`, `frontend/features/issues/attachments.tsx` |
 | Images added offline wait on the device and upload exactly once | `shared/sync/src/engine.ts` |
