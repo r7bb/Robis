@@ -181,7 +181,7 @@ describe('no hardcoded colours outside the palette', () => {
     'frontend/components/presence.tsx',
     // The online dot and the ring that cuts it out of the avatar. Green
     // means "here" in every theme, so it must not move with one.
-    'frontend/features/workspace/sidebar.tsx',
+    'frontend/features/chat/people-stack.tsx',
     /*
      * Status and priority colours, for the same reason the danger colour is
      * literal in tailwind.config.ts: red means the same thing in every

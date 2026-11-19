@@ -45,6 +45,7 @@ import { useLive, useLiveEvents } from '../workspace/live.tsx';
 import { useBoardDrag } from './board-drag.ts';
 import { BoardFilters } from './board-filters.tsx';
 import { BulkBar } from './bulk-bar.tsx';
+import { DeleteBoard } from './delete-board.tsx';
 import { ShortcutHelp } from './shortcut-help.tsx';
 import { useBoardKeyboard } from './use-board-keyboard.ts';
 import { useSelection } from './use-selection.ts';
@@ -198,9 +199,17 @@ export function ProjectBoard({
         {drag.said}
       </p>
       <div className="flex items-center justify-between gap-4">
-        <h1 className="truncate text-lg font-semibold tracking-tight text-content">
-          {projectName}
-        </h1>
+        <span className="flex min-w-0 items-center gap-1">
+          <h1 className="truncate text-lg font-semibold tracking-tight text-content">
+            {projectName}
+          </h1>
+          <DeleteBoard
+            workspaceId={workspaceId}
+            projectId={projectId}
+            name={projectName}
+            role={role}
+          />
+        </span>
         <SyncStatus online={board.online} pending={board.pending} />
       </div>
 
@@ -299,7 +308,7 @@ export function ProjectBoard({
 
       {/* Columns never narrower than a card's title needs: between the left
           rail and the right one the board scrolls sideways instead. */}
-      <div className="mt-6 grid gap-4 md:auto-cols-[minmax(13.5rem,1fr)] md:grid-flow-col">
+      <div className="mt-6 grid gap-4 md:auto-cols-[minmax(11.5rem,1fr)] md:grid-flow-col">
         {columns.map((column) => {
           const columnIssues = shown.filter((issue) => issue.status === column);
 

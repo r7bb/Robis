@@ -1,25 +1,25 @@
 import { describe, expect, test } from 'bun:test';
-import { clampDockHeight, isDockShortcut } from '@robis/web/features/workspace/use-dock.ts';
+import { clampChatWidth, isChatShortcut } from '@robis/web/features/workspace/use-chat-panel.ts';
 import { boardToOpen } from '@robis/web/lib/last-board.ts';
 
 const key = (code: string, mods: Partial<KeyboardEvent> = {}) =>
   ({ code, ctrlKey: false, altKey: false, metaKey: false, ...mods }) as KeyboardEvent;
 
-describe('the chat dock', () => {
-  test('is never shorter than a few lines nor taller than most of the window', () => {
-    expect(clampDockHeight(40, 900)).toBe(160);
-    expect(clampDockHeight(300, 900)).toBe(300);
-    expect(clampDockHeight(2000, 900)).toBe(630);
-    // A window too short for both limits keeps the dock usable.
-    expect(clampDockHeight(400, 200)).toBe(160);
+describe('the chat panel', () => {
+  test('is never narrower than a message needs nor wider than half the window', () => {
+    expect(clampChatWidth(120, 1440)).toBe(300);
+    expect(clampChatWidth(380, 1440)).toBe(380);
+    expect(clampChatWidth(2000, 1440)).toBe(720);
+    // A window too narrow for both limits keeps the panel usable.
+    expect(clampChatWidth(400, 500)).toBe(300);
   });
 
   test('opens and closes on Ctrl and the backquote key only', () => {
-    expect(isDockShortcut(key('Backquote', { ctrlKey: true }))).toBe(true);
-    expect(isDockShortcut(key('Backquote'))).toBe(false);
-    expect(isDockShortcut(key('Backquote', { ctrlKey: true, metaKey: true }))).toBe(false);
-    expect(isDockShortcut(key('Backquote', { ctrlKey: true, altKey: true }))).toBe(false);
-    expect(isDockShortcut(key('KeyK', { ctrlKey: true }))).toBe(false);
+    expect(isChatShortcut(key('Backquote', { ctrlKey: true }))).toBe(true);
+    expect(isChatShortcut(key('Backquote'))).toBe(false);
+    expect(isChatShortcut(key('Backquote', { ctrlKey: true, metaKey: true }))).toBe(false);
+    expect(isChatShortcut(key('Backquote', { ctrlKey: true, altKey: true }))).toBe(false);
+    expect(isChatShortcut(key('KeyK', { ctrlKey: true }))).toBe(false);
   });
 });
 

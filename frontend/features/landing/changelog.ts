@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-19',
     area: 'Product',
+    title: 'One place for each thing',
+    brief:
+      'Chat moves to the right of the board, and everything in a workspace now shows in one place only: boards and docs on the left, rooms and people at the top of the chat.',
+    summary:
+      'The workspace is now three parts, with nothing listed twice. On the left, quieter than the board: the boards with their open counts, the docs, and links to meetings, activity and people, each a page in the middle. Boards and docs are made from a + beside their heading. In the middle, the board or page. On the right, the chat: the open room’s name at its top opens the list of rooms and a field for a new one, and the faces beside it open everyone in the workspace, with the way to invitations, roles and agents. The tabbed panel on the right is gone, and so are the rooms and the team from the left. Drag the chat’s left edge, or use the arrow keys on it, to make it wider or narrower; the × or Ctrl ` hides it, and a Chat button in the top bar brings it back. On a phone the left side opens from Menu and the chat over the board, each closing on Escape and handing focus back to the button that opened it. A board is deleted from beside its name.',
+    feature: {
+      name: 'Calmer workspace frame',
+      where: 'Any workspace: boards and docs on the left, chat on the right',
+      layers: [
+        'Screen: a left rail of boards and docs, a chat panel with a room picker and the team, and pages for meetings, activity and people',
+        'Client: chat width and open state kept on the device, and one overlay behaviour for the phone menu and the chat',
+        'Server: no API or data change',
+      ],
+    },
+    checked:
+      'Unit tests for the chat’s width limits and its shortcut, and for which board a workspace opens on. Full suite, lint, typecheck, knip and the link check pass. A code review and a Web Interface Guidelines audit; their points fixed, among them focus on closing, Escape and a kept Tab order in the phone overlays, a failed create that now keeps its field open with the reason, the saved chat choice no longer changed by a visit on a small window, and the board no longer jumping when the chat appears. In headless Chrome on the rebuilt stack: the board sat in the middle with the chat to its right at 1440 and 1280 pixels; rooms were listed only in the picker; Escape closed the room list and left the chat open; Meetings, Activity and People opened in the middle with the chat still beside them; on a phone the chat started closed, the menu took focus, kept Tab inside and gave focus back to Menu on Escape, the chat opened as a dialog and closed on Escape with focus back on Chat, and nothing scrolled sideways. The keyboard-only board test and the browser smoke test passed.',
+  },
+  {
+    date: '2026-11-19',
+    area: 'Product',
     title: 'The board at the centre',
     brief:
       'A workspace now opens on its board, with chat docked underneath like a terminal that you can resize, hide and bring back with Ctrl `.',

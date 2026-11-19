@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **One place for each thing** (2026-11-19). Chat moves to the right of the
+  board, and everything in a workspace now shows in one place only: boards
+  and docs on the left, rooms and people at the top of the chat.
 - **The board at the centre** (2026-11-19). A workspace now opens on its
   board, with chat docked underneath like a terminal that you can resize,
   hide and bring back with Ctrl `.

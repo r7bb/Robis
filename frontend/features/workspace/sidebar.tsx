@@ -1,100 +1,251 @@
 'use client';
 
 import { can, contracts, type Role, type ThemeId } from '@robis/shared';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { type FormEvent, type ReactNode, useRef, useState } from 'react';
 import { ThemePicker } from '../../components/theme-picker.tsx';
-import { Avatar } from '../../components/ui/avatar.tsx';
-import { AgentBadge, SectionLabel } from '../../components/ui/primitives.tsx';
-import { ApiError, call, type Member } from '../../lib/api.ts';
+import { SectionLabel } from '../../components/ui/primitives.tsx';
+import { ApiError, call } from '../../lib/api.ts';
 import { boardHref } from '../../lib/links.ts';
-import { ChannelList } from '../chat/channel-list.tsx';
-import { useCreateChannel } from '../chat/use-chat.ts';
+import { useOverlay } from '../../lib/use-overlay.ts';
 
 /**
- * The left rail: the boards first, since the board is the middle of the
- * workspace, then the rooms the chat below it can show, then who is here.
+ * The left rail, and the only list of where things are: the boards, the
+ * docs, and three quiet ways to the rest. Rooms and people are in the chat
+ * on the right, so nothing here repeats them. Dimmer than the board, which
+ * is what the eye is for.
  */
 
-/** Each project's board, the one on show marked. */
-function ProjectNav({ workspaceId, activeId }: { workspaceId: string; activeId: string | null }) {
-  const projects = useQuery({
-    queryKey: ['projects', workspaceId],
-    queryFn: () => call(contracts['projects.list'], { params: { workspaceId } }),
-  });
-  const rows = (projects.data?.projects ?? []).filter((project) => !project.archived);
+const ROW =
+  'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft';
+const rowTone = (active: boolean) =>
+  active ? 'bg-accent/15 text-content' : 'text-muted hover:bg-raised hover:text-content';
+
+/** A section title with a + that opens a one-line form for a new one. */
+function AddableSection({
+  title,
+  addLabel,
+  canAdd,
+  pending,
+  onAdd,
+  children,
+}: {
+  title: string;
+  addLabel: string;
+  canAdd: boolean;
+  pending: boolean;
+  /** Resolves once made; a refusal keeps the field open with its reason. */
+  onAdd: (name: string) => Promise<unknown>;
+  children: ReactNode;
+}) {
+  const [adding, setAdding] = useState(false);
+  const [name, setName] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const plus = useRef<HTMLButtonElement>(null);
+
+  function stop() {
+    setAdding(false);
+    setError(null);
+    plus.current?.focus();
+  }
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    const trimmed = name.trim();
+    if (!trimmed || pending) return;
+    try {
+      await onAdd(trimmed);
+      setName('');
+      setAdding(false);
+      setError(null);
+    } catch (cause) {
+      setError(cause instanceof ApiError ? cause.message : 'That could not be made. Try again.');
+    }
+  }
 
   return (
-    <section className="space-y-2">
-      <SectionLabel>Boards</SectionLabel>
-      {projects.isSuccess && rows.length === 0 ? (
-        <p className="px-2 text-xs text-faint">No projects yet.</p>
-      ) : (
-        <ul className="space-y-px">
-          {rows.map((project) => {
-            const active = project.id === activeId;
-            return (
-              <li key={project.id}>
-                <Link
-                  href={boardHref(workspaceId, project.id)}
-                  aria-current={active ? 'page' : undefined}
-                  className={`flex items-center justify-between gap-2 rounded px-2 py-1 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft ${
-                    active
-                      ? 'bg-accent/15 text-content'
-                      : 'text-muted hover:bg-surface hover:text-content'
-                  }`}
-                >
-                  <span className="truncate">{project.name}</span>
-                  <span className="shrink-0 font-mono text-[10px] text-faint">{project.key}</span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+    <section className="space-y-1.5">
+      <SectionLabel
+        action={
+          canAdd ? (
+            <button
+              ref={plus}
+              type="button"
+              onClick={() => (adding ? stop() : setAdding(true))}
+              aria-expanded={adding}
+              aria-label={adding ? 'Cancel' : addLabel}
+              className="rounded px-1 text-sm leading-none text-faint transition-colors hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+            >
+              {adding ? '×' : '+'}
+            </button>
+          ) : null
+        }
+      >
+        {title}
+      </SectionLabel>
+      {adding ? (
+        <form onSubmit={submit}>
+          <input
+            // biome-ignore lint/a11y/noAutofocus: opened by the + just pressed, to type into
+            autoFocus
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key !== 'Escape') return;
+              // Only the field closes, not the drawer around it.
+              event.preventDefault();
+              stop();
+            }}
+            name={addLabel}
+            autoComplete="off"
+            aria-label={addLabel}
+            aria-invalid={error ? true : undefined}
+            placeholder={`${addLabel}, then Enter…`}
+            className="w-full rounded-md border border-line bg-surface px-2 py-1 text-sm text-content placeholder:text-faint focus:border-accent-soft focus:outline-none"
+          />
+          {error ? (
+            <p role="alert" className="mt-1 px-1 text-xs text-danger-soft">
+              {error}
+            </p>
+          ) : null}
+        </form>
+      ) : null}
+      {children}
     </section>
   );
 }
 
-/**
- * Who is in the workspace, and who is here right now. A Set of online ids,
- * so each row is one lookup rather than a scan of the presence list.
- */
-function TeamRoster({ members, onlineIds }: { members: Member[]; onlineIds: Set<string> }) {
+function Boards({
+  workspaceId,
+  activeId,
+  role,
+}: {
+  workspaceId: string;
+  activeId: string | null;
+  role: Role | undefined;
+}) {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+  const projects = useQuery({
+    queryKey: ['projects', workspaceId],
+    queryFn: () => call(contracts['projects.list'], { params: { workspaceId } }),
+  });
+  const create = useMutation({
+    mutationFn: (name: string) =>
+      call(contracts['projects.create'], { params: { workspaceId }, body: { name } }),
+    onSuccess: async ({ project }) => {
+      await queryClient.invalidateQueries({ queryKey: ['projects', workspaceId] });
+      router.push(boardHref(workspaceId, project.id));
+    },
+  });
+  const rows = (projects.data?.projects ?? []).filter((project) => !project.archived);
+
   return (
-    <section className="space-y-2">
-      <SectionLabel>Team</SectionLabel>
-
+    <AddableSection
+      title="Boards"
+      addLabel="New board"
+      canAdd={role !== undefined && can(role, 'project:create')}
+      pending={create.isPending}
+      onAdd={(name) => create.mutateAsync(name)}
+    >
       <ul className="space-y-px">
-        {members.map((member) => {
-          const online = onlineIds.has(member.userId);
+        {rows.map((project) => (
+          <li key={project.id}>
+            <Link
+              href={boardHref(workspaceId, project.id)}
+              aria-current={project.id === activeId ? 'page' : undefined}
+              className={`${ROW} ${rowTone(project.id === activeId)}`}
+            >
+              <span className="truncate">{project.name}</span>
+              <span className="shrink-0 text-[11px] tabular-nums text-faint">
+                {project.openIssues}
+                <span className="sr-only"> open issues</span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+      {projects.isSuccess && rows.length === 0 ? (
+        <p className="px-2 text-xs text-faint">No boards yet.</p>
+      ) : null}
+    </AddableSection>
+  );
+}
 
+function Docs({ workspaceId, role }: { workspaceId: string; role: Role | undefined }) {
+  const pathname = usePathname();
+  const queryClient = useQueryClient();
+  const router = useRouter();
+  const documents = useQuery({
+    queryKey: ['documents', workspaceId],
+    queryFn: () => call(contracts['documents.list'], { params: { workspaceId } }),
+  });
+  const create = useMutation({
+    mutationFn: (title: string) =>
+      call(contracts['documents.create'], { params: { workspaceId }, body: { title } }),
+    onSuccess: async ({ document }) => {
+      await queryClient.invalidateQueries({ queryKey: ['documents', workspaceId] });
+      router.push(`/workspaces/${workspaceId}/documents/${document.id}`);
+    },
+  });
+  const rows = documents.data?.documents ?? [];
+
+  return (
+    <AddableSection
+      title="Docs"
+      addLabel="New doc"
+      // Documents follow the project permission, as the API does.
+      canAdd={role !== undefined && can(role, 'project:create')}
+      pending={create.isPending}
+      onAdd={(title) => create.mutateAsync(title)}
+    >
+      <ul className="space-y-px">
+        {rows.map((document) => {
+          const href = `/workspaces/${workspaceId}/documents/${document.id}`;
           return (
-            <li key={member.userId} className="flex items-center gap-2 rounded px-2 py-1 text-sm">
-              <span className="relative">
-                <Avatar name={member.name} seed={member.userId} avatar={member.avatar} size="sm" />
-                {/* A ring in the surface colour cuts the dot out of the
-                    avatar, so it reads as a badge rather than a smudge. */}
-                {online ? (
-                  <span
-                    className="absolute -bottom-px -right-px h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-raised"
-                    aria-hidden="true"
-                  />
-                ) : null}
-              </span>
-
-              <span
-                className={`truncate ${online ? 'text-content' : 'text-faint'}`}
-                title={online ? `${member.name} (online)` : member.name}
+            <li key={document.id}>
+              <Link
+                href={href}
+                aria-current={pathname === href ? 'page' : undefined}
+                className={`${ROW} ${rowTone(pathname === href)}`}
               >
-                {member.name}
-              </span>
-              {member.kind === 'agent' && <AgentBadge />}
+                <span className="truncate">{document.title}</span>
+              </Link>
             </li>
           );
         })}
       </ul>
-    </section>
+      {documents.isSuccess && rows.length === 0 ? (
+        <p className="px-2 text-xs text-faint">No docs yet.</p>
+      ) : null}
+    </AddableSection>
+  );
+}
+
+/** The quiet ways to the rest, each a page in the middle. */
+function MoreLinks({ workspaceId }: { workspaceId: string }) {
+  const pathname = usePathname();
+  const links = [
+    { href: `/workspaces/${workspaceId}/meetings`, label: 'Meetings' },
+    { href: `/workspaces/${workspaceId}/activity`, label: 'Activity' },
+    { href: `/workspaces/${workspaceId}/people`, label: 'People' },
+  ];
+  return (
+    <ul className="space-y-px">
+      {links.map((link) => (
+        <li key={link.href}>
+          <Link
+            href={link.href}
+            aria-current={pathname === link.href ? 'page' : undefined}
+            className={`${ROW} ${rowTone(pathname === link.href)}`}
+          >
+            {link.label}
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -102,66 +253,81 @@ export function Sidebar({
   workspaceId,
   projectId,
   role,
-  rooms,
-  channelId,
-  onSelectChannel,
-  members,
-  onlineIds,
   theme,
+  open,
+  onClose,
 }: {
   workspaceId: string;
   projectId: string | null;
   role: Role | undefined;
-  rooms: { id: string; name: string; topic: string | null }[];
-  channelId: string | null;
-  onSelectChannel: (id: string) => void;
-  members: Member[];
-  onlineIds: Set<string>;
   theme: ThemeId;
+  /** On a phone the rail is a drawer, opened from the top bar. */
+  open: boolean;
+  onClose: () => void;
 }) {
-  const createChannel = useCreateChannel(workspaceId);
+  const drawer = useRef<HTMLElement>(null);
+  useOverlay({
+    active: open,
+    onClose,
+    panel: drawer,
+    returnFocus: () => document.querySelector<HTMLElement>('[data-menu-toggle]'),
+  });
 
-  return (
-    // A 224px rail on a 390px phone left the board about 160px; below `md`
-    // the boards and rooms move into strips instead.
-    <nav className="hidden w-56 shrink-0 flex-col gap-4 overflow-y-auto border-r border-line bg-raised p-3 md:flex">
-      <ProjectNav workspaceId={workspaceId} activeId={projectId} />
-
-      <ChannelList
-        channels={rooms}
-        activeId={channelId}
-        onSelect={onSelectChannel}
-        canCreate={role !== undefined && can(role, 'channel:create')}
-        creating={createChannel.isPending}
-        createError={createChannel.error instanceof ApiError ? createChannel.error.message : null}
-        onCreate={(name) =>
-          createChannel.mutate(name, {
-            // Straight into the room just made: the reason for making it is
-            // to say something in it.
-            onSuccess: (created) => onSelectChannel(created.channel.id),
-          })
-        }
-      />
-
-      <TeamRoster members={members} onlineIds={onlineIds} />
-
-      {role ? (
-        // Collapsed: six labelled buttons is most of the rail, spent on
-        // something changed once per workspace.
-        <details className="mt-auto border-t border-line pt-3">
-          <summary className="cursor-pointer list-none text-[11px] font-semibold uppercase tracking-wider text-faint transition-colors hover:text-muted">
-            Theme
-          </summary>
-
-          <div className="mt-2">
-            <ThemePicker
-              workspaceId={workspaceId}
-              current={theme}
-              canEdit={can(role, 'workspace:update')}
-            />
-          </div>
-        </details>
+  const rail = (
+    <nav
+      ref={drawer}
+      id="workspace-menu"
+      aria-label="Workspace"
+      className={`w-56 shrink-0 flex-col gap-5 overflow-y-auto bg-surface px-3 py-4 ${
+        open
+          ? 'fixed inset-y-0 left-0 z-30 flex overscroll-contain border-r border-line pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] shadow-2xl shadow-black/30 md:static md:z-auto md:border-r-0 md:shadow-none'
+          : 'hidden md:flex'
+      }`}
+    >
+      {open ? (
+        <button
+          type="button"
+          onClick={onClose}
+          className="self-end rounded-md px-1.5 py-0.5 text-xs text-muted transition-colors hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft md:hidden"
+        >
+          Close
+        </button>
       ) : null}
+      <Boards workspaceId={workspaceId} activeId={projectId} role={role} />
+      <Docs workspaceId={workspaceId} role={role} />
+
+      <div className="mt-auto space-y-3 pt-2">
+        <MoreLinks workspaceId={workspaceId} />
+        {role ? (
+          // Collapsed: six labelled buttons for something changed once per workspace.
+          <details className="px-2">
+            <summary className="cursor-pointer rounded text-xs text-faint transition-colors hover:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft">
+              Theme
+            </summary>
+            <div className="mt-2">
+              <ThemePicker
+                workspaceId={workspaceId}
+                current={theme}
+                canEdit={can(role, 'workspace:update')}
+              />
+            </div>
+          </details>
+        ) : null}
+      </div>
     </nav>
+  );
+
+  if (!open) return rail;
+  return (
+    <>
+      <button
+        type="button"
+        aria-label="Close the menu"
+        onClick={onClose}
+        tabIndex={-1}
+        className="fixed inset-0 z-20 bg-black/40 md:hidden"
+      />
+      {rail}
+    </>
   );
 }

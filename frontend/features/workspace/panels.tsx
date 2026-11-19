@@ -7,19 +7,11 @@ import { type FormEvent, useState } from 'react';
 import { DeleteButton } from '../../components/delete-button.tsx';
 import { Button, EmptyState, InlineError } from '../../components/ui/primitives.tsx';
 import { call } from '../../lib/api.ts';
-import { formatRelative } from '../../lib/time.ts';
 
 /**
- * Projects and documents, as right-rail panels.
- *
- * These were two inline sections of the workspace page. Moving them here was
- * not tidying for its own sake: the page became a shell that can show any
- * panel beside the conversation, and a section that only exists as part of a
- * 250-line page cannot be shown beside anything.
- *
- * They share a file because they are the same shape -- a create form over a
- * list of links with a delete control -- and splitting them would mean
- * maintaining that shape in two places.
+ * The projects list with its create form and delete controls, shown in the
+ * middle of a workspace that has no board yet. The left rail lists the
+ * boards once there are some; deleting one stays here, out of the way.
  */
 
 const INPUT =
@@ -136,78 +128,6 @@ export function ProjectsPanel({ workspaceId, role }: { workspaceId: string; role
                 cascade="Every issue and comment in this project is deleted with it."
                 onConfirm={() => remove.mutateAsync(project.id)}
                 className="mr-1.5 shrink-0"
-              />
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-export function DocumentsPanel({ workspaceId, role }: { workspaceId: string; role: Role }) {
-  const queryClient = useQueryClient();
-
-  const documents = useQuery({
-    queryKey: ['documents', workspaceId],
-    queryFn: () => call(contracts['documents.list'], { params: { workspaceId } }),
-  });
-
-  const create = useMutation({
-    mutationFn: (title: string) =>
-      call(contracts['documents.create'], { params: { workspaceId }, body: { title } }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['documents', workspaceId] }),
-  });
-
-  const remove = useMutation({
-    mutationFn: (documentId: string) =>
-      call(contracts['documents.delete'], { params: { workspaceId, documentId } }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['documents', workspaceId] }),
-  });
-
-  const rows = documents.data?.documents ?? [];
-
-  return (
-    <div className="space-y-3">
-      {/* Documents are governed by the project permission rather than one of
-          their own, which is what the API checks too. */}
-      {can(role, 'project:create') ? (
-        <CreateForm
-          placeholder="New document"
-          label="New document title"
-          pending={create.isPending}
-          onSubmit={(title) => create.mutate(title)}
-        />
-      ) : null}
-
-      {documents.isError ? <InlineError>Could not load documents.</InlineError> : null}
-
-      {documents.isSuccess && rows.length === 0 ? (
-        <EmptyState>No documents yet. Create one to try collaborative editing.</EmptyState>
-      ) : (
-        <ul className="space-y-1.5">
-          {rows.map((document) => (
-            <li
-              key={document.id}
-              className="flex items-center rounded-lg border border-line bg-surface transition-colors hover:border-faint"
-            >
-              <Link
-                href={`/workspaces/${workspaceId}/documents/${document.id}`}
-                className="min-w-0 flex-1 px-3 py-2"
-              >
-                <span className="block truncate text-sm text-content">{document.title}</span>
-                <span className="mt-0.5 block text-[11px] text-faint">
-                  edited {formatRelative(document.updatedAt)}
-                </span>
-              </Link>
-
-              <DeleteButton
-                allowed={can(role, 'project:delete')}
-                kind="document"
-                name={document.title}
-                cascade="The document and its entire edit history are removed."
-                onConfirm={() => remove.mutateAsync(document.id)}
-                className="mr-1.5"
               />
             </li>
           ))}
