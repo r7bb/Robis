@@ -267,6 +267,9 @@ jobs:
           # First: the production overlay needs it for every compose command.
           export CI_AUDIT_HMAC_KEYS="ci:$(openssl rand -base64 32)"
           echo "CI_AUDIT_HMAC_KEYS=$CI_AUDIT_HMAC_KEYS" >> "$GITHUB_ENV"
+          # And a two-factor key: the stack's fixed one is refused in production.
+          export CI_TWO_FACTOR_KEY="$(openssl rand -base64 32)"
+          echo "CI_TWO_FACTOR_KEY=$CI_TWO_FACTOR_KEY" >> "$GITHUB_ENV"
           docker compose down
           bun run scripts/smoke/throwaway-tls.ts
           docker compose up --detach --wait --wait-timeout 300
