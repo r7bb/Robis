@@ -36,7 +36,7 @@ export function LiveFeed({
   return (
     <section
       aria-labelledby="home-live"
-      className="min-w-0 rounded-2xl border border-line bg-raised p-5 shadow-[0_12px_40px_rgb(8_9_12/0.45)]"
+      className="min-w-0 rounded-2xl border border-line bg-raised p-5 shadow-[0_12px_40px_rgb(8_9_12/0.45)] fit:flex fit:min-h-0 fit:flex-col"
     >
       <div className="flex items-center justify-between">
         <h2 id="home-live" className="text-sm font-semibold text-content">
@@ -52,7 +52,11 @@ export function LiveFeed({
       </div>
 
       {/* The times are hidden from screen readers, so their ticking is not announced. */}
-      <div role="log" aria-relevant="additions" className="mt-3">
+      <div
+        role="log"
+        aria-relevant="additions"
+        className="mt-3 fit:min-h-0 fit:flex-1 fit:overflow-y-auto fit:overscroll-contain"
+      >
         {items.length === 0 ? (
           <p className="pt-1 text-sm text-faint">
             Quiet so far. Changes from your teammates appear here as they happen.

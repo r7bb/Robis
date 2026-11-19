@@ -100,7 +100,7 @@ export function WorkspaceTile({
       onPointerMove={trackPointer}
       onPointerLeave={resetTilt}
       style={{ ...style, '--tile-accent': accent } as CSSProperties}
-      className="home-tile group relative isolate flex flex-col overflow-hidden rounded-2xl border border-line bg-raised/70 bg-[linear-gradient(to_bottom,rgb(var(--tile-accent)/0.1),transparent_45%)] p-5 transition-[border-color,transform] duration-300 [transition-timing-function:var(--ease)] focus-within:border-[rgb(var(--tile-accent)/0.6)] hover:border-[rgb(var(--tile-accent)/0.45)]"
+      className="home-tile group relative isolate flex flex-col overflow-hidden rounded-2xl border border-line bg-raised/70 bg-[linear-gradient(to_bottom,rgb(var(--tile-accent)/0.1),transparent_45%)] p-5 transition-[border-color,transform] fit:p-4 duration-300 [transition-timing-function:var(--ease)] focus-within:border-[rgb(var(--tile-accent)/0.6)] hover:border-[rgb(var(--tile-accent)/0.45)]"
     >
       <span aria-hidden="true" className="home-tile-spot" />
       {pulse > 0 && <span aria-hidden="true" key={pulse} className="home-tile-pulse" />}
@@ -115,9 +115,9 @@ export function WorkspaceTile({
         <RoleBadge role={workspace.role} />
       </div>
 
-      <div className="mt-6 flex items-end justify-between gap-4">
+      <div className="mt-6 flex items-end justify-between gap-4 fit:mt-3">
         <div>
-          <div className="text-4xl font-semibold leading-none text-content">
+          <div className="text-4xl font-semibold leading-none text-content fit:text-3xl">
             {overview ? (
               <LiveNumber value={overview.openIssues} />
             ) : (
@@ -135,7 +135,7 @@ export function WorkspaceTile({
       <TileLatest overview={overview} />
       {overview?.storage && <TileStorage storage={overview.storage} />}
 
-      <div className="relative z-10 mt-3 flex justify-end">
+      <div className="relative z-10 mt-3 flex justify-end fit:absolute fit:bottom-3 fit:right-3 fit:mt-0">
         <DeleteButton
           allowed={can(workspace.role, 'workspace:delete')}
           kind="workspace"
@@ -165,7 +165,7 @@ function TileMembers({
         ? `${count} ${count === 1 ? 'member' : 'members'}`
         : '';
   return (
-    <div className="mt-5 flex items-center gap-3">
+    <div className="mt-5 flex items-center gap-3 fit:mt-3">
       <div className="flex -space-x-2">
         {(overview?.members ?? []).map((member) => (
           <span
@@ -186,7 +186,7 @@ function TileMembers({
 function TileLatest({ overview }: { overview: WorkspaceOverview | undefined }) {
   const latest = overview?.latest;
   return (
-    <p className="mt-4 min-h-5 truncate text-sm text-faint">
+    <p className="mt-4 min-h-5 truncate text-sm text-faint fit:mt-3 fit:pr-8">
       {latest ? (
         <>
           <span className="text-muted">{latest.actorName ?? 'Someone'}</span>{' '}
@@ -217,7 +217,7 @@ function size(bytes: number): string {
 function TileStorage({ storage }: { storage: { used: number; quota: number } }) {
   const share = Math.min(1, storage.used / storage.quota);
   return (
-    <div className="relative z-10 mt-4">
+    <div className="relative z-10 mt-4 fit:hidden fit:group-hover:block fit:group-focus-within:block">
       <div className="flex justify-between text-[11px] text-faint">
         <span>Storage</span>
         <span>

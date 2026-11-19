@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-19',
     area: 'Product',
+    title: 'The home on one screen',
+    brief:
+      'The home after signing in now fits on one screen on a laptop or larger, with no scrolling: the greeting, what needs you, the live feed and your workspaces.',
+    summary:
+      'On a screen at least 1024 pixels wide and 680 tall, the home after signing in is one screen with no page scroll. The greeting and the two-week activity chart take less height, what needs you and the live feed share the space under them and scroll inside their own cards, and your workspaces sit in one row along the bottom, scrolling sideways when there are many. A workspace tile shows its storage when the pointer is over it or it has focus. Smaller screens and phones scroll as a normal page, as everything would not fit.',
+    checked:
+      'In headless Chrome on the rebuilt stack, the page measured exactly the window’s height at 1440 by 900, 1280 by 800 and 1024 by 700, with all five issues that need you showing at 1280 by 800. The browser smoke test passed. Lint and typecheck clean.',
+  },
+  {
+    date: '2026-11-19',
+    area: 'Product',
     title: 'Quieter cards',
     brief:
       'Board cards drop their status menu and show a label dot, the due date and the assignee’s face, with Move and Delete appearing on hover.',

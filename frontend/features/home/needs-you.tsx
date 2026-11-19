@@ -18,7 +18,7 @@ export function NeedsYou({
   return (
     <section
       aria-labelledby="home-needs-you"
-      className="min-w-0 rounded-2xl border border-line bg-raised p-5 shadow-[0_12px_40px_rgb(8_9_12/0.45)]"
+      className="min-w-0 rounded-2xl border border-line bg-raised p-5 shadow-[0_12px_40px_rgb(8_9_12/0.45)] fit:flex fit:min-h-0 fit:flex-1 fit:flex-col"
     >
       <h2 id="home-needs-you" className="text-sm font-semibold text-content">
         Needs you
@@ -35,7 +35,7 @@ export function NeedsYou({
           Nothing is waiting on you. Issues assigned to you show up here.
         </p>
       ) : (
-        <ul className="mt-3 space-y-1">
+        <ul className="mt-3 fit:min-h-0 fit:flex-1 fit:overflow-y-auto fit:overscroll-contain space-y-1">
           {issues.map((issue, index) => (
             <li
               key={issue.id}

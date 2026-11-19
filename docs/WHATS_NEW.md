@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **The home on one screen** (2026-11-19). The home after signing in now
+  fits on one screen on a laptop or larger, with no scrolling: the greeting,
+  what needs you, the live feed and your workspaces.
 - **Quieter cards** (2026-11-19). Board cards drop their status menu and
   show a label dot, the due date and the assignee’s face, with Move and
   Delete appearing on hover.

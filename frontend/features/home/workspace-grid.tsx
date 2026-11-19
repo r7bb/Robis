@@ -50,7 +50,7 @@ export function WorkspaceGrid({
 
   return (
     <ul
-      className={`home-tiles mt-5 grid gap-4 sm:grid-cols-2 ${workspaces.length >= 3 ? 'xl:grid-cols-3' : ''}`}
+      className={`home-tiles mt-5 grid gap-4 sm:grid-cols-2 ${workspaces.length >= 3 ? 'xl:grid-cols-3' : ''} fit:grid-flow-col fit:auto-cols-[minmax(17rem,1fr)] fit:grid-cols-none fit:overflow-x-auto fit:pb-1`}
     >
       {workspaces.map((workspace, index) => (
         <WorkspaceTile

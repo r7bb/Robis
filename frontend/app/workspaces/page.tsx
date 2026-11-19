@@ -116,7 +116,9 @@ export default function WorkspacesPage() {
   if (unauthenticated) return null;
 
   return (
-    <main className="min-h-[100dvh] bg-surface pb-20">
+    // On a big enough screen the whole home is one screen with no page
+    // scroll; the lists scroll inside their own cards instead.
+    <main className="min-h-[100dvh] bg-surface pb-20 fit:flex fit:h-dvh fit:min-h-0 fit:flex-col fit:overflow-hidden fit:pb-6">
       <HomeHero
         firstName={firstName}
         series={river}
@@ -148,9 +150,9 @@ export default function WorkspacesPage() {
       />
 
       {/* Positioned, so it paints above the hero it overlaps. */}
-      <div className="relative mx-auto -mt-6 max-w-6xl px-4 sm:px-6">
-        <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
-          <div className="min-w-0 space-y-4">
+      <div className="relative mx-auto -mt-6 w-full max-w-6xl px-4 sm:px-6 fit:flex fit:min-h-0 fit:flex-1 fit:flex-col">
+        <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr] fit:min-h-0 fit:flex-1">
+          <div className="min-w-0 space-y-4 fit:flex fit:min-h-0 fit:flex-col">
             <NeedsYou issues={overview.data?.assigned ?? []} loading={overview.isPending} />
             <MyInvitations me={me.data} focusAfter="workspaces-heading" />
           </div>
@@ -175,7 +177,7 @@ export default function WorkspacesPage() {
           </p>
         )}
 
-        <div className="mt-12 flex flex-wrap items-center justify-between gap-4">
+        <div className="mt-12 flex flex-wrap items-center justify-between gap-4 fit:mt-6">
           <h2 className="text-xl font-semibold tracking-tight text-content">Your workspaces</h2>
           <NewWorkspace
             onCreate={(name) => createWorkspace.mutateAsync(name)}

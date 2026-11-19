@@ -77,7 +77,7 @@ export function HomeHero({
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgb(8_9_12/0.45),transparent_38%,transparent_80%,rgb(var(--surface))_100%)]" />
       </div>
 
-      <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 lg:pb-24">
+      <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 lg:pb-24 fit:pb-10 fit:pt-4">
         <nav aria-label="Account" className="flex items-center justify-end gap-4">
           {actions}
         </nav>
@@ -87,7 +87,7 @@ export function HomeHero({
             <h1
               id="workspaces-heading"
               tabIndex={-1}
-              className="home-rise mt-12 text-4xl font-semibold leading-[1.05] tracking-tight text-content focus:outline-none sm:mt-16 sm:text-5xl"
+              className="home-rise mt-12 text-4xl font-semibold leading-[1.05] tracking-tight text-content focus:outline-none sm:mt-16 sm:text-5xl fit:mt-2"
             >
               {greeting}
             </h1>

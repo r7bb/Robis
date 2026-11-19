@@ -90,7 +90,7 @@ export function ActivityRiver({
           aria-label={summary}
           viewBox={`0 0 ${W} ${H}`}
           preserveAspectRatio="none"
-          className="block h-36 w-full overflow-visible sm:h-44"
+          className="block h-36 w-full overflow-visible sm:h-44 fit:h-28"
         >
           <defs>
             {series.map((s) => (

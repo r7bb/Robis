@@ -15,6 +15,13 @@ export default {
   content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}', './features/**/*.{ts,tsx}'],
   theme: {
     extend: {
+      /*
+       * A screen big enough for the home to sit on it whole, with no page
+       * scroll: from a laptop up. Smaller ones scroll as a normal page.
+       */
+      screens: {
+        fit: { raw: '(min-width: 1024px) and (min-height: 680px)' },
+      },
       colors: {
         surface: token('surface'),
         raised: token('raised'),
