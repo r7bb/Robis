@@ -10,19 +10,20 @@
 :root {
   color-scheme: dark;
 
-  --surface: 14 16 20;
-  --raised: 22 25 31;
-  --border: 37 42 51;
-  --content: 226 232 240;
-  --muted: 148 163 184;
+  --surface: 15 15 17;
+  --raised: 23 23 26;
+  --border: 40 40 44;
+  --content: 231 229 226;
+  --muted: 166 162 158;
   /*
    * Raised from `100 116 139`, which scored 4.00:1 against the surface and
    * 3.70:1 against raised panels. Both are under the 4.5:1 WCAG AA floor
    * for body text, and every dark theme had the same problem: timestamps,
    * helper text and empty states were the least readable things on screen
-   * while also being the ones people squint at. Now 5.96:1 and 5.51:1.
+   * while also being the ones people squint at. Now well over 4.5:1; the
+   * values match the Midnight theme's (warmer since idea 8).
    */
-  --faint: 133 145 163;
+  --faint: 145 141 137;
   --accent: 99 102 241;
   --accent-hover: 129 140 248;
   --accent-soft: 165 180 252;

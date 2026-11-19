@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-19',
     area: 'Product',
+    title: 'Warmer greys',
+    brief:
+      'The default Midnight theme moves from a blue slate to softer, warmer greys, so the work reads first.',
+    summary:
+      'Midnight, the theme a workspace starts with, now uses softer and warmer neutrals in place of its blue-tinted slate: the surfaces, borders and every grey of text. The accent is unchanged, and so are the other five themes. Everything stays well above the readability floor: body text at over 14 to 1 against its background, secondary text over 7 to 1 and the faintest over 5 to 1.',
+    checked:
+      'The theme suite’s contrast checks pass for every theme, and the faintest grey measures 5.81 to 1 on the page and 5.43 to 1 on a panel. Checked by eye in headless Chrome on the rebuilt stack, on the board, the chat and the inbox.',
+  },
+  {
+    date: '2026-11-19',
+    area: 'Product',
     title: 'Priority and Other in the inbox',
     brief:
       'The inbox opens on Priority, what asks something of you, with everything else under Other, each with its unread count.',

@@ -51,13 +51,15 @@ export const THEMES: Record<ThemeId, Theme> = {
     label: 'Midnight',
     colorScheme: 'dark',
     swatch: '#6366f1',
+    // Softer, warmer neutrals than the blue slate it had (idea 8): the
+    // interface recedes and the work in it reads first. Accent unchanged.
     tokens: {
-      surface: '14 16 20',
-      raised: '22 25 31',
-      border: '37 42 51',
-      content: '226 232 240',
-      muted: '148 163 184',
-      faint: '133 145 163',
+      surface: '15 15 17',
+      raised: '23 23 26',
+      border: '40 40 44',
+      content: '231 229 226',
+      muted: '166 162 158',
+      faint: '145 141 137',
       accent: '99 102 241',
       accentHover: '129 140 248',
       accentSoft: '165 180 252',

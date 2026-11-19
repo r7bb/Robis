@@ -6,6 +6,8 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Warmer greys** (2026-11-19). The default Midnight theme moves from a
+  blue slate to softer, warmer greys, so the work reads first.
 - **Priority and Other in the inbox** (2026-11-19). The inbox opens on
   Priority, what asks something of you, with everything else under Other,
   each with its unread count.

@@ -148,14 +148,14 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Warmer greys.** The default Midnight theme moves from a blue slate to
+  softer, warmer greys, so the work reads first.
 - **Priority and Other in the inbox.** The inbox opens on Priority, what
   asks something of you, with everything else under Other, each with its
   unread count.
 - **Today on the home.** The home after signing in opens on Today: the
   issues assigned to you, where you were mentioned, and today’s meetings
   across every workspace.
-- **Focus mode.** Press the backslash key, or Focus in the top bar, to put
-  the side panels away and leave only the board.
 
 <!-- latest:end -->
 
