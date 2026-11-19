@@ -148,15 +148,15 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **The board at the centre.** A workspace now opens on its board, with chat
+  docked underneath like a terminal that you can resize, hide and bring back
+  with Ctrl `.
 - **Push notifications.** Turn on push for a device from your account page,
   and get a prompt to open Robis when something new arrives, with nothing
   about it on the lock screen.
 - **Notifications by email.** Get mentions by email as they happen and
   everything else in one summary a day, each with a link that stops it
   without signing in.
-- **Choose what you hear about.** Turn each kind of notification on or off
-  from your account, and hear when you are given an issue, someone comments
-  on yours, or a meeting you are in moves.
 
 <!-- latest:end -->
 

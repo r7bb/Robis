@@ -63,7 +63,7 @@ export function SidePanel({
         role="tablist"
         aria-label="Workspace panels"
         onKeyDown={onKeyDown}
-        className="flex gap-px overflow-x-auto border-b border-line px-2 pt-2"
+        className="flex justify-between gap-px overflow-x-auto border-b border-line px-1.5 pt-2 [scrollbar-width:none]"
       >
         {TABS.map((tab, index) => {
           const selected = tab === active;
@@ -83,7 +83,7 @@ export function SidePanel({
               // the rest. This is the roving-tabindex half of the pattern.
               tabIndex={selected ? 0 : -1}
               onClick={() => setActive(tab)}
-              className={`whitespace-nowrap rounded-t-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+              className={`whitespace-nowrap rounded-t-md px-2 py-1.5 text-xs font-medium transition-colors ${
                 selected ? 'bg-surface text-content' : 'text-faint hover:text-muted'
               }`}
             >

@@ -17,9 +17,9 @@ function messageFor(error: unknown): string | null {
 }
 
 /**
- * The centre column: one channel's transcript and its composer.
+ * One channel's transcript and its composer, docked under the board.
  *
- * Which channel is selected is decided by the shell above this, so the view
+ * Which channel is selected is decided by the frame above this, so the view
  * can be dropped anywhere a channel id is available and has no opinion about
  * navigation.
  */
@@ -29,13 +29,16 @@ export function ChatView({
   role,
   currentUserId,
   avatars,
+  showHeader = true,
 }: {
   workspaceId: string;
   channel: ChannelSummary | null;
   role: Role;
   currentUserId: string | null;
-  /** Each member's picture, by user id, from the roster the shell already holds. */
+  /** Each member's picture, by user id, from the roster the frame already holds. */
   avatars?: ReadonlyMap<string, AvatarRef>;
+  /** Off in the dock, whose own bar already names the room. */
+  showHeader?: boolean;
 }) {
   const channelId = channel?.id ?? null;
 
@@ -46,15 +49,17 @@ export function ChatView({
   const messages = flattenMessages(history.data?.pages);
 
   return (
-    <section className="flex min-w-0 flex-1 flex-col bg-surface">
-      <header className="flex items-baseline gap-3 border-b border-line px-4 py-3">
-        <h2 className="truncate text-sm font-semibold text-content">
-          <span className="text-faint">#</span>
-          {channel?.name ?? 'no channel'}
-        </h2>
+    <section className="flex min-h-0 min-w-0 flex-1 flex-col bg-surface">
+      {showHeader ? (
+        <header className="flex items-baseline gap-3 border-b border-line px-4 py-3">
+          <h2 className="truncate text-sm font-semibold text-content">
+            <span className="text-faint">#</span>
+            {channel?.name ?? 'no channel'}
+          </h2>
 
-        {channel?.topic ? <p className="truncate text-xs text-faint">{channel.topic}</p> : null}
-      </header>
+          {channel?.topic ? <p className="truncate text-xs text-faint">{channel.topic}</p> : null}
+        </header>
+      ) : null}
 
       {history.isError ? (
         <div className="flex-1 px-4 py-6">

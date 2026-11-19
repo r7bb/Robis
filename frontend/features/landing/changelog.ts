@@ -44,6 +44,26 @@ export type Entry = {
 
 export const CHANGELOG: readonly Entry[] = [
   {
+    date: '2026-11-19',
+    area: 'Product',
+    title: 'The board at the centre',
+    brief:
+      'A workspace now opens on its board, with chat docked underneath like a terminal that you can resize, hide and bring back with Ctrl `.',
+    summary:
+      'Going into a workspace now opens a board: the one you last had open there, or the first project’s. The boards are listed at the top of the left rail, above the channels and the team, and moving between them keeps everything else in place. Chat sits under the board like a code editor’s terminal: a bar with the rooms that is always there, and the open room above it. Drag its top edge, or use the arrow keys on it, to make it taller or shorter; Hide folds it down to the bar, and Ctrl ` opens it with the cursor in the message box, or closes it. Its size and whether it is open are remembered on the device. The side panel of projects, docs, meetings, the team and activity opens by itself on wide screens and from the Panel button on any other, so the board keeps its four columns on a laptop. The board and the chat share one live connection. On a phone the boards and rooms become strips. Also fixed: in the Activity tab, an agent’s name and its badge left the words so narrow that they ran under the time, and an agent’s comment had its time out of line with everyone else’s.',
+    feature: {
+      name: 'Board-centred workspace',
+      where: 'Any workspace: the board in the middle, chat docked below, boards on the left',
+      layers: [
+        'Screen: one frame for the workspace and its boards, a chat dock with a resizable edge, and a Panel button',
+        'Client: one realtime connection shared by the board and the chat; dock size and the last board kept on the device',
+        'Server: no API or data change',
+      ],
+    },
+    checked:
+      'Five new tests: the dock is never shorter than a few lines nor taller than most of the window, opens only on Ctrl and the backquote key, and a workspace opens on the board last open while it exists, else the first project not archived, else none. In headless Chrome on the rebuilt stack: Engineering opened on its Web App board with chat below, Ctrl ` hid the chat and brought it back with the cursor in the message box, choosing Backend kept the chat open, the board showed four columns at 1280 pixels wide with the panel closed, the Panel button opened it with a tab strip that does not scroll, Activity rows showed the agent’s name, badge and time on one line and what was done below, comment times lined up, and a phone showed no sideways scroll. The keyboard-only board test (41 checks) and the browser smoke test passed against the new layout.',
+  },
+  {
     date: '2026-11-18',
     area: 'Product',
     title: 'Push notifications',

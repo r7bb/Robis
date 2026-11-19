@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **The board at the centre** (2026-11-19). A workspace now opens on its
+  board, with chat docked underneath like a terminal that you can resize,
+  hide and bring back with Ctrl `.
 - **Push notifications** (2026-11-18). Turn on push for a device from your
   account page, and get a prompt to open Robis when something new arrives,
   with nothing about it on the lock screen.

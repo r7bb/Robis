@@ -10,48 +10,56 @@ import {
 } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { type FormEvent, type KeyboardEvent, Suspense, useEffect, useRef, useState } from 'react';
-import { DeleteButton } from '../../../../../components/delete-button.tsx';
-import { PresenceBar } from '../../../../../components/presence.tsx';
-import { SyncStatus } from '../../../../../components/sync-status.tsx';
-import { Avatar } from '../../../../../components/ui/avatar.tsx';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from 'react';
+import { DeleteButton } from '../../components/delete-button.tsx';
+import { SyncStatus } from '../../components/sync-status.tsx';
+import { Avatar } from '../../components/ui/avatar.tsx';
 import {
   LabelChip,
   PriorityBadge,
   StatusHeading,
   statusLabel,
-} from '../../../../../components/ui/badges.tsx';
-import { DueChip } from '../../../../../components/ui/due-chip.tsx';
-import { Kbd } from '../../../../../components/ui/kbd.tsx';
-import { ErrorState } from '../../../../../components/ui/primitives.tsx';
-import { useBoardDrag } from '../../../../../features/board/board-drag.ts';
-import { BoardFilters } from '../../../../../features/board/board-filters.tsx';
-import { BulkBar } from '../../../../../features/board/bulk-bar.tsx';
-import { ShortcutHelp } from '../../../../../features/board/shortcut-help.tsx';
-import { useBoardKeyboard } from '../../../../../features/board/use-board-keyboard.ts';
-import { useSelection } from '../../../../../features/board/use-selection.ts';
-import { useCommands, useOpenPalette } from '../../../../../features/command/command-provider.tsx';
-import { DuplicateHints } from '../../../../../features/issues/duplicate-hints.tsx';
-import { PriorityHint } from '../../../../../features/issues/priority-hint.tsx';
-import { call } from '../../../../../lib/api.ts';
+} from '../../components/ui/badges.tsx';
+import { DueChip } from '../../components/ui/due-chip.tsx';
+import { Kbd } from '../../components/ui/kbd.tsx';
+import { ErrorState } from '../../components/ui/primitives.tsx';
+import { call } from '../../lib/api.ts';
 import {
   filterFromParams,
   filterToQuery,
   isFiltered,
   matchesFilter,
-} from '../../../../../lib/board-filter.ts';
-import { COMPOSE_PARAM } from '../../../../../lib/links.ts';
-import { boardCommands } from '../../../../../lib/page-commands.ts';
-import { may } from '../../../../../lib/permissions.ts';
-import { useCoalesced, useRealtime } from '../../../../../lib/realtime.ts';
-import { concernsBoard } from '../../../../../lib/realtime-events.ts';
-import { lastTheme, useApplyTheme } from '../../../../../lib/theme.ts';
-import { useMemberAvatars } from '../../../../../lib/use-member-avatars.ts';
-import { useOfflineBoard } from '../../../../../lib/use-offline-board.ts';
+} from '../../lib/board-filter.ts';
+import { COMPOSE_PARAM } from '../../lib/links.ts';
+import { boardCommands } from '../../lib/page-commands.ts';
+import { may } from '../../lib/permissions.ts';
+import { useCoalesced } from '../../lib/realtime.ts';
+import { concernsBoard } from '../../lib/realtime-events.ts';
+import { useMemberAvatars } from '../../lib/use-member-avatars.ts';
+import { useOfflineBoard } from '../../lib/use-offline-board.ts';
+import { useCommands, useOpenPalette } from '../command/command-provider.tsx';
+import { DuplicateHints } from '../issues/duplicate-hints.tsx';
+import { PriorityHint } from '../issues/priority-hint.tsx';
+import { useLive, useLiveEvents } from '../workspace/live.tsx';
+import { useBoardDrag } from './board-drag.ts';
+import { BoardFilters } from './board-filters.tsx';
+import { BulkBar } from './bulk-bar.tsx';
+import { ShortcutHelp } from './shortcut-help.tsx';
+import { useBoardKeyboard } from './use-board-keyboard.ts';
+import { useSelection } from './use-selection.ts';
 
-function Board() {
-  const { workspaceId, projectId } = useParams<{ workspaceId: string; projectId: string }>();
+/**
+ * A project's board: the middle of the workspace (see `WorkspaceFrame`),
+ * with the chat docked below it and the boards listed on the left.
+ */
+export function ProjectBoard({
+  workspaceId,
+  projectId,
+}: {
+  workspaceId: string;
+  projectId: string;
+}) {
   const avatars = useMemberAvatars();
   const [title, setTitle] = useState('');
   // Picked from the priority hint, or not at all; never guessed silently.
@@ -95,15 +103,12 @@ function Board() {
   // message, another project's issue) does not touch the board, and a burst
   // is one pull.
   const pullBoard = useCoalesced(board.refresh);
-  const { presence, state: realtimeState } = useRealtime(
-    workspaceId,
-    projectId,
-    (event) => {
-      if (concernsBoard(event, projectId)) pullBoard();
-    },
-    // Only this project's issues reach the socket at all (stage 3, item 24).
-    { scopes: [{ kind: 'project', projectId }] },
-  );
+  // The frame's one connection (it reports this board as where we are, and
+  // hears this project's issues); a burst of events is one pull.
+  const { state: realtimeState } = useLive();
+  useLiveEvents((event) => {
+    if (concernsBoard(event, projectId)) pullBoard();
+  });
   // Events sent while the connection was down are not replayed, so the board
   // is read again whenever it comes back.
   useEffect(() => {
@@ -114,8 +119,6 @@ function Board() {
     queryKey: ['workspace', workspaceId],
     queryFn: () => call(contracts['workspaces.get'], { params: { workspaceId } }),
   });
-
-  useApplyTheme(workspace.data?.workspace.theme ?? lastTheme());
 
   const role = workspace.data?.workspace.role;
   // The same checks the palette makes for its commands (C2).
@@ -176,12 +179,6 @@ function Board() {
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }, [composing, canCreate, router, pathname]);
 
-  // Reconnecting means we may have missed events while the socket was down.
-  const { refresh } = board;
-  useEffect(() => {
-    if (realtimeState === 'live') void refresh();
-  }, [realtimeState, refresh]);
-
   if (workspace.isError) return <ErrorState message={(workspace.error as Error).message} />;
 
   function onCreate(event: FormEvent) {
@@ -195,26 +192,16 @@ function Board() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-12">
+    <div className="px-6 py-6">
       {/* Said aloud as a card is lifted, moved and dropped by keyboard. */}
       <p className="sr-only" aria-live="assertive">
         {drag.said}
       </p>
-      <nav className="text-sm text-faint">
-        <Link href="/workspaces" className="hover:text-muted">
-          Workspaces
-        </Link>
-        <span className="mx-2">/</span>
-        <Link href={`/workspaces/${workspaceId}`} className="hover:text-muted">
-          {workspace.data?.workspace.name ?? '…'}
-        </Link>
-        <span className="mx-2">/</span>
-        <span className="text-muted">Board</span>
-      </nav>
-
-      <div className="mt-4 flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="truncate text-lg font-semibold tracking-tight text-content">
+          {projectName}
+        </h1>
         <SyncStatus online={board.online} pending={board.pending} />
-        <PresenceBar users={presence} state={realtimeState} here={projectId} />
       </div>
 
       {canCreate && (
@@ -310,7 +297,9 @@ function Board() {
         />
       )}
 
-      <div className="mt-6 grid gap-4 md:grid-cols-4">
+      {/* Columns never narrower than a card's title needs: between the left
+          rail and the right one the board scrolls sideways instead. */}
+      <div className="mt-6 grid gap-4 md:auto-cols-[minmax(13.5rem,1fr)] md:grid-flow-col">
         {columns.map((column) => {
           const columnIssues = shown.filter((issue) => issue.status === column);
 
@@ -423,7 +412,7 @@ function Board() {
           );
         })}
       </div>
-    </main>
+    </div>
   );
 }
 
@@ -562,17 +551,6 @@ function CardLabels({
         <LabelChip key={label.id} name={label.name} colour={label.colour} />
       ))}
     </p>
-  );
-}
-
-/** `useSearchParams` needs a boundary so the route can still be prerendered. */
-export default function BoardPage() {
-  return (
-    <Suspense
-      fallback={<main className="mx-auto max-w-6xl px-6 py-12 text-sm text-faint">Loading…</main>}
-    >
-      <Board />
-    </Suspense>
   );
 }
 
