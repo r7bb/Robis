@@ -3,6 +3,16 @@
 import { useEffect, useRef, useState } from 'react';
 
 type CameraState = 'starting' | 'live' | 'denied' | 'unavailable';
+type Shape = 'circle' | 'portrait' | 'landscape';
+
+/** Width over height of each frame. */
+const ASPECT: Record<Shape, number> = { circle: 1, portrait: 9 / 16, landscape: 4 / 3 };
+
+/** The largest centred crop of a `width` by `height` frame in the shape's proportions. */
+function cropOf(shape: Shape, width: number, height: number): [number, number] {
+  const aspect = ASPECT[shape];
+  return width / height > aspect ? [height * aspect, height] : [width, width / aspect];
+}
 
 /**
  * A live front-camera preview in the same circle the picture will sit in.
@@ -20,8 +30,8 @@ export function CameraCapture({
 }: {
   onCapture: (frame: Blob) => void;
   busy: boolean;
-  /** A circle for a picture of you; a tall frame for a story (B2). */
-  shape?: 'circle' | 'portrait';
+  /** A circle for a picture of you; a tall frame for a story; a wide one for chat (B2). */
+  shape?: 'circle' | 'portrait' | 'landscape';
 }) {
   const video = useRef<HTMLVideoElement>(null);
   const [state, setState] = useState<CameraState>('starting');
@@ -63,9 +73,7 @@ export function CameraCapture({
     // A centred square for a picture of you, the shape it is cropped to
     // anyway; for a story, the tallest 9:16 the frame holds.
     const { videoWidth: width, videoHeight: height } = element;
-    const outWidth =
-      shape === 'circle' ? Math.min(width, height) : Math.min(width, (height * 9) / 16);
-    const outHeight = shape === 'circle' ? outWidth : Math.min(height, (outWidth * 16) / 9);
+    const [outWidth, outHeight] = cropOf(shape, width, height);
     const canvas = document.createElement('canvas');
     canvas.width = Math.round(outWidth);
     canvas.height = Math.round(outHeight);

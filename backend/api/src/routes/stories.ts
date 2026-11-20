@@ -15,7 +15,12 @@ import { and, asc, count, eq, gt, sql } from 'drizzle-orm';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { serve, shape } from '../contract.ts';
 import { ApiError } from '../errors.ts';
-import { acceptImageBodies, admitImageUpload } from '../media/admit-upload.ts';
+import {
+  acceptImageBodies,
+  admitImageUpload,
+  assertRoomFor,
+  IMAGE_CSP,
+} from '../media/admit-upload.ts';
 import { type ProcessedImage, toAttachment, UnreadableImageError } from '../media/images.ts';
 import {
   auditActor,
@@ -233,6 +238,7 @@ export async function storyRoutes(
           throw error;
         }
 
+        await assertRoomFor(db, workspaceId, image.bytes.byteLength);
         const key = `stories/${workspaceId}/${randomUUID()}.${image.extension}`;
         await storage.put(key, image.bytes, image.contentType);
         let row: StoryRow;
@@ -295,6 +301,7 @@ export async function storyRoutes(
         .header('vary', 'Cookie')
         .header('x-content-type-options', 'nosniff')
         .header('cross-origin-resource-policy', 'same-site')
+        .header('content-security-policy', IMAGE_CSP)
         .send(object.stream);
     },
   );

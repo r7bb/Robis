@@ -3,7 +3,8 @@
 import { contracts, PROFILE_TITLE_MAX_LENGTH, WORKING_ON_MAX_LENGTH } from '@robis/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useId, useRef, useState } from 'react';
-import { ApiError, BASE_URL, call } from '../../lib/api.ts';
+import { ApiError, call } from '../../lib/api.ts';
+import { sendImage } from '../../lib/upload.ts';
 import { uploadable } from '../issues/attachments.tsx';
 import { type ProfileData, profileKey } from './profile-model.ts';
 
@@ -17,22 +18,9 @@ const FIELD =
 const QUIET =
   'rounded-md border border-line px-3 py-1.5 text-sm text-content transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft disabled:opacity-50';
 
-/** A cover's bytes, as they are: images are not JSON, so this goes around `call`. */
-async function putCover(workspaceId: string, image: Blob) {
-  const response = await fetch(`${BASE_URL}/workspaces/${workspaceId}/people/me/cover`, {
-    method: 'PUT',
-    credentials: 'include',
-    headers: { 'content-type': image.type },
-    body: image,
-  });
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new ApiError(
-      response.status,
-      payload?.error ?? 'upload_failed',
-      payload?.message ?? 'That cover could not be saved. Try again.',
-    );
-  }
+/** A cover, as it is. */
+function putCover(workspaceId: string, image: Blob) {
+  return sendImage('PUT', `/workspaces/${workspaceId}/people/me/cover`, image);
 }
 
 export function ProfileEditor({

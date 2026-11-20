@@ -72,6 +72,7 @@ const PHRASES: Record<string, (payload: Payload) => string> = {
   'workspace.stories_enabled': (p) =>
     p.enabled === true ? 'turned stories on' : 'turned stories off',
   'member.profile_updated': () => 'updated their profile',
+  'message.image_added': () => 'posted a picture in chat',
   'member.cover_set': () => 'set a cover photo',
   'member.cover_removed': () => 'removed their cover photo',
   'story.added': (p) => (p.kind === 'photo' ? 'posted a photo story' : 'posted a story'),

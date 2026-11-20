@@ -14,7 +14,7 @@ Written to be checkable. Every row names a file you can open.
 | --- | --- |
 | Services | 5 (web, API, realtime gateway, worker, MCP server for agents) plus an optional ML service |
 | Database tables | 18 |
-| HTTP endpoints | 136 |
+| HTTP endpoints | 138 |
 | Tests | Counted in [docs/ROADMAP.md](docs/ROADMAP.md), the one place they are kept |
 | Screenshots | 28, all captured from the running app |
 | Measured throughput | ~3,600 req/s, zero errors |
@@ -82,6 +82,7 @@ second "consumed" state to get wrong.
 | A scripted triage agent: on each new issue it comments suggested duplicates and a priority with their scores, through the MCP server with a five-minute token, and changes nothing | `backend/worker/src/triage.ts` |
 | An MCP server for agents at `/mcp/<workspace id>`: search, suggest, list projects, read, create and update issues, comment; it holds no authority and calls the API with the agent's own token | `backend/mcp/` |
 | Stories: a photo or a few words, seen by the workspace for 24 hours and a 404 on every route after, before the job that deletes the row and queues the file has run; photos re-encoded without metadata and served to members only; posting and taking down audited without the words; an owner can turn them off, which hides them and refuses new ones. In the app: a strip atop the chat, rings on pictures, a full-screen viewer and a composer (photo chosen, taken or pasted, or words); a photo posted offline posts once on reconnect | `backend/api/src/routes/stories.ts`, `backend/database/src/stories.ts`, `frontend/features/stories/`, `shared/sync/src/engine.ts` |
+| Pictures in chat: a pasted screenshot or a photo (chosen, or taken with the camera on phone or desktop) posts as its own message, stripped, members only, audited, counted in storage, removed with its message, room or workspace | `backend/api/src/routes/message-images.ts`, `frontend/features/chat/picture-buttons.tsx` |
 | Profiles, per workspace: a title, a "working on" line and a cover photo (members only, removed with the membership), recent work of the kinds the viewer may read, and a grid of the images they shared; your own to edit | `backend/api/src/routes/profiles.ts`, `backend/api/src/profile-activity.ts`, `frontend/features/profiles/` |
 | Agents as workspace members (member or guest only) with revocable bearer tokens, shown once and kept as hashes; recorded as agents in the audit trail and as the delegate on issues they touch, never as an assignee | `backend/api/src/routes/agents.ts`, `backend/auth/src/agent-tokens.ts` |
 

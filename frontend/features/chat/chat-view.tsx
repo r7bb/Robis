@@ -7,7 +7,13 @@ import type { ChatDraft } from '../workspace/chat-controls.tsx';
 import { Composer } from './composer.tsx';
 import { MessageList } from './message-list.tsx';
 import type { ChannelSummary } from './types.ts';
-import { flattenMessages, useDeleteMessage, useMessages, useSendMessage } from './use-chat.ts';
+import {
+  flattenMessages,
+  useDeleteMessage,
+  useMessages,
+  useSendMessage,
+  useSendPicture,
+} from './use-chat.ts';
 
 /** Turn a thrown value into something worth showing a person. */
 function messageFor(error: unknown): string | null {
@@ -50,6 +56,7 @@ export function ChatView({
 
   const history = useMessages(workspaceId, channelId);
   const send = useSendMessage(workspaceId, channelId);
+  const picture = useSendPicture(workspaceId, channelId);
   const remove = useDeleteMessage(workspaceId, channelId);
 
   const messages = flattenMessages(history.data?.pages);
@@ -91,8 +98,10 @@ export function ChatView({
         channelName={channel?.name ?? ''}
         disabled={!channel || !can(role, 'message:create')}
         sending={send.isPending}
-        error={messageFor(send.error)}
+        error={messageFor(send.error ?? picture.error)}
         onSend={(body) => send.mutate(body)}
+        onPicture={(image) => picture.mutate(image)}
+        sendingPicture={picture.isPending}
         draft={draft}
         onDraftUsed={onDraftUsed}
       />

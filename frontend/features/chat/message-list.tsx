@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 import { Avatar } from '../../components/ui/avatar.tsx';
 import { EmptyState } from '../../components/ui/primitives.tsx';
+import { BASE_URL } from '../../lib/api.ts';
 import { personHref } from '../../lib/links.ts';
 import { formatDaySeparator, formatExact, formatTime, isSameDay } from '../../lib/time.ts';
 import { StoryRing } from '../stories/story-ring.tsx';
@@ -207,9 +208,12 @@ function MessageRow({
          * breaks without parsing anything, and `break-words` stops a pasted
          * URL from widening the column past the viewport.
          */}
-        <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-muted">
-          <MessageBody workspaceId={workspaceId} body={message.body} />
-        </p>
+        {message.body ? (
+          <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-muted">
+            <MessageBody workspaceId={workspaceId} body={message.body} />
+          </p>
+        ) : null}
+        {message.image ? <MessagePicture image={message.image} by={message.authorName} /> : null}
       </div>
 
       {deletable ? (
@@ -225,5 +229,39 @@ function MessageRow({
         </button>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * A picture posted to the room (B2): shown at a size that leaves the
+ * conversation readable, opening full size in a new tab. Its width and
+ * height are known, so the transcript does not jump as it loads.
+ */
+function MessagePicture({
+  image,
+  by,
+}: {
+  image: { url: string; width: number; height: number };
+  by: string;
+}) {
+  const src = `${BASE_URL}${image.url}`;
+  return (
+    <a
+      href={src}
+      target="_blank"
+      rel="noreferrer"
+      className="mt-1 inline-block max-w-full overflow-hidden rounded-lg border border-line bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+    >
+      {/* biome-ignore lint/performance/noImgElement: members-only bytes with the session cookie */}
+      <img
+        src={src}
+        alt={`Shared by ${by}`}
+        width={image.width}
+        height={image.height}
+        loading="lazy"
+        decoding="async"
+        className="block h-auto max-h-64 w-auto max-w-full object-contain"
+      />
+    </a>
   );
 }

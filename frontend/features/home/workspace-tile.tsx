@@ -204,8 +204,8 @@ function TileStorage({ storage }: { storage: { used: number; quota: number } }) 
   const share = Math.min(1, storage.used / storage.quota);
   return (
     // Always in the layout, faded in on hover: appearing must not push the tile's
-    // contents about.
-    <div className="relative z-10 mt-4 transition-opacity duration-300 fit:opacity-0 fit:group-hover:opacity-100 fit:group-focus-within:opacity-100 motion-reduce:transition-none">
+    // contents about. Room on the right for the delete button in that corner.
+    <div className="relative z-10 mt-4 transition-opacity duration-300 fit:pr-9 fit:opacity-0 fit:group-hover:opacity-100 fit:group-focus-within:opacity-100 motion-reduce:transition-none">
       <div className="flex justify-between text-[11px] text-faint">
         <span>Storage</span>
         <span>

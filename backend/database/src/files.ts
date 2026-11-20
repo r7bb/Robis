@@ -2,7 +2,7 @@ import type { SQL } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
 import type { Executor } from './index.ts';
 import { enqueue } from './queue.ts';
-import { attachments, stories } from './schema.ts';
+import { attachments, messages, stories } from './schema.ts';
 
 /** The job that removes stored files whose rows are gone. */
 export const STORAGE_PURGE_JOB = 'storage.purge';
@@ -27,9 +27,18 @@ export type StoragePurgePayload = { keys: string[] };
  */
 export async function queueAttachmentPurge(tx: Executor, where: SQL): Promise<number> {
   const rows = await tx.select({ key: attachments.storageKey }).from(attachments).where(where);
-  if (rows.length === 0) return 0;
+  return queueKeysPurge(
+    tx,
+    rows.map((row) => row.key),
+  );
+}
 
-  const keys = rows.map((row) => row.key);
+/**
+ * Queue removal of these stored files, in batches, in the caller's
+ * transaction: the one place every kind of file (attachments, stories,
+ * covers, chat pictures) goes through once its row is going.
+ */
+export async function queueKeysPurge(tx: Executor, keys: readonly string[]): Promise<number> {
   for (let start = 0; start < keys.length; start += PURGE_BATCH) {
     const payload: StoragePurgePayload = { keys: keys.slice(start, start + PURGE_BATCH) };
     await enqueue(tx, STORAGE_PURGE_JOB, payload);
@@ -38,17 +47,34 @@ export async function queueAttachmentPurge(tx: Executor, where: SQL): Promise<nu
 }
 
 /**
+ * Queue removal of the pictures on the messages `where` selects (B2): for a
+ * message taken down, a room deleted, or a workspace deleted, before the
+ * delete, like `queueAttachmentPurge`.
+ */
+export async function queueMessageImagePurge(tx: Executor, where: SQL): Promise<number> {
+  const rows = await tx
+    .select({ key: messages.imageKey })
+    .from(messages)
+    .where(sql`${where} and ${messages.imageKey} is not null`);
+  return queueKeysPurge(
+    tx,
+    rows.flatMap((row) => (row.key ? [row.key] : [])),
+  );
+}
+
+/**
  * How much a workspace may store (stage 1, item 11), in bytes. Checked
  * before an upload is read; shown to the workspace's owners.
  */
 export const WORKSPACE_STORAGE_QUOTA_BYTES = 1024 ** 3;
 
-/** Bytes a workspace's files take, as stored: images on issues, and story photos (B2). */
+/** Bytes a workspace's files take, as stored: images on issues, story photos and chat pictures (B2). */
 export async function workspaceStorageUsed(db: Executor, workspaceId: string): Promise<number> {
   const [row] = await db
     .select({
       used: sql<number>`coalesce((select sum(${attachments.bytes}) from ${attachments} where ${attachments.workspaceId} = ${workspaceId}), 0)::bigint
-        + coalesce((select sum(${stories.bytes}) from ${stories} where ${stories.workspaceId} = ${workspaceId}), 0)::bigint`,
+        + coalesce((select sum(${stories.bytes}) from ${stories} where ${stories.workspaceId} = ${workspaceId}), 0)::bigint
+        + coalesce((select sum(${messages.imageBytes}) from ${messages} where ${messages.workspaceId} = ${workspaceId}), 0)::bigint`,
     })
     .from(sql`(select 1) as one`);
   return Number(row?.used ?? 0);

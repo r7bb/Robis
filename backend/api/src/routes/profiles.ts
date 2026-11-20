@@ -4,6 +4,7 @@ import {
   auditEvents,
   type Database,
   enqueue,
+  messages,
   publishEvent,
   recordAudit,
   STORAGE_PURGE_JOB,
@@ -13,11 +14,11 @@ import {
 } from '@robis/database';
 import { contracts, isUuid } from '@robis/shared';
 import type { MediaStorage } from '@robis/storage';
-import { and, desc, eq, like, notInArray, or } from 'drizzle-orm';
+import { and, desc, eq, isNotNull, like, notInArray, or } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { serve } from '../contract.ts';
 import { ApiError } from '../errors.ts';
-import { acceptImageBodies, admitImageUpload } from '../media/admit-upload.ts';
+import { acceptImageBodies, admitImageUpload, IMAGE_CSP } from '../media/admit-upload.ts';
 import { avatarOf } from '../media/avatars.ts';
 import { toCover, UnreadableImageError } from '../media/images.ts';
 import {
@@ -156,22 +157,59 @@ export async function profileRoutes(
     return rows.map((event) => ({ ...event, payload: JSON.parse(event.payload) }));
   }
 
-  /** The images they added to this workspace's issues, newest first. */
+  /** The images they added to issues here and the pictures they posted in chat, newest first. */
   async function sharedBy(workspaceId: string, userId: string) {
-    const rows = await db
-      .select()
-      .from(attachments)
-      .where(and(eq(attachments.workspaceId, workspaceId), eq(attachments.uploaderId, userId)))
-      .orderBy(desc(attachments.createdAt))
-      .limit(SHARED_SHOWN);
-    return rows.map((row) => ({
-      id: row.id,
-      issueId: row.issueId,
-      url: `/workspaces/${workspaceId}/attachments/${row.id}`,
-      width: row.width,
-      height: row.height,
-      createdAt: row.createdAt,
-    }));
+    const [onIssues, inChat] = await Promise.all([
+      db
+        .select()
+        .from(attachments)
+        .where(and(eq(attachments.workspaceId, workspaceId), eq(attachments.uploaderId, userId)))
+        .orderBy(desc(attachments.createdAt))
+        .limit(SHARED_SHOWN),
+      db
+        .select({
+          id: messages.id,
+          channelId: messages.channelId,
+          width: messages.imageWidth,
+          height: messages.imageHeight,
+          createdAt: messages.createdAt,
+        })
+        .from(messages)
+        .where(
+          and(
+            eq(messages.workspaceId, workspaceId),
+            eq(messages.authorId, userId),
+            isNotNull(messages.imageKey),
+            isNotNull(messages.imageWidth),
+            isNotNull(messages.imageHeight),
+          ),
+        )
+        .orderBy(desc(messages.createdAt))
+        .limit(SHARED_SHOWN),
+    ]);
+    const images = [
+      ...onIssues.map((row) => ({
+        id: row.id,
+        issueId: row.issueId,
+        channelId: null,
+        url: `/workspaces/${workspaceId}/attachments/${row.id}`,
+        width: row.width,
+        height: row.height,
+        createdAt: row.createdAt,
+      })),
+      ...inChat.map((row) => ({
+        id: row.id,
+        issueId: null,
+        channelId: row.channelId,
+        url: `/workspaces/${workspaceId}/messages/${row.id}/image`,
+        width: row.width!,
+        height: row.height!,
+        createdAt: row.createdAt,
+      })),
+    ];
+    return images
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, SHARED_SHOWN);
   }
 
   async function storiesOn(workspaceId: string): Promise<boolean> {
@@ -348,6 +386,7 @@ export async function profileRoutes(
           .header('vary', 'Cookie')
           .header('x-content-type-options', 'nosniff')
           .header('cross-origin-resource-policy', 'same-site')
+          .header('content-security-policy', IMAGE_CSP)
           .send(object.stream)
       );
     },

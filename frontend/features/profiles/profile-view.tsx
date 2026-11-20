@@ -9,7 +9,7 @@ import { Avatar, orbStyle } from '../../components/ui/avatar.tsx';
 import { AgentBadge, ErrorState, RoleBadge } from '../../components/ui/primitives.tsx';
 import { BASE_URL, call } from '../../lib/api.ts';
 import { describeEvent } from '../../lib/audit-events.ts';
-import { issueHref } from '../../lib/links.ts';
+import { channelHref, issueHref } from '../../lib/links.ts';
 import { StoryRing } from '../stories/story-ring.tsx';
 import { ProfileEditor } from './profile-editor.tsx';
 import { type ProfileData, profileKey } from './profile-model.ts';
@@ -173,7 +173,7 @@ function Shared({
       {images.length === 0 ? (
         <p className="mt-3 rounded-lg border border-line bg-raised px-4 py-6 text-center text-sm text-faint">
           {mine
-            ? 'Images you add to issues gather here. Paste a screenshot into any issue to start.'
+            ? 'Images you add to issues or post in chat gather here. Paste a screenshot into either to start.'
             : 'No images shared yet.'}
         </p>
       ) : (
@@ -181,13 +181,17 @@ function Shared({
           {images.map((image) => (
             <li key={image.id}>
               <Link
-                href={issueHref(workspaceId, image.issueId)}
+                href={
+                  image.issueId
+                    ? issueHref(workspaceId, image.issueId)
+                    : channelHref(workspaceId, image.channelId ?? '')
+                }
                 className="group block overflow-hidden rounded-lg border border-line bg-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
               >
                 {/* biome-ignore lint/performance/noImgElement: members-only bytes with the session cookie */}
                 <img
                   src={`${BASE_URL}${image.url}`}
-                  alt={`Added to an issue ${ago(image.createdAt)}`}
+                  alt={`${image.issueId ? 'Added to an issue' : 'Posted in chat'} ${ago(image.createdAt)}`}
                   width={image.width}
                   height={image.height}
                   loading="lazy"

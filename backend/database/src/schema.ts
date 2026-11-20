@@ -1395,6 +1395,17 @@ export const messages = pgTable(
     body: text('body').notNull(),
     /** Null until edited, so "(edited)" is a fact about the row, not a guess. */
     editedAt: timestamp('edited_at', { withTimezone: true }),
+    /**
+     * A picture posted to the room (B2): a pasted screenshot or a photo, one
+     * per message, in the storage port and served to members only. The
+     * code that deletes a message, its room or its workspace queues the
+     * file's removal, since a cascade cannot.
+     */
+    imageKey: text('image_key'),
+    imageContentType: text('image_content_type'),
+    imageBytes: integer('image_bytes'),
+    imageWidth: integer('image_width'),
+    imageHeight: integer('image_height'),
     createdAt: createdAt(),
     searchVector: tsvector('search_vector').generatedAlwaysAs(
       sql`to_tsvector('english', coalesce(body, ''))`,
@@ -1411,6 +1422,7 @@ export const messages = pgTable(
     // One workspace's messages, newest first: where an issue's key is
     // looked for (its In chat list), so the scan never leaves the workspace.
     index('messages_workspace_created_idx').on(t.workspaceId, t.createdAt.desc(), t.id.desc()),
+    uniqueIndex('messages_image_key_key').on(t.imageKey),
   ],
 );
 

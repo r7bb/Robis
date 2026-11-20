@@ -5,6 +5,7 @@ import {
   encodeCursor,
   messages,
   publishEvent,
+  queueMessageImagePurge,
   recordAudit,
   users,
 } from '@robis/database';
@@ -38,7 +39,7 @@ import {
  * B's conversation. Not found rather than forbidden, so the reply does not
  * confirm the channel exists.
  */
-async function loadChannel(db: Database, workspaceId: string, channelId: string) {
+export async function loadChannel(db: Database, workspaceId: string, channelId: string) {
   if (!isUuid(channelId)) throw ApiError.notFound('Channel not found');
 
   const [channel] = await db
@@ -49,6 +50,31 @@ async function loadChannel(db: Database, workspaceId: string, channelId: string)
 
   if (!channel) throw ApiError.notFound('Channel not found');
   return channel;
+}
+
+/** A message's picture as the API shows it: a members-only route, never a storage key. */
+export function imageOf(
+  workspaceId: string,
+  messageId: string,
+  key: string | null,
+  width: number | null,
+  height: number | null,
+) {
+  if (!key || width === null || height === null) return null;
+  return { url: `/workspaces/${workspaceId}/messages/${messageId}/image`, width, height };
+}
+
+/** A stored message as the API shows it, without its storage columns. */
+export function messageWire(row: typeof messages.$inferSelect) {
+  return {
+    id: row.id,
+    channelId: row.channelId,
+    body: row.body,
+    createdAt: row.createdAt,
+    editedAt: row.editedAt,
+    authorId: row.authorId,
+    image: imageOf(row.workspaceId, row.id, row.imageKey, row.imageWidth, row.imageHeight),
+  };
 }
 
 export async function channelRoutes(app: FastifyInstance, opts: { db: Database }) {
@@ -177,6 +203,8 @@ export async function channelRoutes(app: FastifyInstance, opts: { db: Database }
       // be worse than losing them, because nothing would ever show them again
       // and nobody would know they were still stored.
       await db.transaction(async (tx) => {
+        // Its pictures' files too (B2), read before the cascade takes the rows.
+        await queueMessageImagePurge(tx, eq(messages.channelId, channelId));
         const deleted = await tx
           .delete(channels)
           .where(and(eq(channels.id, channelId), eq(channels.workspaceId, workspaceId)))
@@ -243,6 +271,9 @@ export async function channelRoutes(app: FastifyInstance, opts: { db: Database }
           editedAt: messages.editedAt,
           authorId: messages.authorId,
           authorName: users.name,
+          imageKey: messages.imageKey,
+          imageWidth: messages.imageWidth,
+          imageHeight: messages.imageHeight,
         })
         .from(messages)
         .innerJoin(users, eq(users.id, messages.authorId))
@@ -253,7 +284,10 @@ export async function channelRoutes(app: FastifyInstance, opts: { db: Database }
       const last = rows.at(-1);
 
       return {
-        messages: rows,
+        messages: rows.map(({ imageKey, imageWidth, imageHeight, ...row }) => ({
+          ...row,
+          image: imageOf(workspaceId, row.id, imageKey, imageWidth, imageHeight),
+        })),
         nextCursor: rows.length === query.limit && last ? encodeCursor(last.id) : null,
       };
     },
@@ -284,7 +318,7 @@ export async function channelRoutes(app: FastifyInstance, opts: { db: Database }
         actorId: user.id,
       });
 
-      return { message: { ...created!, authorName: user.name } };
+      return { message: { ...messageWire(created!), authorName: user.name } };
     },
   );
 
@@ -318,6 +352,7 @@ export async function channelRoutes(app: FastifyInstance, opts: { db: Database }
        * the only place that says the message existed, and who took it down.
        */
       await db.transaction(async (tx) => {
+        await queueMessageImagePurge(tx, eq(messages.id, messageId));
         const deleted = await tx
           .delete(messages)
           .where(and(eq(messages.id, messageId), eq(messages.workspaceId, workspaceId)))

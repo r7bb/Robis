@@ -148,14 +148,14 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Pictures in chat.** Paste a screenshot into the message box, or choose
+  or take a photo, and it posts to the room as a picture.
 - **Profiles.** Each person has a profile in each workspace: a cover, what
   they do there, what they are working on, what they have been doing, and
   the images they have shared.
 - **Stories.** Share a photo or a few words with your workspace for 24
   hours: rings on faces, a full-screen viewer, and a photo taken with no
   signal posts itself once you are back.
-- **Passkeys.** Sign in with your phone, laptop or a security key instead of
-  a password: no address to type, nothing a fake site can use.
 
 <!-- latest:end -->
 

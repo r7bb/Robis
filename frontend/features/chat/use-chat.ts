@@ -3,6 +3,8 @@
 import { contracts } from '@robis/shared';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { call } from '../../lib/api.ts';
+import { sendImage } from '../../lib/upload.ts';
+import { uploadable } from '../issues/attachments.tsx';
 import type { ChatMessage, MessagePage } from './types.ts';
 
 /**
@@ -83,6 +85,28 @@ export function useSendMessage(workspaceId: string, channelId: string | null) {
       queryClient.invalidateQueries({ queryKey: messagesKey(workspaceId, channelId) });
       // A message may name an issue; its In chat list is read again.
       queryClient.invalidateQueries({ queryKey: ['discussion', workspaceId] });
+    },
+  });
+}
+
+/**
+ * Post a picture to the room (B2): a pasted screenshot or a photo, as its
+ * own message. Each gets a key of its own, so a retry after a lost answer
+ * is the same picture, not a second one.
+ */
+export function useSendPicture(workspaceId: string, channelId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: Blob) =>
+      sendImage(
+        'POST',
+        `/workspaces/${workspaceId}/channels/${channelId as string}/images`,
+        await uploadable(file),
+        crypto.randomUUID(),
+      ),
+    onSuccess: () => {
+      if (!channelId) return;
+      queryClient.invalidateQueries({ queryKey: messagesKey(workspaceId, channelId) });
     },
   });
 }

@@ -1,7 +1,6 @@
 import { and, eq, type SQL, sql } from 'drizzle-orm';
-import { PURGE_BATCH, STORAGE_PURGE_JOB, type StoragePurgePayload } from './files.ts';
+import { queueKeysPurge } from './files.ts';
 import type { Executor } from './index.ts';
-import { enqueue } from './queue.ts';
 import { stories, workspaceMembers } from './schema.ts';
 import { deleteStories } from './stories.ts';
 
@@ -19,12 +18,10 @@ export async function queueCoverPurge(tx: Executor, where: SQL): Promise<number>
     // Locked, so a cover being replaced right now commits first and its new
     // key, not the one it replaces, is the one read here.
     .for('update');
-  const keys = rows.flatMap((row) => (row.key ? [row.key] : []));
-  for (let start = 0; start < keys.length; start += PURGE_BATCH) {
-    const payload: StoragePurgePayload = { keys: keys.slice(start, start + PURGE_BATCH) };
-    await enqueue(tx, STORAGE_PURGE_JOB, payload);
-  }
-  return keys.length;
+  return queueKeysPurge(
+    tx,
+    rows.flatMap((row) => (row.key ? [row.key] : [])),
+  );
 }
 
 /**

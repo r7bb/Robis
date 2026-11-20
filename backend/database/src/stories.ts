@@ -1,8 +1,7 @@
 import { lte, type SQL, sql } from 'drizzle-orm';
 import { publishEvent } from './events.ts';
-import { PURGE_BATCH, STORAGE_PURGE_JOB, type StoragePurgePayload } from './files.ts';
+import { queueKeysPurge } from './files.ts';
 import type { Database, Executor } from './index.ts';
-import { enqueue } from './queue.ts';
 import { stories } from './schema.ts';
 
 /** How long a story is seen for (B2). */
@@ -29,12 +28,10 @@ export async function queueStoryPurge(tx: Executor, where: SQL): Promise<number>
     .select({ key: stories.storageKey })
     .from(stories)
     .where(sql`${where} and ${stories.storageKey} is not null`);
-  const keys = rows.map((row) => row.key!).filter(Boolean);
-  for (let start = 0; start < keys.length; start += PURGE_BATCH) {
-    const payload: StoragePurgePayload = { keys: keys.slice(start, start + PURGE_BATCH) };
-    await enqueue(tx, STORAGE_PURGE_JOB, payload);
-  }
-  return keys.length;
+  return queueKeysPurge(
+    tx,
+    rows.flatMap((row) => (row.key ? [row.key] : [])),
+  );
 }
 
 /**
@@ -72,11 +69,10 @@ export async function expireStories(db: Database): Promise<number> {
         .where(sql`${stories.id} in ${due}`)
         .returning({ workspaceId: stories.workspaceId, storageKey: stories.storageKey });
 
-      const keys = deleted.flatMap((row) => (row.storageKey ? [row.storageKey] : []));
-      for (let start = 0; start < keys.length; start += PURGE_BATCH) {
-        const payload: StoragePurgePayload = { keys: keys.slice(start, start + PURGE_BATCH) };
-        await enqueue(tx, STORAGE_PURGE_JOB, payload);
-      }
+      await queueKeysPurge(
+        tx,
+        deleted.flatMap((row) => (row.storageKey ? [row.storageKey] : [])),
+      );
       for (const workspaceId of new Set(deleted.map((row) => row.workspaceId))) {
         await publishEvent(tx, {
           type: 'story.changed',

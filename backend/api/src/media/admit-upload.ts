@@ -54,3 +54,25 @@ export function admitImageUpload(db: Database) {
     }
   };
 }
+
+/**
+ * The storage limit checked again with the image's real size, once it is
+ * processed: the early check trusts Content-Length, which a chunked upload
+ * does not send. Refused the same way, before anything is stored.
+ */
+export async function assertRoomFor(db: Database, workspaceId: string, bytes: number) {
+  const used = await workspaceStorageUsed(db, workspaceId);
+  if (used + bytes > WORKSPACE_STORAGE_QUOTA_BYTES) {
+    throw new ApiError(
+      413,
+      'storage_quota_exceeded',
+      'This workspace is out of storage. An owner can make room by deleting old images.',
+    );
+  }
+}
+
+/**
+ * For an image served on the API's own address: nothing in it may run or
+ * load anything, even opened on its own in a tab.
+ */
+export const IMAGE_CSP = "default-src 'none'; sandbox";

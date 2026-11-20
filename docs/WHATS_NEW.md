@@ -6,6 +6,8 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Pictures in chat** (2026-11-20). Paste a screenshot into the message
+  box, or choose or take a photo, and it posts to the room as a picture.
 - **Profiles** (2026-11-20). Each person has a profile in each workspace: a
   cover, what they do there, what they are working on, what they have been
   doing, and the images they have shared.

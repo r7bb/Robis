@@ -7,10 +7,12 @@ import {
   enqueue,
   erasureRequests,
   meetingAttendees,
+  messages,
   mutations,
   notifications,
   queueAttachmentPurge,
   queueCoverPurge,
+  queueMessageImagePurge,
   queueStoryPurge,
   STORAGE_PURGE_JOB,
   sessions,
@@ -75,6 +77,7 @@ async function settleWorkspace(tx: Tx, userId: string, decision: Decision) {
   await queueAttachmentPurge(tx, eq(attachments.workspaceId, decision.id));
   await queueStoryPurge(tx, eq(stories.workspaceId, decision.id));
   await queueCoverPurge(tx, eq(workspaceMembers.workspaceId, decision.id));
+  await queueMessageImagePurge(tx, eq(messages.workspaceId, decision.id));
   await tx.delete(workspaces).where(eq(workspaces.id, decision.id));
 }
 

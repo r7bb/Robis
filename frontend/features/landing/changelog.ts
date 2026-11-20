@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-20',
     area: 'Product',
+    title: 'Pictures in chat',
+    brief:
+      'Paste a screenshot into the message box, or choose or take a photo, and it posts to the room as a picture.',
+    summary:
+      'Under the message box there are now Photo and Camera. Photo chooses one or more pictures; Camera opens the phone’s own camera, or a live preview on a desktop; and pasting a screenshot straight into the box posts it, while pasted text stays text. Each picture is its own message, shown at a size that keeps the conversation readable and opening full size in a new tab. Pictures are stored without their location, count toward the workspace’s storage, are shown to members only, and go with their message, their room or their workspace. Posting one is recorded in the workspace’s history, as every upload is, though a text message is not. They also appear in their author’s profile, beside the images they added to issues.',
+    feature: {
+      name: 'Pictures in chat',
+      where: 'Photo, Camera, or paste, under any room’s message box',
+      layers: [
+        'Screen: Photo and Camera under the message box, paste into it, and pictures in the conversation',
+        'API: messages.createImage and the members-only picture route; messages carry their picture',
+        'Data: a picture on its message, in the storage port, removed with the message, room or workspace',
+      ],
+    },
+    checked:
+      'Seven new tests against the API: a picture posts as its own message, stripped of metadata, served to members only and refused to a stranger, and is audited; a text message still has none; a replay stores one file and what is not an image is refused; a room in another workspace is a 404; pictures count toward storage and show on their author’s profile; and the file goes with its message (taken down by its author or an admin), its room and its workspace. The full suite, lint, typecheck and docs:links. In headless Chrome on the rebuilt stack, with a throwaway account: a screenshot pasted into the message box posted and showed in the room, text still sent as text, and a workspace tile on the home stayed put under the pointer. Security and code review: nothing critical or high; storage is now checked again with a picture’s real size, and pictures, covers and stories are served with a policy that lets nothing in them run.',
+  },
+  {
+    date: '2026-11-20',
+    area: 'Product',
     title: 'Profiles',
     brief:
       'Each person has a profile in each workspace: a cover, what they do there, what they are working on, what they have been doing, and the images they have shared.',

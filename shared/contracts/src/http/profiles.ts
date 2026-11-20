@@ -38,10 +38,12 @@ const profile = z.object({
   joinedAt: timestamp,
 });
 
-/** An image they added to an issue, for the profile's grid. */
+/** An image they added to an issue, or a picture they posted in chat, for the profile's grid. */
 const sharedImage = z.object({
   id: uuid,
-  issueId: uuid,
+  /** Where it was shared: an issue, or a chat room. One of the two is set. */
+  issueId: uuid.nullable(),
+  channelId: uuid.nullable(),
   url: z.string(),
   width: z.number().int(),
   height: z.number().int(),

@@ -379,6 +379,13 @@
       "when": 1795175092138,
       "tag": "0053_member_profiles",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1795176320553,
+      "tag": "0054_message_images",
+      "breakpoints": true
     }
   ]
 }

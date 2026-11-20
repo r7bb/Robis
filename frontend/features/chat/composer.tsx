@@ -4,6 +4,7 @@ import { MESSAGE_MAX_LENGTH } from '@robis/shared/limits';
 import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { Button, InlineError } from '../../components/ui/primitives.tsx';
 import type { ChatDraft } from '../workspace/chat-controls.tsx';
+import { PictureButtons } from './picture-buttons.tsx';
 
 /** Show the remaining-characters hint only when it is nearly relevant. */
 const COUNTER_VISIBLE_FROM = MESSAGE_MAX_LENGTH - 200;
@@ -26,6 +27,8 @@ export function Composer({
   onSend,
   draft = null,
   onDraftUsed,
+  onPicture,
+  sendingPicture = false,
 }: {
   channelName: string;
   disabled: boolean;
@@ -36,6 +39,9 @@ export function Composer({
   draft?: ChatDraft | null;
   /** Called once the draft is in the box, so it is not put in again. */
   onDraftUsed?: () => void;
+  /** A picture to post (B2): chosen, taken, or pasted into the box. */
+  onPicture?: (image: Blob) => void;
+  sendingPicture?: boolean;
 }) {
   const [body, setBody] = useState('');
   const textarea = useRef<HTMLTextAreaElement>(null);
@@ -107,6 +113,16 @@ export function Composer({
             resize();
           }}
           onKeyDown={onKeyDown}
+          onPaste={(event) => {
+            // A screenshot pasted into the box goes up as a picture; text
+            // pastes as text, as ever.
+            const images = [...event.clipboardData.items]
+              .filter((item) => item.type.startsWith('image/'))
+              .flatMap((item) => item.getAsFile() ?? []);
+            if (images.length === 0 || !onPicture) return;
+            event.preventDefault();
+            for (const image of images) onPicture(image);
+          }}
           disabled={disabled}
           rows={1}
           maxLength={MESSAGE_MAX_LENGTH}
@@ -125,7 +141,12 @@ export function Composer({
       </div>
 
       <div className="mt-1.5 flex items-center justify-between gap-3">
-        <p className="text-[10px] text-faint">
+        {onPicture ? (
+          <div className="flex shrink-0 gap-1.5">
+            <PictureButtons disabled={disabled} sending={sendingPicture} onPicture={onPicture} />
+          </div>
+        ) : null}
+        <p className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-right text-[10px] text-faint">
           <kbd className="rounded border border-line px-1">Enter</kbd> to send,{' '}
           <kbd className="rounded border border-line px-1">Shift</kbd>+
           <kbd className="rounded border border-line px-1">Enter</kbd> for a new line

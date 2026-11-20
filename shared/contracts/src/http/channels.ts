@@ -20,14 +20,23 @@ const channel = z.object({
 });
 
 /** A message as the API shows it; never its search vector. */
+/** A picture posted to a room (B2); `url` is the members-only route that serves it. */
+const messageImage = z.object({
+  url: z.string(),
+  width: z.number().int(),
+  height: z.number().int(),
+});
+
 const message = z.object({
   id: uuid,
   channelId: uuid,
+  /** Empty for a message that is only a picture. */
   body: z.string(),
   createdAt: timestamp,
   editedAt: timestamp.nullable(),
   authorId: uuid,
   authorName: z.string(),
+  image: messageImage.nullable().default(null),
 });
 
 export const channelContracts = {
@@ -77,6 +86,16 @@ export const channelContracts = {
     summary: 'Post a message to a channel.',
     params: channelParams,
     body: createMessageSchema,
+    status: 201,
+    response: z.object({ message }),
+  }),
+  'messages.createImage': contract({
+    method: 'POST',
+    path: '/workspaces/:workspaceId/channels/:channelId/images',
+    summary:
+      'Post a picture to a channel as its own message; re-encoded and stripped of metadata, within the workspace’s storage limit.',
+    params: channelParams,
+    rawBody: 'image/*',
     status: 201,
     response: z.object({ message }),
   }),

@@ -182,7 +182,17 @@ Order of work, decided 2026-10-09:
    settings, agents, saved views or the trail's own housekeeping, and a new
    event type stays off until listed), and a grid of the images they added
    to issues. Covers are not counted in the storage limit: one per member,
-   at most 1500 by 500. Still to come: pictures in chat.
+   at most 1500 by 500.
+   **Pictures in chat, 2026-11-20:** a screenshot pasted into the message
+   box, a photo chosen, or one taken (the phone's own camera, or a live
+   preview on a desktop) posts to the room as its own message: re-encoded
+   without metadata, through the idempotency ledger, counted in the
+   workspace's storage, served to members only, audited (unlike a text
+   message, since every upload is), and removed with its message, room or
+   workspace. They join their author's shared grid. With this, Phase 2b's
+   capture list (issues, chat, stories; phone and desktop) is complete.
+   Next, at the owner's request: "Different shots" (agents posting idea
+   cards with a Try it button) and a Feed page.
 
 - Rich profiles: photo, cover, role, a "working on" line, recent activity,
   and a grid of what the person has shared.
