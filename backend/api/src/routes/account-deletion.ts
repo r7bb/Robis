@@ -3,14 +3,17 @@ import {
   attachments,
   authTokens,
   type Database,
+  deleteStories,
   enqueue,
   erasureRequests,
   meetingAttendees,
   mutations,
   notifications,
   queueAttachmentPurge,
+  queueStoryPurge,
   STORAGE_PURGE_JOB,
   sessions,
+  stories,
   type Tx,
   users,
   workspaceInvitations,
@@ -69,6 +72,7 @@ async function settleWorkspace(tx: Tx, userId: string, decision: Decision) {
     return;
   }
   await queueAttachmentPurge(tx, eq(attachments.workspaceId, decision.id));
+  await queueStoryPurge(tx, eq(stories.workspaceId, decision.id));
   await tx.delete(workspaces).where(eq(workspaces.id, decision.id));
 }
 
@@ -82,6 +86,8 @@ async function emptyAccount(tx: Tx, userId: string) {
     await enqueue(tx, STORAGE_PURGE_JOB, { keys: [account.avatarRef] });
   }
 
+  // Stories are personal: they go with the account, files and all (B2).
+  await deleteStories(tx, eq(stories.authorId, userId));
   await tx.delete(sessions).where(eq(sessions.userId, userId));
   await tx.delete(authTokens).where(eq(authTokens.userId, userId));
   await tx.delete(workspaceMembers).where(eq(workspaceMembers.userId, userId));

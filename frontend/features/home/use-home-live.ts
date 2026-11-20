@@ -109,13 +109,16 @@ export function useHomeLive({
   const signals = useMemo<TileSignals>(
     () => ({
       onEvent(event) {
+        // Nobody did it (stories that reached their 24 hours): no spark, no line.
+        const { actorId } = event;
+        if (actorId === null) return;
         setSpark((last) => ({
           workspaceId: event.workspaceId,
-          actorId: event.actorId,
+          actorId,
           seq: (last?.seq ?? 0) + 1,
         }));
         const item = feedItemFrom(event, {
-          actorName: context.current.names.get(event.actorId) ?? null,
+          actorName: context.current.names.get(actorId) ?? null,
           workspaceName: context.current.workspaceNames.get(event.workspaceId) ?? 'a workspace',
           at: Date.now(),
         });

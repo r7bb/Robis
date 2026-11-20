@@ -487,6 +487,11 @@ export const workspaces = pgTable(
      * workspace route and on the live feed, with a way to turn it on.
      */
     requireTwoFactor: boolean('require_two_factor').notNull().default(false),
+    /**
+     * Whether people here may post stories (B2). On unless an owner turns
+     * it off; off hides the stories there are and refuses new ones.
+     */
+    storiesEnabled: boolean('stories_enabled').notNull().default(true),
     createdBy: uuid('created_by')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict' }),
@@ -753,6 +758,54 @@ export const attachments = pgTable(
     uniqueIndex('attachments_storage_key_key').on(t.storageKey),
     index('attachments_issue_created_idx').on(t.issueId, t.createdAt),
     index('attachments_workspace_idx').on(t.workspaceId),
+  ],
+);
+
+/** What a story is: a picture, or a few words on a colour (B2). */
+export const STORY_KINDS = ['photo', 'text'] as const;
+
+/**
+ * A story (B2): a photo or a short text, seen by the workspace for 24 hours.
+ *
+ * Expiry is checked on every read, so a story past `expires_at` is gone to
+ * everyone at once, whether or not the job that deletes it has run. That
+ * job removes the row and queues its file; until then the row is only
+ * waiting to go. Text is a person's own words, so it never enters the
+ * audit trail: the trail records that a story was added, not what it said.
+ */
+export const stories = pgTable(
+  'stories',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    authorId: uuid('author_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    kind: text('kind', { enum: STORY_KINDS }).notNull(),
+    /** A text story's words. */
+    body: text('body'),
+    /** A text story's background, by name from a fixed list. */
+    tone: text('tone'),
+    /** A photo story's file, and what it is. */
+    storageKey: text('storage_key'),
+    contentType: text('content_type'),
+    bytes: integer('bytes'),
+    width: integer('width'),
+    height: integer('height'),
+    createdAt: createdAt(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    uniqueIndex('stories_storage_key_key').on(t.storageKey),
+    index('stories_workspace_expires_idx').on(t.workspaceId, t.expiresAt),
+    index('stories_author_idx').on(t.authorId),
+    index('stories_expires_idx').on(t.expiresAt),
+    check(
+      'stories_kind_fields',
+      sql`(${t.kind} = 'photo' and ${t.storageKey} is not null and ${t.body} is null) or (${t.kind} = 'text' and ${t.storageKey} is null and ${t.body} is not null)`,
+    ),
   ],
 );
 

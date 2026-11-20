@@ -73,7 +73,13 @@ export type ServerEvent =
     }
   | { type: 'channel.created'; workspaceId: string; channelId: string; actorId: string }
   | { type: 'channel.deleted'; workspaceId: string; channelId: string; actorId: string }
-  | { type: 'meeting.changed'; workspaceId: string; meetingId: string; actorId: string };
+  | { type: 'meeting.changed'; workspaceId: string; meetingId: string; actorId: string }
+  /*
+   * A story was added or went (B2), or the workspace turned stories on or
+   * off (then `storyId` is null). Ids only: the bar re-reads the list, so
+   * an expired or hidden story is never sent to anyone.
+   */
+  | { type: 'story.changed'; workspaceId: string; storyId: string | null; actorId: string | null };
 
 export type PresenceUser = {
   userId: string;

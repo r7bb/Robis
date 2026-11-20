@@ -69,6 +69,11 @@ const PHRASES: Record<string, (payload: Payload) => string> = {
     p.required === true
       ? 'required two-factor sign-in of everyone'
       : 'stopped requiring two-factor sign-in',
+  'workspace.stories_enabled': (p) =>
+    p.enabled === true ? 'turned stories on' : 'turned stories off',
+  'story.added': (p) => (p.kind === 'photo' ? 'posted a photo story' : 'posted a story'),
+  'story.deleted': (p) =>
+    p.moderated === true ? "took down someone's story" : 'took down a story',
   'audit.keyed': () => 'started signing this audit trail',
   'audit.read': () => 'read the audit trail',
   'audit.exported': () => 'exported part of the audit trail',

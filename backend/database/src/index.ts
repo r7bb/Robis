@@ -28,6 +28,7 @@ export * from './roles.ts';
 export * from './schema.ts';
 export * from './search.ts';
 export * from './signups.ts';
+export * from './stories.ts';
 export * from './usernames.ts';
 export { schema };
 

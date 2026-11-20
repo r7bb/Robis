@@ -5,6 +5,8 @@ import {
   hasPendingJob,
   listenForJobs,
   STORAGE_PURGE_JOB,
+  STORY_EXPIRY_INTERVAL_MS,
+  STORY_EXPIRY_JOB,
 } from '@robis/database';
 import { mailerFromEnv } from '@robis/mailer';
 import { TRIAGE_JOB } from '@robis/shared';
@@ -67,6 +69,8 @@ async function scheduleMaintenance() {
   await enqueue(db, 'agents.judge', {}, { delayMs: HOUR_MS });
   // Hourly, so the day's digests go out within the hour of DIGEST_HOUR_UTC (C3).
   await enqueue(db, 'digests.scan', {}, { delayMs: HOUR_MS });
+  // Stories past their 24 hours (B2): hidden at once, deleted within this.
+  await enqueue(db, STORY_EXPIRY_JOB, {}, { delayMs: STORY_EXPIRY_INTERVAL_MS });
 }
 
 // Recurring jobs re-enqueue themselves after running, which keeps the schedule
@@ -122,6 +126,7 @@ reschedule('sessions.cleanup', HOUR_MS);
 reschedule('nudges.scan', NUDGE_INTERVAL_MS);
 reschedule('agents.judge', HOUR_MS);
 reschedule('digests.scan', HOUR_MS);
+reschedule(STORY_EXPIRY_JOB, STORY_EXPIRY_INTERVAL_MS);
 
 await scheduleMaintenance();
 

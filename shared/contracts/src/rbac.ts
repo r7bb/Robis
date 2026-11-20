@@ -72,6 +72,15 @@ export const PERMISSIONS = [
 
   /** Add and remove agents, and issue and revoke their tokens (B5). */
   'agent:manage',
+
+  /** Post a story, seen by the workspace for 24 hours (B2). */
+  'story:create',
+  /** Take down a story you posted. */
+  'story:delete_own',
+  /** Take down anyone's story (moderation). */
+  'story:delete_any',
+  /** Turn stories on or off for the whole workspace. */
+  'story:configure',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -115,6 +124,10 @@ const MEMBER: readonly Permission[] = [
   'channel:create',
   'meeting:create',
   'meeting:manage_own',
+  // Guests see stories but do not post them: a contractor's window into a
+  // team is its work, not its social side.
+  'story:create',
+  'story:delete_own',
 ];
 
 const ADMIN: readonly Permission[] = [
@@ -135,10 +148,14 @@ const ADMIN: readonly Permission[] = [
   'audit:read',
   // Who acts on the workspace's behalf is the same kind of question.
   'agent:manage',
+  'story:delete_any',
 ];
 
-/** Owners differ from admins only by being able to destroy the workspace. */
-const OWNER: readonly Permission[] = [...ADMIN, 'workspace:delete'];
+/**
+ * Owners differ from admins by being able to destroy the workspace, and by
+ * deciding whether it has stories at all: what kind of place it is.
+ */
+const OWNER: readonly Permission[] = [...ADMIN, 'workspace:delete', 'story:configure'];
 
 const MATRIX: Record<Role, ReadonlySet<Permission>> = {
   OWNER: new Set(OWNER),

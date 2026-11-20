@@ -32,6 +32,7 @@ const OUTSIDE: readonly string[] = [
   // These answer with image bytes, streamed from storage, not JSON.
   'GET /workspaces/:workspaceId/attachments/:attachmentId',
   'GET /users/:userId/avatar',
+  'GET /workspaces/:workspaceId/stories/:storyId/image',
 ];
 
 describe('route contracts', () => {

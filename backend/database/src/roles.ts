@@ -225,6 +225,8 @@ export const WORKER_GRANTS: TableGrants = {
   known_devices: ['select', 'delete'],
   // Passkey challenges nobody answered are removed (C4).
   passkey_challenges: ['select', 'delete'],
+  // Stories past their 24 hours are removed; their files go by key (B2).
+  stories: ['select', 'delete'],
   workspaces: ['select'],
   workspace_members: ['select'],
   workspace_invitations: ['select'],

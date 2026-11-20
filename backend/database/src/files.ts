@@ -1,7 +1,8 @@
-import { eq, type SQL, sql } from 'drizzle-orm';
+import type { SQL } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import type { Executor } from './index.ts';
 import { enqueue } from './queue.ts';
-import { attachments } from './schema.ts';
+import { attachments, stories } from './schema.ts';
 
 /** The job that removes stored files whose rows are gone. */
 export const STORAGE_PURGE_JOB = 'storage.purge';
@@ -42,11 +43,13 @@ export async function queueAttachmentPurge(tx: Executor, where: SQL): Promise<nu
  */
 export const WORKSPACE_STORAGE_QUOTA_BYTES = 1024 ** 3;
 
-/** Bytes a workspace's files take, as stored. */
+/** Bytes a workspace's files take, as stored: images on issues, and story photos (B2). */
 export async function workspaceStorageUsed(db: Executor, workspaceId: string): Promise<number> {
   const [row] = await db
-    .select({ used: sql<number>`coalesce(sum(${attachments.bytes}), 0)::bigint` })
-    .from(attachments)
-    .where(eq(attachments.workspaceId, workspaceId));
+    .select({
+      used: sql<number>`coalesce((select sum(${attachments.bytes}) from ${attachments} where ${attachments.workspaceId} = ${workspaceId}), 0)::bigint
+        + coalesce((select sum(${stories.bytes}) from ${stories} where ${stories.workspaceId} = ${workspaceId}), 0)::bigint`,
+    })
+    .from(sql`(select 1) as one`);
   return Number(row?.used ?? 0);
 }

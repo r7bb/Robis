@@ -1,36 +1,27 @@
 import { randomUUID } from 'node:crypto';
-import { resolveSession } from '@robis/auth';
 import {
   attachments,
   comments,
   type Database,
-  findMembership,
   issues,
   publishEvent,
   queueAttachmentPurge,
   recordAudit,
-  WORKSPACE_STORAGE_QUOTA_BYTES,
-  workspaceStorageUsed,
 } from '@robis/database';
 import { can, contracts, isUuid } from '@robis/shared';
 import type { MediaStorage } from '@robis/storage';
 import { and, asc, eq } from 'drizzle-orm';
-import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { serve, shape } from '../contract.ts';
 import { ApiError } from '../errors.ts';
-import {
-  ACCEPTED_TYPES,
-  MAX_UPLOAD_BYTES,
-  toAttachment,
-  UnreadableImageError,
-} from '../media/images.ts';
+import { acceptImageBodies, admitImageUpload } from '../media/admit-upload.ts';
+import { toAttachment, UnreadableImageError } from '../media/images.ts';
 import {
   auditActor,
   currentMembership,
   currentUser,
   requireAuth,
   requireMembership,
-  sessionToken,
 } from '../plugins/authz.ts';
 import { withIdempotency } from '../plugins/idempotency.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
@@ -71,11 +62,7 @@ export async function attachmentRoutes(
 ) {
   const { db, storage } = opts;
 
-  app.addContentTypeParser(
-    [...ACCEPTED_TYPES],
-    { parseAs: 'buffer', bodyLimit: MAX_UPLOAD_BYTES },
-    (_request, body, done) => done(null, body),
-  );
+  acceptImageBodies(app);
 
   const uploadLimit = rateLimit({
     name: 'attachment-upload',
@@ -83,32 +70,8 @@ export async function attachmentRoutes(
     windowMs: 60_000,
   });
 
-  /** Refuse before the body is read: see the note in `avatars.ts`. */
-  async function admitUpload(request: FastifyRequest) {
-    if (Number(request.headers['content-length'] ?? 0) > MAX_UPLOAD_BYTES) {
-      throw new ApiError(413, 'payload_too_large', 'That image is larger than 8 MB');
-    }
-    const token = sessionToken(request);
-    const user = token ? await resolveSession(db, token) : null;
-    if (!user) throw ApiError.unauthorized();
-    request.user = user;
-
-    // The quota (stage 1, item 11), before the body is read, and only for
-    // a member: anyone else falls through to the membership check's 404,
-    // so a full workspace never confirms it exists.
-    const { workspaceId } = request.params as { workspaceId?: string };
-    if (!workspaceId || !isUuid(workspaceId)) return;
-    if (!(await findMembership(db, workspaceId, user.id))) return;
-    const incoming = Number(request.headers['content-length'] ?? 0);
-    const used = await workspaceStorageUsed(db, workspaceId);
-    if (used + incoming > WORKSPACE_STORAGE_QUOTA_BYTES) {
-      throw new ApiError(
-        413,
-        'storage_quota_exceeded',
-        'This workspace is out of storage. An owner can make room by deleting old images.',
-      );
-    }
-  }
+  /** Refused before the body is read: its size, a session, the storage limit. */
+  const admitUpload = admitImageUpload(db);
 
   /** Tell open issue pages to re-read their images. Never fails the request. */
   async function notifyChanged(workspaceId: string, issueId: string, actorId: string) {

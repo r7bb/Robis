@@ -159,7 +159,17 @@ Order of work, decided 2026-10-09:
    the gate enforced by the API and the realtime gateway as well as the app.
    Left open: picture changes are not in the account trail. Storage is local
    disk or any S3-compatible store since 2026-10-13.
-3. **Photos and stories**, as below.
+3. **Photos and stories**, as below. Building since 2026-11-20 (B2), in
+   slices. **Stories on the server, 2026-11-20:** photo or text, 24 hours,
+   a 404 everywhere once past them even before the expiry job (every 10
+   minutes) deletes the row and queues the file; uploads through the
+   idempotency ledger, so a replayed offline post stores one file; posts
+   and take-downs audited without the words; an owner's switch that hides
+   and refuses them; files removed with the account or the workspace.
+   Expiry itself is not in the audit trail: the clock does it, not a
+   person, and the post's own event records when it was made. Still to
+   come: the stories bar and rings in the app, the offline queue for a
+   story, profiles, and pictures in chat.
 
 - Rich profiles: photo, cover, role, a "working on" line, recent activity,
   and a grid of what the person has shared.

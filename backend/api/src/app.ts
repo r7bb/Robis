@@ -46,6 +46,7 @@ import { pushKey, pushRoutes } from './routes/push.ts';
 import { savedViewRoutes } from './routes/saved-views.ts';
 import { searchRoutes } from './routes/search.ts';
 import { signupRoutes } from './routes/signup.ts';
+import { storyRoutes } from './routes/stories.ts';
 import { twoFactorRoutes } from './routes/two-factor.ts';
 import { workspaceRoutes } from './routes/workspaces.ts';
 import { createSuggestionClient, type SuggestionClient } from './suggestions.ts';
@@ -277,6 +278,7 @@ export function buildApp({
   app.register(accountEventRoutes, { db, limits });
   app.register(avatarRoutes, { db, storage });
   app.register(attachmentRoutes, { db, storage });
+  app.register(storyRoutes, { db, storage });
   app.register(searchRoutes, { db, limits });
 
   return app;

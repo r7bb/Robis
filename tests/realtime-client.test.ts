@@ -76,6 +76,15 @@ describe('what an event makes stale', () => {
   test('a chat message refreshes only that channel', () => {
     expect(staleKeys(chat)).toEqual([['messages', W, 'c1']]);
   });
+
+  test('a story refreshes the bar; the owner’s switch refreshes the workspace too (B2)', () => {
+    const story = { type: 'story.changed', workspaceId: W, storyId: 's1', actorId: 'u1' } as const;
+    expect(staleKeys(story)).toEqual([['stories', W]]);
+    expect(staleKeys({ ...story, storyId: null })).toEqual([
+      ['stories', W],
+      ['workspace', W],
+    ]);
+  });
 });
 
 describe('coalescing', () => {

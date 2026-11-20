@@ -39,12 +39,21 @@ describe('permission matrix', () => {
     expect(can('ADMIN', 'workspace:delete')).toBe(false);
   });
 
-  test('deleting the workspace is what separates owner from admin', () => {
+  test('deleting the workspace, and whether it has stories, separate owner from admin', () => {
     const owner = new Set(permissionsFor('OWNER'));
     const admin = new Set(permissionsFor('ADMIN'));
     const extra = [...owner].filter((p) => !admin.has(p));
 
-    expect(extra).toEqual(['workspace:delete']);
+    expect(extra).toEqual(['workspace:delete', 'story:configure']);
+  });
+
+  test('guests see stories but do not post them; members post; admins take any down (B2)', () => {
+    expect(can('GUEST', 'story:create')).toBe(false);
+    expect(can('MEMBER', 'story:create')).toBe(true);
+    expect(can('MEMBER', 'story:delete_own')).toBe(true);
+    expect(can('MEMBER', 'story:delete_any')).toBe(false);
+    expect(can('ADMIN', 'story:delete_any')).toBe(true);
+    expect(can('ADMIN', 'story:configure')).toBe(false);
   });
 
   /**

@@ -5,7 +5,9 @@ import {
   type Database,
   type Executor,
   queueAttachmentPurge,
+  queueStoryPurge,
   recordAudit,
+  stories,
   twoFactor,
   users,
   workspaceMembers,
@@ -275,6 +277,7 @@ export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database
       // a deleted workspace's history survives.
       await db.transaction(async (tx) => {
         await queueAttachmentPurge(tx, eq(attachments.workspaceId, workspaceId));
+        await queueStoryPurge(tx, eq(stories.workspaceId, workspaceId));
         await tx.delete(workspaces).where(eq(workspaces.id, workspaceId));
       });
 

@@ -21,6 +21,8 @@ const workspace = z.object({
   theme: z.string(),
   /** Everyone here must sign in with two-factor (C4); defaults off. */
   requireTwoFactor: z.boolean().default(false),
+  /** People here may post stories (B2); defaults on, owners decide. */
+  storiesEnabled: z.boolean().default(true),
   createdBy: uuid,
   createdAt: timestamp,
   updatedAt: timestamp,

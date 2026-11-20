@@ -28,3 +28,12 @@ export const MESSAGE_PAGE_SIZE = 50;
 /** Bounds on a meeting length, in minutes: a quarter hour to a full day. */
 export const MEETING_MIN_MINUTES = 15;
 export const MEETING_MAX_MINUTES = 60 * 24;
+
+/** A text story's words (B2): a line or two, read at a glance. */
+export const STORY_TEXT_MAX_LENGTH = 280;
+
+/** Stories one person may have showing in a workspace at once (B2). */
+export const MAX_LIVE_STORIES = 20;
+
+/** The backgrounds a text story may have, by name; the web app colours them. */
+export const STORY_TONES = ['dusk', 'sea', 'forest', 'ember', 'ink'] as const;

@@ -21,6 +21,7 @@ import { passkeyContracts } from './passkeys.ts';
 import { projectContracts } from './projects.ts';
 import { pushContracts } from './push.ts';
 import { savedViewContracts } from './saved-views.ts';
+import { storyContracts } from './stories.ts';
 import { twoFactorContracts } from './two-factor.ts';
 import { workspaceContracts } from './workspaces.ts';
 
@@ -72,6 +73,7 @@ export const contracts = {
   ...authContracts,
   ...twoFactorContracts,
   ...passkeyContracts,
+  ...storyContracts,
   ...accountContracts,
 } as const satisfies Record<string, Contract>;
 

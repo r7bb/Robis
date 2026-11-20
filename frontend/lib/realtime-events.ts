@@ -49,6 +49,14 @@ export function staleKeys(event: ServerEvent): unknown[][] {
       return [['meetings', event.workspaceId]];
     case 'document.created':
       return [['documents', event.workspaceId]];
+    case 'story.changed':
+      // With no story named, the owner turned stories on or off.
+      return event.storyId
+        ? [['stories', event.workspaceId]]
+        : [
+            ['stories', event.workspaceId],
+            ['workspace', event.workspaceId],
+          ];
   }
 }
 

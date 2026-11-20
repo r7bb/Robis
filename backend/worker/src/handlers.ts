@@ -9,12 +9,14 @@ import {
   type Database,
   deleteExpiredUsernameHolds,
   deleteStaleSignups,
+  expireStories,
   judgeAgentChanges,
   pruneAgentHistory,
   pruneEmailRecords,
   pruneExpiredAgentTokens,
   pruneIdempotencyLedger,
   pruneReadNotifications,
+  STORY_EXPIRY_JOB,
   scanDigests,
 } from '@robis/database';
 import { notifyHandlers } from './notify.ts';
@@ -73,6 +75,11 @@ export const runDigestScan = async (_payload: unknown, { db }: { db: Database })
   await scanDigests(db);
 };
 
+/** Delete stories past their 24 hours, and queue their files (B2). */
+export const runStoryExpiry = async (_payload: unknown, { db }: { db: Database }) => {
+  await expireStories(db);
+};
+
 export const handlers: Handlers = {
   // Mentions, comments on your issue, assignments, meeting changes (C3).
   ...notifyHandlers,
@@ -80,4 +87,5 @@ export const handlers: Handlers = {
   'nudges.scan': runNudgeScan,
   'agents.judge': judgeAgentWork,
   'digests.scan': runDigestScan,
+  [STORY_EXPIRY_JOB]: runStoryExpiry,
 };
