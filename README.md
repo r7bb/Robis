@@ -102,8 +102,10 @@ working on, their recent work and what they have shared. A Feed of posts,
 pictures from rooms, three reactions shown as faces rather than totals, and
 an end: "You're all caught up". Pictures pasted or taken straight into chat.
 And Different shots: an agent can post an idea a day to try, with a Try it
-that opens that part of Robis. Everything stays inside the workspace, and
-photos are stored without their location.
+that opens that part of Robis, in a small stack on the Feed you swipe right
+to try and left to set aside (with a button and a key for every swipe).
+Everything stays inside the workspace, and photos are stored without their
+location.
 
 <table>
   <tr>
@@ -173,13 +175,14 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Swipe through Different shots.** The Feed has a small stack of the day’s
+  Different shots: swipe right to try one, left to set it aside, tap to read
+  it all.
 - **Different shots.** An agent can post an idea a day for the team to try,
   as a story with a Try it button that opens that part of Robis.
 - **A feed that ends.** A Feed page for the team: posts of words or photos,
   three reactions and comments, pictures from rooms mixed in, and a clear
   "You’re all caught up" where it ends.
-- **Pictures in chat.** Paste a screenshot into the message box, or choose
-  or take a photo, and it posts to the room as a picture.
 
 <!-- latest:end -->
 

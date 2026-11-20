@@ -256,9 +256,12 @@ they are rate limited.
 idea a day as a story with a Try it (checked to open only a place in that
 workspace or the account page), scripted from a written list in
 `backend/worker/src/shots.ts`, through the MCP tool `post_shot` with a
-one-run token. Still to come: the swipe stack of shots on the Feed, the
-weekly check-in, and the agent bringing licensed pictures from public
-image libraries.
+one-run token. **The swipe stack, 2026-11-20:** on the Feed, up to five
+shots; right is Try it, left is Not now with Undo, a tap is See more;
+every swipe has a button, the arrow keys work on a focused button, and
+with reduced motion cards fade. What was set aside stays in the browser.
+Still to come: the weekly check-in, and the agent bringing licensed
+pictures from public image libraries.
 
 ## Phase 3. Agents as teammates, over MCP (M)
 

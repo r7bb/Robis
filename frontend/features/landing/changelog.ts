@@ -46,6 +46,25 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-20',
     area: 'Product',
+    title: 'Swipe through Different shots',
+    brief:
+      'The Feed has a small stack of the day’s Different shots: swipe right to try one, left to set it aside, tap to read it all.',
+    summary:
+      'Under the stories on the Feed sits a stack of up to five Different shots, newest on top with the next two showing behind it. Swipe a card right, or press its button (Open the feed, Start a document and so on), and Robis takes you there; swipe it left, or press Not now, and it is set aside, with Undo for a few seconds (or Z); tap it, or press See more, to read all of it. Every swipe has a button, and with a button focused the arrow keys swipe too, so a mouse, a finger and a keyboard all work. With reduced motion set, cards fade rather than fly. What you set aside or tried is kept in your browser only, never sent anywhere, and the stack ends: “That’s all for today”.',
+    feature: {
+      name: 'Different shots stack',
+      where: 'The Feed, under the stories',
+      layers: [
+        'Screen: a stack of up to five cards that follow a drag, with Not now, See more and Try it buttons and arrow keys',
+        'Data: none new; the day’s shots are stories with a Try it, and what you set aside stays in your browser',
+      ],
+    },
+    checked:
+      'Two new tests for its rules: only shots show, newest first, without those set aside, five at most; and how far a card travels decides Try it, Not now, a tap or nothing. The full suite, lint, typecheck, knip and docs:links. In headless Chrome on the rebuilt stack, with a throwaway account and its own agent: a real drag to the left set a shot aside and offered Undo, which brought it back; a tap opened See more; the right arrow on a focused button went to the shot’s page; and setting the last one aside ended the stack with “That’s all for today”.',
+  },
+  {
+    date: '2026-11-20',
+    area: 'Product',
     title: 'Different shots',
     brief:
       'An agent can post an idea a day for the team to try, as a story with a Try it button that opens that part of Robis.',

@@ -14,6 +14,7 @@ import { useWorkspaceRole } from '../workspace/page-frame.tsx';
 import { type FeedItem, feedKey, itemKey, splitAtSeen } from './feed-model.ts';
 import { PostCard } from './post-card.tsx';
 import { PostComposer } from './post-composer.tsx';
+import { ShotsStack } from './shots-stack.tsx';
 
 /**
  * The feed (Phase 2c): the team's stories along the top, then what has
@@ -117,6 +118,7 @@ export function FeedView({ workspaceId }: { workspaceId: string }) {
           <StoriesStrip members={memberList} />
         </div>
       ) : null}
+      <ShotsStack people={people} />
       {role && can(role, 'post:create') ? (
         <div className="mt-4">
           <PostComposer workspaceId={workspaceId} />

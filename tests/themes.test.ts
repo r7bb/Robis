@@ -241,6 +241,8 @@ describe('no hardcoded colours outside the palette', () => {
      */
     'frontend/features/stories/story-viewer.tsx',
     'frontend/features/stories/story-composer.tsx',
+    // The Different shots stack: the same fixed dark gradients as a words story.
+    'frontend/features/feed/shots-stack.tsx',
   ]);
 
   function sourceFiles(): string[] {

@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Swipe through Different shots** (2026-11-20). The Feed has a small stack
+  of the day’s Different shots: swipe right to try one, left to set it
+  aside, tap to read it all.
 - **Different shots** (2026-11-20). An agent can post an idea a day for the
   team to try, as a story with a Try it button that opens that part of
   Robis.
