@@ -32,6 +32,8 @@ export function staleKeys(event: ServerEvent): unknown[][] {
         ['members', event.workspaceId],
         ['invitations', event.workspaceId],
         ['workspace', event.workspaceId],
+        // Every open profile here (B2): a title, a cover or a role changed.
+        ['profile', event.workspaceId],
       ];
     /*
      * Chat invalidates rather than appending the pushed row: the event

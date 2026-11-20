@@ -174,8 +174,15 @@ Order of work, decided 2026-10-09:
    motion), a composer for a chosen, taken or pasted photo or a few words,
    and the owner's switch on the People page. A photo posted with no
    signal waits in the device's sync queue and posts once on reconnect.
-   What someone has seen stays in their browser. Still to come: profiles,
-   and pictures in chat.
+   What someone has seen stays in their browser.
+   **Profiles, 2026-11-20:** per workspace, each person's title, a
+   "working on" line and a cover photo (cropped wide, stripped, members
+   only, removed with the membership), recent activity of work only and
+   only of the kinds the viewer's role may read (never membership changes,
+   settings, agents, saved views or the trail's own housekeeping, and a new
+   event type stays off until listed), and a grid of the images they added
+   to issues. Covers are not counted in the storage limit: one per member,
+   at most 1500 by 500. Still to come: pictures in chat.
 
 - Rich profiles: photo, cover, role, a "working on" line, recent activity,
   and a grid of what the person has shared.

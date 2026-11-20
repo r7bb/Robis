@@ -516,6 +516,16 @@ export const workspaceMembers = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     role: roleEnum('role').notNull().default('MEMBER'),
+    /**
+     * A profile in this workspace (B2), each part optional and the person's
+     * own: what they do here ("Design lead") and what they are on now. Per
+     * workspace, as the same person can be a different person to each team.
+     */
+    title: text('title'),
+    workingOn: text('working_on'),
+    /** A cover photo for that profile, in the storage port; members only. */
+    coverKey: text('cover_key'),
+    coverUpdatedAt: timestamp('cover_updated_at', { withTimezone: true }),
     createdAt: createdAt(),
   },
   (t) => [

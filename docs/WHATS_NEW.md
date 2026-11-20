@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Profiles** (2026-11-20). Each person has a profile in each workspace: a
+  cover, what they do there, what they are working on, what they have been
+  doing, and the images they have shared.
 - **Stories** (2026-11-20). Share a photo or a few words with your workspace
   for 24 hours: rings on faces, a full-screen viewer, and a photo taken with
   no signal posts itself once you are back.

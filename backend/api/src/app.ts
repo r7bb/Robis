@@ -41,6 +41,7 @@ import { notificationSettingRoutes } from './routes/notification-settings.ts';
 import { notificationRoutes } from './routes/notifications.ts';
 import { overviewRoutes } from './routes/overview.ts';
 import { passkeyRoutes } from './routes/passkeys.ts';
+import { profileRoutes } from './routes/profiles.ts';
 import { projectRoutes } from './routes/projects.ts';
 import { pushKey, pushRoutes } from './routes/push.ts';
 import { savedViewRoutes } from './routes/saved-views.ts';
@@ -279,6 +280,7 @@ export function buildApp({
   app.register(avatarRoutes, { db, storage });
   app.register(attachmentRoutes, { db, storage });
   app.register(storyRoutes, { db, storage });
+  app.register(profileRoutes, { db, storage });
   app.register(searchRoutes, { db, limits });
 
   return app;

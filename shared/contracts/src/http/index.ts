@@ -18,6 +18,7 @@ import { notificationSettingContracts, unsubscribeContracts } from './notificati
 import { notificationContracts } from './notifications.ts';
 import { overviewContracts } from './overview.ts';
 import { passkeyContracts } from './passkeys.ts';
+import { profileContracts } from './profiles.ts';
 import { projectContracts } from './projects.ts';
 import { pushContracts } from './push.ts';
 import { savedViewContracts } from './saved-views.ts';
@@ -74,6 +75,7 @@ export const contracts = {
   ...twoFactorContracts,
   ...passkeyContracts,
   ...storyContracts,
+  ...profileContracts,
   ...accountContracts,
 } as const satisfies Record<string, Contract>;
 

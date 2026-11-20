@@ -21,6 +21,7 @@ export * from './notification-email.ts';
 export * from './notify.ts';
 export * from './pagination.ts';
 export * from './presence-bus.ts';
+export * from './profiles.ts';
 export * from './queries.ts';
 export * from './queue.ts';
 export * from './retention.ts';

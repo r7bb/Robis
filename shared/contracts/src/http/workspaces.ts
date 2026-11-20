@@ -32,7 +32,7 @@ const workspace = z.object({
 const workspaceWithRole = workspace.extend({ role: z.enum(ROLES) });
 
 /** One entry of a workspace's activity feed. */
-const activityEvent = z.object({
+export const activityEvent = z.object({
   id: uuid,
   actorId: uuid.nullable(),
   actorName: z.string().nullable(),

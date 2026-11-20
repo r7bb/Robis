@@ -1,11 +1,10 @@
 import { revokeAllAgentTokens } from '@robis/auth';
 import {
+  clearMembershipMedia,
   type Database,
-  deleteStories,
   type Executor,
   publishEvent,
   recordAudit,
-  stories,
   users,
   workspaceMembers,
 } from '@robis/database';
@@ -73,14 +72,6 @@ function assertCanManage(actor: Role, target: Role) {
   if (!outranks(actor, target)) {
     throw ApiError.forbidden(`You cannot manage a member with the ${target} role`);
   }
-}
-
-/** A person's stories in a workspace go when they do (B2), files and all. */
-function storiesLeaveWith(tx: Executor, workspaceId: string, userId: string) {
-  return deleteStories(
-    tx,
-    and(eq(stories.workspaceId, workspaceId), eq(stories.authorId, userId))!,
-  );
 }
 
 export async function memberRoutes(app: FastifyInstance, opts: { db: Database }) {
@@ -212,6 +203,8 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
       }
 
       await db.transaction(async (tx) => {
+        // Their stories and cover go with them (B2): no longer one of the team here.
+        await clearMembershipMedia(tx, workspaceId, userId);
         const removed = await tx
           .delete(workspaceMembers)
           .where(
@@ -222,8 +215,6 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
         if (removed.length === 0) {
           throw ApiError.notFound('That user is not a member of this workspace');
         }
-        // Their stories leave with them (B2): no longer one of the team here.
-        await storiesLeaveWith(tx, workspaceId, userId);
         // An agent removed here loses its tokens too, as through the agent
         // routes, so none comes back to life if it is ever added again (B5).
         if (target.kind === 'agent') {
@@ -277,6 +268,7 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
       }
 
       await db.transaction(async (tx) => {
+        await clearMembershipMedia(tx, workspaceId, actor.id);
         const left = await tx
           .delete(workspaceMembers)
           .where(
@@ -288,7 +280,6 @@ export async function memberRoutes(app: FastifyInstance, opts: { db: Database })
           .returning({ userId: workspaceMembers.userId });
 
         if (left.length === 0) throw ApiError.notFound('Workspace not found');
-        await storiesLeaveWith(tx, workspaceId, actor.id);
 
         // The actor is the person leaving, so their id is already on the
         // event; the role is the only fact worth adding.

@@ -37,3 +37,9 @@ export const MAX_LIVE_STORIES = 20;
 
 /** The backgrounds a text story may have, by name; the web app colours them. */
 export const STORY_TONES = ['dusk', 'sea', 'forest', 'ember', 'ink'] as const;
+
+/** A profile's title in a workspace (B2): "Design lead", "Backend". */
+export const PROFILE_TITLE_MAX_LENGTH = 60;
+
+/** A profile's "working on" line (B2): one line, read at a glance. */
+export const WORKING_ON_MAX_LENGTH = 120;

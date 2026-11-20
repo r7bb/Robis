@@ -84,16 +84,23 @@ export async function withDecodeSlot<T>(work: () => Promise<T>): Promise<T> {
   }
 }
 
-export async function toAvatar(input: Uint8Array, declaredType = ''): Promise<Uint8Array> {
+/**
+ * The format the bytes are, checked against the one the upload claimed. A
+ * mismatch is not an attack by itself (browsers mislabel), but it is a
+ * file that is not what it says, so it is refused rather than guessed at.
+ */
+function checkedType(input: Uint8Array, declaredType: string): string {
   const actual = sniff(input);
   if (!actual) throw new UnreadableImageError('Use a JPEG, PNG, WebP or AVIF image');
-
-  // A mismatch is not an attack by itself (browsers mislabel), but it is a
-  // file that is not what it says, so it is refused rather than guessed at.
   const declared = declaredType.split(';')[0]!.trim().toLowerCase();
   if (declared && declared !== actual) {
     throw new UnreadableImageError(`That file is a ${actual.slice(6)}, not a ${declared.slice(6)}`);
   }
+  return actual;
+}
+
+export async function toAvatar(input: Uint8Array, declaredType = ''): Promise<Uint8Array> {
+  checkedType(input, declaredType);
 
   return withDecodeSlot(async () => {
     try {
@@ -133,13 +140,7 @@ export type ProcessedImage = {
  * WebP. Nothing is enlarged.
  */
 export async function toAttachment(input: Uint8Array, declaredType = ''): Promise<ProcessedImage> {
-  const actual = sniff(input);
-  if (!actual) throw new UnreadableImageError('Use a JPEG, PNG, WebP or AVIF image');
-
-  const declared = declaredType.split(';')[0]!.trim().toLowerCase();
-  if (declared && declared !== actual) {
-    throw new UnreadableImageError(`That file is a ${actual.slice(6)}, not a ${declared.slice(6)}`);
-  }
+  const actual = checkedType(input, declaredType);
 
   const lossless = actual === 'image/png';
 
@@ -163,6 +164,27 @@ export async function toAttachment(input: Uint8Array, declaredType = ''): Promis
         width: info.width,
         height: info.height,
       };
+    } catch {
+      throw new UnreadableImageError('That image could not be read');
+    }
+  });
+}
+
+/** A profile's cover (B2): a wide band, cropped to its busiest part. */
+export const COVER_WIDTH = 1500;
+export const COVER_HEIGHT = 500;
+
+/** Turn an upload into a cover: the same checks and metadata stripping, cropped wide. */
+export async function toCover(input: Uint8Array, declaredType = ''): Promise<Uint8Array> {
+  checkedType(input, declaredType);
+  return withDecodeSlot(async () => {
+    try {
+      const output = await sharp(input, { limitInputPixels: MAX_INPUT_PIXELS })
+        .rotate()
+        .resize(COVER_WIDTH, COVER_HEIGHT, { fit: 'cover', position: 'entropy' })
+        .webp({ quality: 82 })
+        .toBuffer();
+      return new Uint8Array(output);
     } catch {
       throw new UnreadableImageError('That image could not be read');
     }

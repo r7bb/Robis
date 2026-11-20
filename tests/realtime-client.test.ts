@@ -77,6 +77,11 @@ describe('what an event makes stale', () => {
     expect(staleKeys(chat)).toEqual([['messages', W, 'c1']]);
   });
 
+  test('a member change refreshes the roster and every open profile there (B2)', () => {
+    const changed = { type: 'member.changed', workspaceId: W, actorId: 'u1' } as const;
+    expect(staleKeys(changed)).toContainEqual(['profile', W]);
+  });
+
   test('a story refreshes the bar; the owner’s switch refreshes the workspace too (B2)', () => {
     const story = { type: 'story.changed', workspaceId: W, storyId: 's1', actorId: 'u1' } as const;
     expect(staleKeys(story)).toEqual([['stories', W]]);

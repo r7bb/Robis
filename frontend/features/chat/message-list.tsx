@@ -1,9 +1,11 @@
 'use client';
 
 import type { Avatar as AvatarRef } from '@robis/shared';
+import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 import { Avatar } from '../../components/ui/avatar.tsx';
 import { EmptyState } from '../../components/ui/primitives.tsx';
+import { personHref } from '../../lib/links.ts';
 import { formatDaySeparator, formatExact, formatTime, isSameDay } from '../../lib/time.ts';
 import { StoryRing } from '../stories/story-ring.tsx';
 import { MessageBody } from './message-body.tsx';
@@ -181,7 +183,12 @@ function MessageRow({
       <div className="min-w-0 flex-1">
         {grouped ? null : (
           <p className="flex items-baseline gap-2">
-            <span className="text-sm font-medium text-content">{message.authorName}</span>
+            <Link
+              href={personHref(workspaceId, message.authorId)}
+              className="rounded text-sm font-medium text-content underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+            >
+              {message.authorName}
+            </Link>
             <time
               dateTime={message.createdAt}
               title={formatExact(message.createdAt)}

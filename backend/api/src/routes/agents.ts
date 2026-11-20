@@ -3,6 +3,7 @@ import { issueAgentToken, revokeAgentToken, revokeAllAgentTokens } from '@robis/
 import {
   agentTokens,
   changeCounts,
+  clearMembershipMedia,
   type Database,
   latestRuns,
   lockUsername,
@@ -359,6 +360,8 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
     await db.transaction(async (tx) => {
       await revokeAllAgentTokens(tx, { agentId: agent.id, workspaceId });
       await stopTriaging(tx, workspaceId, agent.id);
+      // Its cover and any stories go with it (B2), before the row does.
+      await clearMembershipMedia(tx, workspaceId, agent.id);
       await tx
         .delete(workspaceMembers)
         .where(

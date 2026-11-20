@@ -43,3 +43,13 @@ export function boardHref(
 export function channelHref(workspaceId: string, channelId: string): string {
   return `/workspaces/${workspaceId}?${CHANNEL_PARAM}=${encodeURIComponent(channelId)}`;
 }
+
+/** A member's profile in this workspace (B2). */
+export function personHref(workspaceId: string, userId: string): string {
+  return `/workspaces/${workspaceId}/people/${userId}`;
+}
+
+/** An issue's own page. */
+export function issueHref(workspaceId: string, issueId: string): string {
+  return `/workspaces/${workspaceId}/issues/${issueId}`;
+}

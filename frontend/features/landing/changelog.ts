@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-20',
     area: 'Product',
+    title: 'Profiles',
+    brief:
+      'Each person has a profile in each workspace: a cover, what they do there, what they are working on, what they have been doing, and the images they have shared.',
+    summary:
+      'Click a name on the People page or in the chat and you see that person as this team knows them: their picture (with its ring if they have a story), a cover photo or a band drawn from their id, their role, a title such as Design lead, and a Working on line. Below are their recent work (issues, comments, projects, documents, meetings, rooms and stories, only of the kinds your role may read) and a grid of the images they added to issues, each opening its issue. A profile never shows who joined or left, changed roles or settings, agents, saved views, taking down someone else’s words, or the audit trail’s own housekeeping; a kind of event added later stays off profiles until someone decides it belongs. Your own has Edit profile: a title, a Working on line and a cover, each optional and only for this workspace, since the same person can be a different person to each team. Covers are cropped wide, stored without their location, shown to members only, and removed with the membership, when someone leaves, is removed, is an agent taken out, deletes their account, or the workspace is deleted. Anyone outside the workspace, or asking after someone not in it, gets a not-found.',
+    feature: {
+      name: 'Profiles',
+      where: 'A name on the People page or in the chat; Edit profile on your own',
+      layers: [
+        'Screen: the profile page with its cover, activity and shared grid, and an editor for your own',
+        'API: profiles.get, update, setCover and removeCover, and the members-only cover image',
+        'Data: a title, a working-on line and a cover on each membership; activity read from the audit trail through an allow-list',
+      ],
+    },
+    checked:
+      'Fourteen new tests against the API: a profile shows a member as the workspace knows them; it is a 404 outside the workspace and for someone not in it; your own edits are trimmed, cleared by nothing, refused when too long, and audited without their words; a title in one workspace is not in another; activity shows issues, comments, projects and stories but never a saved view, a role change or a take-down, and drops stories when they are off; a profile shows only that person’s events; the grid shows their images and not anyone else’s; a cover is cropped to 1500 by 500, stripped of metadata and refused to a stranger; a new cover replaces the old file, removing it removes the file, and removing one you do not have records nothing; a file that is not an image is refused; and the cover’s file goes when its owner leaves, is removed, is an agent taken out, or the workspace is deleted. One more for live refresh of open profiles. The full suite, lint, typecheck and docs:links. In headless Chrome on the rebuilt stack, with a throwaway account: the People page led to the profile, a title and working-on line were saved and shown, a cover chosen through the file input uploaded and showed, and a stranger’s id showed not found. Code and security reviews: nothing critical or high; their medium points (an agent’s cover left behind, a cover uploaded while leaving, unthrottled edits, take-downs on profiles) are fixed.',
+  },
+  {
+    date: '2026-11-20',
+    area: 'Product',
     title: 'Stories',
     brief:
       'Share a photo or a few words with your workspace for 24 hours: rings on faces, a full-screen viewer, and a photo taken with no signal posts itself once you are back.',

@@ -1,6 +1,7 @@
 'use client';
 
 import { AGENT_ROLES, contracts, ROLES, type Role, rankOf } from '@robis/shared';
+import Link from 'next/link';
 
 const isAgentRole = (role: Role) => (AGENT_ROLES as readonly Role[]).includes(role);
 
@@ -8,6 +9,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { StoryRing } from '../features/stories/story-ring.tsx';
 import { call, type Member } from '../lib/api.ts';
+import { personHref } from '../lib/links.ts';
 import { DeleteButton } from './delete-button.tsx';
 import { SentInvitations } from './sent-invitations.tsx';
 import { Avatar } from './ui/avatar.tsx';
@@ -180,7 +182,12 @@ export function MemberList({
                     size="md"
                   />
                 </StoryRing>
-                <span className="text-sm text-content">{member.name}</span>
+                <Link
+                  href={personHref(workspaceId, member.userId)}
+                  className="rounded text-sm text-content underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+                >
+                  {member.name}
+                </Link>
                 {member.kind === 'agent' && <AgentBadge />}
                 <span className="ml-2 text-xs text-faint">
                   @{member.username}

@@ -71,6 +71,9 @@ const PHRASES: Record<string, (payload: Payload) => string> = {
       : 'stopped requiring two-factor sign-in',
   'workspace.stories_enabled': (p) =>
     p.enabled === true ? 'turned stories on' : 'turned stories off',
+  'member.profile_updated': () => 'updated their profile',
+  'member.cover_set': () => 'set a cover photo',
+  'member.cover_removed': () => 'removed their cover photo',
   'story.added': (p) => (p.kind === 'photo' ? 'posted a photo story' : 'posted a story'),
   'story.deleted': (p) =>
     p.moderated === true ? "took down someone's story" : 'took down a story',

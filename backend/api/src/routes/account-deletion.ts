@@ -10,6 +10,7 @@ import {
   mutations,
   notifications,
   queueAttachmentPurge,
+  queueCoverPurge,
   queueStoryPurge,
   STORAGE_PURGE_JOB,
   sessions,
@@ -73,6 +74,7 @@ async function settleWorkspace(tx: Tx, userId: string, decision: Decision) {
   }
   await queueAttachmentPurge(tx, eq(attachments.workspaceId, decision.id));
   await queueStoryPurge(tx, eq(stories.workspaceId, decision.id));
+  await queueCoverPurge(tx, eq(workspaceMembers.workspaceId, decision.id));
   await tx.delete(workspaces).where(eq(workspaces.id, decision.id));
 }
 
@@ -88,6 +90,8 @@ async function emptyAccount(tx: Tx, userId: string) {
 
   // Stories are personal: they go with the account, files and all (B2).
   await deleteStories(tx, eq(stories.authorId, userId));
+  // And the covers on their profiles, before the memberships go.
+  await queueCoverPurge(tx, eq(workspaceMembers.userId, userId));
   await tx.delete(sessions).where(eq(sessions.userId, userId));
   await tx.delete(authTokens).where(eq(authTokens.userId, userId));
   await tx.delete(workspaceMembers).where(eq(workspaceMembers.userId, userId));
