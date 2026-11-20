@@ -543,6 +543,11 @@ export const workspaceMembers = pgTable(
     coverUpdatedAt: timestamp('cover_updated_at', { withTimezone: true }),
     /** When they last reached the end of the feed (Phase 2c): what is new is after it. */
     feedSeenAt: timestamp('feed_seen_at', { withTimezone: true }),
+    /**
+     * Whether the Feed may celebrate them here (Phase 2c): a milestone, an
+     * anniversary, a welcome. On unless they turn it off; theirs alone.
+     */
+    celebrate: boolean('celebrate').notNull().default(true),
     createdAt: createdAt(),
   },
   (t) => [
@@ -676,6 +681,12 @@ export const issues = pgTable(
       .references(() => users.id, { onDelete: 'restrict' }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
+    /**
+     * When it was last moved to done (Phase 2c, for project health and
+     * celebrations); null while it is not done. Kept by the database
+     * trigger `issues_completed_at`, so no write path can forget it.
+     */
+    completedAt: timestamp('completed_at', { withTimezone: true }),
     /** Weight A for the title, B for the body: a term in the title is a
      * stronger match than the same term buried in a description. */
     searchVector: tsvector('search_vector').generatedAlwaysAs(

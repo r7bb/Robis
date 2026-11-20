@@ -35,9 +35,12 @@ export function ProfileEditor({
   const queryClient = useQueryClient();
   const titleId = useId();
   const workingId = useId();
+  const celebrateId = useId();
   const coverInput = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState(person.title ?? '');
   const [workingOn, setWorkingOn] = useState(person.workingOn ?? '');
+  // Yours alone: the server says it only to you, and on unless you said otherwise.
+  const [celebrate, setCelebrate] = useState(person.celebrate ?? true);
   const refresh = () =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: profileKey(workspaceId, person.userId) }),
@@ -46,9 +49,15 @@ export function ProfileEditor({
 
   const save = useMutation({
     mutationFn: () =>
-      call(contracts['profiles.update'], { params: { workspaceId }, body: { title, workingOn } }),
+      call(contracts['profiles.update'], {
+        params: { workspaceId },
+        body: { title, workingOn, celebrate },
+      }),
     onSuccess: async () => {
-      await refresh();
+      await Promise.all([
+        refresh(),
+        queryClient.invalidateQueries({ queryKey: ['feed-celebrations', workspaceId] }),
+      ]);
       onDone();
     },
   });
@@ -105,6 +114,23 @@ export function ProfileEditor({
             placeholder="The new onboarding…"
           />
         </div>
+      </div>
+
+      <div className="flex items-start gap-2.5">
+        <input
+          id={celebrateId}
+          type="checkbox"
+          checked={celebrate}
+          onChange={(e) => setCelebrate(e.target.checked)}
+          className="mt-0.5 h-4 w-4 shrink-0 rounded border-line bg-surface accent-[rgb(var(--accent))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+        />
+        <label htmlFor={celebrateId} className="text-sm leading-snug text-content">
+          Celebrate me on the Feed
+          <span className="block text-xs text-faint">
+            Milestones like your 10th issue done, a year with the team, or a welcome when you join.
+            Off, and the Feed never celebrates you here; nobody else sees which you chose.
+          </span>
+        </label>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

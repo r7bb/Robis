@@ -13,11 +13,31 @@ import { feedKey, type Post } from './feed-model.ts';
  * up first and its words are added to it; pasting a screenshot into the box
  * makes it the photo.
  */
-export function PostComposer({ workspaceId }: { workspaceId: string }) {
+export function PostComposer({
+  workspaceId,
+  draft = null,
+}: {
+  workspaceId: string;
+  /** Words to start from, such as a well done; a new `at` starts again. */
+  draft?: { words: string; at: number } | null;
+}) {
   const queryClient = useQueryClient();
   const fieldId = useId();
   const fileInput = useRef<HTMLInputElement>(null);
+  const field = useRef<HTMLTextAreaElement>(null);
   const [body, setBody] = useState('');
+
+  useEffect(() => {
+    if (!draft) return;
+    // Added to what is already there, never in place of it.
+    setBody((current) => (current.trim() ? `${current.trimEnd()}\n${draft.words}` : draft.words));
+    const box = field.current;
+    if (!box) return;
+    box.focus({ preventScroll: true });
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    box.scrollIntoView({ block: 'center', behavior: still ? 'auto' : 'smooth' });
+    requestAnimationFrame(() => box.setSelectionRange(box.value.length, box.value.length));
+  }, [draft]);
   const [photo, setPhoto] = useState<Blob | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -73,6 +93,7 @@ export function PostComposer({ workspaceId }: { workspaceId: string }) {
         Share something with the team
       </label>
       <textarea
+        ref={field}
         id={fieldId}
         name="post"
         autoComplete="off"

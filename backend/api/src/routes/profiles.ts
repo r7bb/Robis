@@ -71,6 +71,7 @@ async function findPerson(db: Database, workspaceId: string, userId: string) {
       coverKey: workspaceMembers.coverKey,
       coverUpdatedAt: workspaceMembers.coverUpdatedAt,
       joinedAt: workspaceMembers.createdAt,
+      celebrate: workspaceMembers.celebrate,
     })
     .from(workspaceMembers)
     .innerJoin(users, eq(users.id, workspaceMembers.userId))
@@ -82,7 +83,7 @@ async function findPerson(db: Database, workspaceId: string, userId: string) {
 type Person = NonNullable<Awaited<ReturnType<typeof findPerson>>>;
 
 /** The wire shape. The cover is a members-only route, versioned so a new one is fetched. */
-function toWire(workspaceId: string, person: Person) {
+function toWire(workspaceId: string, person: Person, viewerId: string) {
   const version = person.coverUpdatedAt?.getTime() ?? 0;
   return {
     userId: person.userId,
@@ -97,6 +98,8 @@ function toWire(workspaceId: string, person: Person) {
       ? `/workspaces/${workspaceId}/people/${person.userId}/cover?v=${version}`
       : null,
     joinedAt: person.joinedAt,
+    // Their own choice: whether someone opted out is not for others to see.
+    celebrate: person.userId === viewerId ? person.celebrate : null,
   };
 }
 
@@ -238,7 +241,7 @@ export async function profileRoutes(
       const person = await personOr404(workspaceId, userId);
       const patterns = profileActivityPatterns(role, await storiesOn(workspaceId));
       return {
-        profile: toWire(workspaceId, person),
+        profile: toWire(workspaceId, person, currentUser(request).id),
         activity: await activityOf(workspaceId, person.userId, patterns),
         shared: await sharedBy(workspaceId, person.userId),
       };
@@ -255,6 +258,7 @@ export async function profileRoutes(
       const fields = {
         ...(body.title !== undefined ? { title: body.title } : {}),
         ...(body.workingOn !== undefined ? { workingOn: body.workingOn } : {}),
+        ...(body.celebrate !== undefined ? { celebrate: body.celebrate } : {}),
       };
       await db.transaction(async (tx) => {
         await tx
@@ -273,7 +277,7 @@ export async function profileRoutes(
         });
       });
       await notifyChanged(workspaceId, me.id);
-      return { profile: toWire(workspaceId, await personOr404(workspaceId, me.id)) };
+      return { profile: toWire(workspaceId, await personOr404(workspaceId, me.id), me.id) };
     },
   );
 
@@ -309,7 +313,7 @@ export async function profileRoutes(
         throw error;
       }
       await notifyChanged(workspaceId, me.id);
-      return { profile: toWire(workspaceId, await personOr404(workspaceId, me.id)) };
+      return { profile: toWire(workspaceId, await personOr404(workspaceId, me.id), me.id) };
     },
   );
 

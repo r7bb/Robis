@@ -46,6 +46,46 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-20',
     area: 'Product',
+    title: 'Celebrations, with a way to opt out',
+    brief:
+      'The Feed marks the week’s milestones (a project finished, a 10th issue done, a year with the team, a new teammate), with a Say well done, and never for anyone who opts out.',
+    summary:
+      'Under the Different shots, the Feed lists what happened in the last seven days that is worth a well done: a project with every issue closed, someone’s 10th, 25th or 50th issue done (and on up to 1,000), a year or more with the team, and a new teammate. Say well done starts a post in the composer with a few words for you to change or send; nothing is posted for you. Put one away and it stays away in that browser. Everyone can turn celebrations off for themselves on their profile, per workspace; once off, the Feed never celebrates them there, and nobody else can see which they chose. Agents are never celebrated. Nothing is stored: each celebration is worked out from the issues and memberships whenever the Feed opens.',
+    feature: {
+      name: 'Celebrations',
+      where: 'Feed: Worth a well done; your profile: Celebrate me on the Feed',
+      layers: [
+        'Screen: a card per milestone with Say well done and Put away; a tickbox on your profile',
+        'API: feed.celebrations works out the week’s milestones on every read; profiles.update takes celebrate, shown back to you alone',
+        'Database: issues gain completed_at, kept by a trigger; memberships gain celebrate, on by default',
+      ],
+    },
+    checked:
+      'Eight new tests and two wording tests: a 10th issue, a welcome and a finished project are celebrated and the maker of the workspace is not welcomed; a project with two issues done, one finished long ago, and a milestone older than seven days are not; an anniversary shows in its week, across a new year too; someone who opts out is never celebrated, their team’s project still is, and their choice shows to them alone; a stranger gets 404. The full suite, lint, typecheck, knip and docs:links, and checked in a browser.',
+  },
+  {
+    date: '2026-11-20',
+    area: 'Product',
+    title: 'Project health on the Feed',
+    brief:
+      'The Feed shows how each project is doing, from its issues: needs a look, on track, quiet or finished, with the numbers that led there.',
+    summary:
+      'Above the composer on the Feed, a card for each active project: what is open, what was done in the last seven days, what is overdue or urgent, how far along it is, and a state worked out from those by rules short enough to check by eye. Needs a look means an open issue is overdue or urgent; quiet means nothing has moved for two weeks; finished means every issue is closed; otherwise it is on track. The state is always said in words, never by colour alone, overdue is judged on your own calendar as the board judges it, and each card opens its board. The cards update live as issues move, and nothing new is stored: they are worked out from the issues each time.',
+    feature: {
+      name: 'Project health',
+      where: 'Feed: Projects',
+      layers: [
+        'Screen: a card per project with its state, a progress bar and the facts behind it, opening its board',
+        'API: feed.projects works out each active project’s numbers and state from its issues in one query',
+        'Database: issues gain completed_at, set when an issue becomes done and cleared when it leaves done, by a trigger, so no write path can forget it',
+      ],
+    },
+    checked:
+      'Seven new tests and four wording tests: done is stamped on the way to done, kept while done and cleared on the way out, whichever way an issue gets there; open, done, recent, overdue and urgent are counted and the state follows the rules in order; a project finished long ago, all cancelled, or empty is not shown; overdue follows the viewer’s today within a day of the server’s; a stranger gets 404. The full suite, lint, typecheck, knip and docs:links, and checked in a browser.',
+  },
+  {
+    date: '2026-11-20',
+    area: 'Product',
     title: 'A picture a day, from public image libraries',
     brief:
       'An agent can post an openly licensed, credited picture to the feed each day from NASA, Wikimedia Commons or Openverse, and now and then a meme.',

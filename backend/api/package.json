@@ -8,6 +8,8 @@
     "./avatars": "./src/routes/avatars.ts",
     "./contract": "./src/contract.ts",
     "./env": "./src/env.ts",
+    "./feed-celebrations": "./src/feed/celebrations.ts",
+    "./feed-health": "./src/feed/health.ts",
     "./feed-week": "./src/feed/week.ts",
     "./hardening": "./src/hardening.ts",
     "./images": "./src/media/images.ts",

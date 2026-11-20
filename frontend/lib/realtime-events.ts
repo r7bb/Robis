@@ -21,10 +21,17 @@ export function staleKeys(event: ServerEvent): unknown[][] {
       return [
         ['issues', event.workspaceId, event.projectId],
         ['projects', event.workspaceId],
+        // The Feed's project health and celebrations come from the issues (Phase 2c).
+        ['feed-projects', event.workspaceId],
+        ['feed-celebrations', event.workspaceId],
       ];
     case 'project.created':
     case 'project.deleted':
-      return [['projects', event.workspaceId]];
+      return [
+        ['projects', event.workspaceId],
+        ['feed-projects', event.workspaceId],
+        ['feed-celebrations', event.workspaceId],
+      ];
     case 'comment.created':
       return [['comments', event.workspaceId, event.issueId]];
     case 'member.changed':
@@ -34,6 +41,8 @@ export function staleKeys(event: ServerEvent): unknown[][] {
         ['workspace', event.workspaceId],
         // Every open profile here (B2): a title, a cover or a role changed.
         ['profile', event.workspaceId],
+        // Someone joined, or turned celebrations off (Phase 2c).
+        ['feed-celebrations', event.workspaceId],
       ];
     /*
      * Chat invalidates rather than appending the pushed row: the event

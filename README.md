@@ -108,6 +108,9 @@ that opens that part of Robis, in a small stack on the Feed you swipe right
 to try and left to set aside (with a button and a key for every swipe).
 An agent can also post a picture a day from NASA, Wikimedia Commons or
 Openverse, openly licensed and credited, and now and then as a meme.
+Project health cards say how each project is doing, from its issues, and
+the week's milestones get a Say well done (a project finished, a 10th
+issue, a year with the team), never for anyone who opts out.
 Everything stays inside the workspace, and photos are stored without their
 location.
 
@@ -119,6 +122,9 @@ location.
   <tr>
     <td width="50%"><img src="imgs/31-profile.webp" alt="A profile: cover, title, working-on line, recent activity and shared pictures"></td>
     <td width="50%"><img src="imgs/32-chat-picture.webp" alt="A picture posted in chat, beside the board"></td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="imgs/33-feed-week.webp" alt="The Feed's celebrations, each with Say well done, above project health cards: Web App needs a look, Mobile on track, Launch Plan finished"></td>
   </tr>
 </table>
 
@@ -179,14 +185,15 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Celebrations, with a way to opt out.** The Feed marks the week’s
+  milestones (a project finished, a 10th issue done, a year with the team, a
+  new teammate), with a Say well done, and never for anyone who opts out.
+- **Project health on the Feed.** The Feed shows how each project is doing,
+  from its issues: needs a look, on track, quiet or finished, with the
+  numbers that led there.
 - **A picture a day, from public image libraries.** An agent can post an
   openly licensed, credited picture to the feed each day from NASA,
   Wikimedia Commons or Openverse, and now and then a meme.
-- **A weekly check-in.** Once a week the Feed asks what you are working on;
-  your answer is a post, and your profile’s Working on line.
-- **Swipe through Different shots.** The Feed has a small stack of the day’s
-  Different shots: swipe right to try one, left to set it aside, tap to read
-  it all.
 
 <!-- latest:end -->
 

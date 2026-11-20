@@ -414,6 +414,20 @@
       "when": 1795183399955,
       "tag": "0058_pictures_agent",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1795205573496,
+      "tag": "0059_issue_completed_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1795206672152,
+      "tag": "0060_member_celebrate",
+      "breakpoints": true
     }
   ]
 }

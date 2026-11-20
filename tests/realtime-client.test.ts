@@ -66,10 +66,12 @@ describe('which events a page acts on', () => {
 });
 
 describe('what an event makes stale', () => {
-  test('a new issue refreshes its project’s issues and the project list', () => {
+  test('a new issue refreshes its project’s issues, the project list and the Feed’s health and celebrations', () => {
     expect(staleKeys(issueCreated)).toEqual([
       ['issues', W, 'p1'],
       ['projects', W],
+      ['feed-projects', W],
+      ['feed-celebrations', W],
     ]);
   });
 
@@ -80,6 +82,8 @@ describe('what an event makes stale', () => {
   test('a member change refreshes the roster and every open profile there (B2)', () => {
     const changed = { type: 'member.changed', workspaceId: W, actorId: 'u1' } as const;
     expect(staleKeys(changed)).toContainEqual(['profile', W]);
+    // Someone joined or turned celebrations off (Phase 2c).
+    expect(staleKeys(changed)).toContainEqual(['feed-celebrations', W]);
   });
 
   test('a story refreshes the bar; the owner’s switch refreshes the workspace too (B2)', () => {

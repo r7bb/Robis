@@ -241,8 +241,8 @@ and from where:
 
 Order: posts and the feed's API; the Feed page; Different shots; the
 weekly check-in; then, asked for later the same day, an agent that brings
-licensed pictures and memes from public image libraries. Later, if
-wanted: project health cards and celebrations with a personal opt-out.
+licensed pictures and memes from public image libraries; then project
+health cards and celebrations with a personal opt-out.
 
 **The feed, 2026-11-20:** posts of words or photos, three reactions and
 comments, pictures from rooms mixed in, a page at a time, ending at
@@ -268,8 +268,20 @@ posts a picture a day from NASA, Wikimedia Commons or Openverse, under an
 allowed licence and with its credit, and on every third day, when the
 picture is public domain or CC0, as a meme with a caption from a written
 list. No model, no paid service, HTTPS to named hosts only. Not verified
-against the live libraries from this machine. Phase 2c is complete; next,
-if wanted, project health cards and celebrations with an opt-out.
+against the live libraries from this machine.
+**Project health, 2026-11-20:** on the Feed, a card per active project
+with its open, recent, overdue and urgent issues and a state from rules
+written in `backend/api/src/feed/health.ts` (needs a look, on track,
+quiet, finished), said in words; worked out from the issues on each read,
+with done stamped by a database trigger on `issues.completed_at`.
+**Celebrations, 2026-11-20:** the last seven days' milestones (a project
+finished, a 10th or later issue done, an anniversary, a new teammate),
+each with a Say well done that starts a post for its author to send.
+Never for agents; anyone can opt out per workspace on their profile, and
+nobody else sees that choice. Nothing is stored: it is worked out from
+issues and memberships. It shows a person's join date and issue count to
+their team, which members could already see; flagged with the rest of
+Phase 2b for legal review. Phase 2c is complete.
 
 ## Phase 3. Agents as teammates, over MCP (M)
 

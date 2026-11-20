@@ -30,6 +30,7 @@ import { consentRoutes } from './routes/consent.ts';
 import { discussionRoutes } from './routes/discussion.ts';
 import { documentRoutes } from './routes/documents.ts';
 import { feedRoutes } from './routes/feed.ts';
+import { feedHighlightRoutes } from './routes/feed-highlights.ts';
 import { feedbackRoutes } from './routes/feedback.ts';
 import { invitationRoutes } from './routes/invitations.ts';
 import { issueRoutes } from './routes/issues.ts';
@@ -287,6 +288,7 @@ export function buildApp({
   app.register(messageImageRoutes, { db, storage });
   app.register(postRoutes, { db, storage });
   app.register(feedRoutes, { db });
+  app.register(feedHighlightRoutes, { db });
   app.register(searchRoutes, { db, limits });
 
   return app;

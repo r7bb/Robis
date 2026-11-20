@@ -1,4 +1,4 @@
-import type { IssuePriority, IssueStatus } from '@robis/shared';
+import type { IssuePriority, IssueStatus, ProjectHealthState } from '@robis/shared';
 
 /**
  * Colour that carries information.
@@ -119,6 +119,39 @@ export function LabelChip({ name, colour }: { name: string; colour: string }) {
       className={`inline-flex max-w-[12rem] items-center truncate rounded-full border px-2 py-0.5 text-[10px] font-medium ${LABEL_STYLES[colour] ?? LABEL_STYLES.slate}`}
     >
       {name}
+    </span>
+  );
+}
+
+/**
+ * A project's health on the Feed (Phase 2c), on the same scale as the
+ * statuses: rose needs a look, sky is moving, slate is quiet, emerald is
+ * done. The label always says it, so the colour is never the only sign.
+ */
+const HEALTH_STYLES: Record<ProjectHealthState, { dot: string; className: string }> = {
+  needs_a_look: {
+    dot: 'bg-rose-400',
+    className: 'border-rose-400/40 bg-rose-400/15 text-rose-300',
+  },
+  on_track: { dot: 'bg-sky-400', className: 'border-sky-400/30 bg-sky-400/10 text-sky-300' },
+  quiet: { dot: 'bg-slate-400', className: 'border-slate-400/30 bg-slate-400/10 text-slate-300' },
+  finished: {
+    dot: 'bg-emerald-400',
+    className: 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300',
+  },
+};
+
+/** The bar's fill for a state, from the same scale. */
+export const healthFill = (state: ProjectHealthState) => HEALTH_STYLES[state].dot;
+
+export function HealthBadge({ state, label }: { state: ProjectHealthState; label: string }) {
+  const style = HEALTH_STYLES[state];
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium ${style.className}`}
+    >
+      <span className={`h-1.5 w-1.5 rounded-full ${style.dot}`} aria-hidden="true" />
+      {label}
     </span>
   );
 }

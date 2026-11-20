@@ -11,10 +11,12 @@ import { channelHref } from '../../lib/links.ts';
 import { useStories } from '../stories/stories-context.tsx';
 import { StoriesStrip } from '../stories/stories-strip.tsx';
 import { useWorkspaceRole } from '../workspace/page-frame.tsx';
+import { Celebrations } from './celebrations.tsx';
 import { CheckIn } from './check-in.tsx';
 import { type FeedItem, feedKey, itemKey, splitAtSeen } from './feed-model.ts';
 import { PostCard } from './post-card.tsx';
 import { PostComposer } from './post-composer.tsx';
+import { ProjectHealthCards } from './project-health.tsx';
 import { ShotsStack } from './shots-stack.tsx';
 
 /**
@@ -81,7 +83,6 @@ function usePeople(workspaceId: string) {
 
 export function FeedView({ workspaceId }: { workspaceId: string }) {
   const { role } = useWorkspaceRole();
-  const stories = useStories();
   const me = useQuery({
     queryKey: ['me'],
     queryFn: () => call(contracts['auth.me']),
@@ -114,20 +115,13 @@ export function FeedView({ workspaceId }: { workspaceId: string }) {
       <p className="mt-1 text-sm text-muted">
         What the team has been sharing. It ends where you last caught up.
       </p>
-      {stories?.enabled ? (
-        <div className="mt-4 overflow-hidden rounded-xl border border-line bg-raised">
-          <StoriesStrip members={memberList} />
-        </div>
-      ) : null}
-      {role && can(role, 'post:create') && feed.data && !feed.data.pages[0]?.checkedInThisWeek ? (
-        <CheckIn workspaceId={workspaceId} />
-      ) : null}
-      <ShotsStack people={people} />
-      {role && can(role, 'post:create') ? (
-        <div className="mt-4">
-          <PostComposer workspaceId={workspaceId} />
-        </div>
-      ) : null}
+      <FeedTop
+        workspaceId={workspaceId}
+        me={myId}
+        members={memberList}
+        people={people}
+        checkedIn={feed.data ? (feed.data.pages[0]?.checkedInThisWeek ?? false) : true}
+      />
 
       {feed.isPending ? (
         <FeedSkeleton />
@@ -157,6 +151,57 @@ export function FeedView({ workspaceId }: { workspaceId: string }) {
         </div>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * Above the posts: the team's stories, this week's check-in, the day's
+ * Different shots, the week's celebrations, how the projects are doing,
+ * and the composer, each only for those who may use it. A well done
+ * starts a post in the composer, for its author to change or send.
+ */
+function FeedTop({
+  workspaceId,
+  me,
+  members,
+  people,
+  checkedIn,
+}: {
+  workspaceId: string;
+  me: string | null;
+  members: Member[];
+  people: ReadonlyMap<string, Member>;
+  checkedIn: boolean;
+}) {
+  const { role } = useWorkspaceRole();
+  const stories = useStories();
+  const mayPost = role ? can(role, 'post:create') : false;
+  const mayReadWork = role ? can(role, 'issue:read') : false;
+  const [draft, setDraft] = useState<{ words: string; at: number } | null>(null);
+  return (
+    <>
+      {stories?.enabled ? (
+        <div className="mt-4 overflow-hidden rounded-xl border border-line bg-raised">
+          <StoriesStrip members={members} />
+        </div>
+      ) : null}
+      {mayPost && !checkedIn ? <CheckIn workspaceId={workspaceId} /> : null}
+      <ShotsStack people={people} />
+      {mayReadWork ? (
+        <Celebrations
+          workspaceId={workspaceId}
+          me={me}
+          people={people}
+          onWellDone={mayPost ? (words) => setDraft({ words, at: Date.now() }) : undefined}
+        />
+      ) : null}
+      {mayReadWork ? <ProjectHealthCards workspaceId={workspaceId} /> : null}
+      {mayPost ? (
+        <div className="mt-4">
+          <PostComposer workspaceId={workspaceId} draft={draft} />
+        </div>
+      ) : null}
+    </>
   );
 }
 

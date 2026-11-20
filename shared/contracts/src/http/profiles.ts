@@ -36,6 +36,8 @@ const profile = z.object({
   /** The members-only cover route, or null for the generated band. */
   cover: z.string().nullable(),
   joinedAt: timestamp,
+  /** Whether the Feed may celebrate them (Phase 2c): shown to them alone, null to anyone else. */
+  celebrate: z.boolean().nullable(),
 });
 
 /** An image they added to an issue, or a picture they posted in chat, for the profile's grid. */
@@ -66,16 +68,23 @@ export const profileContracts = {
   'profiles.update': contract({
     method: 'PATCH',
     path: '/workspaces/:workspaceId/people/me',
-    summary: 'Change your title or what you are working on, in this workspace.',
+    summary:
+      'Change your title, what you are working on, or whether the Feed may celebrate you, in this workspace.',
     params: workspaceParams,
     body: z
       .object({
         title: optionalLine(PROFILE_TITLE_MAX_LENGTH).optional(),
         workingOn: optionalLine(WORKING_ON_MAX_LENGTH).optional(),
+        /** Off, and the Feed never celebrates you here. */
+        celebrate: z.boolean().optional(),
       })
-      .refine((body) => body.title !== undefined || body.workingOn !== undefined, {
-        message: 'Change at least one field',
-      }),
+      .refine(
+        (body) =>
+          body.title !== undefined || body.workingOn !== undefined || body.celebrate !== undefined,
+        {
+          message: 'Change at least one field',
+        },
+      ),
     response: z.object({ profile }),
   }),
   'profiles.setCover': contract({

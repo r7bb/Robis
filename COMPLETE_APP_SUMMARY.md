@@ -14,9 +14,9 @@ Written to be checkable. Every row names a file you can open.
 | --- | --- |
 | Services | 5 (web, API, realtime gateway, worker, MCP server for agents) plus an optional ML service |
 | Database tables | 18 |
-| HTTP endpoints | 151 |
+| HTTP endpoints | 153 |
 | Tests | Counted in [docs/ROADMAP.md](docs/ROADMAP.md), the one place they are kept |
-| Screenshots | 32, all captured from the running app |
+| Screenshots | 33, all captured from the running app |
 | Measured throughput | ~3,600 req/s, zero errors |
 
 ---
@@ -82,6 +82,8 @@ second "consumed" state to get wrong.
 | A scripted triage agent: on each new issue it comments suggested duplicates and a priority with their scores, through the MCP server with a five-minute token, and changes nothing | `backend/worker/src/triage.ts` |
 | An MCP server for agents at `/mcp/<workspace id>`: search, suggest, list projects, read, create and update issues, comment; it holds no authority and calls the API with the agent's own token | `backend/mcp/` |
 | Stories: a photo or a few words, seen by the workspace for 24 hours and a 404 on every route after, before the job that deletes the row and queues the file has run; photos re-encoded without metadata and served to members only; posting and taking down audited without the words; an owner can turn them off, which hides them and refuses new ones. In the app: a strip atop the chat, rings on pictures, a full-screen viewer and a composer (photo chosen, taken or pasted, or words); a photo posted offline posts once on reconnect | `backend/api/src/routes/stories.ts`, `backend/database/src/stories.ts`, `frontend/features/stories/`, `shared/sync/src/engine.ts` |
+| Project health on the Feed: a card per active project with open, done this week, overdue and urgent, and a state from written rules (needs a look, on track, quiet, finished) in words, never colour alone; worked out from the issues on each read, with done stamped by a database trigger | `backend/api/src/routes/feed-highlights.ts`, `backend/api/src/feed/health.ts`, `frontend/features/feed/project-health.tsx` |
+| Celebrations on the Feed: a project finished, a 10th (25th...) issue done, an anniversary, a new teammate, from the last seven days, with Say well done starting a post; never for agents or anyone who opted out on their profile, a choice only they can see | `backend/api/src/feed/celebrations.ts`, `frontend/features/feed/celebrations.tsx` |
 | A picture a day from public image libraries (NASA, Wikimedia Commons, Openverse): an agent posts an openly licensed, credited picture, sometimes as a meme drawn by Robis; HTTPS to named hosts only, nothing sent | `backend/worker/src/pictures/` |
 | A weekly check-in on the Feed: the answer is a post and your profile's Working on line; optional, no streaks, nobody told who has not answered | `backend/api/src/routes/posts.ts`, `frontend/features/feed/check-in.tsx` |
 | Different shots: a chosen agent posts an idea a day as a story with a Try it that opens a place in Robis, scripted from a written list, through the MCP tool post_shot with a one-run token | `backend/worker/src/shots.ts`, `backend/mcp/src/tools.ts` |

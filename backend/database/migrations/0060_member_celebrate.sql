@@ -1,0 +1,1 @@
+ALTER TABLE "workspace_members" ADD COLUMN "celebrate" boolean DEFAULT true NOT NULL;

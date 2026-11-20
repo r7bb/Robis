@@ -9,6 +9,7 @@ import { type Contract, statusesOf } from './contract.ts';
 import { discussionContracts } from './discussion.ts';
 import { documentContracts } from './documents.ts';
 import { feedContracts } from './feed.ts';
+import { feedHighlightContracts } from './feed-highlights.ts';
 import { feedbackContracts } from './feedback.ts';
 import { issueContracts } from './issues.ts';
 import { bulkIssueContracts } from './issues-bulk.ts';
@@ -36,6 +37,12 @@ export {
 export { SEARCH_KINDS, SEARCH_LIMIT_MAX } from './audit.ts';
 export * from './contract.ts';
 export { DISCUSSION_LIMIT, DISCUSSION_PREVIEW_CHARS } from './discussion.ts';
+export {
+  CELEBRATION_KINDS,
+  type CelebrationKind,
+  PROJECT_HEALTH_STATES,
+  type ProjectHealthState,
+} from './feed-highlights.ts';
 export {
   OFFLINE_DUPLICATE_EVALUATION,
   SUGGESTION_ACTIONS,
@@ -78,6 +85,7 @@ export const contracts = {
   ...storyContracts,
   ...profileContracts,
   ...feedContracts,
+  ...feedHighlightContracts,
   ...accountContracts,
 } as const satisfies Record<string, Contract>;
 
