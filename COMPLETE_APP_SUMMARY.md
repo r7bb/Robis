@@ -16,7 +16,7 @@ Written to be checkable. Every row names a file you can open.
 | Database tables | 18 |
 | HTTP endpoints | 150 |
 | Tests | Counted in [docs/ROADMAP.md](docs/ROADMAP.md), the one place they are kept |
-| Screenshots | 30, all captured from the running app |
+| Screenshots | 32, all captured from the running app |
 | Measured throughput | ~3,600 req/s, zero errors |
 
 ---

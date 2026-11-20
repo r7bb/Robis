@@ -107,8 +107,12 @@ photos are stored without their location.
 
 <table>
   <tr>
-    <td width="62%"><img src="imgs/29-feed.webp" alt="The Feed: stories along the top, a composer, and a photo post"></td>
-    <td width="38%"><img src="imgs/30-story.webp" alt="A story playing full screen"></td>
+    <td width="50%"><img src="imgs/29-feed.webp" alt="The Feed: stories along the top, a composer, the caught-up line and a photo post"></td>
+    <td width="50%"><img src="imgs/30-story.webp" alt="A Different shot from an agent, full screen, with its Open the chat button"></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="imgs/31-profile.webp" alt="A profile: cover, title, working-on line, recent activity and shared pictures"></td>
+    <td width="50%"><img src="imgs/32-chat-picture.webp" alt="A picture posted in chat, beside the board"></td>
   </tr>
 </table>
 

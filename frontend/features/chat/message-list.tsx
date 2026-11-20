@@ -174,7 +174,7 @@ function MessageRow({
           {formatTime(message.createdAt)}
         </span>
       ) : (
-        <span className="mt-0.5 inline-flex shrink-0">
+        <span className="mt-0.5 inline-flex shrink-0 items-start self-start">
           <StoryRing userId={message.authorId} name={message.authorName} inline>
             <Avatar name={message.authorName} seed={message.authorId} avatar={avatar} size="md" />
           </StoryRing>

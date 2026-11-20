@@ -49,7 +49,7 @@ function YourStory({ me }: { me: Member }) {
     <div className="flex w-14 shrink-0 flex-col items-center gap-1">
       <div className="relative">
         {iHaveOne ? (
-          <StoryRing userId={me.userId} name="Your">
+          <StoryRing userId={me.userId} name={me.name} label="Your story">
             {picture}
           </StoryRing>
         ) : (

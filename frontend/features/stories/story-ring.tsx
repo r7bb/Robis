@@ -14,9 +14,12 @@ export function StoryRing({
   name,
   children,
   inline = false,
+  label,
 }: {
   userId: string;
   name: string;
+  /** What a screen reader hears, when not "<name>'s story". */
+  label?: string;
   children: ReactNode;
   /** In a row of text: the ring sits outside the picture's own box, so nothing moves. */
   inline?: boolean;
@@ -33,8 +36,8 @@ export function StoryRing({
         event.stopPropagation();
         stories.open(userId);
       }}
-      aria-label={`${name}'s story${unseen ? ', not seen yet' : ''}`}
-      className={`story-ring inline-flex shrink-0 ${inline ? '-m-[3.5px]' : ''} rounded-full p-[2px] transition-transform active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft`}
+      aria-label={`${label ?? `${name}'s story`}${unseen ? ', not seen yet' : ''}`}
+      className={`story-ring inline-flex h-fit shrink-0 self-start ${inline ? '-m-[3.5px]' : ''} rounded-full p-[2px] transition-transform active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft`}
       data-unseen={unseen || undefined}
     >
       <span className="inline-flex rounded-full bg-raised p-[1.5px]">{children}</span>
