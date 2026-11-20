@@ -25,6 +25,7 @@ export function AgentList({ workspaceId }: { workspaceId: string }) {
   const [name, setName] = useState('');
   const [role, setRole] = useState<AgentRole>('MEMBER');
   const [triage, setTriage] = useState(false);
+  const [shots, setShots] = useState(false);
   const [summaries, setSummaries] = useState(false);
   const [issued, setIssued] = useState<Issued | null>(null);
   const [copied, setCopied] = useState(false);
@@ -49,7 +50,7 @@ export function AgentList({ workspaceId }: { workspaceId: string }) {
     mutationFn: () =>
       call(contracts['agents.create'], {
         params: { workspaceId },
-        body: { name: name.trim(), role, triage, summaries: triage && summaries },
+        body: { name: name.trim(), role, triage, summaries: triage && summaries, shots },
       }),
     onSuccess: ({ agent, token }) => {
       setName('');
@@ -158,6 +159,15 @@ export function AgentList({ workspaceId }: { workspaceId: string }) {
           />
           Triages new issues
         </label>
+        <label className="flex items-center gap-2 text-sm text-muted">
+          <input
+            type="checkbox"
+            checked={shots}
+            onChange={(event) => setShots(event.target.checked)}
+            className="accent-[rgb(var(--accent))]"
+          />
+          Posts Different shots (an idea a day to try)
+        </label>
         {triage && (
           <label
             className="flex items-center gap-2 text-sm text-muted"
@@ -242,6 +252,9 @@ export function AgentList({ workspaceId }: { workspaceId: string }) {
                       <span className="block text-xs text-muted">
                         Triages new issues{agent.summaries ? ', with a one-line summary' : ''}
                       </span>
+                    )}
+                    {agent.shots && (
+                      <span className="block text-xs text-muted">Posts Different shots</span>
                     )}
                   </span>
                 </span>

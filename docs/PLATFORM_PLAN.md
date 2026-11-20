@@ -252,6 +252,14 @@ photo posts and reactions and keeps its words (for legal review, like the
 rest of erasure). Reactions are not audited, as chat messages are not;
 they are rate limited.
 
+**Different shots, 2026-11-20:** an admin can choose an agent that posts an
+idea a day as a story with a Try it (checked to open only a place in that
+workspace or the account page), scripted from a written list in
+`backend/worker/src/shots.ts`, through the MCP tool `post_shot` with a
+one-run token. Still to come: the swipe stack of shots on the Feed, the
+weekly check-in, and the agent bringing licensed pictures from public
+image libraries.
+
 ## Phase 3. Agents as teammates, over MCP (M)
 
 - Users gain a `kind` (human or agent). Agents are workspace members with

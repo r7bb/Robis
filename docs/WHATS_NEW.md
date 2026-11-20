@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Different shots** (2026-11-20). An agent can post an idea a day for the
+  team to try, as a story with a Try it button that opens that part of
+  Robis.
 - **A feed that ends** (2026-11-20). A Feed page for the team: posts of
   words or photos, three reactions and comments, pictures from rooms mixed
   in, and a clear "You’re all caught up" where it ends.

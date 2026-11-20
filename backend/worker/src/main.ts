@@ -17,6 +17,7 @@ import { DEFAULT_HEARTBEAT_FILE, heartbeat } from './heartbeat.ts';
 import { mailHandlers } from './mail.ts';
 import { checkVapidKeys, pushHandlers, vapidFromEnv } from './push.ts';
 import { Runner } from './runner.ts';
+import { SHOTS_INTERVAL_MS, SHOTS_JOB, shotsHandler } from './shots.ts';
 import { storagePurgeHandler, workerStorage } from './storage-purge.ts';
 import { providerSummarizer } from './summary-provider.ts';
 import { triageHandler } from './triage.ts';
@@ -118,8 +119,18 @@ const summarize = summaryKey
   : undefined;
 if (mcpUrl) {
   handlers[TRIAGE_JOB] = triageHandler({ mcpUrl, summarize });
+  // Different shots (Phase 2c): an idea a day from each workspace's chosen
+  // agent. Looked for hourly, and once soon after a start, so a new day's
+  // shot does not wait an hour for a restarted worker.
+  handlers[SHOTS_JOB] = shotsHandler({ mcpUrl });
+  reschedule(SHOTS_JOB, SHOTS_INTERVAL_MS);
+  if (!(await hasPendingJob(db, SHOTS_JOB))) {
+    await enqueue(db, SHOTS_JOB, {}, { delayMs: 30_000 });
+  }
 } else {
-  console.warn('MCP_URL is not set: new issues are not triaged by an agent.');
+  console.warn(
+    'MCP_URL is not set: new issues are not triaged by an agent, and no shots are posted.',
+  );
 }
 
 reschedule('sessions.cleanup', HOUR_MS);

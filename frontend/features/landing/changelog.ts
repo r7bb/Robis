@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-20',
     area: 'Product',
+    title: 'Different shots',
+    brief:
+      'An agent can post an idea a day for the team to try, as a story with a Try it button that opens that part of Robis.',
+    summary:
+      'When an admin adds an agent, they can now tick Posts Different shots. Once a day that agent posts a short idea as a story, from a written list (share a desk photo on the feed, add a passkey, paste a screenshot into chat, start a document, and so on), each with a Try it button that opens the place it describes. Stories marked as a different shot show that above their words. There is no language model in it and nothing is sent anywhere. The agent works through the MCP server with a token made for that one run and revoked when it ends, so its post goes through the same permissions, retry ledger and audit trail as anyone’s, and the trail names it. A workspace gets at most one shot a day however often the job runs, none with stories turned off, and none from an agent that is only a guest. A Try it can only open a place in that workspace or the account page; anything else is refused.',
+    feature: {
+      name: 'Different shots',
+      where: 'People, Agents: Posts Different shots; then in the stories strip',
+      layers: [
+        'Screen: a Try it button on a different shot in the story viewer, and the option when adding an agent',
+        'API: stories.createText takes a Try it, checked to stay inside Robis; agents choose a shots agent',
+        'Worker: a scripted job, hourly, posting each workspace’s idea of the day through the MCP tool post_shot',
+      ],
+    },
+    checked:
+      'Five new tests: the chosen agent posts the day’s idea with its Try it once a day, the next idea the next day, and its run tokens are revoked; nothing is posted without a chosen agent, with stories off, or by a guest agent; removing the agent stops its shots; a Try it is refused for another workspace, another site, a protocol-relative path, the sign-in page and a path that climbs out, and needs both its place and its words; and every written idea opens a place in Robis. The full suite, lint, typecheck, knip and docs:links. Not yet seen in a browser: the swipe stack of shots on the Feed is the next piece.',
+  },
+  {
+    date: '2026-11-20',
+    area: 'Product',
     title: 'A feed that ends',
     brief:
       'A Feed page for the team: posts of words or photos, three reactions and comments, pictures from rooms mixed in, and a clear "You’re all caught up" where it ends.',

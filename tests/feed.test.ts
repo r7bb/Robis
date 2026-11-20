@@ -224,7 +224,7 @@ describe('reactions and comments', () => {
   test('a reaction is once per person per kind, shown as who, and can be taken back', async () => {
     const { owner, member, workspace } = await team();
     const { post } = (await say(member, workspace.id, 'Demo went well')).json();
-    const react = (actor: Actor, kind: string, method = 'PUT') =>
+    const react = (actor: Actor, kind: string, method: 'PUT' | 'DELETE' = 'PUT') =>
       request(`/workspaces/${workspace.id}/posts/${post.id}/reactions/${kind}`, { method, actor });
     expect((await react(owner, 'celebrate')).statusCode).toBe(204);
     expect((await react(owner, 'celebrate')).statusCode).toBe(204);

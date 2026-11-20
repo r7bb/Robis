@@ -37,6 +37,8 @@ const agent = z.object({
   triage: z.boolean(),
   /** Whether its triage comments may carry a language model's one-line summary. */
   summaries: z.boolean(),
+  /** Whether it posts Different shots here: an idea a day to try (Phase 2c). */
+  shots: z.boolean().default(false),
   tokens: z.array(token),
 });
 
@@ -55,6 +57,8 @@ const createAgentSchema = z.object({
    * effect only where the server is configured with a provider key.
    */
   summaries: z.boolean().default(false),
+  /** Make it the agent that posts Different shots here, in place of any other. */
+  shots: z.boolean().default(false),
 });
 
 const step = z.object({

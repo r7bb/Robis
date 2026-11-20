@@ -22,9 +22,23 @@ const story = z.object({
   url: z.string().nullable(),
   width: z.number().int().nullable(),
   height: z.number().int().nullable(),
+  /** A Different shot's place in Robis to try, and its button's words (Phase 2c). */
+  tryPath: z.string().nullable().default(null),
+  tryLabel: z.string().nullable().default(null),
   createdAt: timestamp,
   expiresAt: timestamp,
 });
+
+/**
+ * A place inside Robis, as a path: letters, digits and a few separators,
+ * no scheme, no host, no `//`. The server also checks it is this
+ * workspace's or the account page.
+ */
+const tryPathSchema = z
+  .string()
+  .max(200)
+  .regex(/^\/[a-z0-9/#?=_-]*$/, 'A path inside Robis')
+  .refine((path) => !path.includes('//'), 'A path inside Robis');
 
 export const storyContracts = {
   'stories.list': contract({
@@ -49,10 +63,17 @@ export const storyContracts = {
     path: '/workspaces/:workspaceId/stories',
     summary: 'Post a few words as a story.',
     params: workspaceParams,
-    body: z.object({
-      body: z.string().trim().min(1).max(STORY_TEXT_MAX_LENGTH),
-      tone: z.enum(STORY_TONES),
-    }),
+    body: z
+      .object({
+        body: z.string().trim().min(1).max(STORY_TEXT_MAX_LENGTH),
+        tone: z.enum(STORY_TONES),
+        /** A Different shot: where its Try it goes, and what the button says. */
+        tryPath: tryPathSchema.optional(),
+        tryLabel: z.string().trim().min(1).max(24).optional(),
+      })
+      .refine((story) => (story.tryPath === undefined) === (story.tryLabel === undefined), {
+        message: 'A Try it needs both a place and its words',
+      }),
     status: 201,
     response: z.object({ story }),
   }),

@@ -11,6 +11,7 @@
     "./nudges": "./src/nudges.ts",
     "./push": "./src/push.ts",
     "./runner": "./src/runner.ts",
+    "./shots": "./src/shots.ts",
     "./storage-purge": "./src/storage-purge.ts",
     "./summary-provider": "./src/summary-provider.ts",
     "./triage": "./src/triage.ts"

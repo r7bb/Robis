@@ -483,6 +483,12 @@ export const workspaces = pgTable(
      */
     triageSummaries: boolean('triage_summaries').notNull().default(false),
     /**
+     * The agent that posts Different shots here (Phase 2c): an idea a day
+     * for the team to try, as a story with a Try it. None unless an admin
+     * chooses one.
+     */
+    shotsAgentId: uuid('shots_agent_id').references(() => users.id, { onDelete: 'set null' }),
+    /**
      * Whether everyone here must sign in with two-factor (C4). An admin who
      * turns it on must have it; a member without it is refused at every
      * workspace route and on the live feed, with a way to turn it on.
@@ -807,6 +813,13 @@ export const stories = pgTable(
     bytes: integer('bytes'),
     width: integer('width'),
     height: integer('height'),
+    /**
+     * A Different shot's way in (Phase 2c): a place inside Robis the idea
+     * opens, and the words on its button. Only ever a path within this
+     * workspace or the account page, checked when it is posted.
+     */
+    tryPath: text('try_path'),
+    tryLabel: text('try_label'),
     createdAt: createdAt(),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   },

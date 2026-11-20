@@ -2,6 +2,7 @@
 
 import { can, contracts, type Role } from '@robis/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import Link from 'next/link';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Avatar } from '../../components/ui/avatar.tsx';
 import { ApiError, BASE_URL, call, type Member } from '../../lib/api.ts';
@@ -390,9 +391,25 @@ function StoryFrame({ story, by }: { story: Story; by: string }) {
       className="grid h-full w-full place-items-center px-8"
       style={{ backgroundImage: TONE_BACKGROUNDS[story.tone ?? 'ink'] }}
     >
-      <p className="max-w-[22ch] whitespace-pre-wrap break-words text-center text-2xl font-semibold leading-snug tracking-tight text-white [text-wrap:balance] sm:text-3xl">
-        {story.body}
-      </p>
+      <div className="flex flex-col items-center gap-6">
+        {story.tryPath ? (
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-white/70">
+            A different shot
+          </p>
+        ) : null}
+        <p className="max-w-[22ch] whitespace-pre-wrap break-words text-center text-2xl font-semibold leading-snug tracking-tight text-white [text-wrap:balance] sm:text-3xl">
+          {story.body}
+        </p>
+        {story.tryPath && story.tryLabel ? (
+          // Above the tap zones, so it is a button rather than "next".
+          <Link
+            href={story.tryPath}
+            className="relative z-30 rounded-full bg-white px-5 py-2 text-sm font-semibold text-black shadow-lg transition-transform hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+          >
+            {story.tryLabel}
+          </Link>
+        ) : null}
+      </div>
     </div>
   );
 }

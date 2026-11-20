@@ -1,5 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { ISSUE_STATUSES } from '@robis/shared';
+import { ISSUE_STATUSES, STORY_TEXT_MAX_LENGTH, STORY_TONES } from '@robis/shared';
 import { z } from 'zod';
 import { type ApiClient, ApiRefusal } from './api-client.ts';
 
@@ -18,6 +18,7 @@ export const TOOL_NAMES = [
   'create_issue',
   'update_issue',
   'comment',
+  'post_shot',
 ] as const;
 export type ToolName = (typeof TOOL_NAMES)[number];
 
@@ -211,6 +212,30 @@ export function createToolServer(
           tool: 'comment',
           params: { ...params, issueId },
           body: { body },
+          idempotencyKey: key,
+        }),
+      ),
+  );
+
+  server.registerTool(
+    'post_shot',
+    {
+      description:
+        'Post a Different shot: a short idea for the team to try, shown as a story for 24 hours, with a Try it button that opens a place in this workspace (a path such as /workspaces/<id>/feed) or the account page.',
+      inputSchema: {
+        body: z.string().min(1).max(STORY_TEXT_MAX_LENGTH),
+        tone: z.enum(STORY_TONES),
+        tryPath: z.string().min(1).max(200),
+        tryLabel: z.string().min(1).max(24),
+        idempotencyKey,
+      },
+    },
+    ({ idempotencyKey: key, ...shot }) =>
+      run('post_shot', observe, () =>
+        api.call('stories.createText', {
+          tool: 'post_shot',
+          params,
+          body: shot,
           idempotencyKey: key,
         }),
       ),

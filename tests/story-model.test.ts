@@ -26,6 +26,8 @@ function story(id: string, authorId: string, minutesAgo: number): Story {
     url: null,
     width: null,
     height: null,
+    tryPath: null,
+    tryLabel: null,
     createdAt: created.toISOString(),
     expiresAt: new Date(created.getTime() + 86_400_000).toISOString(),
   };

@@ -49,9 +49,23 @@ function toWire(row: StoryRow) {
     url: row.storageKey ? `/workspaces/${row.workspaceId}/stories/${row.id}/image` : null,
     width: row.width,
     height: row.height,
+    tryPath: row.tryPath,
+    tryLabel: row.tryLabel,
     createdAt: row.createdAt,
     expiresAt: row.expiresAt,
   };
+}
+
+/** A Try it's place: this workspace's pages, or the account page, and nothing else. */
+function insideWorkspace(path: string, workspaceId: string): boolean {
+  const own = `/workspaces/${workspaceId}`;
+  return (
+    path === own ||
+    path.startsWith(`${own}/`) ||
+    path.startsWith(`${own}?`) ||
+    path === '/account' ||
+    path.startsWith('/account#')
+  );
 }
 
 /** Still within its 24 hours: checked on every read, so expiry needs no job to be true. */
@@ -203,7 +217,19 @@ export async function storyRoutes(
       const { workspaceId } = currentMembership(request);
       await assertStoriesOn(workspaceId);
       return withIdempotency(db, request, reply, 201, async () => {
-        const row = await post(request, { kind: 'text', body: input.body, tone: input.tone });
+        if (input.tryPath && !insideWorkspace(input.tryPath, workspaceId)) {
+          throw ApiError.badRequest(
+            'A Try it can only open a place in this workspace, or the account page',
+            'try_path_outside',
+          );
+        }
+        const row = await post(request, {
+          kind: 'text',
+          body: input.body,
+          tone: input.tone,
+          tryPath: input.tryPath ?? null,
+          tryLabel: input.tryLabel ?? null,
+        });
         await notifyChanged(workspaceId, row.id, currentUser(request).id);
         return shape(contracts['stories.createText'], { story: toWire(row) });
       });

@@ -155,6 +155,7 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
         createdAt: workspaceMembers.createdAt,
         triageAgentId: workspaces.triageAgentId,
         triageSummaries: workspaces.triageSummaries,
+        shotsAgentId: workspaces.shotsAgentId,
         avatarKind: users.avatarKind,
         avatarRef: users.avatarRef,
         avatarUpdatedAt: users.avatarUpdatedAt,
@@ -198,12 +199,14 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
           role,
           triageAgentId,
           triageSummaries,
+          shotsAgentId,
           ...agent
         }) => ({
           ...agent,
           role: role as AgentRole,
           triage: triageAgentId === agent.id,
           summaries: triageAgentId === agent.id && triageSummaries,
+          shots: shotsAgentId === agent.id,
           avatar: avatarOf({ id: agent.id, avatarKind, avatarRef, avatarUpdatedAt }),
           tokens: tokens
             .filter((token) => token.agentId === agent.id)
@@ -259,6 +262,9 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
           .set({ triageAgentId: id, triageSummaries: input.summaries })
           .where(eq(workspaces.id, workspaceId));
       }
+      if (input.shots) {
+        await tx.update(workspaces).set({ shotsAgentId: id }).where(eq(workspaces.id, workspaceId));
+      }
 
       await recordAudit(tx, auditActor(request), {
         workspaceId,
@@ -270,6 +276,7 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
           role: input.role,
           triage: input.triage,
           summaries: input.triage && input.summaries,
+          shots: input.shots,
         },
       });
 
@@ -288,6 +295,7 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
         avatar: avatarOf(agent),
         triage: input.triage,
         summaries: input.triage && input.summaries,
+        shots: input.shots,
         createdAt: joinedAt,
       },
       token: { id: token.id, label: input.tokenLabel, secret: token.secret },
@@ -381,12 +389,16 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
   });
 }
 
-/** A removed agent no longer triages the workspace's new issues. */
+/** A removed agent no longer triages the workspace's new issues, nor posts its shots. */
 export async function stopTriaging(tx: Tx, workspaceId: string, agentId: string) {
   await tx
     .update(workspaces)
     .set({ triageAgentId: null, triageSummaries: false })
     .where(and(eq(workspaces.id, workspaceId), eq(workspaces.triageAgentId, agentId)));
+  await tx
+    .update(workspaces)
+    .set({ shotsAgentId: null })
+    .where(and(eq(workspaces.id, workspaceId), eq(workspaces.shotsAgentId, agentId)));
 }
 
 /** For the member routes: an agent's role must stay one an agent may hold. */

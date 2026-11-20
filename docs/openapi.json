@@ -2644,6 +2644,10 @@
                           "summaries": {
                             "type": "boolean"
                           },
+                          "shots": {
+                            "default": false,
+                            "type": "boolean"
+                          },
                           "tokens": {
                             "type": "array",
                             "items": {
@@ -2752,6 +2756,7 @@
                           "createdAt",
                           "triage",
                           "summaries",
+                          "shots",
                           "tokens"
                         ],
                         "additionalProperties": false
@@ -2814,6 +2819,10 @@
                     "type": "boolean"
                   },
                   "summaries": {
+                    "default": false,
+                    "type": "boolean"
+                  },
+                  "shots": {
                     "default": false,
                     "type": "boolean"
                   }
@@ -2915,6 +2924,10 @@
                         },
                         "summaries": {
                           "type": "boolean"
+                        },
+                        "shots": {
+                          "default": false,
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -2925,7 +2938,8 @@
                         "avatar",
                         "createdAt",
                         "triage",
-                        "summaries"
+                        "summaries",
+                        "shots"
                       ],
                       "additionalProperties": false
                     },
@@ -11600,6 +11614,20 @@
                               }
                             ]
                           },
+                          "tryPath": {
+                            "default": null,
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "tryLabel": {
+                            "default": null,
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
                           "createdAt": {
                             "anyOf": [
                               {
@@ -11636,6 +11664,8 @@
                           "url",
                           "width",
                           "height",
+                          "tryPath",
+                          "tryLabel",
                           "createdAt",
                           "expiresAt"
                         ],
@@ -11690,6 +11720,16 @@
                       "ember",
                       "ink"
                     ]
+                  },
+                  "tryPath": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "pattern": "^\\/[a-z0-9/#?=_-]*$"
+                  },
+                  "tryLabel": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 24
                   }
                 },
                 "required": [
@@ -11782,6 +11822,20 @@
                             }
                           ]
                         },
+                        "tryPath": {
+                          "default": null,
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "tryLabel": {
+                          "default": null,
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
                         "createdAt": {
                           "anyOf": [
                             {
@@ -11818,6 +11872,8 @@
                         "url",
                         "width",
                         "height",
+                        "tryPath",
+                        "tryLabel",
                         "createdAt",
                         "expiresAt"
                       ],
@@ -11944,6 +12000,20 @@
                             }
                           ]
                         },
+                        "tryPath": {
+                          "default": null,
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "tryLabel": {
+                          "default": null,
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
                         "createdAt": {
                           "anyOf": [
                             {
@@ -11980,6 +12050,8 @@
                         "url",
                         "width",
                         "height",
+                        "tryPath",
+                        "tryLabel",
                         "createdAt",
                         "expiresAt"
                       ],
