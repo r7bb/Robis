@@ -22,7 +22,13 @@ import {
   assertRoomFor,
   IMAGE_CSP,
 } from '../media/admit-upload.ts';
-import { type ProcessedImage, toAttachment, UnreadableImageError } from '../media/images.ts';
+import {
+  MEME_CAPTION_MAX_LENGTH,
+  type ProcessedImage,
+  toAttachment,
+  toMeme,
+  UnreadableImageError,
+} from '../media/images.ts';
 import {
   auditActor,
   currentMembership,
@@ -32,6 +38,28 @@ import {
 } from '../plugins/authz.ts';
 import { withIdempotency } from '../plugins/idempotency.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
+
+/**
+ * A meme caption to draw on a photo post (Phase 2c), from the
+ * `X-Robis-Meme-Caption` header, URI-encoded: a header rather than the
+ * address, so the words are not written into access logs. Null for none.
+ */
+function memeCaption(raw: string | string[] | undefined): string | null {
+  if (typeof raw !== 'string' || raw === '') return null;
+  let caption: string;
+  try {
+    caption = decodeURIComponent(raw).replace(/\s+/g, ' ').trim();
+  } catch {
+    throw ApiError.badRequest('That meme caption could not be read', 'bad_meme_caption');
+  }
+  if (caption.length === 0 || caption.length > MEME_CAPTION_MAX_LENGTH) {
+    throw ApiError.badRequest(
+      `A meme caption is one line of up to ${MEME_CAPTION_MAX_LENGTH} characters`,
+      'bad_meme_caption',
+    );
+  }
+  return caption;
+}
 
 /** Posts and comments a person may write in an hour. */
 const WRITES_PER_HOUR = 60;
@@ -132,9 +160,13 @@ export async function postRoutes(
       }),
   );
 
-  async function processed(body: Uint8Array, declared: string): Promise<ProcessedImage> {
+  async function processed(
+    body: Uint8Array,
+    declared: string,
+    caption: string | null,
+  ): Promise<ProcessedImage> {
     try {
-      return await toAttachment(body, declared);
+      return caption ? await toMeme(body, declared, caption) : await toAttachment(body, declared);
     } catch (error) {
       if (error instanceof UnreadableImageError) {
         throw ApiError.badRequest(error.message, 'unreadable_image');
@@ -156,8 +188,9 @@ export async function postRoutes(
       if (!(body instanceof Uint8Array) || body.byteLength === 0) {
         throw new ApiError(415, 'unsupported_media_type', 'Upload a JPEG, PNG, WebP or AVIF image');
       }
+      const caption = memeCaption(request.headers['x-robis-meme-caption']);
       return withIdempotency(db, request, reply, 201, async () => {
-        const image = await processed(body, request.headers['content-type'] ?? '');
+        const image = await processed(body, request.headers['content-type'] ?? '', caption);
         await assertRoomFor(db, workspaceId, image.bytes.byteLength);
         const key = `posts/${workspaceId}/${randomUUID()}.${image.extension}`;
         await storage.put(key, image.bytes, image.contentType);

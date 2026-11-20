@@ -112,7 +112,7 @@ export const feedContracts = {
     method: 'POST',
     path: '/workspaces/:workspaceId/posts/photo',
     summary:
-      'Post a photo to the feed; re-encoded and stripped of metadata, within the workspace’s storage. Add words with posts.update.',
+      'Post a photo to the feed; re-encoded and stripped of metadata, within the workspace’s storage. Add words with posts.update. An X-Robis-Meme-Caption header (URI-encoded, up to 80 characters) draws it across the photo as a meme.',
     params: workspaceParams,
     rawBody: 'image/*',
     status: 201,

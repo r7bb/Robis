@@ -190,3 +190,59 @@ export async function toCover(input: Uint8Array, declaredType = ''): Promise<Uin
     }
   });
 }
+
+/** The longest meme caption: one line, read at a glance. */
+export const MEME_CAPTION_MAX_LENGTH = 80;
+const MEME_WIDTH = 1600;
+
+/** XML-safe, so a caption can never become markup in the SVG. */
+function svgText(text: string): string {
+  return text.replace(/[<>&'"]/g, (c) => `&#${c.charCodeAt(0)};`);
+}
+
+/**
+ * A photo with a meme caption drawn across its foot (Phase 2c): the same
+ * checks and metadata stripping as any upload, at a feed's width, the
+ * caption in bold white with a dark edge over a soft shade. Drawn here, in
+ * the API, which alone holds the image library.
+ */
+export async function toMeme(
+  input: Uint8Array,
+  declaredType: string,
+  caption: string,
+): Promise<ProcessedImage> {
+  checkedType(input, declaredType);
+  return withDecodeSlot(async () => {
+    try {
+      const base = await sharp(input, { limitInputPixels: MAX_INPUT_PIXELS })
+        .rotate()
+        .resize(MEME_WIDTH, MEME_WIDTH, { fit: 'inside' })
+        .toBuffer({ resolveWithObject: true });
+      const { width, height } = base.info;
+      const size = Math.round(width / 20);
+      const band = Math.round(size * 2.4);
+      const svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#000" stop-opacity="0"/>
+          <stop offset="1" stop-color="#000" stop-opacity="0.72"/></linearGradient></defs>
+        <rect x="0" y="${height - band * 1.6}" width="${width}" height="${band * 1.6}" fill="url(#fade)"/>
+        <text x="50%" y="${height - band * 0.55}" text-anchor="middle"
+          font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="${size}"
+          fill="#fff" stroke="#000" stroke-width="${Math.max(2, size / 14)}" paint-order="stroke">${svgText(caption)}</text>
+      </svg>`;
+      const { data, info } = await sharp(base.data)
+        .composite([{ input: Buffer.from(svg), top: 0, left: 0 }])
+        .webp({ quality: 86 })
+        .toBuffer({ resolveWithObject: true });
+      return {
+        bytes: new Uint8Array(data),
+        contentType: 'image/webp',
+        extension: 'webp',
+        width: info.width,
+        height: info.height,
+      };
+    } catch {
+      throw new UnreadableImageError('That image could not be read');
+    }
+  });
+}

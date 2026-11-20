@@ -393,3 +393,28 @@ describe('the weekly check-in', () => {
     expect(refused.statusCode).toBe(403);
   });
 });
+
+describe('a meme caption', () => {
+  test('is drawn across a photo post by the API, and must be one short line', async () => {
+    const { member, workspace } = await team();
+    const { app } = await getHarness();
+    const post = async (caption: string) =>
+      app.inject({
+        method: 'POST',
+        url: `/workspaces/${workspace.id}/posts/photo`,
+        headers: {
+          cookie: member.cookie,
+          'content-type': 'image/jpeg',
+          'x-robis-meme-caption': encodeURIComponent(caption),
+        },
+        payload: Buffer.from(await photo()),
+      });
+    const made = await post('Shipping it, at last');
+    expect(made.statusCode).toBe(201);
+    // Drawn at the feed's width, so a 1600 by 1200 photo stays that size.
+    expect(made.json().post.photo).toMatchObject({ width: 1600, height: 1200 });
+    expect((await post('x'.repeat(81))).statusCode).toBe(400);
+    const plain = await raw(member, `/workspaces/${workspace.id}/posts/photo`, await photo('#000'));
+    expect(plain.statusCode).toBe(201);
+  });
+});

@@ -16,8 +16,8 @@ is in `node_modules/geist/LICENSE.TXT` and at <https://openfontlicense.org>.
 ## sharp and libvips
 
 Used by the API to decode, resize and re-encode every uploaded image, which
-is also what strips their metadata, and by the worker to draw a caption on
-a picture for the pictures agent's memes (Phase 2c). `sharp` 0.35.5 is licensed under the Apache
+is also what strips their metadata, and to draw a meme caption across a
+photo posted to the feed (Phase 2c). The API alone holds it. `sharp` 0.35.5 is licensed under the Apache
 License 2.0. It loads a prebuilt `libvips` (`@img/sharp-libvips-*`), licensed
 under the GNU LGPL 3.0 or later, as a separate shared library, together with
 the libraries libvips bundles under their own licences (listed in the

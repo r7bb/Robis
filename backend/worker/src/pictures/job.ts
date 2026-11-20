@@ -2,7 +2,6 @@ import { issueAgentToken, revokeAgentToken } from '@robis/auth';
 import { type Database, posts, workspaces } from '@robis/database';
 import { and, isNotNull, sql } from 'drizzle-orm';
 import type { JobHandler } from '../runner.ts';
-import { MEME_CAPTIONS, memeOf } from './meme.ts';
 import {
   type Fetcher,
   fetchPicture,
@@ -29,6 +28,23 @@ export const PICTURES_INTERVAL_MS = 60 * 60 * 1000;
 const RUN_TOKEN_TTL_MS = 5 * 60_000;
 /** A generic name for the libraries' logs: nothing about who runs this server. */
 const DEFAULT_USER_AGENT = 'robis-pictures/1.0 (an open source team workspace)';
+
+/**
+ * The meme captions, drawn by the API on a free-to-change picture: about the
+ * work, never about a person.
+ */
+export const MEME_CAPTIONS: readonly string[] = [
+  'When the standup ends five minutes early',
+  'Me, checking the board after the weekend',
+  'The build after one more small change',
+  'Friday deploys, seen from a safe distance',
+  'When the bug fixes itself on the second try',
+  'Inbox zero, as it really looks',
+  'Waiting for the review like',
+  'The team when the demo just works',
+  'My calendar, between meetings',
+  'Shipping it, at last',
+];
 
 const dayOf = (now: Date) => Math.floor(now.getTime() / 86_400_000);
 
@@ -101,6 +117,7 @@ async function post(
   bytes: Uint8Array,
   credit: string,
   day: number,
+  meme: string | null,
 ) {
   const api = options.apiFetcher ?? fetch;
   const headers = { authorization: `Bearer ${token}` };
@@ -111,6 +128,8 @@ async function post(
       ...headers,
       'content-type': 'image/jpeg',
       'idempotency-key': `pictures:${workspaceId}:${day}`,
+      // The API draws the caption: it alone holds the image library.
+      ...(meme ? { 'x-robis-meme-caption': encodeURIComponent(meme) } : {}),
     },
     body: new Blob([new Uint8Array(bytes)], { type: 'image/jpeg' }),
   });
@@ -133,11 +152,7 @@ async function today(fetcher: Fetcher, now: Date, userAgent: string) {
   // Every third day, when the picture is free to change, a meme.
   const meme =
     picture.freeToChange && day % 3 === 0 ? MEME_CAPTIONS[day % MEME_CAPTIONS.length]! : null;
-  return {
-    day,
-    bytes: meme ? await memeOf(original, meme) : original,
-    credit: creditOf(picture, meme),
-  };
+  return { day, bytes: original, meme, credit: creditOf(picture, meme) };
 }
 
 export function picturesHandler(options: Options): JobHandler {
@@ -162,7 +177,15 @@ export function picturesHandler(options: Options): JobHandler {
         expiresAt: new Date(Date.now() + RUN_TOKEN_TTL_MS),
       });
       try {
-        await post(options, token.secret, workspaceId, found.bytes, found.credit, found.day);
+        await post(
+          options,
+          token.secret,
+          workspaceId,
+          found.bytes,
+          found.credit,
+          found.day,
+          found.meme,
+        );
       } catch (error) {
         console.warn(`pictures: workspace ${workspaceId} skipped: ${(error as Error).message}`);
       } finally {
