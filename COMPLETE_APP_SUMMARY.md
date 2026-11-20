@@ -186,7 +186,10 @@ JavaScript.
 
 | Feature | Where |
 | --- | --- |
-| Prometheus `/metrics` on internal ports of the API and gateway, off the public ports | `backend/metrics/`, `backend/api/src/metrics.ts` |
+| Prometheus `/metrics` on internal ports of the API, gateway, MCP server and worker, off the public ports; the worker reads the queue and the audit stream's lag at each scrape | `backend/metrics/`, `backend/api/src/metrics.ts`, `backend/worker/src/metrics.ts` |
+| Traces across every service with OpenTelemetry: a request, the jobs it queued and the mail they sent are one trace, through the realtime fan-out and the ML service too | `backend/telemetry/`, `backend/api/src/plugins/tracing.ts`, `robis-ml/robis_ml/telemetry.py` |
+| Structured JSON logs in every service, each line naming its trace | `backend/telemetry/src/log.ts` |
+| Alert rules with promtool tests in CI, and a runbook for each | `deploy/prometheus/`, `docs/RUNBOOK.md` |
 | Route-pattern labels (cardinality-safe) | `backend/api/src/metrics.ts` |
 | Health endpoints | `backend/api/src/app.ts` |
 | Load harness | `scripts/bench/loadtest.ts` |

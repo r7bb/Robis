@@ -61,6 +61,9 @@ export type SuggestionClient = {
   ): Promise<Suggestions>;
 };
 
+/** How a call to the ML service ended, for its metric (A5). */
+export type MlOutcome = 'ok' | 'error' | 'unreachable';
+
 export type SuggestionConfig = {
   /** Base URL of the ML service. Absent means the feature is off. */
   url: string | null;
@@ -158,6 +161,8 @@ export function parseTriage(payload: unknown): TriageSuggestion | null {
 export function createSuggestionClient(
   config: SuggestionConfig,
   log: FastifyBaseLogger,
+  /** Told how each call ended, for the metric the ML alert reads (A5). */
+  onOutcome: (outcome: MlOutcome) => void = () => {},
 ): SuggestionClient {
   if (!config.url) return noSuggestions;
 
@@ -191,12 +196,16 @@ export function createSuggestionClient(
       });
 
       if (!response.ok) {
+        onOutcome('error');
         log.warn({ status: response.status, endpoint }, 'suggestion service returned an error');
         return undefined;
       }
 
-      return await response.json();
+      const body: unknown = await response.json();
+      onOutcome('ok');
+      return body;
     } catch (error) {
+      onOutcome('unreachable');
       // Logged once at warn, never surfaced. A composer that reports
       // "could not reach the suggestion service" is worse than one that
       // quietly has no suggestions.

@@ -70,8 +70,12 @@ Everything is served from one address, through an edge proxy
   link is built from it. Production refuses to start without it, or with
   plain http.
 
-Metrics are on internal ports (API 9464, gateway 9465) for a scraper on the
-private network, never through the proxy.
+Metrics are on internal ports (API 9464, gateway 9465, MCP server 9466,
+worker 9467) for a scraper on the private network, never through the proxy.
+Alert rules for Prometheus are in `deploy/prometheus/alerts.yml`, tested in
+CI with promtool, with what each means and what to check first in
+[RUNBOOK.md](RUNBOOK.md) (A5). They read metric names only, so any scrape
+job names work.
 
 ## Tested as production runs it
 

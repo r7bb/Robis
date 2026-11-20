@@ -185,6 +185,10 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Alert rules, tested, with a runbook.** Prometheus alert rules for
+  errors, slow requests, the job queue, the audit stream, the live
+  connections and the ML service, each tested in CI and explained in a
+  runbook.
 - **Traces through the live updates and the duplicate hints.** A write’s
   trace now reaches the realtime gateway’s fan-out to open tabs and the ML
   service’s duplicate hints, so each is a span in the request that caused
@@ -192,10 +196,6 @@ with Postgres on the same machine. Method and percentiles in
 - **Log lines that lead to their trace.** Every service now writes
   structured JSON logs, each line with its service, level, and the trace and
   span it was written in; the API’s carry the request id too.
-- **One trace from a request to the mail it sends.** Requests, the jobs they
-  queue and the mail those send are now traced with OpenTelemetry as one
-  trace, from the API through the queue to the worker, and through the MCP
-  server for agents.
 
 <!-- latest:end -->
 

@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-20',
     area: 'Product',
+    title: 'Alert rules, tested, with a runbook',
+    brief:
+      'Prometheus alert rules for errors, slow requests, the job queue, the audit stream, the live connections and the ML service, each tested in CI and explained in a runbook.',
+    summary:
+      'Nine alert rules, ready for Prometheus: API errors over 5%, the slowest 1% of requests over a second, a job queue backing up or a job waiting over five minutes, a job that used up its attempts, a worker that cannot read the queue, the audit stream falling behind, nobody holding a live connection while people use the API, and the ML service failing most calls. The worker now serves metrics of its own (jobs due, the oldest one’s wait, dead letters, the audit stream’s lag, and each job’s outcome by kind), and the API counts every call to the ML service by how it ended. Each rule is tested with Prometheus’s own tool in CI, once where it must fire and once where it must not, and docs/RUNBOOK.md says what each means and the first three things to check.',
+    checked:
+      'promtool checks the nine rules and runs their tests in CI; a threshold broken on purpose fails them. Twenty-one checks that every rule has a firing and a quiet case, a runbook section its annotation links to, and only metrics a service exports. Four tests of the worker’s metrics and the ML call count. The full suite, lint, typecheck, knip and docs:links. Not run against a real Prometheus: none runs here.',
+  },
+  {
+    date: '2026-11-20',
+    area: 'Product',
     title: 'Traces through the live updates and the duplicate hints',
     brief:
       'A write’s trace now reaches the realtime gateway’s fan-out to open tabs and the ML service’s duplicate hints, so each is a span in the request that caused it.',

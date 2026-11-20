@@ -10,13 +10,14 @@ import {
 } from '@robis/database';
 import { mailerFromEnv } from '@robis/mailer';
 import { TRIAGE_JOB } from '@robis/shared';
-import { loadConfig } from '@robis/shared/config';
+import { loadConfig, portFrom } from '@robis/shared/config';
 import { startTracingFromEnv } from '@robis/telemetry';
 import { log, setLogService } from '@robis/telemetry/log';
 import { auditStreamConfig, httpSink, streamAuditEvents } from './audit-stream.ts';
 import { handlers } from './handlers.ts';
 import { DEFAULT_HEARTBEAT_FILE, heartbeat } from './heartbeat.ts';
 import { mailHandlers } from './mail.ts';
+import { serveWorkerMetrics, workerMetrics } from './metrics.ts';
 import { PICTURES_INTERVAL_MS, PICTURES_JOB, picturesHandler } from './pictures/job.ts';
 import { checkVapidKeys, pushHandlers, vapidFromEnv } from './push.ts';
 import { Runner } from './runner.ts';
@@ -27,7 +28,11 @@ import { triageHandler } from './triage.ts';
 
 // Before anything else, and failing closed: see `loadConfig`. The origin is
 // the one every mailed link is built from.
-const { databaseUrl: DATABASE_URL, webOrigin } = loadConfig(process.env, { webOrigin: true });
+const {
+  databaseUrl: DATABASE_URL,
+  webOrigin,
+  metricsHost,
+} = loadConfig(process.env, { webOrigin: true });
 // Spans to a collector when OTEL_EXPORTER_OTLP_ENDPOINT names one (A5).
 const tracing = startTracingFromEnv('worker');
 setLogService('worker');
@@ -37,11 +42,19 @@ const { db, close } = createDatabase(DATABASE_URL, { max: 5 });
 /** How long the worker waits, idle, when nothing wakes it (stage 3, item 26). */
 const FALLBACK_POLL_MS = 30_000;
 
+// The queue, the audit stream's lag and each job's outcome, for Prometheus
+// (A5); kinds are the handlers' names, a fixed list.
+const metrics = workerMetrics(db, {
+  knows: (kind) => Object.hasOwn(handlers, kind),
+  auditStream: auditStreamConfig(process.env) !== null,
+});
+
 const runner = new Runner({
   db,
   handlers,
   idleDelayMs: FALLBACK_POLL_MS,
   onPoll: heartbeat(process.env.WORKER_HEARTBEAT_FILE ?? DEFAULT_HEARTBEAT_FILE),
+  observe: metrics.observe,
 });
 
 /**
@@ -194,6 +207,12 @@ if (auditStream) {
 // with its reason rather than failing to reach the database first.
 const jobsListener = await listenForJobs(DATABASE_URL, () => runner.wake());
 
+// Not on any public port: inside the network, for Prometheus to scrape.
+const metricsServer = serveWorkerMetrics(metrics, {
+  port: portFrom(process.env, 'WORKER_METRICS_PORT', 9467),
+  hostname: metricsHost,
+});
+
 log.info(`Worker ${runner.id} waiting for jobs (woken on each, polling every 30 s)`);
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
@@ -202,6 +221,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     // Anything still claimed is reclaimed by another worker after the
     // visibility timeout.
     runner.stop();
+    metricsServer.stop();
     await jobsListener.close();
     await close();
     await tracing.stop();

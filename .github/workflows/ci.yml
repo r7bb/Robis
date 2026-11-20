@@ -95,6 +95,21 @@ jobs:
       - name: Typecheck
         run: bun run typecheck
 
+      # The alert rules and their tests (A5), with Prometheus's own tool, at a
+      # pinned image, so a rule that would never fire (or always would) fails
+      # the build. tests/alert-rules.test.ts checks every rule has a test and
+      # a runbook entry.
+      - name: Alert rules
+        run: |
+          docker run --rm -v "$PWD/deploy/prometheus:/rules:ro" -w /rules \
+            --entrypoint promtool \
+            prom/prometheus:v3.15.1@sha256:fa3302279710be2f21a8301ec17a8b4f2301fd829bd113839b3b6b02b6f191a2 \
+            check rules alerts.yml
+          docker run --rm -v "$PWD/deploy/prometheus:/rules:ro" -w /rules \
+            --entrypoint promtool \
+            prom/prometheus:v3.15.1@sha256:fa3302279710be2f21a8301ec17a8b4f2301fd829bd113839b3b6b02b6f191a2 \
+            test rules alerts.test.yml
+
       # No unused files, exports or dependencies (stage 4, item 35).
       - name: Unused code
         run: bun run knip

@@ -48,7 +48,15 @@ export function createMetrics() {
     .gauge('robis_process_uptime_seconds', 'Seconds since this process started.')
     .collect(() => (Date.now() - started) / 1000);
 
-  return { registry, requests, duration, inFlight };
+  // Calls to the ML service, by how they ended (A5): it has no metrics of its
+  // own, so whether it is answering is read from here.
+  const mlCalls = registry.counter(
+    'robis_ml_requests_total',
+    'Calls to the ML service for suggestions, by outcome: ok, error (it answered with a failure), unreachable (no answer in time, or none at all).',
+    ['outcome'],
+  );
+
+  return { registry, requests, duration, inFlight, mlCalls };
 }
 
 /**

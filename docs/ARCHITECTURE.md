@@ -216,9 +216,14 @@ curl -s localhost:9464/metrics | grep robis_http_requests_total
 curl -s localhost:9465/metrics | grep robis_ws
 ```
 
-The API reports request counts, a latency histogram and an in-flight gauge; the
+The API reports request counts, a latency histogram and an in-flight gauge,
+and each call to the ML service by outcome (it has no metrics of its own); the
 gateway reports open sockets, document rooms, fan-out deliveries and upgrade
-outcomes. One write reaching fifty subscribed sockets counts as fifty
+outcomes; the worker (`:9467`, A5) reads the queue at each scrape (jobs due,
+the oldest one's wait, dead letters, the audit stream's lag) and counts each
+job's outcome and duration by kind. Alert rules over these are in
+`deploy/prometheus/alerts.yml`, each with a promtool test that fires it and
+one that must not, and a section in [RUNBOOK.md](RUNBOOK.md). One write reaching fifty subscribed sockets counts as fifty
 deliveries, because that is the quantity that describes fan-out cost.
 
 ### Traces

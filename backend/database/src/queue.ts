@@ -261,3 +261,30 @@ export async function deadLetterCount(db: Executor): Promise<number> {
   const rows = await db.select({ id: jobs.id }).from(jobs).where(eq(jobs.status, 'failed'));
   return rows.length;
 }
+
+/**
+ * The queue at a glance, for the worker's metrics (A5): jobs due and not
+ * yet taken, how long the oldest of them has waited, and the dead letters.
+ * One pass over the table; the pending part is what the partial index holds.
+ */
+export async function queueStats(
+  db: Executor,
+): Promise<{ due: number; oldestDueSeconds: number; dead: number }> {
+  const staleBefore = new Date(Date.now() - VISIBILITY_TIMEOUT_MS).toISOString();
+  const waiting = sql`${jobs.status} = 'pending' and ${jobs.runAt} <= now()
+    and (${jobs.lockedAt} is null or ${jobs.lockedAt} < ${staleBefore}::timestamptz)`;
+  const [row] = await db
+    .select({
+      due: sql<number>`(count(*) filter (where ${waiting}))::int`,
+      oldest: sql<
+        number | null
+      >`extract(epoch from now() - min(${jobs.runAt}) filter (where ${waiting}))::float8`,
+      dead: sql<number>`(count(*) filter (where ${jobs.status} = 'failed'))::int`,
+    })
+    .from(jobs);
+  return {
+    due: Number(row?.due ?? 0),
+    oldestDueSeconds: Math.max(0, Number(row?.oldest ?? 0)),
+    dead: Number(row?.dead ?? 0),
+  };
+}

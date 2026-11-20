@@ -218,6 +218,7 @@ export function buildApp({
    * the network. With no URL configured this is the switched-off client and
    * the endpoint returns an empty list.
    */
+  const metrics = createMetrics();
   const suggest =
     suggestions ??
     createSuggestionClient(
@@ -227,11 +228,12 @@ export function buildApp({
         timeoutMs: env.ML_TIMEOUT_MS,
       },
       app.log,
+      (outcome) => metrics.mlCalls.inc({ outcome }),
     );
 
   // Before `attachUser`, so the in-flight gauge and the duration histogram
   // include time spent resolving the session rather than starting after it.
-  registerMetrics(app, createMetrics());
+  registerMetrics(app, metrics);
 
   app.addHook('preHandler', attachUser(db));
   // What agents do, step by step, once each call is answered (B6).

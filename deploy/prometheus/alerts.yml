@@ -1,0 +1,114 @@
+# Alert rules for Robis (A5). Each rule has a test in alerts.test.yml, run
+# with promtool in CI, and an entry in docs/RUNBOOK.md: what it means and
+# the first three things to check. tests/alert-rules.test.ts fails if a rule
+# lacks either, or names a metric the services do not export.
+#
+# Severity: `page` wants a person now; `ticket` wants one today.
+groups:
+  - name: robis
+    rules:
+      - alert: RobisApiErrorRate
+        # More than 5% of requests failing with a 5xx, with enough traffic
+        # (over 6 a minute) that a single failure is not a percentage.
+        expr: |
+          (
+            sum(rate(robis_http_requests_total{status=~"5.."}[5m]))
+              / sum(rate(robis_http_requests_total[5m]))
+          ) > 0.05
+          and on() sum(rate(robis_http_requests_total[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: 'More than 5% of API requests are failing with a server error.'
+          runbook: docs/RUNBOOK.md#robisapierrorrate
+
+      - alert: RobisApiLatencyP99
+        expr: |
+          histogram_quantile(
+            0.99,
+            sum by (le) (rate(robis_http_request_duration_seconds_bucket[5m]))
+          ) > 1
+        for: 10m
+        labels:
+          severity: ticket
+        annotations:
+          summary: 'The slowest 1% of API requests take over a second.'
+          runbook: docs/RUNBOOK.md#robisapilatencyp99
+
+      - alert: RobisQueueBacklog
+        expr: robis_jobs_due > 100
+        for: 10m
+        labels:
+          severity: ticket
+        annotations:
+          summary: 'Over 100 jobs are due and waiting for a worker.'
+          runbook: docs/RUNBOOK.md#robisqueuebacklog
+
+      - alert: RobisOldestJobWaiting
+        # Mail, notifications and pushes ride the queue: five minutes late
+        # is late enough that people notice.
+        expr: robis_jobs_oldest_due_age_seconds > 300
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: 'A job has waited more than five minutes for a worker.'
+          runbook: docs/RUNBOOK.md#robisoldestjobwaiting
+
+      - alert: RobisDeadLetters
+        # A job that used up its attempts is something that will not happen
+        # (an email, a purge) unless a person looks.
+        expr: delta(robis_jobs_dead_letters[30m]) > 0
+        labels:
+          severity: ticket
+        annotations:
+          summary: 'A job has used up its attempts and will not run again by itself.'
+          runbook: docs/RUNBOOK.md#robisdeadletters
+
+      - alert: RobisWorkerCannotReadQueue
+        expr: robis_worker_queue_readable == 0
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: 'The worker cannot read the job queue.'
+          runbook: docs/RUNBOOK.md#robisworkercannotreadqueue
+
+      - alert: RobisAuditStreamLag
+        expr: robis_audit_stream_lag_events > 1000
+        for: 15m
+        labels:
+          severity: ticket
+        annotations:
+          summary: 'Over 1,000 audit events have not reached the stream receiver.'
+          runbook: docs/RUNBOOK.md#robisauditstreamlag
+
+      - alert: RobisGatewaySocketsDropped
+        # Nobody holding a live connection while people are using the API:
+        # the gateway, or the way to it, is broken. Zero at night with
+        # nobody about is not an alert.
+        expr: |
+          sum(robis_ws_connections) == 0
+          and on() sum(rate(robis_http_requests_total[10m])) > 0.05
+        for: 10m
+        labels:
+          severity: page
+        annotations:
+          summary: 'People are using the API but no one holds a live connection.'
+          runbook: docs/RUNBOOK.md#robisgatewaysocketsdropped
+
+      - alert: RobisMlDown
+        # The ML service has no metrics of its own; the API counts every
+        # call to it by how it ended.
+        expr: |
+          (
+            sum(rate(robis_ml_requests_total{outcome!="ok"}[10m]))
+              / sum(rate(robis_ml_requests_total[10m]))
+          ) > 0.5
+        for: 10m
+        labels:
+          severity: ticket
+        annotations:
+          summary: 'Most calls to the ML service are failing: hints are off.'
+          runbook: docs/RUNBOOK.md#robismldown

@@ -553,6 +553,23 @@ export async function workspacesBehindStream(db: Executor) {
 }
 
 /**
+ * Events recorded but not yet acknowledged by the audit stream's receiver,
+ * across every workspace (A5): its lag, for the worker's metrics. The
+ * latest sequence per workspace comes from the (workspace, seq) index.
+ */
+export async function auditStreamLag(db: Executor): Promise<number> {
+  const [row] = await db.execute<{ lag: string | number | null }>(sql`
+    select coalesce(sum(greatest(latest.seq - coalesce(c.delivered_seq, 0), 0)), 0) as lag
+    from ${workspaces} w
+    left join ${auditStreamCursors} c on c.workspace_id = w.id
+    cross join lateral (
+      select a.seq from ${auditEvents} a where a.workspace_id = w.id order by a.seq desc limit 1
+    ) latest
+  `);
+  return Number(row?.lag ?? 0);
+}
+
+/**
  * Record that a receiver acknowledged everything up to `seq`.
  *
  * `greatest` keeps the cursor from moving backwards when two workers ship

@@ -144,10 +144,10 @@ new account does still works before the address is confirmed.
 
 ## Remaining backlog
 
-**Operations.** Traces now join the API, the MCP server, the queue, the
-worker, the realtime gateway's fan-out and the ML service, and every
-service logs JSON lines naming their trace (A5); alert rules with tests
-and a runbook are next. The images still run
+**Operations.** A5 is done: traces join every service, logs are JSON
+lines naming their trace, and alert rules have promtool tests and a
+runbook. Not yet tried against a real collector or Prometheus, since none
+runs here. The images still run
 `apt-get upgrade` over their pinned bases: on 2026-10-31 the newest
 `oven/bun:1.4.2-slim` digest had three critical findings with a fix, which
 the upgrade removes and the image scan would otherwise fail on. Drop the

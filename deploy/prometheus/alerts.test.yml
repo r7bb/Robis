@@ -1,0 +1,229 @@
+# Tests for alerts.yml (A5), run in CI with:
+#   promtool test rules deploy/prometheus/alerts.test.yml
+# Every rule has a case where it fires and one where it must stay quiet.
+rule_files:
+  - alerts.yml
+
+evaluation_interval: 1m
+
+tests:
+  # RobisApiErrorRate: fires on a sixth of requests failing, not while the
+  # traffic is too thin for a percentage to mean anything.
+  - interval: 1m
+    input_series:
+      - series: 'robis_http_requests_total{method="GET",route="/x",status="200"}'
+        values: '0+60x20'
+      - series: 'robis_http_requests_total{method="GET",route="/x",status="500"}'
+        values: '0+12x20'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: RobisApiErrorRate
+        exp_alerts: []
+      - eval_time: 12m
+        alertname: RobisApiErrorRate
+        exp_alerts:
+          - exp_labels:
+              severity: page
+            exp_annotations:
+              summary: 'More than 5% of API requests are failing with a server error.'
+              runbook: docs/RUNBOOK.md#robisapierrorrate
+  - interval: 1m
+    input_series:
+      - series: 'robis_http_requests_total{method="GET",route="/x",status="500"}'
+        values: '0+3x20'
+    alert_rule_test:
+      - eval_time: 12m
+        alertname: RobisApiErrorRate
+        exp_alerts: []
+
+  # RobisApiLatencyP99: every request between one and 2.5 seconds fires it;
+  # every request under a quarter of a second does not.
+  - interval: 1m
+    input_series:
+      - series: 'robis_http_request_duration_seconds_bucket{le="0.5"}'
+        values: '0x20'
+      - series: 'robis_http_request_duration_seconds_bucket{le="1"}'
+        values: '0x20'
+      - series: 'robis_http_request_duration_seconds_bucket{le="2.5"}'
+        values: '0+600x20'
+      - series: 'robis_http_request_duration_seconds_bucket{le="+Inf"}'
+        values: '0+600x20'
+    alert_rule_test:
+      - eval_time: 16m
+        alertname: RobisApiLatencyP99
+        exp_alerts:
+          - exp_labels:
+              severity: ticket
+            exp_annotations:
+              summary: 'The slowest 1% of API requests take over a second.'
+              runbook: docs/RUNBOOK.md#robisapilatencyp99
+  - interval: 1m
+    input_series:
+      - series: 'robis_http_request_duration_seconds_bucket{le="0.25"}'
+        values: '0+600x20'
+      - series: 'robis_http_request_duration_seconds_bucket{le="1"}'
+        values: '0+600x20'
+      - series: 'robis_http_request_duration_seconds_bucket{le="+Inf"}'
+        values: '0+600x20'
+    alert_rule_test:
+      - eval_time: 16m
+        alertname: RobisApiLatencyP99
+        exp_alerts: []
+
+  # RobisQueueBacklog, RobisOldestJobWaiting, RobisWorkerCannotReadQueue.
+  - interval: 1m
+    input_series:
+      - series: 'robis_jobs_due'
+        values: '150x20'
+      - series: 'robis_jobs_oldest_due_age_seconds'
+        values: '600x20'
+      - series: 'robis_worker_queue_readable'
+        values: '0x20'
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: RobisOldestJobWaiting
+        exp_alerts: []
+      - eval_time: 6m
+        alertname: RobisOldestJobWaiting
+        exp_alerts:
+          - exp_labels:
+              severity: page
+            exp_annotations:
+              summary: 'A job has waited more than five minutes for a worker.'
+              runbook: docs/RUNBOOK.md#robisoldestjobwaiting
+      - eval_time: 11m
+        alertname: RobisQueueBacklog
+        exp_alerts:
+          - exp_labels:
+              severity: ticket
+            exp_annotations:
+              summary: 'Over 100 jobs are due and waiting for a worker.'
+              runbook: docs/RUNBOOK.md#robisqueuebacklog
+      - eval_time: 6m
+        alertname: RobisWorkerCannotReadQueue
+        exp_alerts:
+          - exp_labels:
+              severity: page
+            exp_annotations:
+              summary: 'The worker cannot read the job queue.'
+              runbook: docs/RUNBOOK.md#robisworkercannotreadqueue
+  - interval: 1m
+    input_series:
+      - series: 'robis_jobs_due'
+        values: '50x20'
+      - series: 'robis_jobs_oldest_due_age_seconds'
+        values: '20x20'
+      - series: 'robis_worker_queue_readable'
+        values: '1x20'
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: RobisQueueBacklog
+        exp_alerts: []
+      - eval_time: 15m
+        alertname: RobisOldestJobWaiting
+        exp_alerts: []
+      - eval_time: 15m
+        alertname: RobisWorkerCannotReadQueue
+        exp_alerts: []
+
+  # RobisDeadLetters: a new dead letter fires it; old ones that stay put
+  # do not, once the half hour has passed.
+  - interval: 1m
+    input_series:
+      - series: 'robis_jobs_dead_letters'
+        values: '2 2 2 3 3 3 3 3 3 3'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: RobisDeadLetters
+        exp_alerts:
+          - exp_labels:
+              severity: ticket
+            exp_annotations:
+              summary: 'A job has used up its attempts and will not run again by itself.'
+              runbook: docs/RUNBOOK.md#robisdeadletters
+  - interval: 1m
+    input_series:
+      - series: 'robis_jobs_dead_letters'
+        values: '2x40'
+    alert_rule_test:
+      - eval_time: 35m
+        alertname: RobisDeadLetters
+        exp_alerts: []
+
+  # RobisAuditStreamLag.
+  - interval: 1m
+    input_series:
+      - series: 'robis_audit_stream_lag_events'
+        values: '2000x20'
+    alert_rule_test:
+      - eval_time: 16m
+        alertname: RobisAuditStreamLag
+        exp_alerts:
+          - exp_labels:
+              severity: ticket
+            exp_annotations:
+              summary: 'Over 1,000 audit events have not reached the stream receiver.'
+              runbook: docs/RUNBOOK.md#robisauditstreamlag
+  - interval: 1m
+    input_series:
+      - series: 'robis_audit_stream_lag_events'
+        values: '40x20'
+    alert_rule_test:
+      - eval_time: 16m
+        alertname: RobisAuditStreamLag
+        exp_alerts: []
+
+  # RobisGatewaySocketsDropped: no sockets while the API is busy fires it;
+  # no sockets with nobody about does not.
+  - interval: 1m
+    input_series:
+      - series: 'robis_ws_connections{instance="gateway-1"}'
+        values: '0x30'
+      - series: 'robis_http_requests_total{method="GET",route="/x",status="200"}'
+        values: '0+60x30'
+    alert_rule_test:
+      - eval_time: 22m
+        alertname: RobisGatewaySocketsDropped
+        exp_alerts:
+          - exp_labels:
+              severity: page
+            exp_annotations:
+              summary: 'People are using the API but no one holds a live connection.'
+              runbook: docs/RUNBOOK.md#robisgatewaysocketsdropped
+  - interval: 1m
+    input_series:
+      - series: 'robis_ws_connections{instance="gateway-1"}'
+        values: '0x30'
+      - series: 'robis_http_requests_total{method="GET",route="/x",status="200"}'
+        values: '5x30'
+    alert_rule_test:
+      - eval_time: 22m
+        alertname: RobisGatewaySocketsDropped
+        exp_alerts: []
+
+  # RobisMlDown: most calls failing fires it; the odd error does not.
+  - interval: 1m
+    input_series:
+      - series: 'robis_ml_requests_total{outcome="unreachable"}'
+        values: '0+60x30'
+      - series: 'robis_ml_requests_total{outcome="ok"}'
+        values: '0+6x30'
+    alert_rule_test:
+      - eval_time: 22m
+        alertname: RobisMlDown
+        exp_alerts:
+          - exp_labels:
+              severity: ticket
+            exp_annotations:
+              summary: 'Most calls to the ML service are failing: hints are off.'
+              runbook: docs/RUNBOOK.md#robismldown
+  - interval: 1m
+    input_series:
+      - series: 'robis_ml_requests_total{outcome="ok"}'
+        values: '0+60x30'
+      - series: 'robis_ml_requests_total{outcome="error"}'
+        values: '0+1x30'
+    alert_rule_test:
+      - eval_time: 22m
+        alertname: RobisMlDown
+        exp_alerts: []

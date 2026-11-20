@@ -117,6 +117,7 @@
         "@robis/auth": "workspace:*",
         "@robis/database": "workspace:*",
         "@robis/mailer": "workspace:*",
+        "@robis/metrics": "workspace:*",
         "@robis/shared": "workspace:*",
         "@robis/storage": "workspace:*",
         "@robis/telemetry": "workspace:*",

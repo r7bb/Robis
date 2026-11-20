@@ -37,6 +37,8 @@ export type RunnerOptions = {
    * while one working through a slow batch keeps calling it.
    */
   onPoll?: () => void;
+  /** Told how each job ended and how long it took, for the worker's metrics (A5). */
+  observe?: (kind: string, outcome: 'completed' | 'retrying' | 'dead', seconds: number) => void;
 };
 
 /** The heartbeat's limit is 30 s; a beat every 10 s leaves room for a slow one. */
@@ -53,6 +55,7 @@ export class Runner {
   private readonly kinds: readonly string[] | undefined;
   private readonly onPoll: (() => void) | undefined;
   private readonly beatMs: number;
+  private readonly observe: RunnerOptions['observe'];
 
   private running = false;
   /** Set by `wake()`; the next idle wait returns at once. */
@@ -68,6 +71,7 @@ export class Runner {
     this.kinds = options.kinds;
     this.onPoll = options.onPoll;
     this.beatMs = Math.min(options.beatMs ?? BEAT_MS, this.idleDelayMs);
+    this.observe = options.observe;
   }
 
   /** Look for work now: a job was queued. Harmless while already working. */
@@ -125,6 +129,13 @@ export class Runner {
   }
 
   private async run(job: ClaimedJob): Promise<'completed' | 'retrying' | 'dead'> {
+    const began = performance.now();
+    const outcome = await this.runOnce(job);
+    this.observe?.(job.kind, outcome, (performance.now() - began) / 1000);
+    return outcome;
+  }
+
+  private async runOnce(job: ClaimedJob): Promise<'completed' | 'retrying' | 'dead'> {
     const handler = this.handlers[job.kind];
 
     if (!handler) {

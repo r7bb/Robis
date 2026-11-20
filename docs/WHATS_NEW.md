@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Alert rules, tested, with a runbook** (2026-11-20). Prometheus alert
+  rules for errors, slow requests, the job queue, the audit stream, the live
+  connections and the ML service, each tested in CI and explained in a
+  runbook.
 - **Traces through the live updates and the duplicate hints** (2026-11-20).
   A write’s trace now reaches the realtime gateway’s fan-out to open tabs
   and the ML service’s duplicate hints, so each is a span in the request
