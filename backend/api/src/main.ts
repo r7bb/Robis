@@ -6,12 +6,16 @@ import {
   settleDeferredAccountEvents,
 } from '@robis/database';
 import { mailerFromEnv } from '@robis/mailer';
-import { buildApp } from './app.ts';
+import { buildApp, rateStoreFromEnv } from './app.ts';
 import { loadEnv } from './env.ts';
 import { serveMetrics } from './metrics.ts';
 
 const env = loadEnv();
 const { db, close } = createDatabase(env.DATABASE_URL, { max: env.DB_POOL_MAX });
+// The rate counts get a small pool of their own that gives up fast (A6): a
+// flood of requests can fill the main pool, and the limits must still count
+// (or fall back to memory) rather than queue behind it.
+const rates = createDatabase(env.DATABASE_URL, { max: 4, statementTimeoutMs: 1000 });
 
 /*
  * Mail is sent by the worker, but the API checks the same configuration and
@@ -31,6 +35,7 @@ const app = buildApp({
   env,
   logger: env.API_LOG,
   rateLimits: { passwordForgotPerHourPerAddress: env.AUTH_FORGOT_PER_HOUR },
+  rateStore: rateStoreFromEnv(env, rates.db),
 });
 
 await app.listen({ port: env.API_PORT, host: env.API_HOST });
@@ -45,7 +50,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     // A failed sign-in is recorded just after its reply; let those land.
     await settleDeferredAccountEvents();
     await settleAgentSteps();
-    await close();
+    await Promise.all([close(), rates.close()]);
     process.exit(0);
   });
 }

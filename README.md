@@ -185,15 +185,15 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Rate limits that hold across instances.** Rate limits and the waits
+  after wrong passwords are now counted in Postgres, so several API
+  instances share one budget, and IPv6 callers count by their /64.
 - **Celebrations, with a way to opt out.** The Feed marks the week’s
   milestones (a project finished, a 10th issue done, a year with the team, a
   new teammate), with a Say well done, and never for anyone who opts out.
 - **Project health on the Feed.** The Feed shows how each project is doing,
   from its issues: needs a look, on track, quiet or finished, with the
   numbers that led there.
-- **A picture a day, from public image libraries.** An agent can post an
-  openly licensed, credited picture to the feed each day from NASA,
-  Wikimedia Commons or Openverse, and now and then a meme.
 
 <!-- latest:end -->
 

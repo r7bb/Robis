@@ -1801,3 +1801,19 @@ export type Channel = typeof channels.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type Meeting = typeof meetings.$inferSelect;
 export type MeetingAttendee = typeof meetingAttendees.$inferSelect;
+
+/**
+ * Rate counts shared by every API instance (A6): one row per key and
+ * window, upserted per hit by `backend/api/src/plugins/rate-store.ts`.
+ * Unlogged (see migration 0061): no write-ahead log, and a crash empties
+ * it, which only forgives a few counts. No index beyond the key, so the
+ * update every hit makes stays in place (a HOT update); the API's sweep of
+ * expired rows is a scan, a minute apart, in batches.
+ */
+export const rateLimits = pgTable('rate_limits', {
+  key: text('key').primaryKey(),
+  count: integer('count').notNull(),
+  firstAt: timestamp('first_at', { withTimezone: true }).notNull(),
+  lastAt: timestamp('last_at', { withTimezone: true }).notNull(),
+  resetAt: timestamp('reset_at', { withTimezone: true }).notNull(),
+});

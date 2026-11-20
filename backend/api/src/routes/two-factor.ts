@@ -103,8 +103,8 @@ export async function twoFactorRoutes(
   }
 
   /** Refuse before checking a code when the account has had too many wrong ones. */
-  function assertNotWaiting(userId: string) {
-    const { count, resetInSeconds } = strikes(STRIKES, userId);
+  async function assertNotWaiting(userId: string) {
+    const { count, resetInSeconds } = await strikes(app.rateStore, STRIKES, userId);
     if (count < WRONG_CODES_ALLOWED) return;
     const minutes = Math.max(1, Math.ceil(resetInSeconds / 60));
     throw new ApiError(
@@ -116,10 +116,10 @@ export async function twoFactorRoutes(
 
   /** A second step spent, or a refusal; a secret that will not open is the server's fault. */
   async function spend(userId: string, code: string) {
-    assertNotWaiting(userId);
+    await assertNotWaiting(userId);
     try {
       const used = await spendSecondFactor(db, needKey(), userId, code);
-      if (!used) strike(STRIKES, userId, WRONG_CODE_WINDOW_MS);
+      if (!used) await strike(app.rateStore, STRIKES, userId, WRONG_CODE_WINDOW_MS);
       return used;
     } catch (error) {
       if (error instanceof UnreadableSecret) {

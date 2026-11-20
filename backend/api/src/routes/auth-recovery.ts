@@ -181,7 +181,9 @@ export async function authRecoveryRoutes(app: FastifyInstance, opts: RecoveryDep
       }
       // The mailed link proves the address: any wait on it from wrong
       // passwords goes (C4).
-      clearSignInFailures(changed.email);
+      await clearSignInFailures(request.server.rateStore, changed.email).catch((error: unknown) =>
+        request.log.warn({ err: error }, 'sign-in wait: not cleared'),
+      );
 
       // Deliberately no session cookie: holding a mailed link is not the same
       // proof of identity as knowing the password, so the next step is signing in

@@ -45,6 +45,17 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-20',
+    area: 'Security',
+    title: 'Rate limits that hold across instances',
+    brief:
+      'Rate limits and the waits after wrong passwords are now counted in Postgres, so several API instances share one budget, and IPv6 callers count by their /64.',
+    summary:
+      'Every rate limit, the wrong-code counts on two-factor and the growing waits after wrong passwords used to live in each API instance’s memory, so behind several instances each allowed the whole budget. In production they are now counted in Postgres: one unlogged table, one atomic upsert per hit timed by the database’s clock, so any number of instances enforce one combined budget, with no new service. A burst of sign-in tries sent to several instances at once is still counted one by one, because each try is judged on the count before it in the same statement. IPv6 callers are counted by the /64 they are in, so a client holding a whole /64 cannot rotate inside it to slip a limit. Keys are stored hashed, so no address sits in the table in plain text. The counts have a small pool of their own with a short timeout, and a memory store behind them, so a slow or failing database loosens the limits to per instance rather than switching them off. Tests and a single instance in development keep counting in memory.',
+    checked:
+      'Twelve new tests: two API instances on one database refuse the fourth of three requests wherever it lands, while two in memory each count alone; two addresses in one /64 share a bucket and the next /64 has its own; the table holds no address in plain text; an unreachable store lets requests through, and a failing shared store falls back to counting in memory; a count inside a transaction lands with it; an IPv4 address inside IPv6, however spelt, counts as that address; fixed and sliding windows, clearing by address and taking back a refused try, in memory and in Postgres; and a burst of sign-in tries across two instances lets exactly the free ones through. The existing sign-in, two-factor and passkey tests, the full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-20',
     area: 'Product',
     title: 'Celebrations, with a way to opt out',
     brief:

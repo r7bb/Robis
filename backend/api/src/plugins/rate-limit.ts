@@ -1,24 +1,34 @@
+import type { Executor } from '@robis/database';
 import type { FastifyReply, FastifyRequest, preHandlerHookHandler } from 'fastify';
 import { ApiError } from '../errors.ts';
-import { resetSignInWaits } from './sign-in-waits.ts';
+import { networkOf } from './client-network.ts';
+import { type Hit, memoryRateStore, type RateStore } from './rate-store.ts';
 
 /**
- * Fixed-window rate limiting, in process memory.
+ * Fixed-window rate limiting, counted in the app's rate store (A6).
  *
- * Deliberately not Redis. A single API instance is the deployment this repo
- * describes, and an in-memory counter needs no extra service; behind several
- * instances each enforces its own share, which for a login throttle means the
- * effective limit is `limit × instances` -- looser than intended, but still
- * bounded, and the failure mode is permissive rather than locking people out.
- * A shared store is the fix when that matters.
+ * The store is memory for tests and a single instance in development, and
+ * Postgres in production, so several API instances enforce one combined
+ * budget instead of each allowing the whole of it. See `rate-store.ts`.
  *
- * A fixed window rather than a sliding one, for the same reason: it is a
- * counter and a timestamp. The known weakness is a burst spanning a window
- * boundary landing up to 2× the limit, which is acceptable for throttling
- * credential stuffing and not acceptable for billing.
+ * A fixed window rather than a sliding one: it is a counter and a
+ * timestamp. The known weakness is a burst spanning a window boundary
+ * landing up to 2x the limit, which is acceptable for throttling credential
+ * stuffing and not acceptable for billing.
+ *
+ * In production the shared store has a memory store behind it, so a
+ * database that is slow or down loosens the limits to per instance rather
+ * than turning them off. Only if no store at all can count does the
+ * request go ahead, logged: failing closed would turn a blip into everyone
+ * locked out.
  */
 
-type Bucket = { count: number; resetAt: number };
+declare module 'fastify' {
+  interface FastifyInstance {
+    /** Where this app's rate counts live (A6). */
+    rateStore: RateStore;
+  }
+}
 
 export type RateLimitOptions = {
   /** Requests allowed per window. */
@@ -39,52 +49,45 @@ export type RateLimitOptions = {
 };
 
 /**
- * Buckets live for one window, so the map is swept rather than grown forever.
- * Without this an attacker rotating IPs is a memory leak.
+ * The memory store an app uses when it is given none: one per process, so
+ * tests clear it between cases with `resetRateLimits`.
  */
-const buckets = new Map<string, Bucket>();
-let lastSweep = Date.now();
-const SWEEP_INTERVAL_MS = 60_000;
-
-function sweep(now: number) {
-  if (now - lastSweep < SWEEP_INTERVAL_MS) return;
-  lastSweep = now;
-
-  for (const [key, bucket] of buckets) {
-    if (bucket.resetAt <= now) buckets.delete(key);
-  }
-}
+export const processRateStore = memoryRateStore();
 
 /** Exported for tests, which need a clean slate between cases. */
 export function resetRateLimits() {
-  buckets.clear();
-  resetSignInWaits();
-  lastSweep = Date.now();
+  processRateStore.clear();
 }
 
 /**
- * Strikes against one subject (an account), counted in the same buckets as
- * the request limits, so tests clear both together. `strike` adds one and
- * says how many there are; `strikes` only looks. Both forget after the
- * window.
+ * Strikes against one subject (an account), counted in the same store as
+ * the request limits. `strike` adds one and says how many there are;
+ * `strikes` only looks. Both forget after the window. Unlike the request
+ * limits these fail closed: a wrong-code count that cannot be read refuses
+ * the code rather than allow unlimited guesses.
  */
-export function strike(name: string, subject: string, windowMs: number): number {
-  const now = Date.now();
-  sweep(now);
-  const key = `${name}:${subject}`;
-  const existing = buckets.get(key);
-  const bucket =
-    existing && existing.resetAt > now ? existing : { count: 0, resetAt: now + windowMs };
-  bucket.count++;
-  buckets.set(key, bucket);
-  return bucket.count;
+export async function strike(
+  store: RateStore,
+  name: string,
+  subject: string,
+  windowMs: number,
+  /** The transaction the caller is in, if any: counted on its connection. */
+  within?: Executor,
+): Promise<number> {
+  return (await store.hit(`${name}:${subject}`, windowMs, { within })).count;
 }
 
-export function strikes(name: string, subject: string): { count: number; resetInSeconds: number } {
-  const now = Date.now();
-  const bucket = buckets.get(`${name}:${subject}`);
-  if (!bucket || bucket.resetAt <= now) return { count: 0, resetInSeconds: 0 };
-  return { count: bucket.count, resetInSeconds: Math.ceil((bucket.resetAt - now) / 1000) };
+export async function strikes(
+  store: RateStore,
+  name: string,
+  subject: string,
+): Promise<{ count: number; resetInSeconds: number }> {
+  const bucket = await store.peek(`${name}:${subject}`);
+  if (!bucket) return { count: 0, resetInSeconds: 0 };
+  return {
+    count: bucket.count,
+    resetInSeconds: Math.max(0, Math.ceil((bucket.resetAt - bucket.now) / 1000)),
+  };
 }
 
 /**
@@ -92,31 +95,32 @@ export function strikes(name: string, subject: string): { count: number; resetIn
  *
  * A signed-in user is limited per account, so sharing an office IP does not
  * mean sharing a quota. Anonymous traffic -- which is exactly where login
- * abuse lives -- falls back to the address.
+ * abuse lives -- falls back to the address, or for IPv6 its /64, which one
+ * client usually holds whole.
  */
 function identify(request: FastifyRequest): string {
-  return request.user?.id ?? request.ip;
+  return request.user?.id ?? networkOf(request.ip);
+}
+
+async function count(request: FastifyRequest, key: string, windowMs: number): Promise<Hit | null> {
+  try {
+    return await request.server.rateStore.hit(key, windowMs);
+  } catch (error) {
+    request.log.warn({ err: error }, 'rate limit: store unreachable, request allowed');
+    return null;
+  }
 }
 
 export function rateLimit(options: RateLimitOptions): preHandlerHookHandler {
   const { limit, windowMs, name } = options;
 
   return async (request: FastifyRequest, reply: FastifyReply) => {
-    const now = Date.now();
-    sweep(now);
-
     const subject = options.key?.(request) ?? identify(request);
-    const key = `${name}:${subject}`;
-    const existing = buckets.get(key);
-
-    const bucket =
-      existing && existing.resetAt > now ? existing : { count: 0, resetAt: now + windowMs };
-
-    bucket.count++;
-    buckets.set(key, bucket);
+    const bucket = await count(request, `${name}:${subject}`, windowMs);
+    if (!bucket) return;
 
     const remaining = Math.max(0, limit - bucket.count);
-    const resetSeconds = Math.ceil((bucket.resetAt - now) / 1000);
+    const resetSeconds = Math.max(0, Math.ceil((bucket.resetAt - bucket.now) / 1000));
 
     reply.header('ratelimit-limit', String(limit));
     reply.header('ratelimit-remaining', String(remaining));

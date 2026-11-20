@@ -46,6 +46,10 @@ Everything is served from one address, through an edge proxy
   front: then list the load balancer's own address range in Caddy's
   `trusted_proxies` and set `TRUST_PROXY=2`. Never trust `0.0.0.0/0`: any
   client could then name its own address and slip its rate limits.
+- **Rate limits are shared in Postgres** (A6) once `NODE_ENV=production`,
+  so any number of API instances enforce one budget. `RATE_LIMIT_STORE=memory`
+  keeps them per instance, for one instance only. The counts need Postgres
+  18 (they use `RETURNING old`).
 - **TLS** terminates at the proxy or in front of it. The stack's Caddyfile
   serves plain HTTP on `:8080` with `auto_https off`, for 127.0.0.1 only; a
   deployment replaces `:8080` with its hostname and removes `auto_https off`

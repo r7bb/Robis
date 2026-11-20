@@ -58,6 +58,7 @@ export const MEDIA_ROOT = mkdtempSync(join(tmpdir(), 'robis-media-'));
 /** Every table that holds test state, in an order safe for `TRUNCATE CASCADE`. */
 const TABLES = [
   'account_events',
+  'rate_limits',
   'auth_tokens',
   'audit_events',
   'audit_tombstones',

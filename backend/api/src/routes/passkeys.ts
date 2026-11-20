@@ -92,7 +92,7 @@ export async function passkeyRoutes(
         'code_required',
       );
     }
-    if (strikes(STRIKES, userId).count >= WRONG_CODES_ALLOWED) {
+    if ((await strikes(app.rateStore, STRIKES, userId)).count >= WRONG_CODES_ALLOWED) {
       throw new ApiError(
         429,
         'too_many_codes',
@@ -105,7 +105,7 @@ export async function passkeyRoutes(
       throw error;
     });
     if (!used) {
-      strike(STRIKES, userId, WRONG_CODE_WINDOW_MS);
+      await strike(app.rateStore, STRIKES, userId, WRONG_CODE_WINDOW_MS);
       throw ApiError.badRequest('That code did not work', 'bad_code');
     }
   }

@@ -32,7 +32,7 @@ import {
 } from '@robis/database';
 import { contracts, MAX_USERNAME_HOLDS, TERMS_VERSION, usernameProblem } from '@robis/shared';
 import { and, eq, gt, sql } from 'drizzle-orm';
-import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { RateLimits } from '../app.ts';
 import { serve } from '../contract.ts';
 import { assertPasswordAllowed, isRefusedDemoPassword } from '../demo-password.ts';
@@ -40,12 +40,9 @@ import type { Env } from '../env.ts';
 import { ApiError } from '../errors.ts';
 import { avatarOf } from '../media/avatars.ts';
 import { currentUser, requireAuth, sessionToken } from '../plugins/authz.ts';
+import { networkOf } from '../plugins/client-network.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
-import {
-  clearSignInFailures,
-  recordSignInAttempt,
-  signInWaitFor,
-} from '../plugins/sign-in-waits.ts';
+import { admitSignInAttempt, clearSignInFailures } from '../plugins/sign-in-waits.ts';
 import { sessionCookieOptions, startSession } from '../session-cookie.ts';
 import { twoFactorKeyOf, twoFactorUnavailable } from '../two-factor-key.ts';
 
@@ -71,14 +68,19 @@ class RegistrationRefused extends Error {
  * is even looked at: a guess made during the wait is not checked at all,
  * right or wrong.
  */
-function admitSignInTry(email: string, place: string, reply: FastifyReply) {
-  const waitMs = signInWaitFor(email, place);
-  if (waitMs === 0) {
-    // Counted now, before the password is checked: tries sent all at once
-    // are counted one by one, not all let through as the first (C4).
-    recordSignInAttempt(email, place);
-    return;
-  }
+async function admitSignInTry(request: FastifyRequest, email: string, reply: FastifyReply) {
+  // Counted now, before the password is checked, and judged on the count
+  // before it in the same step: tries sent all at once are counted one by
+  // one, not all let through as the first (C4, A6).
+  const waitMs = await admitSignInAttempt(request.server.rateStore, email, request.ip).catch(
+    (error: unknown) => {
+      // As the request limits do: a store that cannot be reached lets the
+      // try through, logged, rather than lock everyone out (A6).
+      request.log.warn({ err: error }, 'sign-in wait: store unreachable, try allowed');
+      return 0;
+    },
+  );
+  if (waitMs === 0) return;
   const seconds = Math.ceil(waitMs / 1000);
   reply.header('retry-after', String(seconds));
   const when = seconds < 90 ? `${seconds} seconds` : `${Math.ceil(seconds / 60)} minutes`;
@@ -320,7 +322,7 @@ export async function authRoutes(
     contracts['auth.login'],
     { preHandler: credentialLimit },
     async (request, { body: input }, reply) => {
-      admitSignInTry(input.email, request.ip, reply);
+      await admitSignInTry(request, input.email, reply);
       const [user] = await db
         .select({ ...PUBLIC_USER, passwordHash: users.passwordHash })
         .from(users)
@@ -340,7 +342,9 @@ export async function authRoutes(
         if (user) recordFailedSignInLater(user.id, request.id);
         throw ApiError.unauthorized('Invalid email or password');
       }
-      clearSignInFailures(input.email);
+      await clearSignInFailures(request.server.rateStore, input.email).catch((error: unknown) =>
+        request.log.warn({ err: error }, 'sign-in wait: not cleared'),
+      );
 
       // With two-factor on, the password is only the first half: no session
       // until a code is given (C4).
@@ -501,8 +505,8 @@ export async function authRoutes(
     limit: limits.authPerMinute * 6,
     windowMs: 60_000,
     // By address, signed in or not: per account, a handful of fresh sign-ups
-    // would each bring their own budget and multiply it.
-    key: (request) => request.ip,
+    // would each bring their own budget and multiply it. IPv6 by its /64 (A6).
+    key: (request) => networkOf(request.ip),
   });
 
   serve(

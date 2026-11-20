@@ -755,18 +755,53 @@ or email — metrics tend to be the least access-controlled surface a service
 has, so they hold operational shape and nothing about who was asking, which is
 also why the endpoint needs no session.
 
-### Rate limiting is in memory, and honest about it
+### Rate limits are shared in Postgres, one budget for every instance
 
 A fixed window and a counter, per account when signed in and per address when
-not — which is where credential stuffing lives. Argon2 makes each login
-deliberately expensive, which protects the password and simultaneously makes
-login a cheap way to burn server CPU; the limit protects the server.
+not, which is where credential stuffing lives; an IPv6 caller counts by its
+/64, which one household or server usually holds whole and could otherwise
+rotate inside. Argon2 makes each login deliberately expensive, which protects
+the password and simultaneously makes login a cheap way to burn server CPU;
+the limit protects the server.
 
-Behind several instances each enforces its own share, so the effective limit is
-`limit × instances`. That is looser than intended but still bounded, and the
-failure mode is permissive rather than locking people out. A shared store is
-the fix when that matters. The limits are injectable, so the tests exercise the
-limiter with a budget of three instead of switching it off.
+The counts live behind a small store (A6, `backend/api/src/plugins/rate-store.ts`).
+In production it is Postgres: one unlogged table, one atomic upsert per hit
+timed by the database's clock, so several API instances enforce one combined
+budget instead of each allowing the whole of it. Unlogged because a counter
+rewritten on every request needs no write-ahead log; a crash empties it, which
+only forgives a few counts. No Redis: the counts are small, and the database
+is already there. Keys are kept hashed, so no email or address sits in the
+table in plain text (not secret, as anyone who can read the database could
+confirm a guessed address; it keeps them from being read off). In tests and a
+single instance in development the store is memory (`RATE_LIMIT_STORE`).
+
+The growing waits after wrong passwords use the same store, judged on the
+count before each try in the same upsert (`RETURNING old`, Postgres 18), so
+tries sent all at once, to however many instances, are counted one by one. A
+try refused during a wait is taken back, unless another try counted in the
+meantime, so a patient owner's early retry does not lengthen the wait but a
+burst is not forgiven.
+
+The counts have a pool of their own (four connections, a one-second
+statement timeout), so a flood that fills the main pool does not leave them
+queueing behind it, and a memory store stands behind the shared one: what
+Postgres cannot answer, the instance counts itself, so a database that is
+slow or down loosens the limits to per instance rather than switching them
+off. A count made inside a transaction (the cap on new-browser alerts) uses
+that transaction's connection, never a second one from the pool it holds.
+Expired rows are swept a minute apart, in batches, off the request's path;
+the table has no index but its key, so each hit's update stays in place.
+Only if no store at all can count does a request go ahead, logged. The
+wrong-code counts on two-factor fail closed, as a guess that cannot be
+counted must not be checked.
+
+Two things it does not do. A password guesser spread over about twenty
+networks can still use up an address's hourly cap and make its owner wait
+for the hour or reset the password; that trade (from C4) bounds guessing
+from many machines at the price of that wait. And keys are hashed without a
+secret, so someone who can read the database could test a guessed address
+against them. The limits are injectable, so the tests exercise the limiter
+with a budget of three instead of switching it off.
 
 ### Trim before validate, not after
 

@@ -58,7 +58,11 @@ async function noteThisBrowser(
       const noted = await noteDevice(tx, userId, request.cookies[name]);
       // Past a few in an hour the browser is still remembered, unmailed:
       // the alerts already sent say enough, and the inbox is not flooded.
-      if (noted.isNewDevice && strike('new-device-alerts', userId, HOUR_MS) <= ALERTS_PER_HOUR) {
+      if (
+        noted.isNewDevice &&
+        (await strike(request.server.rateStore, 'new-device-alerts', userId, HOUR_MS, tx)) <=
+          ALERTS_PER_HOUR
+      ) {
         await queueNewDeviceMail(tx, sessionId);
       }
       return noted;

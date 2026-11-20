@@ -59,6 +59,12 @@ const envSchema = z.object({
    * repeatedly against one seeded account.
    */
   AUTH_FORGOT_PER_HOUR: z.coerce.number().int().min(1).default(3),
+  /**
+   * Where rate counts live (A6): `postgres`, so every API instance shares
+   * one budget, or `memory`, per instance, for tests and one instance in
+   * development. Unset, production uses Postgres and everything else memory.
+   */
+  RATE_LIMIT_STORE: z.enum(['memory', 'postgres']).optional(),
   API_LOG: z
     .string()
     .default('1')

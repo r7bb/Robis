@@ -46,10 +46,23 @@ export function createDatabase(
     max?: number;
     /** Called with each statement's SQL: for a test that counts round trips. */
     onQuery?: (sql: string) => void;
+    /**
+     * Give up on any statement after this long, and on connecting after a
+     * few seconds: for a pool whose callers would rather fail fast than
+     * queue, such as the rate counts (A6). None by default.
+     */
+    statementTimeoutMs?: number;
   } = {},
 ) {
+  const timeout = options.statementTimeoutMs;
   const client = postgres(url, {
     max: options.max ?? 10,
+    ...(timeout
+      ? {
+          connection: { statement_timeout: timeout },
+          connect_timeout: Math.ceil(timeout / 1000) + 2,
+        }
+      : {}),
     // Prepared statements are per-connection; disabling them keeps behaviour
     // identical if this ever sits behind a transaction-mode pooler (PgBouncer).
     prepare: false,

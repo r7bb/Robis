@@ -6,6 +6,7 @@
   "exports": {
     "./app": "./src/app.ts",
     "./avatars": "./src/routes/avatars.ts",
+    "./client-network": "./src/plugins/client-network.ts",
     "./contract": "./src/contract.ts",
     "./env": "./src/env.ts",
     "./feed-celebrations": "./src/feed/celebrations.ts",
@@ -15,6 +16,7 @@
     "./images": "./src/media/images.ts",
     "./metrics": "./src/metrics.ts",
     "./rate-limit": "./src/plugins/rate-limit.ts",
+    "./rate-store": "./src/plugins/rate-store.ts",
     "./sign-in-waits": "./src/plugins/sign-in-waits.ts",
     "./suggestions": "./src/suggestions.ts"
   },

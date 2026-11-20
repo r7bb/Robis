@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Rate limits that hold across instances** (2026-11-20). Rate limits and
+  the waits after wrong passwords are now counted in Postgres, so several
+  API instances share one budget, and IPv6 callers count by their /64.
 - **Celebrations, with a way to opt out** (2026-11-20). The Feed marks the
   week’s milestones (a project finished, a 10th issue done, a year with the
   team, a new teammate), with a Say well done, and never for anyone who opts

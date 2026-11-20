@@ -37,7 +37,7 @@ Written to be checkable. Every row names a file you can open.
 | Password reset by email, single-use token | `backend/api/src/routes/auth-recovery.ts` |
 | Email verification | same |
 | Change name, username or password | `backend/api/src/routes/auth.ts` |
-| Rate limiting, per caller and per recipient address | `backend/api/src/plugins/rate-limit.ts` |
+| Rate limiting, per caller (IPv6 by its /64) and per recipient address, with growing waits after wrong passwords; counted in Postgres in production, so every API instance shares one budget | `backend/api/src/plugins/rate-limit.ts`, `backend/api/src/plugins/rate-store.ts`, `backend/api/src/plugins/sign-in-waits.ts` |
 | App-specific `@usernames`, checked as you type, changeable | `shared/contracts/src/usernames.ts`, `backend/api/src/routes/auth.ts` |
 | Lookalike usernames refused, released names held 90 days, mentions kept pointing at the person meant | `backend/database/src/usernames.ts`, `backend/api/src/routes/comments.ts` |
 | Age confirmation at sign-up, enforced by the API (threshold is a placeholder for legal review) | `shared/contracts/src/schemas.ts` |

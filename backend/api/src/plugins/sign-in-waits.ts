@@ -13,16 +13,22 @@
  *   bounded too. Reaching it takes many machines, which is the price of not
  *   letting one machine lock anyone out.
  *
- * A try is counted before its password is checked, so tries sent all at once
- * cannot all slip in before the first is counted; the right password takes
- * its try back and clears the address's counts, as a password reset does.
+ * A try is counted and judged in one step, on the count before it, so tries
+ * sent all at once are counted one by one rather than all let through as
+ * the first. A try refused during a wait is taken back and counts for
+ * nothing, so an early retry does not lengthen the wait, and only tries let
+ * through count towards the address's hourly cap. The right password
+ * clears the address's counts, as a password reset does.
  *
- * Kept in memory, as the request limits are: with several API instances each
- * keeps its own counts, which loosens the bounds by that factor but never
- * keeps anyone waiting longer. The map is capped, oldest first: a flood of
- * new addresses could push an old count out early, but a count under attack
- * is refreshed by every try and so is never the oldest.
+ * Counted in the app's rate store (A6): in Postgres in production, so every
+ * API instance sees the same counts; in memory for tests and development.
+ * Keys carry the address and place only hashed, there.
  */
+
+import { networkOf } from './client-network.ts';
+import type { RateStore } from './rate-store.ts';
+
+export { networkOf };
 
 /** The wrong password, from one place, that starts the first wait. */
 export const FREE_SIGN_IN_FAILURES = 5;
@@ -34,78 +40,14 @@ export const MAX_SIGN_IN_WAIT_MS = 15 * 60_000;
 export const ADDRESS_FAILURES_PER_HOUR = 100;
 /** Counts older than this are forgotten. */
 const MEMORY_MS = 60 * 60_000;
-/** Counts kept at most; past this the oldest go first. */
-const MAX_ENTRIES = 100_000;
-const SWEEP_INTERVAL_MS = 60_000;
 
-type Count = { count: number; firstAt: number; lastAt: number };
-
-const counts = new Map<string, Count>();
-/** Each address's place keys, so clearing an address need not scan the map. */
-const placesOf = new Map<string, Set<string>>();
-let lastSweep = Date.now();
-
-const normal = (address: string) => address.trim().toLowerCase();
-const addressKey = (address: string) => `a:${normal(address)}`;
-const placeKey = (address: string, place: string) => `p:${normal(address)}|${networkOf(place)}`;
-
-/**
- * Where a try comes from, as far as a wait goes: an IPv4 address, or the /64
- * an IPv6 one is in, since one household or server is usually given a whole
- * /64 and could otherwise move to a fresh address for every guess.
- */
-export function networkOf(ip: string): string {
-  const bare = ip.replace(/^\[|\]$/g, '').split('%')[0] ?? '';
-  if (!bare.includes(':')) return bare;
-  if (/^::ffff:\d+\.\d+\.\d+\.\d+$/i.test(bare)) return bare.slice(7);
-  const [head = '', tail = ''] = bare.toLowerCase().split('::');
-  const front = head ? head.split(':') : [];
-  const back = tail ? tail.split(':') : [];
-  const missing = bare.includes('::') ? 8 - front.length - back.length : 0;
-  const groups = [...front, ...Array(Math.max(0, missing)).fill('0'), ...back];
-  return `${groups
-    .slice(0, 4)
-    .map((g) => g.replace(/^0+(?=.)/, ''))
-    .join(':')}::/64`;
-}
-
-function sweep(now: number) {
-  if (now - lastSweep < SWEEP_INTERVAL_MS) return;
-  lastSweep = now;
-  for (const [key, entry] of counts) {
-    if (now - entry.lastAt > MEMORY_MS) counts.delete(key);
-  }
-  for (const [address, keys] of placesOf) {
-    for (const key of keys) if (!counts.has(key)) keys.delete(key);
-    if (keys.size === 0) placesOf.delete(address);
-  }
-}
-
-function live(key: string, now: number): Count | undefined {
-  const entry = counts.get(key);
-  return entry && now - entry.lastAt <= MEMORY_MS ? entry : undefined;
-}
-
-/**
- * One more on a count. A place's count runs on while tries keep coming; an
- * address's is a fixed hour, started afresh once its hour is over, so its
- * cap never goes stale.
- */
-function bump(key: string, now: number, fixedWindow: boolean) {
-  const current = live(key, now);
-  const entry = fixedWindow && current && now - current.firstAt > MEMORY_MS ? undefined : current;
-  // Deleted first, so the map's order stays oldest first for the cap.
-  counts.delete(key);
-  counts.set(key, {
-    count: (entry?.count ?? 0) + 1,
-    firstAt: entry?.firstAt ?? now,
-    lastAt: now,
-  });
-  if (counts.size > MAX_ENTRIES) {
-    const oldest = counts.keys().next().value;
-    if (oldest !== undefined) counts.delete(oldest);
-  }
-}
+/** The address as keys hold it: `|` separates a key's parts, so it is escaped. */
+const normal = (address: string) => address.trim().toLowerCase().replaceAll('|', '%7C');
+/** A place's count runs on while tries keep coming; the address's is a fixed hour. */
+const SLIDING = { sliding: true } as const;
+const placeKey = (address: string, place: string) =>
+  `signin-place:${normal(address)}|${networkOf(place)}`;
+const addressKey = (address: string) => `signin-address:${normal(address)}`;
 
 /** How long a wait this many failures from one place earns: none while still free. */
 export function waitAfter(count: number): number {
@@ -114,44 +56,43 @@ export function waitAfter(count: number): number {
   return Math.min(FIRST_SIGN_IN_WAIT_MS * 2 ** doublings, MAX_SIGN_IN_WAIT_MS);
 }
 
-/** Milliseconds before this address may be tried again from this place; 0 when now. */
-export function signInWaitFor(address: string, place: string, now = Date.now()): number {
-  sweep(now);
-  const here = live(placeKey(address, place), now);
-  const fromHere = here ? Math.max(0, here.lastAt + waitAfter(here.count) - now) : 0;
-  const everywhere = live(addressKey(address), now);
-  const fromAnywhere =
-    everywhere &&
-    now - everywhere.firstAt <= MEMORY_MS &&
-    everywhere.count >= ADDRESS_FAILURES_PER_HOUR
-      ? Math.max(0, everywhere.firstAt + MEMORY_MS - now)
-      : 0;
-  return Math.max(fromHere, fromAnywhere);
-}
-
-/** One more try for this address from this place, counted before its password is checked. */
-export function recordSignInAttempt(address: string, place: string, now = Date.now()): void {
-  sweep(now);
-  const key = placeKey(address, place);
-  bump(key, now, false);
-  bump(addressKey(address), now, true);
-  const keys = placesOf.get(normal(address)) ?? new Set<string>();
-  placesOf.set(normal(address), keys.add(key));
+/**
+ * One more try for this address from this place, counted before its
+ * password is checked: 0 when it may go ahead, otherwise how many
+ * milliseconds until the next may, judged on the store's clock.
+ */
+export async function admitSignInAttempt(
+  store: RateStore,
+  address: string,
+  place: string,
+): Promise<number> {
+  const hereKey = placeKey(address, place);
+  const here = await store.hit(hereKey, MEMORY_MS, SLIDING);
+  const before = here.previous;
+  // No wait owed is no wait at all, whatever the clocks say.
+  const owed = before ? waitAfter(before.count) : 0;
+  const fromHere = before && owed > 0 ? Math.max(0, before.lastAt + owed - here.now) : 0;
+  if (fromHere > 0) {
+    await store.takeBack(hereKey, here, MEMORY_MS, SLIDING);
+    return fromHere;
+  }
+  const key = addressKey(address);
+  const everywhere = await store.hit(key, MEMORY_MS);
+  if ((everywhere.previous?.count ?? 0) < ADDRESS_FAILURES_PER_HOUR) return 0;
+  await Promise.all([
+    store.takeBack(key, everywhere, MEMORY_MS),
+    store.takeBack(hereKey, here, MEMORY_MS, SLIDING),
+  ]);
+  return Math.max(0, everywhere.resetAt - everywhere.now);
 }
 
 /**
  * The right password, or a reset: the address starts again, from everywhere
  * (a reset proves the address, and a right password the person).
  */
-export function clearSignInFailures(address: string): void {
-  counts.delete(addressKey(address));
-  for (const key of placesOf.get(normal(address)) ?? []) counts.delete(key);
-  placesOf.delete(normal(address));
-}
-
-/** For tests, with the request limits. */
-export function resetSignInWaits(): void {
-  counts.clear();
-  placesOf.clear();
-  lastSweep = Date.now();
+export async function clearSignInFailures(store: RateStore, address: string): Promise<void> {
+  await Promise.all([
+    store.clearPrefix(addressKey(address)),
+    store.clearPrefix(`signin-place:${normal(address)}|`),
+  ]);
 }

@@ -15,6 +15,8 @@ import { DECODE_RETRY_AFTER_SECONDS, ImagesBusyError } from './media/images.ts';
 import { createMetrics, registerMetrics } from './metrics.ts';
 import { recordAgentSteps } from './plugins/agent-steps.ts';
 import { attachUser } from './plugins/authz.ts';
+import { processRateStore } from './plugins/rate-limit.ts';
+import { postgresRateStore, type RateStore, withBackstop } from './plugins/rate-store.ts';
 import { accountDeletionRoutes } from './routes/account-deletion.ts';
 import { accountEventRoutes } from './routes/account-events.ts';
 import { agentUndoRoutes } from './routes/agent-undo.ts';
@@ -111,6 +113,8 @@ export type AppDeps = {
   /** Quiet by default in tests; `main.ts` turns logging on. */
   logger?: boolean;
   rateLimits?: Partial<RateLimits>;
+  /** Where rate counts live; `RATE_LIMIT_STORE` decides, unless a test supplies one. */
+  rateStore?: RateStore;
   /**
    * Duplicate-issue suggestions. Off unless a URL is configured.
    *
@@ -129,11 +133,25 @@ export type AppDeps = {
   signupFloorMs?: number;
 };
 
+/**
+ * The rate store `RATE_LIMIT_STORE` names (A6): shared in Postgres, the
+ * default in production, with this process's memory behind it for when the
+ * database cannot answer; or this process's memory alone. `main.ts` hands
+ * it a small pool of its own with a short statement timeout.
+ */
+export function rateStoreFromEnv(env: Env, db: Database): RateStore {
+  const driver = env.RATE_LIMIT_STORE ?? (env.NODE_ENV === 'production' ? 'postgres' : 'memory');
+  return driver === 'postgres'
+    ? withBackstop(postgresRateStore(db), processRateStore)
+    : processRateStore;
+}
+
 export function buildApp({
   db,
   env,
   logger = false,
   rateLimits,
+  rateStore = rateStoreFromEnv(env, db),
   suggestions,
   storage = storageFromEnv(env),
   signupFloorMs,
@@ -152,6 +170,7 @@ export function buildApp({
   const app = Fastify(options);
 
   app.decorate('sessionCookieName', sessionCookieName(env.NODE_ENV));
+  app.decorate('rateStore', rateStore);
 
   app.addHook('onRequest', async (request, reply) => {
     reply.header('x-request-id', request.id);

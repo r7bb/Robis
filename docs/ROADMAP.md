@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-11-20): **1552 TypeScript tests, 100 Python tests, lint and
+Status (2026-11-20): **1565 TypeScript tests, 100 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -146,8 +146,7 @@ new account does still works before the address is confirmed.
 
 **Operations.** Distributed tracing across API, gateway and worker.
 Request ids now span the API and the ML service; the gateway and worker are
-next. Rate limits key on the full IPv6 address, so a client holding a /64
-can rotate within it; key on the /64 instead. The images still run
+next. The images still run
 `apt-get upgrade` over their pinned bases: on 2026-10-31 the newest
 `oven/bun:1.4.2-slim` digest had three critical findings with a fix, which
 the upgrade removes and the image scan would otherwise fail on. Drop the
