@@ -53,7 +53,7 @@ export async function loadChannel(db: Database, workspaceId: string, channelId: 
 }
 
 /** A message's picture as the API shows it: a members-only route, never a storage key. */
-export function imageOf(
+function imageOf(
   workspaceId: string,
   messageId: string,
   key: string | null,

@@ -5,7 +5,7 @@ import type { contracts, ResponseOf } from '@robis/shared';
  * how reactions read are tested without a browser.
  */
 
-export type FeedPage = ResponseOf<(typeof contracts)['feed.list']>;
+type FeedPage = ResponseOf<(typeof contracts)['feed.list']>;
 export type FeedItem = FeedPage['items'][number];
 export type Post = Extract<FeedItem, { kind: 'post' }>['post'];
 export type Reaction = keyof Post['reactions'];
@@ -19,7 +19,7 @@ export const REACTION_NAMES: Record<Reaction, string> = {
 };
 
 /** When an item happened, whichever kind it is. */
-export function itemTime(item: FeedItem): string {
+function itemTime(item: FeedItem): string {
   return item.kind === 'post' ? item.post.createdAt : item.picture.createdAt;
 }
 
@@ -28,7 +28,7 @@ export function itemKey(item: FeedItem): string {
 }
 
 /** Who an item is by, whichever kind it is. */
-export function itemAuthor(item: FeedItem): string {
+function itemAuthor(item: FeedItem): string {
   return item.kind === 'post' ? item.post.authorId : item.picture.authorId;
 }
 
