@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 import { Avatar } from '../../components/ui/avatar.tsx';
 import { EmptyState } from '../../components/ui/primitives.tsx';
 import { formatDaySeparator, formatExact, formatTime, isSameDay } from '../../lib/time.ts';
+import { StoryRing } from '../stories/story-ring.tsx';
 import { MessageBody } from './message-body.tsx';
 import type { ChatMessage } from './types.ts';
 
@@ -170,13 +171,11 @@ function MessageRow({
           {formatTime(message.createdAt)}
         </span>
       ) : (
-        <Avatar
-          name={message.authorName}
-          seed={message.authorId}
-          avatar={avatar}
-          size="md"
-          className="mt-0.5"
-        />
+        <span className="mt-0.5 inline-flex shrink-0">
+          <StoryRing userId={message.authorId} name={message.authorName} inline>
+            <Avatar name={message.authorName} seed={message.authorId} avatar={avatar} size="md" />
+          </StoryRing>
+        </span>
       )}
 
       <div className="min-w-0 flex-1">

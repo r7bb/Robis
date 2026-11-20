@@ -61,7 +61,26 @@ export type QueuedMutation =
       queuedAt: number;
       attempts: number;
       lastError?: string;
+    }
+  | {
+      /**
+       * A photo story posted with no network (B2). Like an attachment: the
+       * bytes wait in `blobs` under this id, which is the Idempotency-Key,
+       * so a replay after a lost response posts it once.
+       */
+      kind: 'story.upload';
+      id: string;
+      workspaceId: string;
+      contentType: string;
+      queuedAt: number;
+      attempts: number;
+      lastError?: string;
     };
+
+/** The kinds whose bytes wait in the `blobs` store under the mutation's id. */
+export function carriesBlob(mutation: QueuedMutation): boolean {
+  return mutation.kind === 'attachment.upload' || mutation.kind === 'story.upload';
+}
 
 export class MutationQueue {
   constructor(private readonly storage: StorageAdapter) {}

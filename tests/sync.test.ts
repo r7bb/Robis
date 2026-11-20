@@ -142,6 +142,22 @@ class FakeTransport implements SyncTransport {
     return { attachment: { id: `att-${idempotencyKey}` } };
   }
 
+  /** Stories the server posted, by idempotency key (B2). */
+  stories = new Map<string, { workspaceId: string; size: number }>();
+
+  async uploadStory(workspaceId: string, body: Blob, _contentType: string, idempotencyKey: string) {
+    this.calls.push({ method: 'story', key: idempotencyKey });
+    if (this.failWith) throw this.failWith;
+    if (!this.stories.has(idempotencyKey)) {
+      this.stories.set(idempotencyKey, { workspaceId, size: body.size });
+    }
+    if (this.dropNextResponse) {
+      this.dropNextResponse = false;
+      throw new SyncError('network dropped after the server stored it');
+    }
+    return { story: { id: `story-${idempotencyKey}` } };
+  }
+
   async listIssues(_workspaceId: string, projectId: string) {
     return {
       issues: [...this.serverIssues.values()].filter((i) => i.projectId === projectId),
@@ -719,6 +735,58 @@ describe('attaching an image offline', () => {
     transport.serverIssues.set(issue.id, { ...onServer, title: 'Renamed elsewhere' });
     await engine.reconcile(WORKSPACE, PROJECT);
 
+    const [local] = await engine.localIssues(PROJECT);
+    expect(local?.title).toBe('Renamed elsewhere');
+  });
+});
+
+describe('posting a story offline (B2)', () => {
+  const image = () => new Blob([new Uint8Array(4096)], { type: 'image/jpeg' });
+
+  test('a story made with no signal waits on the device and posts exactly once', async () => {
+    transport.failWith = new SyncError('offline');
+    const id = await engine.queueStory(WORKSPACE, image(), 'image/jpeg');
+    expect(await engine.pendingStories(WORKSPACE)).toHaveLength(1);
+    expect((await engine.flush()).failed).toBe(1);
+    expect(transport.stories.size).toBe(0);
+
+    transport.failWith = null;
+    // A lost answer, then the replay: the same key both times, one story.
+    transport.dropNextResponse = true;
+    expect((await engine.flush()).failed).toBe(1);
+    expect((await engine.flush()).flushed).toBe(1);
+    expect((await engine.flush()).flushed).toBe(0);
+
+    const sent = transport.calls.filter((c) => c.method === 'story').map((c) => c.key);
+    expect(sent).toEqual([id, id, id]);
+    expect([...transport.stories.keys()]).toEqual([id]);
+    expect(await engine.pendingStories(WORKSPACE)).toEqual([]);
+    expect(await storage.get(STORE_BLOBS, id)).toBeUndefined();
+  });
+
+  test('a story the server refuses (stories turned off) is let go, bytes and all', async () => {
+    transport.failWith = new SyncError(
+      'Stories are turned off in this workspace.',
+      409,
+      'stories_off',
+    );
+    const id = await engine.queueStory(WORKSPACE, image(), 'image/jpeg');
+    const result = await engine.flush();
+    expect(result.refused).toEqual([
+      { kind: 'story.upload', message: 'Stories are turned off in this workspace.' },
+    ]);
+    expect(await storage.get(STORE_BLOBS, id)).toBeUndefined();
+  });
+
+  test('a queued story is not an edit to any issue', async () => {
+    const issue = await engine.createIssue(WORKSPACE, PROJECT, { title: 'Synced' });
+    await engine.flush();
+    transport.failWith = new SyncError('offline');
+    await engine.queueStory(WORKSPACE, image(), 'image/jpeg');
+    transport.failWith = null;
+    const onServer = transport.serverIssues.get(issue.id)!;
+    transport.serverIssues.set(issue.id, { ...onServer, title: 'Renamed elsewhere' });
+    await engine.reconcile(WORKSPACE, PROJECT);
     const [local] = await engine.localIssues(PROJECT);
     expect(local?.title).toBe('Renamed elsewhere');
   });

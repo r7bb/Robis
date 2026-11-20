@@ -1,5 +1,5 @@
 import { byPosition, type IssuePriority, type IssueStatus } from '@robis/shared';
-import { MutationQueue, type QueuedMutation } from './queue.ts';
+import { carriesBlob, MutationQueue, type QueuedMutation } from './queue.ts';
 import {
   STORE_BLOBS,
   STORE_ISSUES,
@@ -50,6 +50,20 @@ export type LocalIssue = {
  */
 export type IssueAnswer = Omit<LocalIssue, 'assigneeName' | 'pending'>;
 
+/** The issue a queued edit is to, if it is one: images and stories are not. */
+function issueEditedBy(mutation: QueuedMutation): string[] {
+  switch (mutation.kind) {
+    case 'issue.create':
+      return [mutation.id];
+    case 'issue.update':
+    case 'issue.delete':
+      return [mutation.issueId];
+    case 'attachment.upload':
+    case 'story.upload':
+      return [];
+  }
+}
+
 /** Transport, injected so the engine can be tested without a server. */
 export interface SyncTransport {
   createIssue(
@@ -81,6 +95,14 @@ export interface SyncTransport {
     contentType: string,
     idempotencyKey: string,
   ): Promise<{ attachment: { id: string } }>;
+
+  /** A photo story (B2), with the same replay-safe key as an attachment. */
+  uploadStory(
+    workspaceId: string,
+    body: Blob,
+    contentType: string,
+    idempotencyKey: string,
+  ): Promise<{ story: { id: string } }>;
 
   /** The list joins in the assignee's name; `pending` is the client's own. */
   listIssues(
@@ -195,6 +217,36 @@ export class SyncEngine {
     });
 
     return id;
+  }
+
+  /**
+   * Post a photo story, now or whenever the network returns (B2). The
+   * bytes stay on the device until the server has them; the queued id is
+   * the Idempotency-Key, so the story is posted exactly once.
+   */
+  async queueStory(workspaceId: string, image: Blob, contentType: string): Promise<string> {
+    const id = this.newId();
+    await this.storage.put(STORE_BLOBS, id, image);
+    await this.queue.enqueue({
+      kind: 'story.upload',
+      id,
+      workspaceId,
+      contentType,
+      queuedAt: this.now(),
+      attempts: 0,
+    });
+    return id;
+  }
+
+  /** Photo stories still waiting to post in a workspace, oldest first. */
+  async pendingStories(workspaceId: string): Promise<{ id: string; image: Blob }[]> {
+    const waiting: { id: string; image: Blob }[] = [];
+    for (const mutation of await this.queue.all()) {
+      if (mutation.kind !== 'story.upload' || mutation.workspaceId !== workspaceId) continue;
+      const image = await this.storage.get<Blob>(STORE_BLOBS, mutation.id);
+      if (image) waiting.push({ id: mutation.id, image });
+    }
+    return waiting;
   }
 
   /** Images still waiting to upload for one issue, oldest first. */
@@ -394,6 +446,19 @@ export class SyncEngine {
       return;
     }
 
+    if (mutation.kind === 'story.upload') {
+      const image = await this.storage.get<Blob>(STORE_BLOBS, mutation.id);
+      if (!image) return;
+      await this.transport.uploadStory(
+        mutation.workspaceId,
+        image,
+        mutation.contentType,
+        mutation.id,
+      );
+      await this.storage.delete(STORE_BLOBS, mutation.id);
+      return;
+    }
+
     if (mutation.kind === 'issue.create') {
       // The mutation id is both the issue's uuid and the idempotency key, so a
       // replay after a lost response returns the original result.
@@ -452,7 +517,7 @@ export class SyncEngine {
     }
     // A refused image (not readable, too large) will never be accepted, so
     // its bytes are released rather than kept on the device forever.
-    if (mutation.kind === 'attachment.upload') {
+    if (carriesBlob(mutation)) {
       await this.storage.delete(STORE_BLOBS, mutation.id);
     }
     // A refused update is repaired by the next reconcile, which overwrites the
@@ -478,11 +543,7 @@ export class SyncEngine {
     const queued = await this.queue.all();
     // Only edits to the issue itself make its row "pending"; a queued image
     // does not, so reconcile still refreshes the issue around it.
-    const pendingIds = new Set(
-      queued.flatMap((m) =>
-        m.kind === 'attachment.upload' ? [] : [m.kind === 'issue.create' ? m.id : m.issueId],
-      ),
-    );
+    const pendingIds = new Set(queued.flatMap((m) => issueEditedBy(m)));
 
     const serverIds = new Set(issues.map((i) => i.id));
 

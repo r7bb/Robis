@@ -167,9 +167,15 @@ Order of work, decided 2026-10-09:
    and take-downs audited without the words; an owner's switch that hides
    and refuses them; files removed with the account or the workspace.
    Expiry itself is not in the audit trail: the clock does it, not a
-   person, and the post's own event records when it was made. Still to
-   come: the stories bar and rings in the app, the offline queue for a
-   story, profiles, and pictures in chat.
+   person, and the post's own event records when it was made.
+   **Stories in the app, 2026-11-20:** a strip at the top of the chat,
+   rings on pictures there, in messages and on the People page, a full
+   screen viewer (tap, hold, arrow keys; nothing autoplays with reduced
+   motion), a composer for a chosen, taken or pasted photo or a few words,
+   and the owner's switch on the People page. A photo posted with no
+   signal waits in the device's sync queue and posts once on reconnect.
+   What someone has seen stays in their browser. Still to come: profiles,
+   and pictures in chat.
 
 - Rich profiles: photo, cover, role, a "working on" line, recent activity,
   and a grid of what the person has shared.

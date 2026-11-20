@@ -234,6 +234,13 @@ describe('no hardcoded colours outside the palette', () => {
     'frontend/features/start/tunnel.tsx',
     'frontend/features/landing/whats-new.tsx',
     'frontend/app/whats-new/page.tsx',
+    /*
+     * Stories (B2): the viewer is a photo on black, and words stories sit
+     * on fixed dark gradients in the composer and the viewer, whatever the
+     * theme, so their text and controls are white on purpose.
+     */
+    'frontend/features/stories/story-viewer.tsx',
+    'frontend/features/stories/story-composer.tsx',
   ]);
 
   function sourceFiles(): string[] {

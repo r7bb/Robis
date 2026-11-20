@@ -16,9 +16,12 @@ type CameraState = 'starting' | 'live' | 'denied' | 'unavailable';
 export function CameraCapture({
   onCapture,
   busy,
+  shape = 'circle',
 }: {
   onCapture: (frame: Blob) => void;
   busy: boolean;
+  /** A circle for a picture of you; a tall frame for a story (B2). */
+  shape?: 'circle' | 'portrait';
 }) {
   const video = useRef<HTMLVideoElement>(null);
   const [state, setState] = useState<CameraState>('starting');
@@ -57,26 +60,30 @@ export function CameraCapture({
     const element = video.current;
     if (!element || element.videoWidth === 0) return;
 
-    // A centred square, the shape the avatar is cropped to anyway.
-    const side = Math.min(element.videoWidth, element.videoHeight);
+    // A centred square for a picture of you, the shape it is cropped to
+    // anyway; for a story, the tallest 9:16 the frame holds.
+    const { videoWidth: width, videoHeight: height } = element;
+    const outWidth =
+      shape === 'circle' ? Math.min(width, height) : Math.min(width, (height * 9) / 16);
+    const outHeight = shape === 'circle' ? outWidth : Math.min(height, (outWidth * 16) / 9);
     const canvas = document.createElement('canvas');
-    canvas.width = side;
-    canvas.height = side;
+    canvas.width = Math.round(outWidth);
+    canvas.height = Math.round(outHeight);
     const context = canvas.getContext('2d');
     if (!context) return;
 
-    context.translate(side, 0);
+    context.translate(canvas.width, 0);
     context.scale(-1, 1);
     context.drawImage(
       element,
-      (element.videoWidth - side) / 2,
-      (element.videoHeight - side) / 2,
-      side,
-      side,
+      (width - outWidth) / 2,
+      (height - outHeight) / 2,
+      outWidth,
+      outHeight,
       0,
       0,
-      side,
-      side,
+      canvas.width,
+      canvas.height,
     );
     canvas.toBlob((blob) => blob && onCapture(blob), 'image/jpeg', 0.9);
   }
@@ -86,14 +93,22 @@ export function CameraCapture({
       <p className="rounded-lg border border-line bg-raised px-4 py-5 text-sm leading-relaxed text-muted">
         {state === 'denied'
           ? 'Camera access was turned down. You can allow it in your browser settings, or upload a photo instead.'
-          : 'No camera is available here. Upload a photo or pick a pattern instead.'}
+          : shape === 'circle'
+            ? 'No camera is available here. Upload a photo or pick a pattern instead.'
+            : 'No camera is available here. Choose a photo instead.'}
       </p>
     );
   }
 
   return (
     <div className="flex flex-col items-center gap-5">
-      <div className="relative h-56 w-56 overflow-hidden rounded-full bg-raised ring-1 ring-line">
+      <div
+        className={`relative overflow-hidden bg-raised ring-1 ring-line ${
+          shape === 'circle'
+            ? 'h-56 w-56 rounded-full'
+            : 'aspect-[9/16] h-[min(52dvh,26rem)] rounded-2xl'
+        }`}
+      >
         <video
           ref={video}
           autoPlay

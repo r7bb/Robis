@@ -600,3 +600,41 @@ body {
     animation: palette-backdrop-in var(--micro) var(--ease);
   }
 }
+
+/*
+ * A story's bar (B2) fills over the time it shows. With reduced motion it is
+ * full at once and nothing plays on its own (see `story-viewer.tsx`).
+ */
+@keyframes story-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.story-progress {
+  transform-origin: left;
+  animation-name: story-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .story-viewer[open] {
+    animation: palette-backdrop-in var(--micro) var(--ease);
+  }
+}
+
+/* A story's ring (B2): the accent while unseen, the line colour once seen. */
+.story-ring {
+  background: rgb(var(--muted) / 0.4);
+}
+.story-ring[data-unseen] {
+  background: conic-gradient(
+    from 210deg,
+    rgb(var(--accent-soft)),
+    rgb(var(--accent)),
+    rgb(var(--accent-hover)),
+    rgb(var(--accent-soft))
+  );
+}

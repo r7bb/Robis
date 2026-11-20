@@ -148,14 +148,14 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Stories.** Share a photo or a few words with your workspace for 24
+  hours: rings on faces, a full-screen viewer, and a photo taken with no
+  signal posts itself once you are back.
 - **Passkeys.** Sign in with your phone, laptop or a security key instead of
   a password: no address to type, nothing a fake site can use.
 - **An email when you sign in from a new browser.** A sign-in from a browser
   your account has not used mails you, with a link that signs you out
   everywhere if it was not you.
-- **Growing waits after wrong passwords.** The fifth wrong password for an
-  address from one place starts a 30 second wait there, and each one after
-  doubles it, up to a quarter of an hour.
 
 <!-- latest:end -->
 

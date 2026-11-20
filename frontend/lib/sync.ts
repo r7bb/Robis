@@ -17,6 +17,38 @@ function toSyncError(error: unknown): SyncError {
   return new SyncError(error instanceof Error ? error.message : 'Network unavailable');
 }
 
+/**
+ * A raw image body, posted with its Idempotency-Key: image bytes are not
+ * JSON, so this goes around `call`. A network failure is transient and the
+ * queue keeps the bytes; a refusal carries the server's own message.
+ */
+async function postImage<T>(
+  path: string,
+  body: Blob,
+  contentType: string,
+  idempotencyKey: string,
+): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(`${BASE_URL}${path}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'content-type': contentType, 'idempotency-key': idempotencyKey },
+      body,
+    });
+  } catch (error) {
+    throw toSyncError(error);
+  }
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new SyncError(
+      payload?.message ?? `Upload failed with ${response.status}`,
+      response.status,
+    );
+  }
+  return payload as T;
+}
+
 const transport: SyncTransport = {
   async createIssue(workspaceId, projectId, body, idempotencyKey) {
     try {
@@ -55,30 +87,22 @@ const transport: SyncTransport = {
    * mutation's id is the Idempotency-Key, which is what makes a replay after
    * a lost response return the first upload instead of storing a second.
    */
-  async uploadAttachment(workspaceId, issueId, body, contentType, idempotencyKey) {
-    let response: Response;
-    try {
-      response = await fetch(
-        `${BASE_URL}/workspaces/${workspaceId}/issues/${issueId}/attachments`,
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'content-type': contentType, 'idempotency-key': idempotencyKey },
-          body,
-        },
-      );
-    } catch (error) {
-      throw toSyncError(error);
-    }
+  uploadAttachment(workspaceId, issueId, body, contentType, idempotencyKey) {
+    return postImage<{ attachment: { id: string } }>(
+      `/workspaces/${workspaceId}/issues/${issueId}/attachments`,
+      body,
+      contentType,
+      idempotencyKey,
+    );
+  },
 
-    const payload = await response.json().catch(() => null);
-    if (!response.ok) {
-      throw new SyncError(
-        payload?.message ?? `Upload failed with ${response.status}`,
-        response.status,
-      );
-    }
-    return payload as { attachment: { id: string } };
+  uploadStory(workspaceId, body, contentType, idempotencyKey) {
+    return postImage<{ story: { id: string } }>(
+      `/workspaces/${workspaceId}/stories/photo`,
+      body,
+      contentType,
+      idempotencyKey,
+    );
   },
 
   async listIssues(workspaceId, projectId) {

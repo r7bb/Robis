@@ -3,6 +3,7 @@
 import { contracts } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
+import { Switch } from '../../components/ui/switch.tsx';
 import { ApiError, call } from '../../lib/api.ts';
 
 /**
@@ -44,24 +45,12 @@ export function TwoFactorPolicy({ workspaceId }: { workspaceId: string }) {
               : 'Off. When on, everyone here must sign in with a code from an authenticator app as well as their password.'}
           </p>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={required}
-          aria-labelledby="two-factor-policy"
+        <Switch
+          checked={required}
+          onChange={(next) => set.mutate(next)}
           disabled={!workspace.data || set.isPending}
-          onClick={() => set.mutate(!required)}
-          className={`relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft disabled:opacity-50 ${
-            required ? 'bg-accent' : 'bg-line'
-          }`}
-        >
-          <span
-            aria-hidden="true"
-            className={`absolute left-0 top-0.5 h-5 w-5 rounded-full bg-content transition-transform ${
-              required ? 'translate-x-5' : 'translate-x-0.5'
-            }`}
-          />
-        </button>
+          labelledBy="two-factor-policy"
+        />
       </div>
       <div aria-live="polite">
         {set.error ? (

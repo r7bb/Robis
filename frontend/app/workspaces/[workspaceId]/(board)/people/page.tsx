@@ -3,6 +3,7 @@
 import { can } from '@robis/shared';
 import { AgentList } from '../../../../../components/agent-list.tsx';
 import { MemberList } from '../../../../../components/member-list.tsx';
+import { StoriesPolicy } from '../../../../../features/stories/stories-policy.tsx';
 import { PageFrame, useWorkspaceRole } from '../../../../../features/workspace/page-frame.tsx';
 import { TwoFactorPolicy } from '../../../../../features/workspace/two-factor-policy.tsx';
 
@@ -18,6 +19,11 @@ export default function PeoplePage() {
       {role && can(role, 'workspace:update') ? (
         <div className="mb-8">
           <TwoFactorPolicy workspaceId={workspaceId} />
+        </div>
+      ) : null}
+      {role && can(role, 'story:configure') ? (
+        <div className="mb-8">
+          <StoriesPolicy workspaceId={workspaceId} />
         </div>
       ) : null}
       <MemberList workspaceId={workspaceId} viewerRole={role} />

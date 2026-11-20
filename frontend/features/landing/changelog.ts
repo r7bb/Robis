@@ -44,6 +44,26 @@ export type Entry = {
 
 export const CHANGELOG: readonly Entry[] = [
   {
+    date: '2026-11-20',
+    area: 'Product',
+    title: 'Stories',
+    brief:
+      'Share a photo or a few words with your workspace for 24 hours: rings on faces, a full-screen viewer, and a photo taken with no signal posts itself once you are back.',
+    summary:
+      'Along the top of the chat there is now a strip of the team’s stories, and anyone with one has a ring round their picture there, in the chat and on the People page: in the workspace’s colour while there is something you have not seen, quiet once you have. A story is a photo (chosen, taken with the camera, or a screenshot pasted straight in) or a few words on one of five colours. Tap a ring and it plays full screen, six seconds each, then the next person: tap the right to go on, the left to go back, hold to pause, or use the arrow keys and Space; with reduced motion set, nothing plays on its own. Your own can be deleted and an admin can take anyone’s down, each asked once more first. Twenty-four hours after it was posted a story is gone from everyone at once, and a job then deletes it and its file. Photos are stored without their location. What you have seen is kept in your browser only, never sent anywhere. A photo posted with no signal is saved on the device, says so, and posts itself once, when the network is back. Guests see stories but do not post them, and an owner can turn stories off for the whole workspace from the People page, which hides them and refuses new ones until it is turned back on.',
+    feature: {
+      name: 'Stories',
+      where: 'The top of the chat; rings on pictures; People, Stories for owners',
+      layers: [
+        'Screen: the strip, rings, a full-screen viewer and a composer for photos (choose, camera, paste) and words',
+        'API: stories.list, createPhoto, createText and delete, the members-only image, and the owner’s switch',
+        'Data: stories (expiring at 24 hours) and the workspace’s stories switch; photos in the storage port; a stories.expire job',
+      ],
+    },
+    checked:
+      'Twenty-eight new tests: sixteen against the API (metadata stripped; 404 outside the workspace and 403 for a guest posting; twenty showing at most; an offline replay storing one file and other bytes on its key refused; an expired story a 404 before the job, then row and file gone; take-downs by author and admin but not another member; the owner’s switch hiding, refusing and restoring; early refusals before a photo is read; images asked for again on each view; files gone with a member who leaves, an account and a workspace), three for the device’s queue (posted exactly once across a lost answer, let go when refused, never mistaken for an issue edit), seven for the strip and viewer order, and two for permissions and live events. The full suite, lint, typecheck and docs:links. In headless Chrome on the rebuilt stack, with a throwaway account: a words story posted from the composer and its ring showed unseen; a pasted screenshot posted with the network cut said it was saved on the device and posted once on reconnect, and not again on a second; the viewer played the words then the photo and the ring went quiet; and the owner’s switch removed the strip, the API answering 409, then brought it back. Code and security reviews: nothing critical or high; their medium points are fixed.',
+  },
+  {
     date: '2026-11-19',
     area: 'Security',
     title: 'Passkeys',

@@ -6,6 +6,7 @@ const isAgentRole = (role: Role) => (AGENT_ROLES as readonly Role[]).includes(ro
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
+import { StoryRing } from '../features/stories/story-ring.tsx';
 import { call, type Member } from '../lib/api.ts';
 import { DeleteButton } from './delete-button.tsx';
 import { SentInvitations } from './sent-invitations.tsx';
@@ -171,7 +172,14 @@ export function MemberList({
               className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5"
             >
               <span className="flex items-center gap-2.5">
-                <Avatar name={member.name} seed={member.userId} avatar={member.avatar} size="md" />
+                <StoryRing userId={member.userId} name={member.name} inline>
+                  <Avatar
+                    name={member.name}
+                    seed={member.userId}
+                    avatar={member.avatar}
+                    size="md"
+                  />
+                </StoryRing>
                 <span className="text-sm text-content">{member.name}</span>
                 {member.kind === 'agent' && <AgentBadge />}
                 <span className="ml-2 text-xs text-faint">

@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Stories** (2026-11-20). Share a photo or a few words with your workspace
+  for 24 hours: rings on faces, a full-screen viewer, and a photo taken with
+  no signal posts itself once you are back.
 - **Passkeys** (2026-11-19). Sign in with your phone, laptop or a security
   key instead of a password: no address to type, nothing a fake site can
   use.
