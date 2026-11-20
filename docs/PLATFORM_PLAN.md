@@ -260,8 +260,10 @@ one-run token. **The swipe stack, 2026-11-20:** on the Feed, up to five
 shots; right is Try it, left is Not now with Undo, a tap is See more;
 every swipe has a button, the arrow keys work on a focused button, and
 with reduced motion cards fade. What was set aside stays in the browser.
-Still to come: the weekly check-in, and the agent bringing licensed
-pictures from public image libraries.
+**The weekly check-in, 2026-11-20:** once a week the Feed asks what you
+are working on; the answer is a check-in post and your Working on line.
+Optional, no streaks, and nobody sees who has not answered. Still to come:
+the agent bringing licensed pictures from public image libraries.
 
 ## Phase 3. Agents as teammates, over MCP (M)
 

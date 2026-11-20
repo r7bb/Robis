@@ -6,6 +6,8 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **A weekly check-in** (2026-11-20). Once a week the Feed asks what you are
+  working on; your answer is a post, and your profile’s Working on line.
 - **Swipe through Different shots** (2026-11-20). The Feed has a small stack
   of the day’s Different shots: swipe right to try one, left to set it
   aside, tap to read it all.

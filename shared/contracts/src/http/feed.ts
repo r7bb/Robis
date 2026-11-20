@@ -1,5 +1,10 @@
 import { z } from 'zod';
-import { POST_COMMENT_MAX_LENGTH, POST_MAX_LENGTH, POST_REACTIONS } from '../limits.ts';
+import {
+  CHECK_IN_MAX_LENGTH,
+  POST_COMMENT_MAX_LENGTH,
+  POST_MAX_LENGTH,
+  POST_REACTIONS,
+} from '../limits.ts';
 import { uuid } from '../schemas.ts';
 import { workspaceParams } from './common.ts';
 import { contract, timestamp } from './contract.ts';
@@ -73,7 +78,19 @@ export const feedContracts = {
       items: z.array(feedItem),
       seenAt: timestamp.nullable(),
       nextCursor: z.string().nullable(),
+      /** Whether you have checked in this week (Monday to Sunday, UTC): yours alone to know. */
+      checkedInThisWeek: z.boolean().default(false),
     }),
+  }),
+  'posts.checkIn': contract({
+    method: 'POST',
+    path: '/workspaces/:workspaceId/check-in',
+    summary:
+      "Answer this week's check-in: a post the team sees, and your profile's Working on line here.",
+    params: workspaceParams,
+    body: z.object({ body: words(CHECK_IN_MAX_LENGTH) }),
+    status: 201,
+    response: z.object({ post }),
   }),
   'feed.seen': contract({
     method: 'POST',

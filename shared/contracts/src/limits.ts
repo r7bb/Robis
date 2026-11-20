@@ -52,3 +52,6 @@ export const POST_COMMENT_MAX_LENGTH = 1000;
 
 /** The three reactions a post can have: faces, never totals (Phase 2c). */
 export const POST_REACTIONS = ['celebrate', 'helpful', 'support'] as const;
+
+/** A weekly check-in answer (Phase 2c): what you are working on, in a few lines. */
+export const CHECK_IN_MAX_LENGTH = 500;

@@ -1,9 +1,10 @@
 import { type Database, messages, posts, workspaceMembers } from '@robis/database';
 import { can, contracts, isUuid } from '@robis/shared';
-import { type AnyColumn, and, desc, eq, isNotNull, sql } from 'drizzle-orm';
+import { type AnyColumn, and, desc, eq, gte, isNotNull, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { serve } from '../contract.ts';
 import { postsWire } from '../feed/post-wire.ts';
+import { weekStart } from '../feed/week.ts';
 import {
   currentMembership,
   currentUser,
@@ -103,7 +104,7 @@ export async function feedRoutes(app: FastifyInstance, opts: { db: Database }) {
       const user = currentUser(request);
       const cursor = decodeCursor(cursorParam);
       // Pictures come from rooms: shown to those who may read the rooms.
-      const [postRows, pictureRows, [membership]] = await Promise.all([
+      const [postRows, pictureRows, [membership], [checkedIn]] = await Promise.all([
         postsBefore(workspaceId, cursor),
         can(role, 'channel:read') ? picturesBefore(workspaceId, cursor) : [],
         db
@@ -115,6 +116,18 @@ export async function feedRoutes(app: FastifyInstance, opts: { db: Database }) {
               eq(workspaceMembers.userId, user.id),
             ),
           ),
+        db
+          .select({ id: posts.id })
+          .from(posts)
+          .where(
+            and(
+              eq(posts.workspaceId, workspaceId),
+              eq(posts.authorId, user.id),
+              eq(posts.kind, 'checkin'),
+              gte(posts.createdAt, weekStart()),
+            ),
+          )
+          .limit(1),
       ]);
       const wired = new Map(
         (
@@ -149,6 +162,7 @@ export async function feedRoutes(app: FastifyInstance, opts: { db: Database }) {
       return {
         items: page.map((entry) => entry.item),
         seenAt: membership?.seenAt ?? null,
+        checkedInThisWeek: checkedIn !== undefined,
         nextCursor:
           merged.length > FEED_PAGE && last ? encodeCursor({ at: last.at, id: last.id }) : null,
       };

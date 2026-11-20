@@ -100,7 +100,9 @@ few words the workspace sees for 24 hours, shown as rings on people's
 pictures. Profiles: a cover, what each person does there and what they are
 working on, their recent work and what they have shared. A Feed of posts,
 pictures from rooms, three reactions shown as faces rather than totals, and
-an end: "You're all caught up". Pictures pasted or taken straight into chat.
+an end: "You're all caught up", with a weekly check-in that asks what you
+are working on and puts the answer on your profile. Pictures pasted or
+taken straight into chat.
 And Different shots: an agent can post an idea a day to try, with a Try it
 that opens that part of Robis, in a small stack on the Feed you swipe right
 to try and left to set aside (with a button and a key for every swipe).
@@ -175,14 +177,13 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **A weekly check-in.** Once a week the Feed asks what you are working on;
+  your answer is a post, and your profile’s Working on line.
 - **Swipe through Different shots.** The Feed has a small stack of the day’s
   Different shots: swipe right to try one, left to set it aside, tap to read
   it all.
 - **Different shots.** An agent can post an idea a day for the team to try,
   as a story with a Try it button that opens that part of Robis.
-- **A feed that ends.** A Feed page for the team: posts of words or photos,
-  three reactions and comments, pictures from rooms mixed in, and a clear
-  "You’re all caught up" where it ends.
 
 <!-- latest:end -->
 

@@ -358,3 +358,38 @@ describe('reviewed edges', () => {
     expect(mine.post.reactions.support).toEqual([]);
   });
 });
+
+describe('the weekly check-in', () => {
+  test('is a post the team sees, and sets your Working on line; only you know you answered', async () => {
+    const { owner, member, workspace } = await team();
+    expect((await feedOf(member, workspace.id)).checkedInThisWeek).toBe(false);
+    const answered = await request(`/workspaces/${workspace.id}/check-in`, {
+      method: 'POST',
+      actor: member,
+      payload: { body: 'Onboarding redesign, first screens\nThen the pricing page' },
+    });
+    expect(answered.statusCode).toBe(201);
+    expect(answered.json().post).toMatchObject({ kind: 'checkin' });
+
+    expect((await feedOf(member, workspace.id)).checkedInThisWeek).toBe(true);
+    const seen = await feedOf(owner, workspace.id);
+    expect(seen.checkedInThisWeek).toBe(false);
+    expect(seen.items[0].post).toMatchObject({ kind: 'checkin', authorId: member.id });
+    const profile = await request(`/workspaces/${workspace.id}/people/${member.id}`, {
+      actor: owner,
+    });
+    expect(profile.json().profile.workingOn).toBe('Onboarding redesign, first screens');
+  });
+
+  test('a guest is not asked to check in, and cannot', async () => {
+    const { owner, workspace } = await team();
+    const guest = await createActor('Guest');
+    await addMember(owner, workspace.id, guest, 'GUEST');
+    const refused = await request(`/workspaces/${workspace.id}/check-in`, {
+      method: 'POST',
+      actor: guest,
+      payload: { body: 'Hello' },
+    });
+    expect(refused.statusCode).toBe(403);
+  });
+});

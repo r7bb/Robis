@@ -11,6 +11,7 @@ import { channelHref } from '../../lib/links.ts';
 import { useStories } from '../stories/stories-context.tsx';
 import { StoriesStrip } from '../stories/stories-strip.tsx';
 import { useWorkspaceRole } from '../workspace/page-frame.tsx';
+import { CheckIn } from './check-in.tsx';
 import { type FeedItem, feedKey, itemKey, splitAtSeen } from './feed-model.ts';
 import { PostCard } from './post-card.tsx';
 import { PostComposer } from './post-composer.tsx';
@@ -117,6 +118,9 @@ export function FeedView({ workspaceId }: { workspaceId: string }) {
         <div className="mt-4 overflow-hidden rounded-xl border border-line bg-raised">
           <StoriesStrip members={memberList} />
         </div>
+      ) : null}
+      {role && can(role, 'post:create') && feed.data && !feed.data.pages[0]?.checkedInThisWeek ? (
+        <CheckIn workspaceId={workspaceId} />
       ) : null}
       <ShotsStack people={people} />
       {role && can(role, 'post:create') ? (

@@ -7,8 +7,9 @@ import {
   publishEvent,
   queuePostPhotoPurge,
   recordAudit,
+  workspaceMembers,
 } from '@robis/database';
-import { can, contracts, isUuid } from '@robis/shared';
+import { can, contracts, isUuid, WORKING_ON_MAX_LENGTH } from '@robis/shared';
 import type { MediaStorage } from '@robis/storage';
 import { and, asc, eq } from 'drizzle-orm';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
@@ -100,6 +101,34 @@ export async function postRoutes(
       withIdempotency(db, request, reply, 201, async () => {
         const row = await createPost(request, { kind: 'text', body: input.body });
         return shape(contracts['posts.create'], { post: await postWire(db, row) });
+      }),
+  );
+
+  /*
+   * The weekly check-in (Phase 2c): what you are working on, as a post the
+   * team sees, and as your profile's Working on line here (its first line,
+   * cut to fit). Optional: nothing reminds anyone who has not answered.
+   */
+  serve(
+    app,
+    contracts['posts.checkIn'],
+    { preHandler: [requireAuth, requireMembership(db, 'post:create'), writeLimit] },
+    async (request, { body: input }, reply) =>
+      withIdempotency(db, request, reply, 201, async () => {
+        const { workspaceId } = currentMembership(request);
+        const user = currentUser(request);
+        const row = await createPost(request, { kind: 'checkin', body: input.body });
+        const line = input.body.split('\n')[0]!.trim().slice(0, WORKING_ON_MAX_LENGTH);
+        await db
+          .update(workspaceMembers)
+          .set({ workingOn: line })
+          .where(
+            and(
+              eq(workspaceMembers.workspaceId, workspaceId),
+              eq(workspaceMembers.userId, user.id),
+            ),
+          );
+        return shape(contracts['posts.checkIn'], { post: await postWire(db, row) });
       }),
   );
 

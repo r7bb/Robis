@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-20',
     area: 'Product',
+    title: 'A weekly check-in',
+    brief:
+      'Once a week the Feed asks what you are working on; your answer is a post, and your profile’s Working on line.',
+    summary:
+      'At the top of your Feed, once a week, a single question: What are you working on this week? Answer it and it goes on the feed as a check-in, and its first line becomes the Working on line on your profile in that workspace. Not this week puts the question away until Monday. Nobody is told who has answered and who has not, there are no streaks, and guests are not asked. The week runs Monday to Sunday, in UTC.',
+    feature: {
+      name: 'Weekly check-in',
+      where: 'The top of the Feed, once a week',
+      layers: [
+        'Screen: the question, a Share button and Not this week',
+        'API: posts.checkIn, and whether you have answered this week on feed.list (yours alone)',
+        'Data: a check-in post, and the Working on line on your membership',
+      ],
+    },
+    checked:
+      'Three new tests: an answer is a post the team sees and sets your Working on line, and only you know you answered; a guest cannot check in; and the week starts on Monday at midnight UTC. The full suite, lint, typecheck, knip and docs:links. In headless Chrome on the rebuilt stack, with a throwaway account: the Feed asked, the answer appeared as a weekly check-in post, the question went away, and the profile’s Working on line became its first line.',
+  },
+  {
+    date: '2026-11-20',
+    area: 'Product',
     title: 'Swipe through Different shots',
     brief:
       'The Feed has a small stack of the day’s Different shots: swipe right to try one, left to set it aside, tap to read it all.',
