@@ -1,3 +1,4 @@
+import { currentTraceparent } from '@robis/telemetry';
 import type { Executor } from './index.ts';
 import { wakeWorkers } from './queue.ts';
 import { jobs } from './schema.ts';
@@ -74,6 +75,7 @@ async function queueAccountMail(db: Executor, kind: string, userId: string) {
       payload: JSON.stringify(payload),
       runAt: new Date(),
       maxAttempts: MAIL_ATTEMPTS,
+      traceParent: currentTraceparent(),
     })
     .onConflictDoNothing();
   await wakeWorkers(db, kind);
@@ -93,6 +95,7 @@ export async function queueNewDeviceMail(db: Executor, sessionId: string) {
       payload: JSON.stringify(payload),
       runAt: new Date(),
       maxAttempts: MAIL_ATTEMPTS,
+      traceParent: currentTraceparent(),
     })
     .onConflictDoNothing();
   await wakeWorkers(db, MAIL_NEW_DEVICE_JOB);
@@ -116,6 +119,7 @@ export async function queueInvitationMail(db: Executor, invitationId: string) {
       payload: JSON.stringify(payload),
       runAt: new Date(),
       maxAttempts: MAIL_ATTEMPTS,
+      traceParent: currentTraceparent(),
     })
     .onConflictDoNothing();
   await wakeWorkers(db, MAIL_WORKSPACE_INVITATION_JOB);
@@ -131,6 +135,7 @@ export async function queueSignupMail(db: Executor, signupId: string) {
       payload: JSON.stringify(payload),
       runAt: new Date(),
       maxAttempts: MAIL_ATTEMPTS,
+      traceParent: currentTraceparent(),
     })
     .onConflictDoNothing();
   await wakeWorkers(db, MAIL_SIGNUP_JOB);
@@ -145,6 +150,7 @@ async function queueMail(db: Executor, kind: string, payload: unknown) {
       payload: JSON.stringify(payload),
       runAt: new Date(),
       maxAttempts: MAIL_ATTEMPTS,
+      traceParent: currentTraceparent(),
     })
     .onConflictDoNothing();
   await wakeWorkers(db, kind);

@@ -1227,6 +1227,12 @@ export const jobs = pgTable(
     /** `pending` until it exhausts its attempts, then `failed` (dead letter). */
     status: text('status').notNull().default('pending'),
     lastError: text('last_error'),
+    /**
+     * The trace that queued it, as a W3C `traceparent` (A5), so the job's
+     * run continues that trace. Beside the payload, not in it: the payload
+     * is what de-duplicates mail.
+     */
+    traceParent: text('trace_parent'),
     createdAt: createdAt(),
   },
   (t) => [

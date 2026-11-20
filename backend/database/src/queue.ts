@@ -1,3 +1,4 @@
+import { currentTraceparent } from '@robis/telemetry';
 import { and, eq, lt, lte, or, sql } from 'drizzle-orm';
 import postgres from 'postgres';
 import type { Database, Executor } from './index.ts';
@@ -54,6 +55,7 @@ export async function enqueue(
       payload: JSON.stringify(payload ?? {}),
       runAt,
       maxAttempts: options.maxAttempts ?? 5,
+      traceParent: currentTraceparent(),
     })
     .returning({ id: jobs.id });
 
@@ -101,6 +103,8 @@ export type ClaimedJob = {
   payload: unknown;
   attempts: number;
   maxAttempts: number;
+  /** The trace that queued it, to continue (A5); null when none was active. */
+  traceParent: string | null;
 };
 
 /**
@@ -161,6 +165,7 @@ export async function claimJobs(
       payload: jobs.payload,
       attempts: jobs.attempts,
       maxAttempts: jobs.maxAttempts,
+      traceParent: jobs.traceParent,
       runAt: jobs.runAt,
     });
 

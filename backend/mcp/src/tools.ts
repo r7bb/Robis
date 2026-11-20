@@ -1,5 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { ISSUE_STATUSES, STORY_TEXT_MAX_LENGTH, STORY_TONES } from '@robis/shared';
+import { inSpan } from '@robis/telemetry';
 import { z } from 'zod';
 import { type ApiClient, ApiRefusal } from './api-client.ts';
 
@@ -71,21 +72,27 @@ async function run(
   observe: (name: ToolName, outcome: ToolOutcome, ms: number) => void,
   work: () => Promise<unknown>,
 ): Promise<ToolResult> {
-  const began = performance.now();
-  try {
-    const result = ok(await work());
-    observe(name, 'ok', performance.now() - began);
-    return result;
-  } catch (error) {
-    const ms = performance.now() - began;
-    if (error instanceof ApiRefusal) {
-      observe(name, DENIED_STATUSES.has(error.status) ? 'denied' : 'error', ms);
-      return refused(error);
+  // A span per tool call (A5); the API requests it makes are its children.
+  return inSpan(`tool ${name}`, { attributes: { 'robis.mcp.tool': name } }, async (span) => {
+    const began = performance.now();
+    try {
+      const result = ok(await work());
+      observe(name, 'ok', performance.now() - began);
+      return result;
+    } catch (error) {
+      const ms = performance.now() - began;
+      if (error instanceof ApiRefusal) {
+        const outcome = DENIED_STATUSES.has(error.status) ? 'denied' : 'error';
+        span.setAttribute('robis.mcp.outcome', outcome);
+        observe(name, outcome, ms);
+        return refused(error);
+      }
+      console.error(`mcp: ${name} failed`, error);
+      span.setAttribute('robis.mcp.outcome', 'error');
+      observe(name, 'error', ms);
+      return internal;
     }
-    console.error(`mcp: ${name} failed`, error);
-    observe(name, 'error', ms);
-    return internal;
-  }
+  });
 }
 
 export function createToolServer(

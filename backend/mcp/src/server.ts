@@ -1,5 +1,6 @@
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { isUuid } from '@robis/shared';
+import { contextFrom, inSpan, SpanKind } from '@robis/telemetry';
 import { ApiClient } from './api-client.ts';
 import { createToolServer, type ToolName, type ToolOutcome } from './tools.ts';
 
@@ -96,23 +97,41 @@ export function createMcpHandler(options: McpOptions) {
       options.fetcher,
       runKey && RUN_KEY.test(runKey) ? runKey : null,
     );
-    const server = createToolServer(api, workspaceId, options.observe);
-    const transport = new WebStandardStreamableHTTPServerTransport({
-      sessionIdGenerator: undefined,
-      enableJsonResponse: true,
-    });
-    await server.connect(transport);
-    try {
-      return await transport.handleRequest(request);
-    } catch (error) {
-      console.error('mcp: request failed', error);
-      return json(500, {
-        jsonrpc: '2.0',
-        id: null,
-        error: { code: -32603, message: 'Internal error' },
-      });
-    } finally {
-      await server.close();
-    }
+    // A span per call, continuing the agent's trace if it sent one (A5).
+    return inSpan(
+      'POST /mcp/:workspaceId',
+      {
+        kind: SpanKind.SERVER,
+        parent: contextFrom(request.headers.get('traceparent')),
+        attributes: { 'robis.workspace_id': workspaceId },
+      },
+      () => answer(request, api, workspaceId, options),
+    );
   };
+}
+
+async function answer(
+  request: Request,
+  api: ApiClient,
+  workspaceId: string,
+  options: McpOptions,
+): Promise<Response> {
+  const server = createToolServer(api, workspaceId, options.observe);
+  const transport = new WebStandardStreamableHTTPServerTransport({
+    sessionIdGenerator: undefined,
+    enableJsonResponse: true,
+  });
+  await server.connect(transport);
+  try {
+    return await transport.handleRequest(request);
+  } catch (error) {
+    console.error('mcp: request failed', error);
+    return json(500, {
+      jsonrpc: '2.0',
+      id: null,
+      error: { code: -32603, message: 'Internal error' },
+    });
+  } finally {
+    await server.close();
+  }
 }

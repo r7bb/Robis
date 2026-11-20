@@ -221,6 +221,23 @@ gateway reports open sockets, document rooms, fan-out deliveries and upgrade
 outcomes. One write reaching fifty subscribed sockets counts as fifty
 deliveries, because that is the quantity that describes fan-out cost.
 
+### Traces
+
+Every service starts OpenTelemetry tracing (A5, `backend/telemetry`), and
+sends spans over OTLP/HTTP to the collector `OTEL_EXPORTER_OTLP_ENDPOINT`
+names; unset, tracing is off and costs next to nothing. W3C trace context
+joins the services: the API continues a caller's `traceparent`, the MCP
+server sends its tool call's on to the API, and every queued job keeps the
+trace that queued it in its own `trace_parent` column (beside the payload,
+which is what de-duplicates mail), so the worker's run is a child of the
+request, and a job it queues is a child of that run. One comment that
+mentions someone is one trace: the request, the notify job, and the mail job
+that sends the email. Spans are named by route pattern and job kind and
+carry ids and status codes, never what anyone wrote; the API's request
+span carries the request id the response and log lines share. Not yet
+traced: the realtime gateway's fan-out and the ML service, which see the
+request id instead.
+
 ### Roles and permissions
 
 The seed creates one account, so there is nothing to see in the role model out

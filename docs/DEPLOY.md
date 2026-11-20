@@ -50,6 +50,11 @@ Everything is served from one address, through an edge proxy
   so any number of API instances enforce one budget. `RATE_LIMIT_STORE=memory`
   keeps them per instance, for one instance only. The counts need Postgres
   18 (they use `RETURNING old`).
+- **Traces** (A5): set `OTEL_EXPORTER_OTLP_ENDPOINT` on the API, worker,
+  gateway and MCP server to an OpenTelemetry collector's OTLP/HTTP address
+  (for example `http://collector:4318`; spans go to its `/v1/traces`).
+  Unset, nothing is sent. Spans hold ids, routes, job kinds and status
+  codes, not what people wrote.
 - **TLS** terminates at the proxy or in front of it. The stack's Caddyfile
   serves plain HTTP on `:8080` with `auto_https off`, for 127.0.0.1 only; a
   deployment replaces `:8080` with its hostname and removes `auto_https off`

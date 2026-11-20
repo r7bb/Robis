@@ -45,6 +45,17 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-20',
+    area: 'Product',
+    title: 'One trace from a request to the mail it sends',
+    brief:
+      'Requests, the jobs they queue and the mail those send are now traced with OpenTelemetry as one trace, from the API through the queue to the worker, and through the MCP server for agents.',
+    summary:
+      'Robis now records traces with OpenTelemetry. The API opens a span for every request, continuing the caller’s trace when it sends a W3C traceparent. Every job keeps the trace that queued it, so the worker’s run of that job, and any job it queues in turn, belongs to the same trace: a comment that mentions someone is one trace from the request, through the notify job, to the mail job that sends the email. An agent’s tool call through the MCP server is one trace with the API requests it makes. Spans are named by route and job kind and carry ids and status codes, never what anyone wrote. Spans go to an OpenTelemetry collector when OTEL_EXPORTER_OTLP_ENDPOINT names one, and nowhere otherwise.',
+    checked:
+      'Five new tests with spans kept in memory: a comment’s request, its notify job and its mail job share one trace, each a child of the last; an assignment’s job and its mail continue the request’s trace; a caller’s traceparent is continued and a malformed one ignored; and an agent’s MCP request, its tool and the API call it makes are one trace. The full suite, lint, typecheck, knip and docs:links. Not checked against a real collector: none runs here.',
+  },
+  {
+    date: '2026-11-20',
     area: 'Security',
     title: 'Rate limits that hold across instances',
     brief:

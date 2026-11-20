@@ -28,7 +28,7 @@
     "db:push": "bun --filter '@robis/database' push",
     "grant:owner": "bun run scripts/db/grant-owner.ts",
     "test": "bun test",
-    "typecheck": "tsc --noEmit -p shared/contracts && tsc --noEmit -p shared/sync && tsc --noEmit -p backend/metrics && tsc --noEmit -p backend/mailer && tsc --noEmit -p backend/storage && tsc --noEmit -p backend/auth && tsc --noEmit -p backend/database && tsc --noEmit -p backend/api && tsc --noEmit -p backend/realtime && tsc --noEmit -p backend/worker && tsc --noEmit -p backend/mcp && tsc --noEmit -p scripts && tsc --noEmit -p tests && tsc --noEmit -p frontend",
+    "typecheck": "tsc --noEmit -p shared/contracts && tsc --noEmit -p shared/sync && tsc --noEmit -p backend/metrics && tsc --noEmit -p backend/telemetry && tsc --noEmit -p backend/mailer && tsc --noEmit -p backend/storage && tsc --noEmit -p backend/auth && tsc --noEmit -p backend/database && tsc --noEmit -p backend/api && tsc --noEmit -p backend/realtime && tsc --noEmit -p backend/worker && tsc --noEmit -p backend/mcp && tsc --noEmit -p scripts && tsc --noEmit -p tests && tsc --noEmit -p frontend",
     "lint": "biome check .",
     "knip": "knip --no-progress",
     "lint:fix": "biome check --write .",

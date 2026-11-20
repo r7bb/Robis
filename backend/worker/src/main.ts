@@ -11,6 +11,7 @@ import {
 import { mailerFromEnv } from '@robis/mailer';
 import { TRIAGE_JOB } from '@robis/shared';
 import { loadConfig } from '@robis/shared/config';
+import { startTracingFromEnv } from '@robis/telemetry';
 import { auditStreamConfig, httpSink, streamAuditEvents } from './audit-stream.ts';
 import { handlers } from './handlers.ts';
 import { DEFAULT_HEARTBEAT_FILE, heartbeat } from './heartbeat.ts';
@@ -26,6 +27,8 @@ import { triageHandler } from './triage.ts';
 // Before anything else, and failing closed: see `loadConfig`. The origin is
 // the one every mailed link is built from.
 const { databaseUrl: DATABASE_URL, webOrigin } = loadConfig(process.env, { webOrigin: true });
+// Spans to a collector when OTEL_EXPORTER_OTLP_ENDPOINT names one (A5).
+const tracing = startTracingFromEnv('worker');
 
 const { db, close } = createDatabase(DATABASE_URL, { max: 5 });
 
@@ -201,6 +204,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     runner.stop();
     await jobsListener.close();
     await close();
+    await tracing.stop();
     process.exit(0);
   });
 }

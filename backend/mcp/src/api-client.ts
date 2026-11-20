@@ -6,6 +6,13 @@ import {
   pathFor,
   type ResponseOf,
 } from '@robis/shared';
+import { currentTraceparent } from '@robis/telemetry';
+
+/** The active trace for the API to continue, when there is one. */
+function traceHeader(): Record<string, string> {
+  const traceparent = currentTraceparent();
+  return traceparent ? { traceparent } : {};
+}
 
 /**
  * The API, called as the agent (B5).
@@ -68,6 +75,8 @@ export class ApiClient {
           ...(this.runKey ? { 'x-robis-run': this.runKey } : {}),
           ...(input.body !== undefined ? { 'content-type': 'application/json' } : {}),
           ...(input.idempotencyKey ? { 'idempotency-key': input.idempotencyKey } : {}),
+          // The tool call's trace, which the API's request span continues (A5).
+          ...traceHeader(),
         },
         body: input.body !== undefined ? JSON.stringify(input.body) : undefined,
         signal: AbortSignal.timeout(CALL_TIMEOUT_MS),

@@ -1,6 +1,7 @@
 import { sessionCookieName } from '@robis/auth';
 import { createDatabase } from '@robis/database';
 import { loadConfig, portFrom } from '@robis/shared/config';
+import { startTracingFromEnv } from '@robis/telemetry';
 import postgres from 'postgres';
 import { createGateway } from './gateway.ts';
 
@@ -12,6 +13,8 @@ const {
   webOrigin: WEB_ORIGIN,
   metricsHost,
 } = loadConfig(process.env, { webOrigin: true });
+// Spans to a collector when OTEL_EXPORTER_OTLP_ENDPOINT names one (A5).
+const tracing = startTracingFromEnv('realtime');
 
 const PORT = portFrom(process.env, 'REALTIME_PORT', 4001);
 
@@ -42,6 +45,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     await gateway.close();
     await listenClient.end({ timeout: 5 });
     await close();
+    await tracing.stop();
     process.exit(0);
   });
 }

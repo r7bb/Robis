@@ -1,6 +1,7 @@
 import { Registry } from '@robis/metrics';
 import { requireNodeEnv } from '@robis/shared';
 import { portFrom } from '@robis/shared/config';
+import { startTracingFromEnv } from '@robis/telemetry';
 import { toolMetrics } from './metrics.ts';
 import { createMcpHandler, MAX_BODY_BYTES } from './server.ts';
 
@@ -15,6 +16,8 @@ const IDLE_TIMEOUT_SECONDS = 30;
  */
 
 const nodeEnv = requireNodeEnv(process.env.NODE_ENV);
+// Spans to a collector when OTEL_EXPORTER_OTLP_ENDPOINT names one (A5).
+const tracing = startTracingFromEnv('mcp');
 const apiUrl = process.env.MCP_API_URL ?? (nodeEnv === 'production' ? '' : 'http://127.0.0.1:4000');
 if (!apiUrl) throw new Error('MCP_API_URL is required in production: where the API answers.');
 try {
@@ -48,9 +51,10 @@ const metricsServer = Bun.serve({
 console.log(`MCP server listening on http://${server.hostname}:${server.port}/mcp/<workspace id>`);
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
-  process.once(signal, () => {
+  process.once(signal, async () => {
     server.stop();
     metricsServer.stop();
+    await tracing.stop();
     process.exit(0);
   });
 }

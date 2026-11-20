@@ -185,15 +185,16 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **One trace from a request to the mail it sends.** Requests, the jobs they
+  queue and the mail those send are now traced with OpenTelemetry as one
+  trace, from the API through the queue to the worker, and through the MCP
+  server for agents.
 - **Rate limits that hold across instances.** Rate limits and the waits
   after wrong passwords are now counted in Postgres, so several API
   instances share one budget, and IPv6 callers count by their /64.
 - **Celebrations, with a way to opt out.** The Feed marks the week’s
   milestones (a project finished, a 10th issue done, a year with the team, a
   new teammate), with a Say well done, and never for anyone who opts out.
-- **Project health on the Feed.** The Feed shows how each project is doing,
-  from its issues: needs a look, on track, quiet or finished, with the
-  numbers that led there.
 
 <!-- latest:end -->
 

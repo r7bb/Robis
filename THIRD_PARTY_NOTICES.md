@@ -94,6 +94,19 @@ brings in, all at the versions in `bun.lock`:
   that is passed on.
 - 0BSD: `tslib` 1.14.1 and 2.8.1 (Microsoft), which asks for nothing.
 
+## Tracing
+
+Traces (A5) use OpenTelemetry for JavaScript, by the OpenTelemetry authors,
+released under the Apache-2.0 licence and pinned exactly:
+`@opentelemetry/api` 1.9.1, `@opentelemetry/sdk-trace-base`,
+`@opentelemetry/context-async-hooks`, `@opentelemetry/core` and
+`@opentelemetry/resources` 2.12.0, and `@opentelemetry/exporter-trace-otlp-http`
+0.223.0. They bring in only OpenTelemetry's own packages, all Apache-2.0, at
+the versions in `bun.lock`: `sdk-trace`, `sdk-logs`, `sdk-metrics`,
+`api-logs`, `otlp-exporter-base`, `otlp-transformer` and
+`semantic-conventions`. Apache-2.0 asks for its licence and any NOTICE file
+to be kept with a copy that is passed on.
+
 ## Mail
 
 `nodemailer` 10.0.12 sends mail over SMTP from the worker, and `smtp-server`

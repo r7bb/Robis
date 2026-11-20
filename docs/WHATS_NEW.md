@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **One trace from a request to the mail it sends** (2026-11-20). Requests,
+  the jobs they queue and the mail those send are now traced with
+  OpenTelemetry as one trace, from the API through the queue to the worker,
+  and through the MCP server for agents.
 - **Rate limits that hold across instances** (2026-11-20). Rate limits and
   the waits after wrong passwords are now counted in Postgres, so several
   API instances share one budget, and IPv6 callers count by their /64.

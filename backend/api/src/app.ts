@@ -17,6 +17,7 @@ import { recordAgentSteps } from './plugins/agent-steps.ts';
 import { attachUser } from './plugins/authz.ts';
 import { processRateStore } from './plugins/rate-limit.ts';
 import { postgresRateStore, type RateStore, withBackstop } from './plugins/rate-store.ts';
+import { registerTracing } from './plugins/tracing.ts';
 import { accountDeletionRoutes } from './routes/account-deletion.ts';
 import { accountEventRoutes } from './routes/account-events.ts';
 import { agentUndoRoutes } from './routes/agent-undo.ts';
@@ -171,6 +172,8 @@ export function buildApp({
 
   app.decorate('sessionCookieName', sessionCookieName(env.NODE_ENV));
   app.decorate('rateStore', rateStore);
+  // First, so everything a request does runs inside its span (A5).
+  registerTracing(app);
 
   app.addHook('onRequest', async (request, reply) => {
     reply.header('x-request-id', request.id);

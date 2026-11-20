@@ -25,6 +25,7 @@
     "@robis/mailer": "workspace:*",
     "@robis/shared": "workspace:*",
     "@robis/storage": "workspace:*",
+    "@robis/telemetry": "workspace:*",
     "drizzle-orm": "^0.45.4",
     "zod": "^4.0.0"
   }

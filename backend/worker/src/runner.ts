@@ -1,4 +1,5 @@
 import { type ClaimedJob, claimJobs, completeJob, type Database, failJob } from '@robis/database';
+import { contextFrom, inSpan, SpanKind } from '@robis/telemetry';
 
 /**
  * The worker loop.
@@ -133,13 +134,32 @@ export class Runner {
       return 'dead';
     }
 
-    try {
-      await handler(job.payload, { db: this.db });
-      await completeJob(this.db, job.id);
-      return 'completed';
-    } catch (error) {
-      return failJob(this.db, job, error);
-    }
+    // In a span continuing the trace that queued it (A5), so a request and
+    // the jobs it caused, and the jobs those caused, are one trace.
+    return inSpan(
+      `job ${job.kind}`,
+      {
+        kind: SpanKind.CONSUMER,
+        parent: contextFrom(job.traceParent),
+        attributes: {
+          'robis.job.id': job.id,
+          'robis.job.kind': job.kind,
+          'robis.job.attempt': job.attempts,
+        },
+      },
+      async (span) => {
+        try {
+          await handler(job.payload, { db: this.db });
+          await completeJob(this.db, job.id);
+          return 'completed' as const;
+        } catch (error) {
+          span.recordException(error as Error);
+          const outcome = await failJob(this.db, job, error);
+          span.setAttribute('robis.job.outcome', outcome);
+          return outcome;
+        }
+      },
+    );
   }
 
   /** Poll until `stop()`. */
