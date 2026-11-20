@@ -8,6 +8,7 @@ import {
   pushSubscriptions,
 } from '@robis/database';
 import { isAllowedPushEndpoint, type NotificationKind } from '@robis/shared';
+import { log } from '@robis/telemetry/log';
 import { eq } from 'drizzle-orm';
 import type { Handlers } from './runner.ts';
 
@@ -176,7 +177,7 @@ async function pushToDevices(
       if (outcome === 'gone') {
         await db.delete(pushSubscriptions).where(eq(pushSubscriptions.id, device.id));
       } else if (outcome === 'refused') {
-        console.warn('push refused our signature: check the VAPID keys match');
+        log.warn('push refused our signature: check the VAPID keys match');
       }
     } catch (error) {
       if (!(error instanceof PushRetry)) throw error;

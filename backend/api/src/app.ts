@@ -2,6 +2,7 @@ import cookie from '@fastify/cookie';
 import { sessionCookieName } from '@robis/auth';
 import type { Database } from '@robis/database';
 import { type MediaStorage, storageFromEnv } from '@robis/storage';
+import { API_LOG_FORMAT, apiLogMixin } from '@robis/telemetry/log';
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
 import type { Env } from './env.ts';
 import { ApiError } from './errors.ts';
@@ -111,8 +112,11 @@ export const DEFAULT_RATE_LIMITS: RateLimits = {
 export type AppDeps = {
   db: Database;
   env: Env;
-  /** Quiet by default in tests; `main.ts` turns logging on. */
-  logger?: boolean;
+  /**
+   * Quiet by default in tests; `main.ts` turns logging on. A stream sends
+   * the JSON lines there instead of stdout, for a test that reads them.
+   */
+  logger?: boolean | { stream: { write(line: string): void } };
   rateLimits?: Partial<RateLimits>;
   /** Where rate counts live; `RATE_LIMIT_STORE` decides, unless a test supplies one. */
   rateStore?: RateStore;
@@ -161,7 +165,17 @@ export function buildApp({
   // Typed as plain HTTP/1 options so Fastify picks that overload: a union
   // in `trustProxy` alone otherwise steers inference towards HTTP/2.
   const options: FastifyServerOptions = {
-    logger,
+    // JSON lines, each with the request id (`reqId`) and the trace and span
+    // it was written in (A5).
+    // Written by the tracing hooks instead, inside each request's span.
+    disableRequestLogging: true,
+    logger: logger
+      ? {
+          ...API_LOG_FORMAT,
+          mixin: apiLogMixin,
+          ...(typeof logger === 'object' ? { stream: logger.stream } : {}),
+        }
+      : false,
     trustProxy: trustProxySetting(env.TRUST_PROXY),
     // Every log line for a request carries this id, and so does the
     // response. A well-formed incoming one is kept so a trace can cross

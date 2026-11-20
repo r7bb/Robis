@@ -1,6 +1,7 @@
 import { issueAgentToken, revokeAgentToken } from '@robis/auth';
 import { type Database, workspaces } from '@robis/database';
 import type { TriageJob } from '@robis/shared';
+import { log } from '@robis/telemetry/log';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { callTool } from './mcp-call.ts';
@@ -181,7 +182,7 @@ export function triageHandler(options: TriageOptions): JobHandler {
       // Logged rather than thrown, so a failed revoke never hides the run's
       // own error; the token expires within minutes regardless.
       await revokeAgentToken(db, { tokenId: token.id, agentId, workspaceId }).catch((error) =>
-        console.error('triage: could not revoke the run token', error),
+        log.error('triage: could not revoke the run token', { err: error }),
       );
     }
   };

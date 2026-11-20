@@ -1,5 +1,6 @@
 import { issueAgentToken, revokeAgentToken } from '@robis/auth';
 import { type Database, posts, workspaces } from '@robis/database';
+import { log } from '@robis/telemetry/log';
 import { and, isNotNull, sql } from 'drizzle-orm';
 import type { JobHandler } from '../runner.ts';
 import {
@@ -164,7 +165,7 @@ export function picturesHandler(options: Options): JobHandler {
     if (targets.length === 0) return;
     const found = await today(fetcher, now, userAgent);
     if (!found) {
-      console.warn('pictures: no usable picture from any library today');
+      log.warn('pictures: no usable picture from any library today');
       return;
     }
     for (const { workspaceId, agentId } of targets) {
@@ -187,7 +188,7 @@ export function picturesHandler(options: Options): JobHandler {
           found.meme,
         );
       } catch (error) {
-        console.warn(`pictures: workspace ${workspaceId} skipped: ${(error as Error).message}`);
+        log.warn(`pictures: workspace ${workspaceId} skipped: ${(error as Error).message}`);
       } finally {
         await revokeAgentToken(db, { tokenId: token.id, agentId, workspaceId }).catch(
           () => undefined,

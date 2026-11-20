@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { log } from '@robis/telemetry/log';
 import type { Summarizer } from './triage.ts';
 
 /**
@@ -81,10 +82,10 @@ export function providerSummarizer(options: {
       return oneLine(text);
     } catch (error) {
       if (error instanceof Anthropic.APIError) {
-        console.warn(`triage summary: the provider answered ${error.status}; no summary added`);
+        log.warn(`triage summary: the provider answered ${error.status}; no summary added`);
       } else {
         // The name only: a connection error's details can carry the request.
-        console.warn(
+        log.warn(
           `triage summary: ${error instanceof Error ? error.name : 'unknown error'}; no summary added`,
         );
       }

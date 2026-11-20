@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-20',
     area: 'Product',
+    title: 'Log lines that lead to their trace',
+    brief:
+      'Every service now writes structured JSON logs, each line with its service, level, and the trace and span it was written in; the API’s carry the request id too.',
+    summary:
+      'The API, worker, realtime gateway and MCP server now log one JSON object per line, in one shape: when, how serious, which service, the message, and the trace and span the line was written in, so a line in the logs leads to its trace and a trace to every line it wrote. The API’s lines also carry the request id that its response sends back, and its request and response lines are now written inside the request’s span, so they name the trace too. Errors are logged by their name, message and stack, never by what anyone wrote.',
+    checked:
+      'Three new tests: a line written inside a span names its trace and one outside does not; an error is logged by name, message and stack; a field that will not serialise keeps its line; and every line the API writes for a request carries that request’s id and the trace it continued. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-20',
+    area: 'Product',
     title: 'One trace from a request to the mail it sends',
     brief:
       'Requests, the jobs they queue and the mail those send are now traced with OpenTelemetry as one trace, from the API through the queue to the worker, and through the MCP server for agents.',

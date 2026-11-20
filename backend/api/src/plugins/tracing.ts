@@ -29,7 +29,12 @@ export function registerTracing(app: FastifyInstance): void {
       attributes: { 'http.request.method': request.method, 'robis.request_id': request.id },
     });
     request.span = span;
-    within(context, done);
+    within(context, () => {
+      // Fastify's own request lines come before any hook, outside the
+      // span; these replace them, inside it (A5).
+      request.log.info({ req: { method: request.method, url: request.url } }, 'incoming request');
+      done();
+    });
   });
 
   app.addHook('onResponse', (request, reply, done) => {
@@ -41,8 +46,12 @@ export function registerTracing(app: FastifyInstance): void {
         span.setAttribute('http.route', route);
       }
       span.setAttribute('http.response.status_code', reply.statusCode);
-      endSpan(span, reply.statusCode >= 500);
     }
+    request.log.info(
+      { res: { statusCode: reply.statusCode }, responseTime: reply.elapsedTime },
+      'request completed',
+    );
+    if (span) endSpan(span, reply.statusCode >= 500);
     done();
   });
 }

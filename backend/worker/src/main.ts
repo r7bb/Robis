@@ -12,6 +12,7 @@ import { mailerFromEnv } from '@robis/mailer';
 import { TRIAGE_JOB } from '@robis/shared';
 import { loadConfig } from '@robis/shared/config';
 import { startTracingFromEnv } from '@robis/telemetry';
+import { log, setLogService } from '@robis/telemetry/log';
 import { auditStreamConfig, httpSink, streamAuditEvents } from './audit-stream.ts';
 import { handlers } from './handlers.ts';
 import { DEFAULT_HEARTBEAT_FILE, heartbeat } from './heartbeat.ts';
@@ -29,6 +30,7 @@ import { triageHandler } from './triage.ts';
 const { databaseUrl: DATABASE_URL, webOrigin } = loadConfig(process.env, { webOrigin: true });
 // Spans to a collector when OTEL_EXPORTER_OTLP_ENDPOINT names one (A5).
 const tracing = startTracingFromEnv('worker');
+setLogService('worker');
 
 const { db, close } = createDatabase(DATABASE_URL, { max: 5 });
 
@@ -107,7 +109,7 @@ const vapid = vapidFromEnv(process.env);
 if (vapid) {
   await checkVapidKeys(vapid.keys);
   Object.assign(handlers, pushHandlers(vapid));
-} else console.warn('VAPID keys are not set: web push is off.');
+} else log.warn('VAPID keys are not set: web push is off.');
 
 // Files left behind by deleted issues, comments and workspaces.
 handlers[STORAGE_PURGE_JOB] = storagePurgeHandler(workerStorage(process.env));
@@ -132,9 +134,7 @@ if (mcpUrl) {
     await enqueue(db, SHOTS_JOB, {}, { delayMs: 30_000 });
   }
 } else {
-  console.warn(
-    'MCP_URL is not set: new issues are not triaged by an agent, and no shots are posted.',
-  );
+  log.warn('MCP_URL is not set: new issues are not triaged by an agent, and no shots are posted.');
 }
 
 // The pictures agent (Phase 2c): a credited, openly licensed picture a day
@@ -151,7 +151,7 @@ if (apiUrl) {
     await enqueue(db, PICTURES_JOB, {}, { delayMs: 60_000 });
   }
 } else {
-  console.warn('API_URL is not set: the pictures agent posts nothing.');
+  log.warn('API_URL is not set: the pictures agent posts nothing.');
 }
 
 reschedule('sessions.cleanup', HOUR_MS);
@@ -178,7 +178,7 @@ if (auditStream) {
 
   handlers['audit.stream'] = async (_payload, context) => {
     const { delivered } = await streamAuditEvents(context.db, sink);
-    if (delivered > 0) console.log(`audit stream: delivered ${delivered} events`);
+    if (delivered > 0) log.info(`audit stream: delivered ${delivered} events`);
   };
   reschedule('audit.stream', auditStream.intervalMs, { maxAttempts: STREAM_MAX_ATTEMPTS });
 
@@ -186,7 +186,7 @@ if (auditStream) {
   if (!(await hasPendingJob(db, 'audit.stream'))) {
     await enqueue(db, 'audit.stream', {}, { maxAttempts: STREAM_MAX_ATTEMPTS });
   }
-  console.log(`Audit stream on, to ${auditStream.url.origin}`);
+  log.info(`Audit stream on, to ${auditStream.url.origin}`);
 }
 
 // Woken as each job is queued, rather than polling every second. Opened
@@ -194,7 +194,7 @@ if (auditStream) {
 // with its reason rather than failing to reach the database first.
 const jobsListener = await listenForJobs(DATABASE_URL, () => runner.wake());
 
-console.log(`Worker ${runner.id} waiting for jobs (woken on each, polling every 30 s)`);
+log.info(`Worker ${runner.id} waiting for jobs (woken on each, polling every 30 s)`);
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.once(signal, async () => {

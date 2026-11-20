@@ -1,5 +1,6 @@
 import { type ClaimedJob, claimJobs, completeJob, type Database, failJob } from '@robis/database';
 import { contextFrom, inSpan, SpanKind } from '@robis/telemetry';
+import { log } from '@robis/telemetry/log';
 
 /**
  * The worker loop.
@@ -175,7 +176,7 @@ export class Runner {
       } catch (error) {
         // A failure here is the queue itself being unreachable, not a job
         // failing. Back off rather than spinning against a dead database.
-        console.error('worker: tick failed', error);
+        log.error('worker: tick failed', { err: error });
         await this.idle(false);
         continue;
       }

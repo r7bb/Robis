@@ -7,6 +7,7 @@ import {
   recordUpdate,
 } from '@robis/database';
 import type { DocumentAwareness } from '@robis/shared';
+import { log } from '@robis/telemetry/log';
 import { and, eq } from 'drizzle-orm';
 import * as Y from 'yjs';
 
@@ -112,7 +113,7 @@ export class DocumentRoom {
       // surface as an unhandled rejection and take the process down under
       // Bun's default. `flush` already decides what is retryable.
       void this.flush().catch((error) => {
-        console.error(`document ${this.documentId}: persist failed`, error);
+        log.error(`document ${this.documentId}: persist failed`, { err: error });
       });
     }, PERSIST_DEBOUNCE_MS);
   }
@@ -156,7 +157,7 @@ export class DocumentRoom {
     try {
       await this.onStored?.(this.documentId, seq);
     } catch (error) {
-      console.error(`document ${this.documentId}: relay notice failed`, error);
+      log.error(`document ${this.documentId}: relay notice failed`, { err: error });
     }
   }
 

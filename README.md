@@ -185,6 +185,9 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Log lines that lead to their trace.** Every service now writes
+  structured JSON logs, each line with its service, level, and the trace and
+  span it was written in; the API’s carry the request id too.
 - **One trace from a request to the mail it sends.** Requests, the jobs they
   queue and the mail those send are now traced with OpenTelemetry as one
   trace, from the API through the queue to the worker, and through the MCP
@@ -192,9 +195,6 @@ with Postgres on the same machine. Method and percentiles in
 - **Rate limits that hold across instances.** Rate limits and the waits
   after wrong passwords are now counted in Postgres, so several API
   instances share one budget, and IPv6 callers count by their /64.
-- **Celebrations, with a way to opt out.** The Feed marks the week’s
-  milestones (a project finished, a 10th issue done, a year with the team, a
-  new teammate), with a Say well done, and never for anyone who opts out.
 
 <!-- latest:end -->
 

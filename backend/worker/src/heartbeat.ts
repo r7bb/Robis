@@ -1,4 +1,5 @@
 import { statSync, writeFileSync } from 'node:fs';
+import { log } from '@robis/telemetry/log';
 
 /**
  * Liveness for a process with no port.
@@ -27,7 +28,7 @@ export function heartbeat(path: string, now: () => number = Date.now): () => voi
       writeFileSync(path, String(at));
     } catch (error) {
       // A full or read-only disk is worth saying, not worth stopping work for.
-      console.error('worker: heartbeat not written', error);
+      log.error('worker: heartbeat not written', { err: error });
     }
   };
 }

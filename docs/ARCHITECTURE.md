@@ -238,6 +238,20 @@ span carries the request id the response and log lines share. Not yet
 traced: the realtime gateway's fan-out and the ML service, which see the
 request id instead.
 
+### Logs
+
+Every service writes one JSON object per line (A5): `time`, `level` by
+name, `service`, `msg`, and the `traceId` and `spanId` of the span it was
+written in, so a line leads to its trace and a trace to its lines. The
+API's lines come from Fastify's logger in the same shape, each with the
+request's `reqId` as well; its request and response lines are written
+inside the request's span, not before it. The worker, gateway and MCP
+server write through `log` in `@robis/telemetry/log`. Messages are the
+code's words, never a user's: errors are logged by name, message and
+stack. The command-line tools (migrations, roles, the audit seal and
+erasure) still print plain text, as they are read by a person at a
+terminal.
+
 ### Roles and permissions
 
 The seed creates one account, so there is nothing to see in the role model out

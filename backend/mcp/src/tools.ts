@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { ISSUE_STATUSES, STORY_TEXT_MAX_LENGTH, STORY_TONES } from '@robis/shared';
 import { inSpan } from '@robis/telemetry';
+import { log } from '@robis/telemetry/log';
 import { z } from 'zod';
 import { type ApiClient, ApiRefusal } from './api-client.ts';
 
@@ -87,7 +88,7 @@ async function run(
         observe(name, outcome, ms);
         return refused(error);
       }
-      console.error(`mcp: ${name} failed`, error);
+      log.error(`mcp: ${name} failed`, { err: error });
       span.setAttribute('robis.mcp.outcome', 'error');
       observe(name, 'error', ms);
       return internal;

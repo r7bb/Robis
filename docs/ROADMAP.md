@@ -145,8 +145,9 @@ new account does still works before the address is confirmed.
 ## Remaining backlog
 
 **Operations.** Traces now join the API, the MCP server, the queue and the
-worker (A5); the realtime gateway and the ML service are next, with
-structured logs, alert rules and a runbook. The images still run
+worker, and every service logs JSON lines naming their trace (A5); the
+realtime gateway and the ML service are next, with alert rules and a
+runbook. The images still run
 `apt-get upgrade` over their pinned bases: on 2026-10-31 the newest
 `oven/bun:1.4.2-slim` digest had three critical findings with a fix, which
 the upgrade removes and the image scan would otherwise fail on. Drop the

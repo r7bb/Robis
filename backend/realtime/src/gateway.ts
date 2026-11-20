@@ -27,6 +27,7 @@ import {
   scopesSchema,
   TERMS_VERSION,
 } from '@robis/shared';
+import { log } from '@robis/telemetry/log';
 import { and, eq, isNotNull } from 'drizzle-orm';
 import type postgres from 'postgres';
 import * as Y from 'yjs';
@@ -372,7 +373,7 @@ export async function createGateway(options: GatewayOptions) {
         await work();
       })
       .catch((error) => {
-        console.error('gateway: message handler failed', error);
+        log.error('gateway: message handler failed', { err: error });
       });
     pendingWork.set(socket, next);
     return next;
@@ -682,7 +683,7 @@ export async function createGateway(options: GatewayOptions) {
   }
   const unsubscribeDocuments = await subscribeToDocumentUpdates(listenClient, (notice) => {
     void relayStoredUpdate(notice).catch((error) => {
-      console.error(`document ${notice.documentId}: relay failed`, error);
+      log.error(`document ${notice.documentId}: relay failed`, { err: error });
     });
   });
 
@@ -710,7 +711,7 @@ export async function createGateway(options: GatewayOptions) {
     if (rechecking) return;
     rechecking = true;
     void recheckFeeds()
-      .catch((error) => console.error('gateway: recheck failed', error))
+      .catch((error) => log.error('gateway: recheck failed', { err: error }))
       .finally(() => {
         rechecking = false;
       });

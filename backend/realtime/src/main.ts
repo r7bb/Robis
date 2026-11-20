@@ -2,6 +2,7 @@ import { sessionCookieName } from '@robis/auth';
 import { createDatabase } from '@robis/database';
 import { loadConfig, portFrom } from '@robis/shared/config';
 import { startTracingFromEnv } from '@robis/telemetry';
+import { log, setLogService } from '@robis/telemetry/log';
 import postgres from 'postgres';
 import { createGateway } from './gateway.ts';
 
@@ -15,6 +16,7 @@ const {
 } = loadConfig(process.env, { webOrigin: true });
 // Spans to a collector when OTEL_EXPORTER_OTLP_ENDPOINT names one (A5).
 const tracing = startTracingFromEnv('realtime');
+setLogService('realtime');
 
 const PORT = portFrom(process.env, 'REALTIME_PORT', 4001);
 
@@ -36,7 +38,7 @@ const gateway = await createGateway({
   },
 });
 
-console.log(
+log.info(
   `Realtime gateway listening on ws://localhost:${gateway.port}/ws (instance ${gateway.instanceId.slice(0, 8)})`,
 );
 

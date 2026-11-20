@@ -7,6 +7,7 @@ import {
 } from '@robis/database';
 import { mailerFromEnv } from '@robis/mailer';
 import { startTracingFromEnv } from '@robis/telemetry';
+import { setLogService } from '@robis/telemetry/log';
 import { buildApp, rateStoreFromEnv } from './app.ts';
 import { loadEnv } from './env.ts';
 import { serveMetrics } from './metrics.ts';
@@ -14,6 +15,7 @@ import { serveMetrics } from './metrics.ts';
 const env = loadEnv();
 // Spans to a collector when OTEL_EXPORTER_OTLP_ENDPOINT names one (A5).
 const tracing = startTracingFromEnv('api');
+setLogService('api');
 const { db, close } = createDatabase(env.DATABASE_URL, { max: env.DB_POOL_MAX });
 // The rate counts get a small pool of their own that gives up fast (A6): a
 // flood of requests can fill the main pool, and the limits must still count

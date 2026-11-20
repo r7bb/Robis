@@ -1,6 +1,7 @@
 import { issueAgentToken, revokeAgentToken } from '@robis/auth';
 import { type Database, stories, workspaces } from '@robis/database';
 import { STORY_TONES } from '@robis/shared';
+import { log } from '@robis/telemetry/log';
 import { and, eq, isNotNull, sql } from 'drizzle-orm';
 import { callTool } from './mcp-call.ts';
 import type { JobHandler } from './runner.ts';
@@ -148,7 +149,7 @@ export function shotsHandler(options: {
       } catch (error) {
         // One workspace's refusal (a guest agent, stories just turned off)
         // must not stop the rest.
-        console.warn(`shots: workspace ${workspaceId} skipped: ${(error as Error).message}`);
+        log.warn(`shots: workspace ${workspaceId} skipped: ${(error as Error).message}`);
       } finally {
         await revokeAgentToken(db, { tokenId: token.id, agentId, workspaceId }).catch(
           () => undefined,

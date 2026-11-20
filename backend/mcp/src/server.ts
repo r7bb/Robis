@@ -1,6 +1,7 @@
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { isUuid } from '@robis/shared';
 import { contextFrom, inSpan, SpanKind } from '@robis/telemetry';
+import { log } from '@robis/telemetry/log';
 import { ApiClient } from './api-client.ts';
 import { createToolServer, type ToolName, type ToolOutcome } from './tools.ts';
 
@@ -125,7 +126,7 @@ async function answer(
   try {
     return await transport.handleRequest(request);
   } catch (error) {
-    console.error('mcp: request failed', error);
+    log.error('mcp: request failed', { err: error });
     return json(500, {
       jsonrpc: '2.0',
       id: null,

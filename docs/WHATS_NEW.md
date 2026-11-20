@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Log lines that lead to their trace** (2026-11-20). Every service now
+  writes structured JSON logs, each line with its service, level, and the
+  trace and span it was written in; the API’s carry the request id too.
 - **One trace from a request to the mail it sends** (2026-11-20). Requests,
   the jobs they queue and the mail those send are now traced with
   OpenTelemetry as one trace, from the API through the queue to the worker,

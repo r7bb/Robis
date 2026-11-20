@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { Executor } from '@robis/database';
+import { log } from '@robis/telemetry/log';
 import { sql } from 'drizzle-orm';
 
 /**
@@ -228,7 +229,7 @@ export function postgresRateStore(db: Executor): RateStore {
     lastSweep = now;
     // Not awaited: a sweep is housekeeping, never a reason to hold a request.
     sweepBatches().catch((error: unknown) =>
-      console.warn(`rate limits: sweep failed: ${(error as Error).message}`),
+      log.warn(`rate limits: sweep failed: ${(error as Error).message}`),
     );
   }
 
@@ -293,7 +294,7 @@ const BACKSTOP_WARN_MS = 60_000;
 export function withBackstop(
   shared: RateStore,
   backstop: RateStore,
-  warn: (message: string) => void = console.warn,
+  warn: (message: string) => void = (message) => log.warn(message),
 ): RateStore {
   let lastWarned = 0;
   function fallback<T>(action: string, run: (store: RateStore) => Promise<T>) {
