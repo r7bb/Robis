@@ -2648,6 +2648,10 @@
                             "default": false,
                             "type": "boolean"
                           },
+                          "pictures": {
+                            "default": false,
+                            "type": "boolean"
+                          },
                           "tokens": {
                             "type": "array",
                             "items": {
@@ -2757,6 +2761,7 @@
                           "triage",
                           "summaries",
                           "shots",
+                          "pictures",
                           "tokens"
                         ],
                         "additionalProperties": false
@@ -2823,6 +2828,10 @@
                     "type": "boolean"
                   },
                   "shots": {
+                    "default": false,
+                    "type": "boolean"
+                  },
+                  "pictures": {
                     "default": false,
                     "type": "boolean"
                   }
@@ -2928,6 +2937,10 @@
                         "shots": {
                           "default": false,
                           "type": "boolean"
+                        },
+                        "pictures": {
+                          "default": false,
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -2939,7 +2952,8 @@
                         "createdAt",
                         "triage",
                         "summaries",
-                        "shots"
+                        "shots",
+                        "pictures"
                       ],
                       "additionalProperties": false
                     },

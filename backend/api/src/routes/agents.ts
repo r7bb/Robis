@@ -156,6 +156,7 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
         triageAgentId: workspaces.triageAgentId,
         triageSummaries: workspaces.triageSummaries,
         shotsAgentId: workspaces.shotsAgentId,
+        picturesAgentId: workspaces.picturesAgentId,
         avatarKind: users.avatarKind,
         avatarRef: users.avatarRef,
         avatarUpdatedAt: users.avatarUpdatedAt,
@@ -200,6 +201,7 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
           triageAgentId,
           triageSummaries,
           shotsAgentId,
+          picturesAgentId,
           ...agent
         }) => ({
           ...agent,
@@ -207,6 +209,7 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
           triage: triageAgentId === agent.id,
           summaries: triageAgentId === agent.id && triageSummaries,
           shots: shotsAgentId === agent.id,
+          pictures: picturesAgentId === agent.id,
           avatar: avatarOf({ id: agent.id, avatarKind, avatarRef, avatarUpdatedAt }),
           tokens: tokens
             .filter((token) => token.agentId === agent.id)
@@ -265,6 +268,12 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
       if (input.shots) {
         await tx.update(workspaces).set({ shotsAgentId: id }).where(eq(workspaces.id, workspaceId));
       }
+      if (input.pictures) {
+        await tx
+          .update(workspaces)
+          .set({ picturesAgentId: id })
+          .where(eq(workspaces.id, workspaceId));
+      }
 
       await recordAudit(tx, auditActor(request), {
         workspaceId,
@@ -277,6 +286,7 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
           triage: input.triage,
           summaries: input.triage && input.summaries,
           shots: input.shots,
+          pictures: input.pictures,
         },
       });
 
@@ -296,6 +306,7 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
         triage: input.triage,
         summaries: input.triage && input.summaries,
         shots: input.shots,
+        pictures: input.pictures,
         createdAt: joinedAt,
       },
       token: { id: token.id, label: input.tokenLabel, secret: token.secret },
@@ -399,6 +410,10 @@ export async function stopTriaging(tx: Tx, workspaceId: string, agentId: string)
     .update(workspaces)
     .set({ shotsAgentId: null })
     .where(and(eq(workspaces.id, workspaceId), eq(workspaces.shotsAgentId, agentId)));
+  await tx
+    .update(workspaces)
+    .set({ picturesAgentId: null })
+    .where(and(eq(workspaces.id, workspaceId), eq(workspaces.picturesAgentId, agentId)));
 }
 
 /** For the member routes: an agent's role must stay one an agent may hold. */

@@ -227,6 +227,8 @@ export const WORKER_GRANTS: TableGrants = {
   passkey_challenges: ['select', 'delete'],
   // Stories past their 24 hours are removed; their files go by key (B2).
   stories: ['select', 'delete'],
+  // The pictures agent looks for today's post before making one (Phase 2c).
+  posts: ['select'],
   workspaces: ['select'],
   workspace_members: ['select'],
   workspace_invitations: ['select'],

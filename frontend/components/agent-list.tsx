@@ -26,6 +26,7 @@ export function AgentList({ workspaceId }: { workspaceId: string }) {
   const [role, setRole] = useState<AgentRole>('MEMBER');
   const [triage, setTriage] = useState(false);
   const [shots, setShots] = useState(false);
+  const [pictures, setPictures] = useState(false);
   const [summaries, setSummaries] = useState(false);
   const [issued, setIssued] = useState<Issued | null>(null);
   const [copied, setCopied] = useState(false);
@@ -50,7 +51,7 @@ export function AgentList({ workspaceId }: { workspaceId: string }) {
     mutationFn: () =>
       call(contracts['agents.create'], {
         params: { workspaceId },
-        body: { name: name.trim(), role, triage, summaries: triage && summaries, shots },
+        body: { name: name.trim(), role, triage, summaries: triage && summaries, shots, pictures },
       }),
     onSuccess: ({ agent, token }) => {
       setName('');
@@ -168,6 +169,18 @@ export function AgentList({ workspaceId }: { workspaceId: string }) {
           />
           Posts Different shots (an idea a day to try)
         </label>
+        <label
+          className="flex items-center gap-2 text-sm text-muted"
+          title="Fetches openly licensed pictures from NASA, Wikimedia Commons and Openverse; sends nothing from this workspace"
+        >
+          <input
+            type="checkbox"
+            checked={pictures}
+            onChange={(event) => setPictures(event.target.checked)}
+            className="accent-[rgb(var(--accent))]"
+          />
+          Posts a picture a day to the feed (openly licensed, credited)
+        </label>
         {triage && (
           <label
             className="flex items-center gap-2 text-sm text-muted"
@@ -255,6 +268,9 @@ export function AgentList({ workspaceId }: { workspaceId: string }) {
                     )}
                     {agent.shots && (
                       <span className="block text-xs text-muted">Posts Different shots</span>
+                    )}
+                    {agent.pictures && (
+                      <span className="block text-xs text-muted">Posts a picture a day</span>
                     )}
                   </span>
                 </span>

@@ -39,6 +39,8 @@ const agent = z.object({
   summaries: z.boolean(),
   /** Whether it posts Different shots here: an idea a day to try (Phase 2c). */
   shots: z.boolean().default(false),
+  /** Whether it posts a picture a day from public image libraries (Phase 2c). */
+  pictures: z.boolean().default(false),
   tokens: z.array(token),
 });
 
@@ -59,6 +61,8 @@ const createAgentSchema = z.object({
   summaries: z.boolean().default(false),
   /** Make it the agent that posts Different shots here, in place of any other. */
   shots: z.boolean().default(false),
+  /** Make it the agent that posts a licensed picture a day here, in place of any other. */
+  pictures: z.boolean().default(false),
 });
 
 const step = z.object({

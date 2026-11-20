@@ -187,6 +187,8 @@ services:
       MAIL_FROM: Robis <no-reply@robis.test>
       # The triage agent works through the MCP server (B5).
       MCP_URL: http://mcp:4002
+      # The pictures agent posts through the API (Phase 2c).
+      API_URL: http://api:4000
       # Web push (C3): the same pair as the API's public key, from the shell.
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}

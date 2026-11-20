@@ -138,6 +138,15 @@ point it at Postgres directly.
   provider, a paid third-party service; without the key nothing is sent.
   Whether that is acceptable for a given workspace's data is for whoever
   runs it to decide.
+- For the pictures agent (Phase 2c): `API_URL` on the worker, where the API
+  answers inside the network, and outbound HTTPS from the worker to
+  `images-api.nasa.gov`, `images-assets.nasa.gov`, `api.wikimedia.org`,
+  `upload.wikimedia.org` and `api.openverse.org`, and nowhere else it needs.
+  Optionally `PICTURES_USER_AGENT`, the name those libraries see; the
+  default is generic. Nothing from a workspace is sent to them. It posts
+  only where an admin chose a pictures agent. Not verified against the live
+  libraries from this machine, which has no general internet access: the
+  tests use canned answers shaped like each library's documented API.
 - Two-factor sign-in: `TWO_FACTOR_KEY` on the API, 32 random bytes in
   base64, made with `bun run two-factor:key` and kept in a secret store. It
   seals each account's authenticator secret in the database (AES-256-GCM),

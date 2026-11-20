@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-20',
     area: 'Product',
+    title: 'A picture a day, from public image libraries',
+    brief:
+      'An agent can post an openly licensed, credited picture to the feed each day from NASA, Wikimedia Commons or Openverse, and now and then a meme.',
+    summary:
+      'When an admin adds an agent, they can tick Posts a picture a day. Each day that agent posts a picture to the feed from one of three public image libraries: NASA’s image library, Wikimedia Commons’ picture of the day, or Openverse. Only pictures under a licence that allows reuse with credit are used (public domain, CC0, CC BY, CC BY-SA), and every post says what it is, who made it, its licence and where it came from. Every third day, when the picture is public domain or CC0, it comes as a meme: a work-friendly caption (about the work, never about a person) drawn across its foot, with a note that the caption was added. There is no language model and no paid service: the searches come from a fixed list, nothing from the workspace is sent anywhere, and pictures are fetched over HTTPS from those libraries’ own addresses only. The agent posts through the API like anyone, so its picture is re-encoded without metadata, counts toward storage, is in the audit trail, and can be taken down by an admin.',
+    feature: {
+      name: 'Picture of the day',
+      where: 'People, Agents: Posts a picture a day; then on the Feed',
+      layers: [
+        'Screen: the option when adding an agent; the picture and its credit on the Feed',
+        'Worker: a scripted job, hourly, posting each chosen workspace’s picture of the day, sometimes as a meme',
+        'API: the agent posts through posts.createPhoto and posts.update with a token made for the run; agents may now upload images as members do',
+      ],
+    },
+    checked:
+      'Seven new tests with canned answers shaped like each library’s API, so no test touches the network: a picture posts once a day as its agent, with its licence, source and creator, re-encoded without metadata, and the run token is revoked; nothing where no agent was chosen or from a guest agent, and no library is asked when no workspace wants a picture; a licence that does not allow reuse is passed over for another library; only a public domain picture becomes a meme, credited as changed; and only HTTPS to the libraries’ own hosts is fetched, with a redirect anywhere else refused. The full suite, lint, typecheck, knip and docs:links. Not verified against the live libraries: this machine has no general internet access.',
+  },
+  {
+    date: '2026-11-20',
+    area: 'Product',
     title: 'A weekly check-in',
     brief:
       'Once a week the Feed asks what you are working on; your answer is a post, and your profile’s Working on line.',

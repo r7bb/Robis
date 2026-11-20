@@ -8,7 +8,7 @@ import {
 import { isUuid } from '@robis/shared';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { ApiError } from '../errors.ts';
-import { sessionToken } from '../plugins/authz.ts';
+import { attachAgent, sessionToken } from '../plugins/authz.ts';
 import { ACCEPTED_TYPES, MAX_UPLOAD_BYTES } from './images.ts';
 
 /**
@@ -36,10 +36,17 @@ export function admitImageUpload(db: Database) {
     if (incoming > MAX_UPLOAD_BYTES) {
       throw new ApiError(413, 'payload_too_large', 'That image is larger than 8 MB');
     }
+    // A person's session, or an agent's token on a workspace route (B5):
+    // an agent posting a picture passes the same checks as anyone.
     const token = sessionToken(request);
-    const user = token ? await resolveSession(db, token) : null;
+    if (token) {
+      const user = await resolveSession(db, token);
+      if (user) request.user = user;
+    } else {
+      await attachAgent(db, request);
+    }
+    const user = request.user;
     if (!user) throw ApiError.unauthorized();
-    request.user = user;
 
     const { workspaceId } = request.params as { workspaceId?: string };
     if (!workspaceId || !isUuid(workspaceId)) return;

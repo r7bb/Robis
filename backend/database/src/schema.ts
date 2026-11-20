@@ -489,6 +489,14 @@ export const workspaces = pgTable(
      */
     shotsAgentId: uuid('shots_agent_id').references(() => users.id, { onDelete: 'set null' }),
     /**
+     * The agent that posts a picture a day to the feed from public image
+     * libraries (Phase 2c): openly licensed, credited, sometimes as a meme.
+     * None unless an admin chooses one.
+     */
+    picturesAgentId: uuid('pictures_agent_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    /**
      * Whether everyone here must sign in with two-factor (C4). An admin who
      * turns it on must have it; a member without it is refused at every
      * workspace route and on the live feed, with a way to turn it on.

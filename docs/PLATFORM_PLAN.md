@@ -262,8 +262,14 @@ every swipe has a button, the arrow keys work on a focused button, and
 with reduced motion cards fade. What was set aside stays in the browser.
 **The weekly check-in, 2026-11-20:** once a week the Feed asks what you
 are working on; the answer is a check-in post and your Working on line.
-Optional, no streaks, and nobody sees who has not answered. Still to come:
-the agent bringing licensed pictures from public image libraries.
+Optional, no streaks, and nobody sees who has not answered.
+**The pictures agent, 2026-11-20:** an admin can choose an agent that
+posts a picture a day from NASA, Wikimedia Commons or Openverse, under an
+allowed licence and with its credit, and on every third day, when the
+picture is public domain or CC0, as a meme with a caption from a written
+list. No model, no paid service, HTTPS to named hosts only. Not verified
+against the live libraries from this machine. Phase 2c is complete; next,
+if wanted, project health cards and celebrations with an opt-out.
 
 ## Phase 3. Agents as teammates, over MCP (M)
 

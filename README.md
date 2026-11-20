@@ -106,6 +106,8 @@ taken straight into chat.
 And Different shots: an agent can post an idea a day to try, with a Try it
 that opens that part of Robis, in a small stack on the Feed you swipe right
 to try and left to set aside (with a button and a key for every swipe).
+An agent can also post a picture a day from NASA, Wikimedia Commons or
+Openverse, openly licensed and credited, and now and then as a meme.
 Everything stays inside the workspace, and photos are stored without their
 location.
 
@@ -177,13 +179,14 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **A picture a day, from public image libraries.** An agent can post an
+  openly licensed, credited picture to the feed each day from NASA,
+  Wikimedia Commons or Openverse, and now and then a meme.
 - **A weekly check-in.** Once a week the Feed asks what you are working on;
   your answer is a post, and your profile’s Working on line.
 - **Swipe through Different shots.** The Feed has a small stack of the day’s
   Different shots: swipe right to try one, left to set it aside, tap to read
   it all.
-- **Different shots.** An agent can post an idea a day for the team to try,
-  as a story with a Try it button that opens that part of Robis.
 
 <!-- latest:end -->
 

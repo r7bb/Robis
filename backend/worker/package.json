@@ -9,6 +9,8 @@
     "./heartbeat": "./src/heartbeat.ts",
     "./mail": "./src/mail.ts",
     "./nudges": "./src/nudges.ts",
+    "./pictures": "./src/pictures/job.ts",
+    "./pictures-sources": "./src/pictures/sources.ts",
     "./push": "./src/push.ts",
     "./runner": "./src/runner.ts",
     "./shots": "./src/shots.ts",
@@ -24,6 +26,7 @@
     "@robis/shared": "workspace:*",
     "@robis/storage": "workspace:*",
     "drizzle-orm": "^0.45.4",
+    "sharp": "0.35.5",
     "zod": "^4.0.0"
   }
 }

@@ -180,7 +180,7 @@ export function attachUser(db: Database): preHandlerHookHandler {
  * the workspace list and the rest answer an agent as they answer nobody.
  * A session cookie wins when both are sent, so a browser is never an agent.
  */
-async function attachAgent(db: Database, request: FastifyRequest) {
+export async function attachAgent(db: Database, request: FastifyRequest) {
   const secret = bearerToken(request);
   const { workspaceId } = (request.params ?? {}) as { workspaceId?: string };
   if (!secret || !workspaceId) return;

@@ -15,8 +15,9 @@ is in `node_modules/geist/LICENSE.TXT` and at <https://openfontlicense.org>.
 
 ## sharp and libvips
 
-Used by the API to decode, resize and re-encode profile pictures, which is
-also what strips their metadata. `sharp` 0.35.5 is licensed under the Apache
+Used by the API to decode, resize and re-encode every uploaded image, which
+is also what strips their metadata, and by the worker to draw a caption on
+a picture for the pictures agent's memes (Phase 2c). `sharp` 0.35.5 is licensed under the Apache
 License 2.0. It loads a prebuilt `libvips` (`@img/sharp-libvips-*`), licensed
 under the GNU LGPL 3.0 or later, as a separate shared library, together with
 the libraries libvips bundles under their own licences (listed in the
@@ -44,6 +45,25 @@ the Apache License 2.0, installed in the worker only. It brings
 `ts-algebra`, `@stablelib/base64` and `@babel/runtime` (all MIT), and
 `fast-sha256`, which is released under the Unlicense (a dedication to the
 public domain), flagged here because it is not a conventional licence.
+
+## Pictures from public image libraries (Phase 2c)
+
+The pictures agent, when a workspace chooses one, posts pictures from NASA's
+image library (images.nasa.gov), Wikimedia Commons' picture of the day
+(through api.wikimedia.org) and Openverse (api.openverse.org). It uses a
+picture only under a licence that allows reuse with credit: public domain,
+CC0, CC BY or CC BY-SA, checked in `backend/worker/src/pictures/sources.ts`.
+Each post carries the picture's title, creator, licence and a link to its
+source. A meme (a caption drawn on the picture) is made only from a public
+domain or CC0 picture, so no licence's terms for changed work arise, and
+its credit says the caption was added. NASA's material is generally not
+subject to copyright, though NASA asks that it not be used to imply
+endorsement; work in its library by others is skipped.
+
+Flagged for review: licence data comes from each library and is relied on
+as given; whether a picture is fit for a given workplace, and any rights
+beyond copyright (people shown in a photo, trademarks), are for whoever
+runs Robis to judge. Robis claims no licence of its own over these pictures.
 
 ## Board ordering
 

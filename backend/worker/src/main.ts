@@ -15,6 +15,7 @@ import { auditStreamConfig, httpSink, streamAuditEvents } from './audit-stream.t
 import { handlers } from './handlers.ts';
 import { DEFAULT_HEARTBEAT_FILE, heartbeat } from './heartbeat.ts';
 import { mailHandlers } from './mail.ts';
+import { PICTURES_INTERVAL_MS, PICTURES_JOB, picturesHandler } from './pictures/job.ts';
 import { checkVapidKeys, pushHandlers, vapidFromEnv } from './push.ts';
 import { Runner } from './runner.ts';
 import { SHOTS_INTERVAL_MS, SHOTS_JOB, shotsHandler } from './shots.ts';
@@ -131,6 +132,23 @@ if (mcpUrl) {
   console.warn(
     'MCP_URL is not set: new issues are not triaged by an agent, and no shots are posted.',
   );
+}
+
+// The pictures agent (Phase 2c): a credited, openly licensed picture a day
+// for each workspace that chose one, posted through the API. Without the
+// API's address, or with no workspace choosing it, nothing is fetched.
+const apiUrl = process.env.API_URL;
+if (apiUrl) {
+  handlers[PICTURES_JOB] = picturesHandler({
+    apiUrl,
+    userAgent: process.env.PICTURES_USER_AGENT || undefined,
+  });
+  reschedule(PICTURES_JOB, PICTURES_INTERVAL_MS);
+  if (!(await hasPendingJob(db, PICTURES_JOB))) {
+    await enqueue(db, PICTURES_JOB, {}, { delayMs: 60_000 });
+  }
+} else {
+  console.warn('API_URL is not set: the pictures agent posts nothing.');
 }
 
 reschedule('sessions.cleanup', HOUR_MS);
