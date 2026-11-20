@@ -20,28 +20,15 @@ export type TileSignals = {
   onGone: (workspaceId: string) => void;
 };
 
-/** Degrees a tile leans toward the pointer at its edge. */
-const TILT_DEG = 5;
-
 /**
  * Follows the pointer with CSS variables, no React render per move: the
- * spotlight's centre, and a slight lean toward the pointer (`home.css`
- * applies it only when motion is welcome).
+ * spotlight's centre. The tile itself stays put; hovering only lights it.
  */
 function trackPointer(event: PointerEvent<HTMLElement>) {
   const el = event.currentTarget;
   const box = el.getBoundingClientRect();
-  const x = event.clientX - box.left;
-  const y = event.clientY - box.top;
-  el.style.setProperty('--spot-x', `${x}px`);
-  el.style.setProperty('--spot-y', `${y}px`);
-  el.style.setProperty('--tilt-x', `${((0.5 - y / box.height) * TILT_DEG).toFixed(2)}deg`);
-  el.style.setProperty('--tilt-y', `${((x / box.width - 0.5) * TILT_DEG).toFixed(2)}deg`);
-}
-
-function resetTilt(event: PointerEvent<HTMLElement>) {
-  event.currentTarget.style.setProperty('--tilt-x', '0deg');
-  event.currentTarget.style.setProperty('--tilt-y', '0deg');
+  el.style.setProperty('--spot-x', `${event.clientX - box.left}px`);
+  el.style.setProperty('--spot-y', `${event.clientY - box.top}px`);
 }
 
 /**
@@ -98,9 +85,8 @@ export function WorkspaceTile({
   return (
     <li
       onPointerMove={trackPointer}
-      onPointerLeave={resetTilt}
       style={{ ...style, '--tile-accent': accent } as CSSProperties}
-      className="home-tile group relative isolate flex flex-col overflow-hidden rounded-2xl border border-line bg-raised/70 bg-[linear-gradient(to_bottom,rgb(var(--tile-accent)/0.1),transparent_45%)] p-5 transition-[border-color,transform] fit:p-4 duration-300 [transition-timing-function:var(--ease)] focus-within:border-[rgb(var(--tile-accent)/0.6)] hover:border-[rgb(var(--tile-accent)/0.45)]"
+      className="home-tile group relative isolate flex flex-col overflow-hidden rounded-2xl border border-line bg-raised/70 bg-[linear-gradient(to_bottom,rgb(var(--tile-accent)/0.1),transparent_45%)] p-5 transition-[border-color,box-shadow] fit:p-4 duration-300 [transition-timing-function:var(--ease)] focus-within:border-[rgb(var(--tile-accent)/0.6)] hover:border-[rgb(var(--tile-accent)/0.55)] hover:shadow-[0_0_0_1px_rgb(var(--tile-accent)/0.25),0_12px_40px_-18px_rgb(var(--tile-accent)/0.55)]"
     >
       <span aria-hidden="true" className="home-tile-spot" />
       {pulse > 0 && <span aria-hidden="true" key={pulse} className="home-tile-pulse" />}
@@ -217,7 +203,9 @@ function size(bytes: number): string {
 function TileStorage({ storage }: { storage: { used: number; quota: number } }) {
   const share = Math.min(1, storage.used / storage.quota);
   return (
-    <div className="relative z-10 mt-4 fit:hidden fit:group-hover:block fit:group-focus-within:block">
+    // Always in the layout, faded in on hover: appearing must not push the tile's
+    // contents about.
+    <div className="relative z-10 mt-4 transition-opacity duration-300 fit:opacity-0 fit:group-hover:opacity-100 fit:group-focus-within:opacity-100 motion-reduce:transition-none">
       <div className="flex justify-between text-[11px] text-faint">
         <span>Storage</span>
         <span>

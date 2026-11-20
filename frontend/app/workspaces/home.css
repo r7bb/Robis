@@ -183,13 +183,7 @@
   }
 }
 
-/* A tile lifts and leans toward the pointer (`trackPointer`). */
 @media (prefers-reduced-motion: no-preference) {
-  .home-tile:hover {
-    transform: perspective(900px) translateY(-2px) rotateX(var(--tilt-x, 0deg))
-      rotateY(var(--tilt-y, 0deg));
-  }
-
   /* "+2" floats up off a number that just rose, and fades. */
   .home-delta {
     animation: home-delta 1.4s var(--ease) both;
