@@ -143,6 +143,20 @@ opentelemetry-api==1.45.1 \
     # via
     #   -c tested versions (uv pip freeze of the test venv)
     #   fastapi
+    #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
+opentelemetry-sdk==1.45.1 \
+    --hash=sha256:63d24a6ca645019a631e6a51999c73e93adcac1196ca640b8ae78a7cc4762bf3 \
+    --hash=sha256:c604c11dc429810812348989115fa44bd558772a3d7442afc43d024f2c250ca4
+    # via
+    #   -c tested versions (uv pip freeze of the test venv)
+    #   robis-ml (pyproject.toml)
+opentelemetry-semantic-conventions==0.66b1 \
+    --hash=sha256:497ca63bf383723411e8eaf60c8779e9877633c936bb641080adab59d0eb6ec8 \
+    --hash=sha256:d4cddeb4315490b35213f55e2bdc9ac54bb1e4d318927475bed62b35545e581b
+    # via
+    #   -c tested versions (uv pip freeze of the test venv)
+    #   opentelemetry-sdk
 psycopg==3.3.6 \
     --hash=sha256:a1db9f7148b06a28606767efaca51fa6f9398c5c0a3810519be69d7000bdb631 \
     --hash=sha256:c081f2250df751a943036e42db6df4571c66cd0aabe8291a7a506512b12007d2
@@ -482,6 +496,8 @@ typing-extensions==4.16.0 \
     #   anyio
     #   fastapi
     #   opentelemetry-api
+    #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
     #   psycopg
     #   pydantic
     #   pydantic-core

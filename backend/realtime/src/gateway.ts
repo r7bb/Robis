@@ -27,6 +27,7 @@ import {
   scopesSchema,
   TERMS_VERSION,
 } from '@robis/shared';
+import { contextFrom, endSpan, SpanKind, startSpan } from '@robis/telemetry';
 import { log } from '@robis/telemetry/log';
 import { and, eq, isNotNull } from 'drizzle-orm';
 import type postgres from 'postgres';
@@ -222,7 +223,14 @@ export async function createGateway(options: GatewayOptions) {
     }
   }
 
-  function broadcastEvent(event: ServerEvent) {
+  function broadcastEvent(event: ServerEvent, traceparent: string | null = null) {
+    // A span per fan-out, continuing the write that caused it (A5): the
+    // browsers get the event alone, never the trace.
+    const { span } = startSpan(`fanout ${event.type}`, {
+      kind: SpanKind.CONSUMER,
+      parent: contextFrom(traceparent),
+      attributes: { 'robis.event.type': event.type, 'robis.instance_id': instanceId },
+    });
     const message = JSON.stringify({ type: 'event', event } satisfies ServerMessage);
 
     let delivered = 0;
@@ -240,6 +248,8 @@ export async function createGateway(options: GatewayOptions) {
     // quantity that describes fan-out cost, and dividing by the event count
     // gives the average audience.
     if (delivered > 0) eventsOut.inc({ type: event.type }, delivered);
+    span.setAttribute('robis.deliveries', delivered);
+    endSpan(span);
   }
 
   /** The plain-HTTP side of the gateway: liveness and scraping, no upgrade. */

@@ -38,6 +38,7 @@ from .model import (
     TriageModel,
     compose_text,
 )
+from .telemetry import json_logging, start_tracing, trace_requests
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +62,16 @@ app = FastAPI(
     title="Robis ML",
     summary="Duplicate detection and priority triage for Robis issues.",
     version="0.1.0",
+    # Spans are exported by `telemetry.start_tracing`, not FastAPI's own
+    # environment set-up, which would need the protobuf exporters.
+    telemetry={"auto_configure": False},
 )
+
+# JSON log lines naming their trace; FastAPI's span per request continues
+# the API's (A5), and spans leave only for a collector OTEL_EXPORTER_OTLP_ENDPOINT names.
+json_logging()
+start_tracing()
+app.middleware("http")(trace_requests)
 
 
 @dataclass

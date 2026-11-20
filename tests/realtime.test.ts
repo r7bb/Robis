@@ -2,6 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:tes
 import { users, workspaces } from '@robis/database';
 import { createGateway } from '@robis/realtime/gateway';
 import type { ServerMessage } from '@robis/shared';
+import { traceInMemory } from '@robis/telemetry/testing';
 import { eq } from 'drizzle-orm';
 import postgres from 'postgres';
 import * as Y from 'yjs';
@@ -951,6 +952,41 @@ describe('documents across gateways', () => {
     } finally {
       await second.close();
       await secondListen.end();
+    }
+  });
+});
+
+describe('traces (A5)', () => {
+  test('the fan-out continues the write’s trace, and the browser gets the event alone', async () => {
+    const tracing = traceInMemory();
+    try {
+      const actor = await createActor('Ada');
+      const workspace = await createWorkspace(actor);
+      const project = await createProject(actor, workspace.id);
+      const client = await TestClient.connect(actor);
+      await client.subscribe(workspace.id);
+      tracing.clear();
+
+      await request(`/workspaces/${workspace.id}/projects/${project.id}/issues`, {
+        method: 'POST',
+        payload: { title: 'Traced' },
+        actor,
+      });
+      const received = await client.waitFor(isEvent('issue.created'));
+      client.close();
+
+      expect(JSON.stringify(received)).not.toContain('traceparent');
+      const server = tracing
+        .spans()
+        .find((span) => span.name === 'POST /workspaces/:workspaceId/projects/:projectId/issues');
+      // The fan-out span ends just after the send; give it a moment.
+      await Bun.sleep(50);
+      const fanout = tracing.spans().find((span) => span.name === 'fanout issue.created');
+      expect(server).toBeDefined();
+      expect(fanout?.spanContext().traceId).toBe(server!.spanContext().traceId);
+      expect(fanout?.attributes['robis.deliveries']).toBe(1);
+    } finally {
+      await tracing.stop();
     }
   });
 });

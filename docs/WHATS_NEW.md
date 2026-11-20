@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Traces through the live updates and the duplicate hints** (2026-11-20).
+  A write’s trace now reaches the realtime gateway’s fan-out to open tabs
+  and the ML service’s duplicate hints, so each is a span in the request
+  that caused it.
 - **Log lines that lead to their trace** (2026-11-20). Every service now
   writes structured JSON logs, each line with its service, level, and the
   trace and span it was written in; the API’s carry the request id too.

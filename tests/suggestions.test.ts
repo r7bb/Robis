@@ -1,5 +1,7 @@
 import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
 import { createSuggestionClient, parseTriage } from '@robis/api/suggestions';
+import { inSpan } from '@robis/telemetry';
+import { traceInMemory } from '@robis/telemetry/testing';
 import {
   addMember,
   breakSuggestions,
@@ -167,11 +169,13 @@ describe('the real suggestion client', () => {
   let answer: { status: number; body: unknown } = { status: 200, body: {} };
   const seen: { path: string; auth: string | null }[] = [];
   let lastRequestId: string | null = null;
+  let lastTraceparent: string | null = null;
   const server = Bun.serve({
     port: 0,
     fetch(req) {
       seen.push({ path: new URL(req.url).pathname, auth: req.headers.get('authorization') });
       lastRequestId = req.headers.get('x-request-id');
+      lastTraceparent = req.headers.get('traceparent');
       return new Response(JSON.stringify(answer.body), { status: answer.status });
     },
   });
@@ -231,6 +235,21 @@ describe('the real suggestion client', () => {
     await client.suggest('ws-1', 'x', null, { requestId: 'trace-abc-12345' });
 
     expect(lastRequestId).toBe('trace-abc-12345');
+  });
+
+  test('sends the trace it is asked within, for the model to continue (A5)', async () => {
+    answer = { status: 200, body: { similar: [], triage: null } };
+    const tracing = traceInMemory();
+    try {
+      let traceId = '';
+      await inSpan('a request', {}, async (span) => {
+        traceId = span.spanContext().traceId;
+        await client.suggest('ws-1', 'x');
+      });
+      expect(lastTraceparent).toMatch(new RegExp(`^00-${traceId}-[0-9a-f]{16}-01$`));
+    } finally {
+      await tracing.stop();
+    }
   });
 
   test('a malformed half becomes no hint, and leaves the other half', async () => {

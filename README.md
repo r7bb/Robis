@@ -185,6 +185,10 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Traces through the live updates and the duplicate hints.** A write’s
+  trace now reaches the realtime gateway’s fan-out to open tabs and the ML
+  service’s duplicate hints, so each is a span in the request that caused
+  it.
 - **Log lines that lead to their trace.** Every service now writes
   structured JSON logs, each line with its service, level, and the trace and
   span it was written in; the API’s carry the request id too.
@@ -192,9 +196,6 @@ with Postgres on the same machine. Method and percentiles in
   queue and the mail those send are now traced with OpenTelemetry as one
   trace, from the API through the queue to the worker, and through the MCP
   server for agents.
-- **Rate limits that hold across instances.** Rate limits and the waits
-  after wrong passwords are now counted in Postgres, so several API
-  instances share one budget, and IPv6 callers count by their /64.
 
 <!-- latest:end -->
 

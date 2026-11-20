@@ -11,7 +11,14 @@
  * down a bug.
  */
 
+import { currentTraceparent } from '@robis/telemetry';
 import type { FastifyBaseLogger } from 'fastify';
+
+/** The active trace for the ML service to continue, when there is one. */
+function traceHeader(): Record<string, string> {
+  const traceparent = currentTraceparent();
+  return traceparent ? { traceparent } : {};
+}
 
 /** The priorities the model can actually predict. `NONE` is "untriaged", not a class. */
 const PREDICTABLE = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const;
@@ -177,6 +184,8 @@ export function createSuggestionClient(
           'content-type': 'application/json',
           ...(config.token ? { authorization: `Bearer ${config.token}` } : {}),
           ...(context?.requestId ? { 'x-request-id': context.requestId } : {}),
+          // The request's trace, which the ML service continues (A5).
+          ...traceHeader(),
         },
         body: JSON.stringify({ title, description: description ?? null }),
       });

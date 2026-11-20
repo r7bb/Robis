@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-20',
     area: 'Product',
+    title: 'Traces through the live updates and the duplicate hints',
+    brief:
+      'A write’s trace now reaches the realtime gateway’s fan-out to open tabs and the ML service’s duplicate hints, so each is a span in the request that caused it.',
+    summary:
+      'When a change goes out live to everyone looking, the realtime gateway now records that fan-out as a span in the trace of the request that made the change: the trace travels beside the event in the database notification, and browsers still receive the event alone. When the composer asks for duplicate and priority hints, the API sends its trace to the ML service, whose request span continues it, and the ML service’s log lines are now JSON in the same shape as the others, each naming its trace. The ML service sends spans only to a collector OTEL_EXPORTER_OTLP_ENDPOINT names, through a small exporter of its own rather than one that would bring protobuf and gRPC.',
+    checked:
+      'One new gateway test (an issue’s creation and the fan-out to a subscribed socket share a trace, and the socket’s message carries no trace), one API test (the trace sent to the ML service), and six Python tests (a request continues the API’s trace and is named by its route, spans encode as OTLP JSON, log lines name their trace, errors are logged by name, message and stack, and a collector URL that is not http(s) stops the service). The full suite, the 106 Python tests, lint, typecheck, knip and docs:links. Not checked against a real collector.',
+  },
+  {
+    date: '2026-11-20',
+    area: 'Product',
     title: 'Log lines that lead to their trace',
     brief:
       'Every service now writes structured JSON logs, each line with its service, level, and the trace and span it was written in; the API’s carry the request id too.',

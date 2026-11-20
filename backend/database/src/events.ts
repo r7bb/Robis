@@ -1,4 +1,5 @@
 import { MAX_NOTIFY_BYTES, REALTIME_CHANNEL, type ServerEvent } from '@robis/shared';
+import { currentTraceparent } from '@robis/telemetry';
 import { sql } from 'drizzle-orm';
 import type postgres from 'postgres';
 import type { Executor } from './index.ts';
@@ -36,7 +37,10 @@ import type { Executor } from './index.ts';
  * instead of two.
  */
 export async function publishEvent(db: Executor, event: ServerEvent): Promise<void> {
-  const payload = JSON.stringify(event);
+  // The write's trace travels beside the event, not in it (A5): the gateway
+  // continues it for the fan-out and sends browsers the event alone.
+  const traceparent = currentTraceparent();
+  const payload = JSON.stringify(traceparent ? { event, traceparent } : event);
 
   if (Buffer.byteLength(payload, 'utf8') > MAX_NOTIFY_BYTES) {
     throw new Error(`Realtime payload too large for NOTIFY: ${event.type}`);
@@ -56,11 +60,18 @@ export type Unsubscribe = () => Promise<void>;
  */
 export async function subscribeToEvents(
   client: postgres.Sql,
-  onEvent: (event: ServerEvent) => void,
+  onEvent: (event: ServerEvent, traceparent: string | null) => void,
 ): Promise<Unsubscribe> {
   const subscription = await client.listen(REALTIME_CHANNEL, (payload) => {
     try {
-      onEvent(JSON.parse(payload) as ServerEvent);
+      const parsed = JSON.parse(payload) as
+        | ServerEvent
+        | { event: ServerEvent; traceparent?: unknown };
+      // Wrapped when the write was traced; bare from a publisher without one.
+      if ('event' in parsed) {
+        const traceparent = typeof parsed.traceparent === 'string' ? parsed.traceparent : null;
+        onEvent(parsed.event, traceparent);
+      } else onEvent(parsed, null);
     } catch {
       // A malformed payload is not worth tearing the listener down for.
     }

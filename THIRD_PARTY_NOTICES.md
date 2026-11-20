@@ -125,7 +125,12 @@ image. Most are MIT, BSD or Apache 2.0. `psycopg` and `psycopg-binary`
 `libpq` (the PostgreSQL License) and the libraries it links. Flagged for
 review, as with libvips above: the code is unmodified and loaded as a
 library, and whether that suffices for a given distribution is for whoever
-ships it to decide.
+ships it to decide. For traces (A5) the service adds `opentelemetry-sdk`
+1.45.1 and `opentelemetry-semantic-conventions` 0.66b1, by the
+OpenTelemetry authors, Apache-2.0; `opentelemetry-api` was already there
+through FastAPI. Its spans are sent by a small exporter of its own
+(`robis_ml/telemetry.py`), not the SDK's OTLP exporters, which would add
+protobuf and gRPC.
 
 ## Container base images
 

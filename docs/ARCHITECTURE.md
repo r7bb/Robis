@@ -234,15 +234,21 @@ request, and a job it queues is a child of that run. One comment that
 mentions someone is one trace: the request, the notify job, and the mail job
 that sends the email. Spans are named by route pattern and job kind and
 carry ids and status codes, never what anyone wrote; the API's request
-span carries the request id the response and log lines share. Not yet
-traced: the realtime gateway's fan-out and the ML service, which see the
-request id instead.
+span carries the request id the response and log lines share. The write's
+trace also travels beside the realtime event in the database notification,
+so the gateway's fan-out to sockets is a span in it (browsers get the event
+alone), and the API sends it to the ML service, whose request span (FastAPI's
+own) continues it; that service exports with a small OTLP-JSON exporter
+rather than the SDK's protobuf one. The web app's server is not traced: it
+renders pages and calls the API from the browser, where nothing is sent.
 
 ### Logs
 
 Every service writes one JSON object per line (A5): `time`, `level` by
-name, `service`, `msg`, and the `traceId` and `spanId` of the span it was
-written in, so a line leads to its trace and a trace to its lines. The
+name, `service`, `msg`, and, while tracing is on, the `traceId` and
+`spanId` of the span it was written in, so a line leads to its trace and a
+trace to its lines. With tracing off there are no ids to give, and the
+request id is what joins a request's lines across the API and ML service. The
 API's lines come from Fastify's logger in the same shape, each with the
 request's `reqId` as well; its request and response lines are written
 inside the request's span, not before it. The worker, gateway and MCP
