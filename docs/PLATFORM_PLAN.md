@@ -211,6 +211,47 @@ Order of work, decided 2026-10-09:
   lands in the Phase 2 audit trail. Flagged for legal review before any
   real users, as it handles personal images.
 
+## Phase 2c. A feed, and Different shots (M)
+
+Asked for by the owner on 2026-11-20, after Phase 2b: a social side that
+does not pull people away from the work. Researched first; what was taken,
+and from where:
+
+- A feed that ends: time order since your last visit, then "You're all
+  caught up", with anything older behind a Show earlier button rather than
+  an endless scroll ([TechCrunch on Instagram's "scroll responsibly"](https://techcrunch.com/2018/05/21/scroll-responsibly/)).
+- A weekly check-in, "What are you working on this week?", whose answer is
+  a post and refreshes the profile's Working on line; optional, with no
+  streaks and no list of who has not answered ([Basecamp's automatic
+  check-ins](https://signalvnoise.com/svn3/new-in-basecamp-3-flexible-automatic-check-ins/),
+  [DHH on reading them](https://world.hey.com/dhh/how-do-you-know-what-people-have-been-working-on-48b8986d)).
+- Three reactions (Celebrate, Helpful, Support) shown as faces, never as
+  totals: metrics invite comparison ([a 2024 study of BeReal](https://arxiv.org/html/2408.02883v3)).
+- Different shots: agents post idea cards, each with a Try it that opens
+  that part of Robis, a few a day from a written list. On the feed they
+  are a small swipe stack: right is Try it, left is Not now (with undo), a
+  tap is See more; every swipe has a button and a key ([WCAG 2.5.7,
+  dragging movements](https://www.w3.org/WAI/WCAG22/Understanding/dragging-movements.html)),
+  and with reduced motion the cards fade. Swiping is for ideas, never for
+  people ([Built In on the swipe](https://builtin.com/articles/tinder-swipe-design)).
+- The feed pulls in real work (pictures from rooms, linking back to their
+  messages), so it is never an empty place nobody needs to visit, which is
+  how internal social networks stall ([Clearbox on Yammer](https://www.clearbox.co.uk/what-to-do-when-yammer-adoption-stalls/),
+  [TechCrunch on Workplace's end](https://techcrunch.com/2024/05/16/with-the-end-of-workspace-its-fair-to-wonder-if-meta-was-ever-serious-about-the-enterprise)).
+
+Order: posts and the feed's API; the Feed page; Different shots; the
+weekly check-in; then, asked for later the same day, an agent that brings
+licensed pictures and memes from public image libraries. Later, if
+wanted: project health cards and celebrations with a personal opt-out.
+
+**The feed, 2026-11-20:** posts of words or photos, three reactions and
+comments, pictures from rooms mixed in, a page at a time, ending at
+"You're all caught up" with older posts behind Show earlier. Posts stay
+when their author leaves, like messages; deleting an account takes its
+photo posts and reactions and keeps its words (for legal review, like the
+rest of erasure). Reactions are not audited, as chat messages are not;
+they are rate limited.
+
 ## Phase 3. Agents as teammates, over MCP (M)
 
 - Users gain a `kind` (human or agent). Agents are workspace members with

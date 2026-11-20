@@ -228,6 +228,7 @@ function Docs({ workspaceId, role }: { workspaceId: string; role: Role | undefin
 function MoreLinks({ workspaceId }: { workspaceId: string }) {
   const pathname = usePathname();
   const links = [
+    { href: `/workspaces/${workspaceId}/feed`, label: 'Feed' },
     { href: `/workspaces/${workspaceId}/meetings`, label: 'Meetings' },
     { href: `/workspaces/${workspaceId}/activity`, label: 'Activity' },
     { href: `/workspaces/${workspaceId}/people`, label: 'People' },

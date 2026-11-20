@@ -79,7 +79,9 @@ export type ServerEvent =
    * off (then `storyId` is null). Ids only: the bar re-reads the list, so
    * an expired or hidden story is never sent to anyone.
    */
-  | { type: 'story.changed'; workspaceId: string; storyId: string | null; actorId: string | null };
+  | { type: 'story.changed'; workspaceId: string; storyId: string | null; actorId: string | null }
+  /** A feed post, a comment on one, or a reaction changed (Phase 2c). Ids only. */
+  | { type: 'feed.changed'; workspaceId: string; postId: string; actorId: string };
 
 export type PresenceUser = {
   userId: string;

@@ -29,6 +29,7 @@ import { commentRoutes } from './routes/comments.ts';
 import { consentRoutes } from './routes/consent.ts';
 import { discussionRoutes } from './routes/discussion.ts';
 import { documentRoutes } from './routes/documents.ts';
+import { feedRoutes } from './routes/feed.ts';
 import { feedbackRoutes } from './routes/feedback.ts';
 import { invitationRoutes } from './routes/invitations.ts';
 import { issueRoutes } from './routes/issues.ts';
@@ -42,6 +43,7 @@ import { notificationSettingRoutes } from './routes/notification-settings.ts';
 import { notificationRoutes } from './routes/notifications.ts';
 import { overviewRoutes } from './routes/overview.ts';
 import { passkeyRoutes } from './routes/passkeys.ts';
+import { postRoutes } from './routes/posts.ts';
 import { profileRoutes } from './routes/profiles.ts';
 import { projectRoutes } from './routes/projects.ts';
 import { pushKey, pushRoutes } from './routes/push.ts';
@@ -283,6 +285,8 @@ export function buildApp({
   app.register(storyRoutes, { db, storage });
   app.register(profileRoutes, { db, storage });
   app.register(messageImageRoutes, { db, storage });
+  app.register(postRoutes, { db, storage });
+  app.register(feedRoutes, { db });
   app.register(searchRoutes, { db, limits });
 
   return app;

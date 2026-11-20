@@ -21,6 +21,7 @@ const SHOWN: readonly { prefix: string; needs: Permission }[] = [
   { prefix: 'meeting.', needs: 'meeting:read' },
   { prefix: 'channel.', needs: 'channel:read' },
   { prefix: 'message.', needs: 'channel:read' },
+  { prefix: 'post.', needs: 'workspace:read' },
 ];
 
 /**
@@ -31,6 +32,8 @@ export const PROFILE_ACTIVITY_HIDDEN = [
   'comment.deleted',
   'message.deleted',
   'attachment.deleted',
+  'post.deleted',
+  'post.comment_deleted',
 ] as const;
 
 /** Posting a story, while the workspace has them; taking one down is moderation. */

@@ -35,6 +35,7 @@ const OUTSIDE: readonly string[] = [
   'GET /workspaces/:workspaceId/stories/:storyId/image',
   'GET /workspaces/:workspaceId/people/:userId/cover',
   'GET /workspaces/:workspaceId/messages/:messageId/image',
+  'GET /workspaces/:workspaceId/posts/:postId/photo',
 ];
 
 describe('route contracts', () => {

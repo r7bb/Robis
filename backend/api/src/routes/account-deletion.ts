@@ -10,9 +10,12 @@ import {
   messages,
   mutations,
   notifications,
+  postReactions,
+  posts,
   queueAttachmentPurge,
   queueCoverPurge,
   queueMessageImagePurge,
+  queuePostPhotoPurge,
   queueStoryPurge,
   STORAGE_PURGE_JOB,
   sessions,
@@ -24,7 +27,7 @@ import {
   workspaces,
 } from '@robis/database';
 import { contracts } from '@robis/shared';
-import { and, eq, ne, sql } from 'drizzle-orm';
+import { and, eq, isNotNull, ne, sql } from 'drizzle-orm';
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { confirmPassword } from '../confirm-password.ts';
 import { serve } from '../contract.ts';
@@ -78,6 +81,7 @@ async function settleWorkspace(tx: Tx, userId: string, decision: Decision) {
   await queueStoryPurge(tx, eq(stories.workspaceId, decision.id));
   await queueCoverPurge(tx, eq(workspaceMembers.workspaceId, decision.id));
   await queueMessageImagePurge(tx, eq(messages.workspaceId, decision.id));
+  await queuePostPhotoPurge(tx, eq(posts.workspaceId, decision.id));
   await tx.delete(workspaces).where(eq(workspaces.id, decision.id));
 }
 
@@ -93,6 +97,11 @@ async function emptyAccount(tx: Tx, userId: string) {
 
   // Stories are personal: they go with the account, files and all (B2).
   await deleteStories(tx, eq(stories.authorId, userId));
+  // Their photo posts go too, files and all: a photo may be of them. Their
+  // words stay under "Deleted user", like their messages; their reactions go.
+  await queuePostPhotoPurge(tx, and(eq(posts.authorId, userId), isNotNull(posts.photoKey))!);
+  await tx.delete(posts).where(and(eq(posts.authorId, userId), eq(posts.kind, 'photo')));
+  await tx.delete(postReactions).where(eq(postReactions.userId, userId));
   // And the covers on their profiles, before the memberships go.
   await queueCoverPurge(tx, eq(workspaceMembers.userId, userId));
   await tx.delete(sessions).where(eq(sessions.userId, userId));

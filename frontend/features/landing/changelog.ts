@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-20',
     area: 'Product',
+    title: 'A feed that ends',
+    brief:
+      'A Feed page for the team: posts of words or photos, three reactions and comments, pictures from rooms mixed in, and a clear "You’re all caught up" where it ends.',
+    summary:
+      'Feed in the sidebar opens the team’s stories along the top, a box to share something (words, a photo, or both; paste a screenshot and it becomes the photo), and then what has happened since you last looked, newest first: posts, and the pictures people posted in rooms, each with a way back to its room. Then it stops: “You’re all caught up”. Anything older is behind Show earlier and never loads on its own, so the feed is something you finish rather than something that keeps you. What you posted before a visit is never new to you. A post has three reactions, Celebrate, Helpful and Support, shown as the faces of who reacted rather than as a total, and comments behind a button. Your own posts are yours to edit or delete, and an admin can take any down, each asked once more. Guests can comment but not post. Photos are stored without their location, count toward the workspace’s storage, and go with their post or workspace; deleting your account takes your photo posts and reactions with it, while your words stay under “Deleted user”, like your messages. Built from research into feeds that respect people’s time, recorded with its sources in the platform plan.',
+    feature: {
+      name: 'Feed',
+      where: 'Feed in the sidebar of any workspace',
+      layers: [
+        'Screen: stories along the top, a composer, post and picture cards with reactions and comments, a caught-up card and Show earlier',
+        'API: feed.list and feed.seen, posts.create, createPhoto, update and delete, comments and reactions',
+        'Data: posts, post_comments and post_reactions, and where each member last caught up',
+      ],
+    },
+    checked:
+      'Eleven new tests against the API and four for the page’s own rules: words and photos post inside the workspace only, guests answer but do not post, a photo is stripped and members only and captioned by its author alone, audited without words; pictures from rooms are mixed in newest first; the feed comes a page at a time and ends, and still follows on when the last item of a page has gone; each person’s caught-up point is their own; reactions are once per person and kind, shown as who, and can be taken back; comments list, count and are yours or an admin’s to take down; a post’s photo goes with it and with its workspace; and deleting an account takes its photo posts and reactions and keeps its words. The full suite, lint, typecheck and docs:links. In headless Chrome on the rebuilt stack, with a throwaway account: the Feed opened from the sidebar, a post and a pasted photo with a caption went up, a reaction and a comment showed, and coming back put them behind “You’re all caught up” until Show earlier. Security review: nothing critical or high; its points (exact paging, erasure, a limit on reactions) are fixed.',
+  },
+  {
+    date: '2026-11-20',
+    area: 'Product',
     title: 'Pictures in chat',
     brief:
       'Paste a screenshot into the message box, or choose or take a photo, and it posts to the room as a picture.',

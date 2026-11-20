@@ -5,9 +5,11 @@ import {
   type Database,
   type Executor,
   messages,
+  posts,
   queueAttachmentPurge,
   queueCoverPurge,
   queueMessageImagePurge,
+  queuePostPhotoPurge,
   queueStoryPurge,
   recordAudit,
   stories,
@@ -283,6 +285,7 @@ export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database
         await queueStoryPurge(tx, eq(stories.workspaceId, workspaceId));
         await queueCoverPurge(tx, eq(workspaceMembers.workspaceId, workspaceId));
         await queueMessageImagePurge(tx, eq(messages.workspaceId, workspaceId));
+        await queuePostPhotoPurge(tx, eq(posts.workspaceId, workspaceId));
         await tx.delete(workspaces).where(eq(workspaces.id, workspaceId));
       });
 

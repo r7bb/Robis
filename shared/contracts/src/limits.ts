@@ -43,3 +43,12 @@ export const PROFILE_TITLE_MAX_LENGTH = 60;
 
 /** A profile's "working on" line (B2): one line, read at a glance. */
 export const WORKING_ON_MAX_LENGTH = 120;
+
+/** A feed post's words (Phase 2c): longer than a story, shorter than a document. */
+export const POST_MAX_LENGTH = 2000;
+
+/** A comment on a feed post. */
+export const POST_COMMENT_MAX_LENGTH = 1000;
+
+/** The three reactions a post can have: faces, never totals (Phase 2c). */
+export const POST_REACTIONS = ['celebrate', 'helpful', 'support'] as const;

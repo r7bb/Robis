@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **A feed that ends** (2026-11-20). A Feed page for the team: posts of
+  words or photos, three reactions and comments, pictures from rooms mixed
+  in, and a clear "You’re all caught up" where it ends.
 - **Pictures in chat** (2026-11-20). Paste a screenshot into the message
   box, or choose or take a photo, and it posts to the room as a picture.
 - **Profiles** (2026-11-20). Each person has a profile in each workspace: a

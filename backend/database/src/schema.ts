@@ -2,6 +2,7 @@ import {
   ISSUE_PRIORITIES,
   ISSUE_STATUSES,
   LABEL_COLOURS,
+  POST_REACTIONS,
   ROLES,
   SUGGESTION_ACTIONS,
   SUGGESTION_KINDS,
@@ -526,6 +527,8 @@ export const workspaceMembers = pgTable(
     /** A cover photo for that profile, in the storage port; members only. */
     coverKey: text('cover_key'),
     coverUpdatedAt: timestamp('cover_updated_at', { withTimezone: true }),
+    /** When they last reached the end of the feed (Phase 2c): what is new is after it. */
+    feedSeenAt: timestamp('feed_seen_at', { withTimezone: true }),
     createdAt: createdAt(),
   },
   (t) => [
@@ -817,6 +820,79 @@ export const stories = pgTable(
       sql`(${t.kind} = 'photo' and ${t.storageKey} is not null and ${t.body} is null) or (${t.kind} = 'text' and ${t.storageKey} is null and ${t.body} is not null)`,
     ),
   ],
+);
+
+/** What a feed post is (Phase 2c): words, a photo (with words or not), or a check-in answer. */
+export const POST_KINDS = ['text', 'photo', 'checkin'] as const;
+
+/**
+ * A post on the workspace's feed (Phase 2c). Kept like a message: it stays
+ * when its author leaves, and goes with its workspace. A photo is in the
+ * storage port; the code that deletes a post or its workspace queues the
+ * file, since a cascade cannot.
+ */
+export const posts = pgTable(
+  'posts',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    authorId: uuid('author_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    kind: text('kind', { enum: POST_KINDS }).notNull(),
+    /** The words, or a photo's caption; empty for a photo with none. */
+    body: text('body').notNull().default(''),
+    photoKey: text('photo_key'),
+    photoContentType: text('photo_content_type'),
+    photoBytes: integer('photo_bytes'),
+    photoWidth: integer('photo_width'),
+    photoHeight: integer('photo_height'),
+    editedAt: timestamp('edited_at', { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('posts_workspace_created_idx').on(t.workspaceId, t.createdAt.desc(), t.id.desc()),
+    index('posts_author_idx').on(t.authorId),
+    uniqueIndex('posts_photo_key_key').on(t.photoKey),
+    check('posts_kind_fields', sql`(${t.kind} = 'photo') = (${t.photoKey} is not null)`),
+  ],
+);
+
+export const postComments = pgTable(
+  'post_comments',
+  {
+    id: id(),
+    postId: uuid('post_id')
+      .notNull()
+      .references(() => posts.id, { onDelete: 'cascade' }),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    authorId: uuid('author_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    body: text('body').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index('post_comments_post_created_idx').on(t.postId, t.createdAt)],
+);
+
+/** Who reacted to a post, and how: one row per person per reaction. */
+export const postReactions = pgTable(
+  'post_reactions',
+  {
+    postId: uuid('post_id')
+      .notNull()
+      .references(() => posts.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    reaction: text('reaction', { enum: POST_REACTIONS }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.postId, t.userId, t.reaction] })],
 );
 
 /** Who acted: a person, an agent acting through a token, or Robis itself. */

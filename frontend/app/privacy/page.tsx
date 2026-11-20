@@ -30,6 +30,14 @@ export default function PrivacyPage() {
         request; how and when that is done is for review. How long the trail should be kept is an
         open question for review.
       </p>
+      <p>
+        Photos you share (on issues, in chat, as stories, on your profile and on the feed) are
+        stored without their location or camera details and shown only to members of that workspace.
+        Stories go after 24 hours. When you delete your account, your stories, profile covers, photo
+        posts and reactions on the feed go with it; the words you wrote, your chat messages and
+        pictures, and images on issues stay in the workspace under &ldquo;Deleted user&rdquo;.
+        Whether that is the right line is for review.
+      </p>
       <h2>Your account history</h2>
       <p>
         Robis records when your account is signed in to, a sign-in fails, you sign out, your

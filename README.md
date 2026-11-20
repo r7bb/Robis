@@ -148,14 +148,14 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **A feed that ends.** A Feed page for the team: posts of words or photos,
+  three reactions and comments, pictures from rooms mixed in, and a clear
+  "You’re all caught up" where it ends.
 - **Pictures in chat.** Paste a screenshot into the message box, or choose
   or take a photo, and it posts to the room as a picture.
 - **Profiles.** Each person has a profile in each workspace: a cover, what
   they do there, what they are working on, what they have been doing, and
   the images they have shared.
-- **Stories.** Share a photo or a few words with your workspace for 24
-  hours: rings on faces, a full-screen viewer, and a photo taken with no
-  signal posts itself once you are back.
 
 <!-- latest:end -->
 

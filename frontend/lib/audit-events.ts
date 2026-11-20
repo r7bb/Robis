@@ -73,6 +73,14 @@ const PHRASES: Record<string, (payload: Payload) => string> = {
     p.enabled === true ? 'turned stories on' : 'turned stories off',
   'member.profile_updated': () => 'updated their profile',
   'message.image_added': () => 'posted a picture in chat',
+  'post.created': (p) => (p.kind === 'photo' ? 'posted a photo to the feed' : 'posted to the feed'),
+  'post.updated': () => 'edited a post',
+  'post.deleted': (p) => (p.moderated === true ? "took down someone's post" : 'took down a post'),
+  'post.commented': () => 'commented on a post',
+  'post.comment_deleted': (p) =>
+    p.moderated === true
+      ? "took down someone's comment on a post"
+      : 'took down a comment on a post',
   'member.cover_set': () => 'set a cover photo',
   'member.cover_removed': () => 'removed their cover photo',
   'story.added': (p) => (p.kind === 'photo' ? 'posted a photo story' : 'posted a story'),

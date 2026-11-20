@@ -81,6 +81,15 @@ export const PERMISSIONS = [
   'story:delete_any',
   /** Turn stories on or off for the whole workspace. */
   'story:configure',
+
+  /** Post to the workspace's feed (Phase 2c). */
+  'post:create',
+  /** Comment on a feed post. */
+  'post:comment',
+  /** Take down a post or a comment you wrote. */
+  'post:delete_own',
+  /** Take down anyone's post or comment (moderation). */
+  'post:delete_any',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -112,6 +121,9 @@ const GUEST: readonly Permission[] = [
   'attachment:delete_own',
   'message:create',
   'message:delete_own',
+  // As in chat: a guest who can talk can answer a post, though not start one.
+  'post:comment',
+  'post:delete_own',
 ];
 
 const MEMBER: readonly Permission[] = [
@@ -128,6 +140,7 @@ const MEMBER: readonly Permission[] = [
   // team is its work, not its social side.
   'story:create',
   'story:delete_own',
+  'post:create',
 ];
 
 const ADMIN: readonly Permission[] = [
@@ -149,6 +162,7 @@ const ADMIN: readonly Permission[] = [
   // Who acts on the workspace's behalf is the same kind of question.
   'agent:manage',
   'story:delete_any',
+  'post:delete_any',
 ];
 
 /**

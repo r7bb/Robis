@@ -8,6 +8,7 @@ import { channelContracts } from './channels.ts';
 import { type Contract, statusesOf } from './contract.ts';
 import { discussionContracts } from './discussion.ts';
 import { documentContracts } from './documents.ts';
+import { feedContracts } from './feed.ts';
 import { feedbackContracts } from './feedback.ts';
 import { issueContracts } from './issues.ts';
 import { bulkIssueContracts } from './issues-bulk.ts';
@@ -76,6 +77,7 @@ export const contracts = {
   ...passkeyContracts,
   ...storyContracts,
   ...profileContracts,
+  ...feedContracts,
   ...accountContracts,
 } as const satisfies Record<string, Contract>;
 
