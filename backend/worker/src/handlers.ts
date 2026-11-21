@@ -15,6 +15,7 @@ import {
   pruneEmailRecords,
   pruneExpiredAgentTokens,
   pruneIdempotencyLedger,
+  pruneReadings,
   pruneReadNotifications,
   STORY_EXPIRY_JOB,
   scanDigests,
@@ -58,6 +59,8 @@ export const cleanupSessions = async (_payload: unknown, { db }: { db: Database 
   await pruneExpiredAgentTokens(db);
   // Agents' runs and judged changes after 90 days, hint feedback after a year (B6).
   await pruneAgentHistory(db);
+  // And system health's timings after a week (Phase 6).
+  await pruneReadings(db);
 };
 
 /** Judge agents' changes that are seven days old: kept, edited or reverted (B6). */

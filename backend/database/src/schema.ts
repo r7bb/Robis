@@ -1824,6 +1824,33 @@ export type MeetingAttendee = typeof meetingAttendees.$inferSelect;
  * update every hit makes stays in place (a HOT update); the API's sweep of
  * expired rows is a scan, a minute apart, in batches.
  */
+/**
+ * Timings the services record as they work (Phase 6): per instrument, per
+ * process, per minute, a count in each fixed bucket of INSTRUMENT_BOUNDS_MS
+ * plus one beyond the last. Counts add, so a minute flushed twice, or by
+ * three instances, merges by addition. Unlogged, like the rate counts: a
+ * crash forgets some minutes of a health chart, nothing else. Swept by the
+ * worker after a week.
+ */
+export const instrumentReadings = pgTable(
+  'instrument_readings',
+  {
+    instrument: text('instrument').notNull(),
+    /** The process that recorded them, so two instances never collide. */
+    source: text('source').notNull(),
+    minute: timestamp('minute', { withTimezone: true }).notNull(),
+    counts: integer('counts').array().notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.instrument, t.minute, t.source] }),
+    check('instrument_readings_instrument', sql`${t.instrument} in ('sync_lag', 'fanout_latency')`),
+    // INSTRUMENT_BOUNDS_MS has 16 edges, plus one bucket beyond. Changing the
+    // edges reinterprets stored minutes: sweep the table (or wait the week)
+    // and change this number in the same migration.
+    check('instrument_readings_buckets', sql`cardinality(${t.counts}) = 17`),
+  ],
+);
+
 export const rateLimits = pgTable('rate_limits', {
   key: text('key').primaryKey(),
   count: integer('count').notNull(),

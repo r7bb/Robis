@@ -38,9 +38,14 @@ import type { Executor } from './index.ts';
  */
 export async function publishEvent(db: Executor, event: ServerEvent): Promise<void> {
   // The write's trace travels beside the event, not in it (A5): the gateway
-  // continues it for the fan-out and sends browsers the event alone.
+  // continues it for the fan-out and sends browsers the event alone. So does
+  // the moment it was written, for the fan-out's latency (Phase 6).
   const traceparent = currentTraceparent();
-  const payload = JSON.stringify(traceparent ? { event, traceparent } : event);
+  const payload = JSON.stringify({
+    event,
+    at: Date.now(),
+    ...(traceparent ? { traceparent } : {}),
+  });
 
   if (Buffer.byteLength(payload, 'utf8') > MAX_NOTIFY_BYTES) {
     throw new Error(`Realtime payload too large for NOTIFY: ${event.type}`);
@@ -58,20 +63,25 @@ export type Unsubscribe = () => Promise<void>;
  * LISTEN holds a dedicated connection for its lifetime and must not be handed
  * back to the pool between notifications.
  */
+/** What travels beside an event: the write's trace, and when it was published. */
+export type EventMeta = { traceparent: string | null; publishedAt: number | null };
+
 export async function subscribeToEvents(
   client: postgres.Sql,
-  onEvent: (event: ServerEvent, traceparent: string | null) => void,
+  onEvent: (event: ServerEvent, meta: EventMeta) => void,
 ): Promise<Unsubscribe> {
   const subscription = await client.listen(REALTIME_CHANNEL, (payload) => {
     try {
       const parsed = JSON.parse(payload) as
         | ServerEvent
-        | { event: ServerEvent; traceparent?: unknown };
-      // Wrapped when the write was traced; bare from a publisher without one.
+        | { event: ServerEvent; traceparent?: unknown; at?: unknown };
+      // Wrapped by this version; bare from a publisher before it, mid-deploy.
       if ('event' in parsed) {
-        const traceparent = typeof parsed.traceparent === 'string' ? parsed.traceparent : null;
-        onEvent(parsed.event, traceparent);
-      } else onEvent(parsed, null);
+        onEvent(parsed.event, {
+          traceparent: typeof parsed.traceparent === 'string' ? parsed.traceparent : null,
+          publishedAt: typeof parsed.at === 'number' ? parsed.at : null,
+        });
+      } else onEvent(parsed, { traceparent: null, publishedAt: null });
     } catch {
       // A malformed payload is not worth tearing the listener down for.
     }

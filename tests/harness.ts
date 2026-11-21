@@ -42,6 +42,8 @@ import postgres from 'postgres';
 
 const ADMIN_URL = process.env.TEST_ADMIN_URL ?? 'postgres://robis:robis@localhost:5433/postgres';
 const TEST_DB = 'robis_test';
+/** Every verified address here runs the test server (HEALTH_OPERATORS). */
+export const TEST_OPERATOR_DOMAIN = 'operators.robis.test';
 /** Shaped as a P-256 public key, which is all the API checks of it; no private half exists. */
 /** Seals authenticator secrets in the tests (C4); 32 bytes, never a real key. */
 export const TEST_TWO_FACTOR_KEY = Buffer.alloc(32, 9).toString('base64url');
@@ -59,6 +61,7 @@ export const MEDIA_ROOT = mkdtempSync(join(tmpdir(), 'robis-media-'));
 const TABLES = [
   'account_events',
   'rate_limits',
+  'instrument_readings',
   'auth_tokens',
   'audit_events',
   'audit_tombstones',
@@ -285,6 +288,8 @@ export async function getHarness() {
     VAPID_PUBLIC_KEY: TEST_PUSH_PUBLIC_KEY,
     // Two-factor sign-in is on (C4), with a key made for the tests alone.
     TWO_FACTOR_KEY: TEST_TWO_FACTOR_KEY,
+    // The server's health is shown to these addresses only (Phase 6).
+    HEALTH_OPERATORS: `ops@robis.test, @${TEST_OPERATOR_DOMAIN}`,
   } as NodeJS.ProcessEnv);
 
   // Generous budgets: the other suites create hundreds of actors from one
@@ -368,11 +373,13 @@ export function resetDatabase(): Promise<void> {
  */
 export async function resetDatabaseWithin(lockTimeout: string): Promise<void> {
   if (!/^\d+(?:ms|s)$/.test(lockTimeout)) throw new Error(`not a lock timeout: ${lockTimeout}`);
-  const { ownerDb: db, mailer } = await getHarness();
+  const { ownerDb: db, mailer, app } = await getHarness();
   // A failed sign-in is recorded after its reply; let the last test's land
   // before the tables are emptied under it.
   await settleDeferredAccountEvents();
   await settleAgentSteps();
+  // Timings the last test left held are written now, then emptied with the rest.
+  await app.syncLag.flush();
   mailer.clear();
   // Buckets are process-wide; each test starts with a full budget, as it
   // starts with empty tables.

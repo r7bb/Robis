@@ -140,6 +140,10 @@ services:
       # is not a secret; a real deployment sets its own (`bun run
       # two-factor:key`) from a secret store.
       TWO_FACTOR_KEY: ${TWO_FACTOR_KEY:-cm9iaXMtc3RhY2stMmZhLWtleS1ub3QtYS1zZWNyZXQ}
+      # Who sees the server's own health on Insights (Phase 6). Here, any
+      # verified address on the reserved test domain the demo and test
+      # accounts use; a real deployment names its operators.
+      HEALTH_OPERATORS: ${HEALTH_OPERATORS:-@robis.test}
       # One hop: the edge proxy, which sets X-Forwarded-For. Rate limits key
       # on the client's address, not the proxy's.
       TRUST_PROXY: '1'

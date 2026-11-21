@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-21',
     area: 'Product',
+    title: 'System health on Insights',
+    brief:
+      'Insights now show how often the hints are used and, for the people who run the server, its job queue and how quickly changes sync and reach open tabs, timed as the services work.',
+    summary:
+      'A System health section on Insights. Workspace admins see how often duplicate and priority hints were used over thirty days, as a rate once ten have been answered. The people who run the server, named in HEALTH_OPERATORS, also see its job queue as it is now and a day of two timings: sync lag, how long a change waited in a browser before the server took it, and live updates, from a change being saved to reaching open tabs. The gateway times every event it delivers and the offline queue reports each change’s wait; both are counted per minute into fixed buckets that add up across instances, and shown as bucket edges with the count behind them. Below ten, counts in words.',
+    checked:
+      'Twenty-five tests: bucket edges and nearest-rank quantiles against hand-worked answers, two instances and a repeated minute adding up, a failed write kept with newer records and capped at an hour, a stop that waits for a write under way, the worker’s sweep as its own role, sync lag counted only for accepted, signed-in, first-time writes and thirty a minute per person, the page’s figures from seeded jobs, readings and hint answers, operators only for server figures, 403 and 404. One gateway test times a real delivery. Seen in Chrome against the compose stack. The full suite, lint, typecheck, knip and docs:links. Not tried with several instances or a real day of traffic.',
+    feature: {
+      name: 'System health',
+      where: 'Sidebar: Insights, below the projects, for admins',
+      layers: [
+        'Screen: tiles for the job queue, sync lag, live updates and each kind of hint, each with its count, and counts in words below ten',
+        'API: insights.health reads the queue, a day of timings and a month of hint answers; writes report their queue wait in a header',
+        'Database: instrument_readings, bucket counts per instrument, process and minute, unlogged and swept after a week',
+      ],
+    },
+  },
+  {
+    date: '2026-11-21',
+    area: 'Product',
     title: 'Insights: cycle time and throughput',
     brief:
       'An Insights page: how long work takes on each project and how much gets done each week, from the status changes the audit trail keeps, with the number of issues behind every figure.',

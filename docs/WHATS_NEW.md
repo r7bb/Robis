@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **System health on Insights** (2026-11-21). Insights now show how often
+  the hints are used and, for the people who run the server, its job queue
+  and how quickly changes sync and reach open tabs, timed as the services
+  work.
 - **Insights: cycle time and throughput** (2026-11-21). An Insights page:
   how long work takes on each project and how much gets done each week, from
   the status changes the audit trail keeps, with the number of issues behind

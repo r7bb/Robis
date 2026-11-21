@@ -38,6 +38,8 @@ function answer(issue: LocalIssue) {
 /** Records calls and can be told to fail. */
 class FakeTransport implements SyncTransport {
   calls: { method: string; key: string }[] = [];
+  /** How long each write said its change had waited (Phase 6), in order. */
+  waited: (number | undefined)[] = [];
   serverIssues = new Map<string, LocalIssue>();
   /** Idempotency ledger, mirroring what the API does. */
   private ledger = new Map<string, ReturnType<typeof answer>>();
@@ -51,8 +53,10 @@ class FakeTransport implements SyncTransport {
     projectId: string,
     body: { id: string; title: string; status?: LocalIssue['status'] },
     idempotencyKey: string,
+    queuedForMs?: number,
   ) {
     this.calls.push({ method: 'create', key: idempotencyKey });
+    this.waited.push(queuedForMs);
     if (this.failWith) throw this.failWith;
 
     const replayed = this.ledger.get(idempotencyKey);
@@ -97,8 +101,10 @@ class FakeTransport implements SyncTransport {
     issueId: string,
     body: Partial<LocalIssue>,
     idempotencyKey: string,
+    queuedForMs?: number,
   ) {
     this.calls.push({ method: 'update', key: idempotencyKey });
+    this.waited.push(queuedForMs);
     if (this.failWith) throw this.failWith;
 
     const current = this.serverIssues.get(issueId);
@@ -178,6 +184,20 @@ beforeEach(() => {
   storage = new MemoryAdapter();
   transport = new FakeTransport();
   engine = new SyncEngine(storage, transport, tick, nextId);
+});
+
+describe('sync lag (Phase 6)', () => {
+  test('each write says how long its change waited, on this device’s clock', async () => {
+    const created = await engine.createIssue(WORKSPACE, PROJECT, { title: 'Written offline' });
+    await engine.updateIssue(WORKSPACE, created.id, { status: 'IN_PROGRESS' });
+    // Five minutes offline, then back.
+    clock += 300_000;
+    await engine.flush();
+
+    // Queued at 1,010 and 1,020; sent at 301,030 and 301,040 (each clock read
+    // ticks it 10 ms), so each waited five minutes and 20 ms.
+    expect(transport.waited).toEqual([300_020, 300_020]);
+  });
 });
 
 describe('writing while offline', () => {

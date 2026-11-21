@@ -2,7 +2,9 @@ import { type AuthenticatedUser, resolveSession, SESSION_COOKIE } from '@robis/a
 import {
   type Database,
   type DocumentNotice,
+  type EventMeta,
   findMembership,
+  InstrumentRecorder,
   loadDocument,
   loadUpdate,
   publishDocumentUpdate,
@@ -19,6 +21,7 @@ import {
   type ClientMessage,
   type DocumentAwareness,
   hears,
+  INSTRUMENT_BOUNDS_MS,
   isUuid,
   type PresenceMessage,
   type ServerEvent,
@@ -201,6 +204,23 @@ export async function createGateway(options: GatewayOptions) {
     'WebSocket upgrade attempts, by outcome.',
     ['outcome'],
   );
+  const fanOutSeconds = registry.histogram(
+    'robis_ws_fanout_latency_seconds',
+    'From an event being written to its reaching the open tabs that hear it, in seconds.',
+    [],
+    INSTRUMENT_BOUNDS_MS.map((ms) => ms / 1000),
+  );
+
+  /*
+   * The same timing, counted per minute into the database (Phase 6), so the
+   * Insights page can show it without a Prometheus. Measured across two
+   * clocks, the writer's and this gateway's, so it is as good as their
+   * agreement; a reading below zero counts as zero.
+   */
+  const fanOut = new InstrumentRecorder(db, 'fanout_latency', instanceId, {
+    warn: (fields, message) => log.warn(`gateway: ${message}`, fields as Record<string, unknown>),
+  });
+  fanOut.start();
 
   /** Tail of the in-flight handler chain for each connection. */
   const pendingWork = new WeakMap<Bun.ServerWebSocket<SocketData>, Promise<void>>();
@@ -223,7 +243,8 @@ export async function createGateway(options: GatewayOptions) {
     }
   }
 
-  function broadcastEvent(event: ServerEvent, traceparent: string | null = null) {
+  function broadcastEvent(event: ServerEvent, meta: EventMeta) {
+    const { traceparent, publishedAt } = meta;
     // A span per fan-out, continuing the write that caused it (A5): the
     // browsers get the event alone, never the trace.
     const { span } = startSpan(`fanout ${event.type}`, {
@@ -248,6 +269,12 @@ export async function createGateway(options: GatewayOptions) {
     // quantity that describes fan-out cost, and dividing by the event count
     // gives the average audience.
     if (delivered > 0) eventsOut.inc({ type: event.type }, delivered);
+    // Timed only when it reached someone: an event nobody hears has no latency.
+    if (delivered > 0 && publishedAt !== null) {
+      const latencyMs = Math.max(0, Date.now() - publishedAt);
+      fanOutSeconds.observe({}, latencyMs / 1000);
+      fanOut.record(latencyMs);
+    }
     span.setAttribute('robis.deliveries', delivered);
     endSpan(span);
   }
@@ -747,6 +774,8 @@ export async function createGateway(options: GatewayOptions) {
     instanceId,
     presence,
     recheckFeeds,
+    /** The fan-out timings, for a test to write out without waiting a minute. */
+    fanOut,
 
     async close() {
       clearInterval(reannounce);
@@ -764,6 +793,7 @@ export async function createGateway(options: GatewayOptions) {
 
       // Persist anything still debounced before the process goes away.
       await rooms.closeAll();
+      await fanOut.stop();
 
       await server.stop(true);
       metricsServer?.stop(true);

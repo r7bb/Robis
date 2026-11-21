@@ -62,6 +62,12 @@ export const PERMISSIONS = [
 
   /** Read the full audit trail, export it, and verify its chain. */
   'audit:read',
+  /**
+   * Health on the Insights page (Phase 6): this workspace's hint acceptance.
+   * The server's own queue and timings cover every workspace on it, so they
+   * also need the address to be one of HEALTH_OPERATORS.
+   */
+  'health:read',
 
   /** Attach an image to an issue or to your own comment. */
   'attachment:create',
@@ -159,6 +165,8 @@ const ADMIN: readonly Permission[] = [
   // Who did what is an administrator's question. Members still see the
   // workspace's activity feed; the full trail and its export are not theirs.
   'audit:read',
+  // How well the hints serve the workspace is an administrator's question.
+  'health:read',
   // Who acts on the workspace's behalf is the same kind of question.
   'agent:manage',
   'story:delete_any',

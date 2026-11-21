@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test';
-import { users, workspaces } from '@robis/database';
+import { quantileEdge, readInstrument, users, workspaces } from '@robis/database';
 import { createGateway } from '@robis/realtime/gateway';
 import type { ServerMessage } from '@robis/shared';
 import { traceInMemory } from '@robis/telemetry/testing';
@@ -988,5 +988,35 @@ describe('traces (A5)', () => {
     } finally {
       await tracing.stop();
     }
+  });
+});
+
+describe('live-update timings (Phase 6)', () => {
+  test('an event that reaches a tab is timed, and written as the gateway’s own role', async () => {
+    const { ownerDb } = await getHarness();
+    const actor = await createActor('Ada');
+    const workspace = await createWorkspace(actor);
+    const project = await createProject(actor, workspace.id);
+    const client = await TestClient.connect(actor);
+    await client.subscribe(workspace.id);
+    // Earlier tests' deliveries are written first, so only this one is new.
+    const since = new Date(Date.now() - 60_000);
+    await gateway.fanOut.flush();
+    const before = await readInstrument(ownerDb, 'fanout_latency', since);
+
+    await request(`/workspaces/${workspace.id}/projects/${project.id}/issues`, {
+      method: 'POST',
+      payload: { title: 'Timed' },
+      actor,
+    });
+    await client.waitFor(isEvent('issue.created'));
+    client.close();
+    await gateway.fanOut.flush();
+
+    const after = await readInstrument(ownerDb, 'fanout_latency', since);
+    const added = after.map((n, i) => n - before[i]!);
+    // One delivery, timed; on one machine, well within a second.
+    expect(added.reduce((sum, n) => sum + n, 0)).toBe(1);
+    expect(quantileEdge(added, 1)).toBeLessThanOrEqual(1_000);
   });
 });

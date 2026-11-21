@@ -113,7 +113,10 @@ the week's milestones get a Say well done (a project finished, a 10th
 issue, a year with the team), never for anyone who opts out.
 Insights show how long work takes on each project and how much gets done
 each week, from the status changes the audit trail keeps, with the number
-of issues behind every figure, and no figure at all below ten.
+of issues behind every figure, and no figure at all below ten. For the
+people who run the server, they also show its job queue and how quickly
+changes sync and reach open tabs, from timings the services keep as they
+work.
 Everything stays inside the workspace, and photos are stored without their
 location.
 
@@ -131,6 +134,9 @@ location.
   </tr>
   <tr>
     <td colspan="2"><img src="imgs/34-insights.webp" alt="Insights: Web App's median cycle time of 3.3 days with its spread and twelve weeks of finished issues as bars; Mobile, with two finished, says it has too few to chart"></td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="imgs/35-health.webp" alt="System health on Insights: the job queue clear, sync lag with too few timings to show, live updates within 10 ms from 28 timings, and hint tiles waiting for ten answers"></td>
   </tr>
 </table>
 
@@ -191,6 +197,9 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **System health on Insights.** Insights now show how often the hints are
+  used and, for the people who run the server, its job queue and how quickly
+  changes sync and reach open tabs, timed as the services work.
 - **Insights: cycle time and throughput.** An Insights page: how long work
   takes on each project and how much gets done each week, from the status
   changes the audit trail keeps, with the number of issues behind every
@@ -199,10 +208,6 @@ with Postgres on the same machine. Method and percentiles in
   errors, slow requests, the job queue, the audit stream, the live
   connections and the ML service, each tested in CI and explained in a
   runbook.
-- **Traces through the live updates and the duplicate hints.** A write’s
-  trace now reaches the realtime gateway’s fan-out to open tabs and the ML
-  service’s duplicate hints, so each is a span in the request that caused
-  it.
 
 <!-- latest:end -->
 

@@ -226,6 +226,20 @@ job's outcome and duration by kind. Alert rules over these are in
 one that must not, and a section in [RUNBOOK.md](RUNBOOK.md). One write reaching fifty subscribed sockets counts as fifty
 deliveries, because that is the quantity that describes fan-out cost.
 
+Two timings are also kept where the app can read them without a
+Prometheus (Phase 6): fan-out latency, from an event's write to its reaching
+the tabs that hear it (`robis_ws_fanout_latency_seconds`, measured across the
+writer's clock and the gateway's), and sync lag, how long a change waited in
+a browser's offline queue before it was accepted (`robis_sync_lag_seconds`,
+on the browser's own clock, sent with the replayed write). Each process
+counts them into fixed buckets per minute and adds them to the unlogged
+`instrument_readings` table, so every instance's minutes add up; the
+Insights page reads a day of them, with the job queue, as bucket edges
+("within 250 ms"). Sync lag is the browser's word, so only accepted writes
+by someone signed in count, never a replay, and at most thirty a minute
+from one person. Server-wide figures go only to `HEALTH_OPERATORS`, since
+anyone can sign up and own a workspace.
+
 ### Traces
 
 Every service starts OpenTelemetry tracing (A5, `backend/telemetry`), and

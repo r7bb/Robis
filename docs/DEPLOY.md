@@ -50,6 +50,12 @@ Everything is served from one address, through an edge proxy
   so any number of API instances enforce one budget. `RATE_LIMIT_STORE=memory`
   keeps them per instance, for one instance only. The counts need Postgres
   18 (they use `RETURNING old`).
+- **Who sees the server's health** (Phase 6): `HEALTH_OPERATORS` on the
+  API, comma-separated verified addresses or `@domain`. They see the job
+  queue and a day of sync lag and live-update timings on Insights, which
+  cover every workspace on the server. Empty, the default in production,
+  shows them to nobody; workspace admins still see their own hint
+  acceptance. The local stack names `@robis.test`, the demo domain.
 - **Traces** (A5): set `OTEL_EXPORTER_OTLP_ENDPOINT` on the API, worker,
   gateway and MCP server to an OpenTelemetry collector's OTLP/HTTP address
   (for example `http://collector:4318`; spans go to its `/v1/traces`).

@@ -209,6 +209,9 @@ export const GATEWAY_GRANTS: TableGrants = {
   documents: ['select', 'update'],
   // Delete: compaction folds old updates into the document's snapshot.
   document_updates: ['select', 'insert', 'delete'],
+  // Live-update timings for system health (Phase 6); select and update for
+  // the upsert that adds a minute's counts to what is there.
+  instrument_readings: ['select', 'insert', 'update'],
 };
 
 /**
@@ -274,6 +277,8 @@ export const WORKER_GRANTS: TableGrants = {
   agent_steps: ['select', 'delete'],
   agent_changes: ['select', 'update (outcome, judged_at)', 'delete'],
   suggestion_feedback: ['select', 'delete'],
+  // System health's timings, swept after a week (Phase 6).
+  instrument_readings: ['select', 'delete'],
   agent_tokens: [
     'select (id, agent_id, workspace_id, revoked_at, expires_at)',
     // Every column, as an insert names them all; the defaults fill the rest.

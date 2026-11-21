@@ -65,6 +65,13 @@ const envSchema = z.object({
    * development. Unset, production uses Postgres and everything else memory.
    */
   RATE_LIMIT_STORE: z.enum(['memory', 'postgres']).optional(),
+  /**
+   * Who sees the server's own health on the Insights page (Phase 6): its job
+   * queue and timings cover every workspace on it, so they are for the people
+   * who run it, not every workspace owner. Comma-separated verified addresses,
+   * or `@domain` for every verified address there. Empty: nobody.
+   */
+  HEALTH_OPERATORS: z.string().max(2000).default(''),
   API_LOG: z
     .string()
     .default('1')

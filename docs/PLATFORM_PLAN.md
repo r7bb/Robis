@@ -362,7 +362,18 @@ last move to done while still done, started at the first move into work
 (again from a reopen), and below ten finished issues the counts and no
 figures. Two partial indexes keep the reads off the whole trail. Offline
 changes are timed when they reach the server, not when they were made.
-System health is next.
+
+**System health, 2026-11-21:** the same page, for admins. Everyone with
+`health:read` sees the workspace's hint acceptance over thirty days. The
+server's own figures (the job queue now, and a day of sync lag and
+live-update latency) go only to `HEALTH_OPERATORS`, because anyone can
+sign up and own a workspace. The two timings are recorded as the
+services work, the gateway's per delivered event and the API's from the
+queue wait the browser reports, counted per minute into fixed buckets
+that add across instances (`instrument_readings`, swept after a week).
+Below ten readings or answers, counts in words. Not verified with more
+than one instance of each service, or with a real day of traffic. Phase 6
+is complete.
 
 ## Phase 7. Calendar (S to M)
 

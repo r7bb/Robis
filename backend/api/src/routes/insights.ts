@@ -1,6 +1,21 @@
-import { auditEvents, type Database, issues, projects } from '@robis/database';
-import { contracts, INSIGHT_MIN_SAMPLE, INSIGHT_WEEKS } from '@robis/shared';
-import { and, asc, eq, gte } from 'drizzle-orm';
+import {
+  auditEvents,
+  type Database,
+  issues,
+  projects,
+  queueStats,
+  readInstrument,
+  suggestionFeedback,
+  users,
+} from '@robis/database';
+import {
+  contracts,
+  HEALTH_HOURS,
+  INSIGHT_MIN_SAMPLE,
+  INSIGHT_WEEKS,
+  SUGGESTION_DAYS,
+} from '@robis/shared';
+import { and, asc, count, eq, gte } from 'drizzle-orm';
 import type { FastifyBaseLogger, FastifyInstance } from 'fastify';
 import { serve } from '../contract.ts';
 import {
@@ -11,7 +26,14 @@ import {
   type StatusMove,
   windowStart,
 } from '../insights/flow.ts';
-import { currentMembership, requireAuth, requireMembership } from '../plugins/authz.ts';
+import { acceptanceOf, readingOf } from '../insights/health.ts';
+import { isOperator } from '../insights/operators.ts';
+import {
+  currentMembership,
+  currentUser,
+  requireAuth,
+  requireMembership,
+} from '../plugins/authz.ts';
 
 /**
  * Insights (Phase 6): cycle time and throughput per project, from the
@@ -112,8 +134,78 @@ function spansByProject(rows: readonly MoveRow[], log: FastifyBaseLogger) {
   return byProject;
 }
 
-export async function insightRoutes(app: FastifyInstance, opts: { db: Database }) {
-  const { db } = opts;
+const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
+
+/** This workspace's hint answers since a moment, by kind. */
+async function hintAnswers(db: Database, workspaceId: string, since: Date) {
+  const rows = await db
+    .select({ kind: suggestionFeedback.kind, action: suggestionFeedback.action, n: count() })
+    .from(suggestionFeedback)
+    .where(and(eq(suggestionFeedback.workspaceId, workspaceId), gte(suggestionFeedback.at, since)))
+    .groupBy(suggestionFeedback.kind, suggestionFeedback.action);
+  const of = (kind: 'duplicate' | 'priority', action: 'accepted' | 'dismissed') =>
+    rows.find((row) => row.kind === kind && row.action === action)?.n ?? 0;
+  return {
+    days: SUGGESTION_DAYS as typeof SUGGESTION_DAYS,
+    duplicate: acceptanceOf(of('duplicate', 'accepted'), of('duplicate', 'dismissed')),
+    priority: acceptanceOf(of('priority', 'accepted'), of('priority', 'dismissed')),
+  };
+}
+
+/** The server's queue as it is now, and a day of every instance's timings. */
+async function serverHealth(db: Database, since: Date) {
+  const [queue, syncLag, fanOut] = await Promise.all([
+    queueStats(db),
+    readInstrument(db, 'sync_lag', since),
+    readInstrument(db, 'fanout_latency', since),
+  ]);
+  return {
+    queue: {
+      due: queue.due,
+      oldestDueSeconds: queue.due === 0 ? null : queue.oldestDueSeconds,
+      deadLetters: queue.dead,
+    },
+    syncLag: readingOf(syncLag),
+    fanOut: readingOf(fanOut),
+  };
+}
+
+/** Whether this person runs the server: a configured, verified address. */
+async function runsTheServer(db: Database, operators: readonly string[], userId: string) {
+  if (operators.length === 0) return false;
+  const [row] = await db
+    .select({ email: users.email, verifiedAt: users.emailVerifiedAt })
+    .from(users)
+    .where(eq(users.id, userId));
+  return row?.verifiedAt != null && isOperator(operators, row.email);
+}
+
+/**
+ * System health (Phase 6), from real instruments: a month of this
+ * workspace's hint answers and, for the server's operators only, its job
+ * queue and a day of the timings every instance records.
+ */
+async function healthOf(db: Database, workspaceId: string, operator: boolean, now: Date) {
+  const since = new Date(now.getTime() - HEALTH_HOURS * HOUR_MS);
+  const [server, suggestions] = await Promise.all([
+    operator ? serverHealth(db, since) : null,
+    hintAnswers(db, workspaceId, new Date(now.getTime() - SUGGESTION_DAYS * DAY_MS)),
+  ]);
+  return {
+    since: since.toISOString(),
+    hours: HEALTH_HOURS as typeof HEALTH_HOURS,
+    minSample: INSIGHT_MIN_SAMPLE as typeof INSIGHT_MIN_SAMPLE,
+    server,
+    suggestions,
+  };
+}
+
+export async function insightRoutes(
+  app: FastifyInstance,
+  opts: { db: Database; operators: readonly string[] },
+) {
+  const { db, operators } = opts;
 
   serve(
     app,
@@ -144,6 +236,16 @@ export async function insightRoutes(app: FastifyInstance, opts: { db: Database }
         minSample: INSIGHT_MIN_SAMPLE as typeof INSIGHT_MIN_SAMPLE,
         projects: flows,
       };
+    },
+  );
+
+  serve(
+    app,
+    contracts['insights.health'],
+    { preHandler: [requireAuth, requireMembership(db, 'health:read')] },
+    async (request) => {
+      const operator = await runsTheServer(db, operators, currentUser(request).id);
+      return healthOf(db, currentMembership(request).workspaceId, operator, new Date());
     },
   );
 }

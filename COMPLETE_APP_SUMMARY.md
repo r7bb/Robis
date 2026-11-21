@@ -14,9 +14,9 @@ Written to be checkable. Every row names a file you can open.
 | --- | --- |
 | Services | 5 (web, API, realtime gateway, worker, MCP server for agents) plus an optional ML service |
 | Database tables | 18 |
-| HTTP endpoints | 154 |
+| HTTP endpoints | 155 |
 | Tests | Counted in [docs/ROADMAP.md](docs/ROADMAP.md), the one place they are kept |
-| Screenshots | 34, all captured from the running app |
+| Screenshots | 35, all captured from the running app |
 | Measured throughput | ~3,600 req/s, zero errors |
 
 ---
@@ -84,6 +84,7 @@ second "consumed" state to get wrong.
 | Stories: a photo or a few words, seen by the workspace for 24 hours and a 404 on every route after, before the job that deletes the row and queues the file has run; photos re-encoded without metadata and served to members only; posting and taking down audited without the words; an owner can turn them off, which hides them and refuses new ones. In the app: a strip atop the chat, rings on pictures, a full-screen viewer and a composer (photo chosen, taken or pasted, or words); a photo posted offline posts once on reconnect | `backend/api/src/routes/stories.ts`, `backend/database/src/stories.ts`, `frontend/features/stories/`, `shared/sync/src/engine.ts` |
 | Project health on the Feed: a card per active project with open, done this week, overdue and urgent, and a state from written rules (needs a look, on track, quiet, finished) in words, never colour alone; worked out from the issues on each read, with done stamped by a database trigger | `backend/api/src/routes/feed-highlights.ts`, `backend/api/src/feed/health.ts`, `frontend/features/feed/project-health.tsx` |
 | Insights: each active project's median cycle time with its spread (half took between, one in ten over) and the number of issues behind it, and twelve weeks of throughput, from the status changes in the audit trail; below ten finished issues the counts and no figures. Rules written on the page; nothing stored | `backend/api/src/insights/flow.ts`, `backend/api/src/routes/insights.ts`, `frontend/features/insights/` |
+| System health on Insights: for workspace admins, a month of hint acceptance (used out of answered, from ten answers); for the server's operators (`HEALTH_OPERATORS`), the job queue and a day of sync lag and live-update latency, timed as the services work and kept as bucket counts per minute that add across instances, shown as bucket edges with the count behind them | `backend/database/src/instruments.ts`, `backend/api/src/plugins/sync-lag.ts`, `backend/api/src/insights/health.ts`, `frontend/features/insights/health-view.tsx` |
 | Celebrations on the Feed: a project finished, a 10th (25th...) issue done, an anniversary, a new teammate, from the last seven days, with Say well done starting a post; never for agents or anyone who opted out on their profile, a choice only they can see | `backend/api/src/feed/celebrations.ts`, `frontend/features/feed/celebrations.tsx` |
 | A picture a day from public image libraries (NASA, Wikimedia Commons, Openverse): an agent posts an openly licensed, credited picture, sometimes as a meme drawn by Robis; HTTPS to named hosts only, nothing sent | `backend/worker/src/pictures/` |
 | A weekly check-in on the Feed: the answer is a post and your profile's Working on line; optional, no streaks, nobody told who has not answered | `backend/api/src/routes/posts.ts`, `frontend/features/feed/check-in.tsx` |

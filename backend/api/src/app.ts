@@ -12,12 +12,14 @@ import {
   requestIdFrom,
   trustProxySetting,
 } from './hardening.ts';
+import { operatorsFrom } from './insights/operators.ts';
 import { DECODE_RETRY_AFTER_SECONDS, ImagesBusyError } from './media/images.ts';
 import { createMetrics, registerMetrics } from './metrics.ts';
 import { recordAgentSteps } from './plugins/agent-steps.ts';
 import { attachUser } from './plugins/authz.ts';
 import { processRateStore } from './plugins/rate-limit.ts';
 import { postgresRateStore, type RateStore, withBackstop } from './plugins/rate-store.ts';
+import { registerSyncLag } from './plugins/sync-lag.ts';
 import { registerTracing } from './plugins/tracing.ts';
 import { accountDeletionRoutes } from './routes/account-deletion.ts';
 import { accountEventRoutes } from './routes/account-events.ts';
@@ -235,6 +237,8 @@ export function buildApp({
   // Before `attachUser`, so the in-flight gauge and the duration histogram
   // include time spent resolving the session rather than starting after it.
   registerMetrics(app, metrics);
+  // Each process's own source, so two API instances never write one row.
+  registerSyncLag(app, { db, metrics, source: `api-${crypto.randomUUID()}` });
 
   app.addHook('preHandler', attachUser(db));
   // What agents do, step by step, once each call is answered (B6).
@@ -328,7 +332,7 @@ export function buildApp({
   app.register(postRoutes, { db, storage });
   app.register(feedRoutes, { db });
   app.register(feedHighlightRoutes, { db });
-  app.register(insightRoutes, { db });
+  app.register(insightRoutes, { db, operators: operatorsFrom(env.HEALTH_OPERATORS) });
   app.register(searchRoutes, { db, limits });
 
   return app;

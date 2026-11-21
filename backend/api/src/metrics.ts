@@ -1,4 +1,5 @@
 import { Registry } from '@robis/metrics';
+import { INSTRUMENT_BOUNDS_MS } from '@robis/shared';
 import type { FastifyInstance } from 'fastify';
 
 /**
@@ -56,7 +57,16 @@ export function createMetrics() {
     ['outcome'],
   );
 
-  return { registry, requests, duration, inFlight, mlCalls };
+  // How long a change waited in a browser's offline queue before it was
+  // accepted (Phase 6), as the browser reports it.
+  const syncLag = registry.histogram(
+    'robis_sync_lag_seconds',
+    "From a change being queued in a browser to the server accepting it, by the browser's clock, in seconds.",
+    [],
+    INSTRUMENT_BOUNDS_MS.map((ms) => ms / 1000),
+  );
+
+  return { registry, requests, duration, inFlight, mlCalls, syncLag };
 }
 
 /**

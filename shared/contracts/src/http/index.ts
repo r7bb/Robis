@@ -49,7 +49,16 @@ export {
   SUGGESTION_ACTIONS,
   SUGGESTION_KINDS,
 } from './feedback.ts';
-export { INSIGHT_MIN_SAMPLE, INSIGHT_WEEKS } from './insights.ts';
+export {
+  HEALTH_HOURS,
+  INSIGHT_MIN_SAMPLE,
+  INSIGHT_WEEKS,
+  INSTRUMENT_BOUNDS_MS,
+  INSTRUMENTS,
+  type Instrument,
+  QUEUED_FOR_HEADER,
+  SUGGESTION_DAYS,
+} from './insights.ts';
 export {
   BULK_ISSUES_MAX,
   BULK_SKIP_REASONS,

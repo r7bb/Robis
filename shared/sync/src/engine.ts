@@ -64,13 +64,18 @@ function issueEditedBy(mutation: QueuedMutation): string[] {
   }
 }
 
-/** Transport, injected so the engine can be tested without a server. */
+/**
+ * Transport, injected so the engine can be tested without a server. Each
+ * write also gets how long its change has waited in the queue, on this
+ * device's clock, which the server counts as sync lag (Phase 6).
+ */
 export interface SyncTransport {
   createIssue(
     workspaceId: string,
     projectId: string,
     body: { id: string; title: string; status?: IssueStatus; priority?: IssuePriority },
     idempotencyKey: string,
+    queuedForMs?: number,
   ): Promise<{ issue: IssueAnswer }>;
 
   updateIssue(
@@ -83,10 +88,11 @@ export interface SyncTransport {
       position: string;
     }>,
     idempotencyKey: string,
+    queuedForMs?: number,
   ): Promise<{ issue: IssueAnswer }>;
 
   /** Naturally idempotent, so it takes no idempotency key. */
-  deleteIssue(workspaceId: string, issueId: string): Promise<void>;
+  deleteIssue(workspaceId: string, issueId: string, queuedForMs?: number): Promise<void>;
 
   uploadAttachment(
     workspaceId: string,
@@ -94,6 +100,7 @@ export interface SyncTransport {
     body: Blob,
     contentType: string,
     idempotencyKey: string,
+    queuedForMs?: number,
   ): Promise<{ attachment: { id: string } }>;
 
   /** A photo story (B2), with the same replay-safe key as an attachment. */
@@ -102,6 +109,7 @@ export interface SyncTransport {
     body: Blob,
     contentType: string,
     idempotencyKey: string,
+    queuedForMs?: number,
   ): Promise<{ story: { id: string } }>;
 
   /** The list joins in the assignee's name; `pending` is the client's own. */
@@ -430,6 +438,7 @@ export class SyncEngine {
   }
 
   private async apply(mutation: QueuedMutation): Promise<void> {
+    const waited = Math.max(0, this.now() - mutation.queuedAt);
     if (mutation.kind === 'attachment.upload') {
       const image = await this.storage.get<Blob>(STORE_BLOBS, mutation.id);
       // The bytes are gone (cleared site data, say): nothing left to send.
@@ -441,6 +450,7 @@ export class SyncEngine {
         image,
         mutation.contentType,
         mutation.id,
+        waited,
       );
       await this.storage.delete(STORE_BLOBS, mutation.id);
       return;
@@ -454,6 +464,7 @@ export class SyncEngine {
         image,
         mutation.contentType,
         mutation.id,
+        waited,
       );
       await this.storage.delete(STORE_BLOBS, mutation.id);
       return;
@@ -467,6 +478,7 @@ export class SyncEngine {
         mutation.projectId,
         { id: mutation.id, ...mutation.input },
         mutation.id,
+        waited,
       );
 
       await this.storeAnswer(issue);
@@ -475,7 +487,7 @@ export class SyncEngine {
 
     if (mutation.kind === 'issue.delete') {
       try {
-        await this.transport.deleteIssue(mutation.workspaceId, mutation.issueId);
+        await this.transport.deleteIssue(mutation.workspaceId, mutation.issueId, waited);
       } catch (error) {
         // The row is already gone -- someone else deleted it, or our own
         // create never reached the server. Either way the intent is satisfied,
@@ -491,6 +503,7 @@ export class SyncEngine {
       mutation.issueId,
       mutation.input,
       `${mutation.id}:${mutation.queuedAt}`,
+      waited,
     );
 
     await this.storeAnswer(issue);

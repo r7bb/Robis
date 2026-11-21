@@ -16,6 +16,7 @@ export * from './erasure.ts';
 export * from './errors.ts';
 export * from './events.ts';
 export * from './files.ts';
+export * from './instruments.ts';
 export * from './mail-jobs.ts';
 export * from './notification-email.ts';
 export * from './notify.ts';

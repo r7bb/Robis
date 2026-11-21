@@ -36,6 +36,8 @@ services:
       SMTP_HOST: mail
       SMTP_PORT: '1025'
       MAIL_FROM: Robis <no-reply@robis.test>
+      # Nobody sees the server's own health until operators are named.
+      HEALTH_OPERATORS: ${HEALTH_OPERATORS:-}
 
   realtime:
     environment: *production

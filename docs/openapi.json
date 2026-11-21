@@ -14802,6 +14802,343 @@
         }
       }
     },
+    "/workspaces/{workspaceId}/insights/health": {
+      "get": {
+        "operationId": "insights.health",
+        "summary": "This workspace's hint acceptance and, for the server's operators, its job queue and a day of sync lag and live-update latency.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "since": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                        }
+                      ]
+                    },
+                    "hours": {
+                      "type": "number",
+                      "const": 24
+                    },
+                    "minSample": {
+                      "type": "number",
+                      "const": 10
+                    },
+                    "server": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "queue": {
+                              "type": "object",
+                              "properties": {
+                                "due": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                "oldestDueSeconds": {
+                                  "anyOf": [
+                                    {
+                                      "type": "number",
+                                      "minimum": 0
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "deadLetters": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "due",
+                                "oldestDueSeconds",
+                                "deadLetters"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "syncLag": {
+                              "type": "object",
+                              "properties": {
+                                "count": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                "median": {
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "withinMs": {
+                                          "anyOf": [
+                                            {
+                                              "type": "integer",
+                                              "exclusiveMinimum": 0,
+                                              "maximum": 9007199254740991
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "withinMs"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "p95": {
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "withinMs": {
+                                          "anyOf": [
+                                            {
+                                              "type": "integer",
+                                              "exclusiveMinimum": 0,
+                                              "maximum": 9007199254740991
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "withinMs"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "count",
+                                "median",
+                                "p95"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "fanOut": {
+                              "type": "object",
+                              "properties": {
+                                "count": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                "median": {
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "withinMs": {
+                                          "anyOf": [
+                                            {
+                                              "type": "integer",
+                                              "exclusiveMinimum": 0,
+                                              "maximum": 9007199254740991
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "withinMs"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "p95": {
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "withinMs": {
+                                          "anyOf": [
+                                            {
+                                              "type": "integer",
+                                              "exclusiveMinimum": 0,
+                                              "maximum": 9007199254740991
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "withinMs"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "count",
+                                "median",
+                                "p95"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "queue",
+                            "syncLag",
+                            "fanOut"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "suggestions": {
+                      "type": "object",
+                      "properties": {
+                        "days": {
+                          "type": "number",
+                          "const": 30
+                        },
+                        "duplicate": {
+                          "type": "object",
+                          "properties": {
+                            "accepted": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "dismissed": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "rate": {
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                  "minimum": 0,
+                                  "maximum": 1
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "accepted",
+                            "dismissed",
+                            "rate"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "priority": {
+                          "type": "object",
+                          "properties": {
+                            "accepted": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "dismissed": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "rate": {
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                  "minimum": 0,
+                                  "maximum": 1
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "accepted",
+                            "dismissed",
+                            "rate"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "days",
+                        "duplicate",
+                        "priority"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "since",
+                    "hours",
+                    "minSample",
+                    "server",
+                    "suggestions"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/signup": {
       "post": {
         "operationId": "auth.signup",

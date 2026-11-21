@@ -449,6 +449,13 @@
       "when": 1795297507199,
       "tag": "0063_insight_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1795298693951,
+      "tag": "0064_instrument_readings",
+      "breakpoints": true
     }
   ]
 }

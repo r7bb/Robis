@@ -1,6 +1,6 @@
 'use client';
 
-import { contracts } from '@robis/shared';
+import { contracts, QUEUED_FOR_HEADER } from '@robis/shared';
 import { createStorage, SyncEngine, SyncError, type SyncTransport } from '@robis/sync';
 import { ApiError, api, BASE_URL, call } from './api.ts';
 
@@ -18,6 +18,14 @@ function toSyncError(error: unknown): SyncError {
 }
 
 /**
+ * How long the change waited in the queue, for the server's sync lag (Phase
+ * 6): whole milliseconds on this device's clock, or nothing when unknown.
+ */
+function waitedHeader(queuedForMs: number | undefined): Record<string, string> {
+  return queuedForMs === undefined ? {} : { [QUEUED_FOR_HEADER]: String(Math.round(queuedForMs)) };
+}
+
+/**
  * A raw image body, posted with its Idempotency-Key: image bytes are not
  * JSON, so this goes around `call`. A network failure is transient and the
  * queue keeps the bytes; a refusal carries the server's own message.
@@ -27,13 +35,18 @@ async function postImage<T>(
   body: Blob,
   contentType: string,
   idempotencyKey: string,
+  queuedForMs?: number,
 ): Promise<T> {
   let response: Response;
   try {
     response = await fetch(`${BASE_URL}${path}`, {
       method: 'POST',
       credentials: 'include',
-      headers: { 'content-type': contentType, 'idempotency-key': idempotencyKey },
+      headers: {
+        'content-type': contentType,
+        'idempotency-key': idempotencyKey,
+        ...waitedHeader(queuedForMs),
+      },
       body,
     });
   } catch (error) {
@@ -50,33 +63,36 @@ async function postImage<T>(
 }
 
 const transport: SyncTransport = {
-  async createIssue(workspaceId, projectId, body, idempotencyKey) {
+  async createIssue(workspaceId, projectId, body, idempotencyKey, queuedForMs) {
     try {
       return await call(contracts['issues.create'], {
         params: { workspaceId, projectId },
         body,
-        headers: { 'idempotency-key': idempotencyKey },
+        headers: { 'idempotency-key': idempotencyKey, ...waitedHeader(queuedForMs) },
       });
     } catch (error) {
       throw toSyncError(error);
     }
   },
 
-  async updateIssue(workspaceId, issueId, body, idempotencyKey) {
+  async updateIssue(workspaceId, issueId, body, idempotencyKey, queuedForMs) {
     try {
       return await call(contracts['issues.update'], {
         params: { workspaceId, issueId },
         body,
-        headers: { 'idempotency-key': idempotencyKey },
+        headers: { 'idempotency-key': idempotencyKey, ...waitedHeader(queuedForMs) },
       });
     } catch (error) {
       throw toSyncError(error);
     }
   },
 
-  async deleteIssue(workspaceId, issueId) {
+  async deleteIssue(workspaceId, issueId, queuedForMs) {
     try {
-      await api<void>(`/workspaces/${workspaceId}/issues/${issueId}`, { method: 'DELETE' });
+      await api<void>(`/workspaces/${workspaceId}/issues/${issueId}`, {
+        method: 'DELETE',
+        headers: waitedHeader(queuedForMs),
+      });
     } catch (error) {
       throw toSyncError(error);
     }
@@ -87,21 +103,23 @@ const transport: SyncTransport = {
    * mutation's id is the Idempotency-Key, which is what makes a replay after
    * a lost response return the first upload instead of storing a second.
    */
-  uploadAttachment(workspaceId, issueId, body, contentType, idempotencyKey) {
+  uploadAttachment(workspaceId, issueId, body, contentType, idempotencyKey, queuedForMs) {
     return postImage<{ attachment: { id: string } }>(
       `/workspaces/${workspaceId}/issues/${issueId}/attachments`,
       body,
       contentType,
       idempotencyKey,
+      queuedForMs,
     );
   },
 
-  uploadStory(workspaceId, body, contentType, idempotencyKey) {
+  uploadStory(workspaceId, body, contentType, idempotencyKey, queuedForMs) {
     return postImage<{ story: { id: string } }>(
       `/workspaces/${workspaceId}/stories/photo`,
       body,
       contentType,
       idempotencyKey,
+      queuedForMs,
     );
   },
 
