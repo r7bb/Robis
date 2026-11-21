@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Whole journeys, tested in a real browser** (2026-11-21). Seven journeys
+  run in real Chrome against the container stack on every push and pull
+  request, from sign-up through the mail sink to a stranger getting not
+  found.
 - **System health on Insights** (2026-11-21). Insights now show how often
   the hints are used and, for the people who run the server, its job queue
   and how quickly changes sync and reach open tabs, timed as the services

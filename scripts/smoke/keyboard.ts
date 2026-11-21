@@ -14,61 +14,15 @@
  */
 
 import type { Page } from '../capture/cdp.ts';
+import { CTRL, press, SHIFT, typeText, WAIT_MS, waitUntil } from './browser-input.ts';
 import { pageCall, signUpInBrowser, startChrome, WEB } from './browser-session.ts';
 
 const PORT = Number(process.env.SMOKE_KEYBOARD_CDP_PORT ?? 9488);
-/** A board write is local first and syncs after; this is long enough for both. */
-const WAIT_MS = 15_000;
-const SHIFT = 8;
-const CTRL = 2;
 
 let failures = 0;
 function check(name: string, ok: boolean, detail = '') {
   if (!ok) failures++;
   process.stdout.write(`  ${ok ? 'ok ' : 'NOT'} ${name}${ok || !detail ? '' : `: ${detail}`}\n`);
-}
-
-const NAMED: Record<string, { code: string; vk: number; text?: string }> = {
-  Enter: { code: 'Enter', vk: 13, text: '\r' },
-  Escape: { code: 'Escape', vk: 27 },
-  Tab: { code: 'Tab', vk: 9 },
-  Delete: { code: 'Delete', vk: 46 },
-  ArrowLeft: { code: 'ArrowLeft', vk: 37 },
-  ArrowRight: { code: 'ArrowRight', vk: 39 },
-  ' ': { code: 'Space', vk: 32, text: ' ' },
-  '?': { code: 'Slash', vk: 191, text: '?' },
-  '/': { code: 'Slash', vk: 191, text: '/' },
-};
-
-/** Press one key: down then up, as a keyboard would. */
-async function press(page: Page, key: string, modifiers = 0) {
-  const named = NAMED[key];
-  const single = key.length === 1 && !named;
-  const code = named?.code ?? (/\d/.test(key) ? `Digit${key}` : `Key${key.toUpperCase()}`);
-  const vk = named?.vk ?? key.toUpperCase().charCodeAt(0);
-  const text = modifiers & CTRL ? undefined : (named?.text ?? (single ? key : undefined));
-  await page.send('Input.dispatchKeyEvent', {
-    type: 'keyDown',
-    key,
-    code,
-    modifiers,
-    windowsVirtualKeyCode: vk,
-    ...(text ? { text, unmodifiedText: text } : {}),
-  });
-  await page.send('Input.dispatchKeyEvent', {
-    type: 'keyUp',
-    key,
-    code,
-    modifiers,
-    windowsVirtualKeyCode: vk,
-  });
-  await Bun.sleep(200);
-}
-
-/** Type text where focus is, as an input method would. */
-async function typeText(page: Page, text: string) {
-  await page.send('Input.insertText', { text });
-  await Bun.sleep(300);
 }
 
 /** Type into a focused select: its options are picked by their first letters. */
@@ -124,13 +78,6 @@ async function choose(page: Page, title: string) {
   );
   check(`the palette offers ${title}`, ready);
   await press(page, 'Enter');
-}
-
-async function waitUntil(page: Page, expression: string, ms = WAIT_MS) {
-  return page.waitFor(expression, ms).then(
-    () => true,
-    () => false,
-  );
 }
 
 async function fileIssues(page: Page, titles: readonly string[]) {

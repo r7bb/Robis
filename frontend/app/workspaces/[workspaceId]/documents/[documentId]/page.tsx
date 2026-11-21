@@ -147,7 +147,7 @@ function DocumentView() {
       />
 
       <p className="mt-3 text-xs text-faint">
-        Edits merge as a CRDT — concurrent changes to the same paragraph both survive.
+        Edits merge as a CRDT: concurrent changes to the same paragraph both survive.
       </p>
     </main>
   );

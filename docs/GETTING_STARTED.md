@@ -9,6 +9,7 @@ How to run it, the commands, and what a deployment needs. Back to the
 docker compose -f deploy/compose.yaml up --build --wait
 bun run smoke:stack
 bun run smoke:browser
+bun run journeys
 ```
 
 Everything is reached through one address, the edge proxy on port 3000:
@@ -59,6 +60,7 @@ Sign in as `rohit@robis.test` with `robis-demo-password`.
 | `bun run mail:start`     | local mail inbox, SMTP on port 1025                 |
 | `bun run smoke:stack`    | drive a running container stack                     |
 | `bun run smoke:browser`  | load the stack in Chrome under its security policy  |
+| `bun run journeys`       | whole journeys in Chrome against the stack          |
 | `bun run smoke:images`   | check each built image holds only its own packages  |
 
 Every picture in the README comes from those two capture scripts driving a

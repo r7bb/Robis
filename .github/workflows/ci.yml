@@ -253,6 +253,14 @@ jobs:
       - name: Every board action without a mouse
         run: bun run scripts/smoke/keyboard.ts
 
+      # Whole journeys in real Chrome (E1): sign-up through the mail sink,
+      # an offline board write and reconnect, two people on one document,
+      # chat delivery, a reschedule clearing answers, a guest with no write
+      # controls, and a stranger getting not found. On every push and pull
+      # request; a broken offline queue fails it.
+      - name: Browser journeys
+        run: bun run scripts/journeys/run.ts
+
       # Health is checked at start-up by `--wait`; this checks it again
       # after real traffic, so a service that fell over during the smoke
       # test fails the job too.

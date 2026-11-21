@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-21',
     area: 'Product',
+    title: 'Whole journeys, tested in a real browser',
+    brief:
+      'Seven journeys run in real Chrome against the container stack on every push and pull request, from sign-up through the mail sink to a stranger getting not found.',
+    summary:
+      'A browser suite that takes the journeys people take, each in its own headless Chrome with fresh accounts: signing up through the pages with the link read from the mail sink, filing an issue on the board offline and seeing it sync once on reconnect, two people typing into one document and each seeing the other, a chat message reaching another open room, a meeting moved and the answers already given cleared live, a guest finding no control that would change the work, and someone outside the workspace getting not found from the page and the API. It runs in CI after the smoke tests, keeping the stack’s real rate limits.',
+    checked:
+      'All seven pass against the compose stack here, 36 checks. The offline journey was run with the queue’s flush made to send nothing, and failed: the card stayed unsynced and never reached the server. CI runs it on every push and pull request.',
+  },
+  {
+    date: '2026-11-21',
+    area: 'Product',
     title: 'System health on Insights',
     brief:
       'Insights now show how often the hints are used and, for the people who run the server, its job queue and how quickly changes sync and reach open tabs, timed as the services work.',

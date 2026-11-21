@@ -196,6 +196,7 @@ JavaScript.
 | Health endpoints | `backend/api/src/app.ts` |
 | Load harness | `scripts/bench/loadtest.ts` |
 | Screenshot capture over CDP | `scripts/capture/screenshots.ts` |
+| Browser journeys in real Chrome against the container stack, in CI on every push and pull request: sign-up through the mail sink, an offline board write and reconnect, two people on one document, chat delivery, a reschedule clearing answers, a guest with no write controls, a stranger getting not found | `scripts/journeys/` |
 | CI: lint, typecheck, test, build | `.github/workflows/ci.yml` |
 
 ## Machine learning

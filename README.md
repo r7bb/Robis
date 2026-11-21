@@ -197,6 +197,9 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Whole journeys, tested in a real browser.** Seven journeys run in real
+  Chrome against the container stack on every push and pull request, from
+  sign-up through the mail sink to a stranger getting not found.
 - **System health on Insights.** Insights now show how often the hints are
   used and, for the people who run the server, its job queue and how quickly
   changes sync and reach open tabs, timed as the services work.
@@ -204,10 +207,6 @@ with Postgres on the same machine. Method and percentiles in
   takes on each project and how much gets done each week, from the status
   changes the audit trail keeps, with the number of issues behind every
   figure.
-- **Alert rules, tested, with a runbook.** Prometheus alert rules for
-  errors, slow requests, the job queue, the audit stream, the live
-  connections and the ML service, each tested in CI and explained in a
-  runbook.
 
 <!-- latest:end -->
 
