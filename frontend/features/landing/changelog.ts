@@ -44,6 +44,26 @@ export type Entry = {
 
 export const CHANGELOG: readonly Entry[] = [
   {
+    date: '2026-11-21',
+    area: 'Product',
+    title: 'Insights: cycle time and throughput',
+    brief:
+      'An Insights page: how long work takes on each project and how much gets done each week, from the status changes the audit trail keeps, with the number of issues behind every figure.',
+    summary:
+      'A card per active project with its median cycle time, the spread behind it (half took between, one in ten took over) and how many issues it comes from, beside twelve weeks of finished issues as bars. Everything is worked out from the status changes the audit trail already keeps, on each read, and the rules are on the page: an issue is finished at its last move to done while still done, started at its first move into work, again from a reopen, and one that never moved into work is counted but not timed. Below ten finished issues a project shows its counts and says it has too few to chart, rather than drawing a guess.',
+    checked:
+      'Fourteen tests: a seeded history whose median, quartiles, 90th percentile and weekly counts match answers worked by hand, the rules for reopened, filed done and created in work issues, the window edge, another workspace kept out, and guests in, strangers 404. Nine tests of what the page says, short spans included. Seen in Chrome at desktop and phone widths against the compose stack. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Insights',
+      where: 'Sidebar: Insights',
+      layers: [
+        'Screen: a card per project with the median, its spread and the issue count, twelve weekly bars with every week read out to screen readers, and counts in words below ten',
+        'API: insights.flow reads each finished issue’s status moves and works out the figures on every read',
+        'Database: two partial indexes, on finished issues and on status-change events',
+      ],
+    },
+  },
+  {
     date: '2026-11-20',
     area: 'Product',
     title: 'Alert rules, tested, with a runbook',

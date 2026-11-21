@@ -231,6 +231,7 @@ function MoreLinks({ workspaceId }: { workspaceId: string }) {
     { href: `/workspaces/${workspaceId}/feed`, label: 'Feed' },
     { href: `/workspaces/${workspaceId}/meetings`, label: 'Meetings' },
     { href: `/workspaces/${workspaceId}/activity`, label: 'Activity' },
+    { href: `/workspaces/${workspaceId}/insights`, label: 'Insights' },
     { href: `/workspaces/${workspaceId}/people`, label: 'People' },
   ];
   return (

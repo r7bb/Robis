@@ -11,6 +11,7 @@ import { documentContracts } from './documents.ts';
 import { feedContracts } from './feed.ts';
 import { feedHighlightContracts } from './feed-highlights.ts';
 import { feedbackContracts } from './feedback.ts';
+import { insightContracts } from './insights.ts';
 import { issueContracts } from './issues.ts';
 import { bulkIssueContracts } from './issues-bulk.ts';
 import { labelContracts } from './labels.ts';
@@ -48,6 +49,7 @@ export {
   SUGGESTION_ACTIONS,
   SUGGESTION_KINDS,
 } from './feedback.ts';
+export { INSIGHT_MIN_SAMPLE, INSIGHT_WEEKS } from './insights.ts';
 export {
   BULK_ISSUES_MAX,
   BULK_SKIP_REASONS,
@@ -86,6 +88,7 @@ export const contracts = {
   ...profileContracts,
   ...feedContracts,
   ...feedHighlightContracts,
+  ...insightContracts,
   ...accountContracts,
 } as const satisfies Record<string, Contract>;
 

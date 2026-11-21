@@ -352,6 +352,18 @@ hint feedback with no user named, and the admin page at
 - System health from real instruments: sync lag, queue depth, realtime
   fan-out latency, suggestion acceptance.
 
+**Cycle time and throughput, 2026-11-21:** an Insights page with a card
+per active project: the median cycle time, the spread (half took between,
+one in ten over) and the number of issues behind it, and finishes per
+week over twelve weeks. All from the `issue.status_changed` events the
+audit trail keeps, worked out on each read, never stored. The rules are
+in `backend/api/src/insights/flow.ts` and on the page: finished at the
+last move to done while still done, started at the first move into work
+(again from a reopen), and below ten finished issues the counts and no
+figures. Two partial indexes keep the reads off the whole trail. Offline
+changes are timed when they reach the server, not when they were made.
+System health is next.
+
 ## Phase 7. Calendar (S to M)
 
 - An ICS feed per member for meetings, with a revocable feed token.

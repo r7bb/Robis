@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-11-20): **1565 TypeScript tests, 100 Python tests, lint and
+Status (2026-11-21): **1627 TypeScript tests, 106 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -56,6 +56,11 @@ update log with compaction, live cursors.
 
 **Chat.** Workspace channels, message history with keyset paging, moderation,
 day separators and author grouping, realtime delivery carrying ids only.
+
+**Insights.** Cycle time and throughput per project from the status
+changes in the audit trail: the median, its spread and the issues behind
+it, and below ten finished issues the counts instead of a figure. Tested
+against a seeded history with hand-worked answers. System health is next.
 
 **Meetings.** Scheduling, invitations intersected with the roster, RSVP,
 reschedule-clears-answers, cancel-not-delete.

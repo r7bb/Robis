@@ -24,7 +24,9 @@ import { mcpFetch } from './mcp-harness.ts';
 beforeEach(resetDatabase);
 afterAll(closeHarness);
 
-const DAY = new Date('2026-11-20T09:00:00Z');
+// Today's date, not a fixed one: the stories themselves carry the real time,
+// so a fixed day stops matching them once that day has passed.
+const DAY = new Date(`${new Date().toISOString().slice(0, 10)}T09:00:00Z`);
 const run =
   (now = DAY) =>
   async () => {

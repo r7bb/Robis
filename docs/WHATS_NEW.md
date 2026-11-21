@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Insights: cycle time and throughput** (2026-11-21). An Insights page:
+  how long work takes on each project and how much gets done each week, from
+  the status changes the audit trail keeps, with the number of issues behind
+  every figure.
 - **Alert rules, tested, with a runbook** (2026-11-20). Prometheus alert
   rules for errors, slow requests, the job queue, the audit stream, the live
   connections and the ML service, each tested in CI and explained in a

@@ -14,6 +14,7 @@
     "./feed-week": "./src/feed/week.ts",
     "./hardening": "./src/hardening.ts",
     "./images": "./src/media/images.ts",
+    "./insights-flow": "./src/insights/flow.ts",
     "./metrics": "./src/metrics.ts",
     "./rate-limit": "./src/plugins/rate-limit.ts",
     "./rate-store": "./src/plugins/rate-store.ts",

@@ -123,6 +123,26 @@ transaction mode) or a larger `max_connections` should come first. The
 gateway's `LISTEN` connection cannot go through a transaction-mode pooler:
 point it at Postgres directly.
 
+## Migrations that build indexes
+
+The migrator runs each migration in one transaction, so a `CREATE INDEX`
+holds writes to its table until it is built. On a small database that is a
+moment. On a large one, build the index first by hand, without holding
+writes, and the migration then finds it there. Migration 0063 (Insights)
+is written for that, on `audit_events`, which every audited write appends
+to:
+
+```sql
+CREATE INDEX CONCURRENTLY IF NOT EXISTS audit_events_status_moves_idx
+  ON audit_events (workspace_id, entity_id, seq)
+  WHERE event_type = 'issue.status_changed';
+CREATE INDEX CONCURRENTLY IF NOT EXISTS issues_workspace_completed_idx
+  ON issues (workspace_id, completed_at) WHERE status = 'DONE';
+```
+
+Earlier migrations build theirs inside the transaction; on a large table,
+run those in a window with writers stopped.
+
 ## What else a deployment needs
 
 - The database owner for migrations and roles (`MIGRATION_DATABASE_URL`),

@@ -66,12 +66,13 @@ describe('which events a page acts on', () => {
 });
 
 describe('what an event makes stale', () => {
-  test('a new issue refreshes its project’s issues, the project list and the Feed’s health and celebrations', () => {
+  test('a new issue refreshes its project’s issues, the project list, the Feed and Insights', () => {
     expect(staleKeys(issueCreated)).toEqual([
       ['issues', W, 'p1'],
       ['projects', W],
       ['feed-projects', W],
       ['feed-celebrations', W],
+      ['insights-flow', W],
     ]);
   });
 

@@ -24,6 +24,8 @@ export function staleKeys(event: ServerEvent): unknown[][] {
         // The Feed's project health and celebrations come from the issues (Phase 2c).
         ['feed-projects', event.workspaceId],
         ['feed-celebrations', event.workspaceId],
+        // Insights' cycle time and throughput come from status moves (Phase 6).
+        ['insights-flow', event.workspaceId],
       ];
     case 'project.created':
     case 'project.deleted':
@@ -31,6 +33,7 @@ export function staleKeys(event: ServerEvent): unknown[][] {
         ['projects', event.workspaceId],
         ['feed-projects', event.workspaceId],
         ['feed-celebrations', event.workspaceId],
+        ['insights-flow', event.workspaceId],
       ];
     case 'comment.created':
       return [['comments', event.workspaceId, event.issueId]];

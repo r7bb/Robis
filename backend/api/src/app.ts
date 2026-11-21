@@ -36,6 +36,7 @@ import { documentRoutes } from './routes/documents.ts';
 import { feedRoutes } from './routes/feed.ts';
 import { feedHighlightRoutes } from './routes/feed-highlights.ts';
 import { feedbackRoutes } from './routes/feedback.ts';
+import { insightRoutes } from './routes/insights.ts';
 import { invitationRoutes } from './routes/invitations.ts';
 import { issueRoutes } from './routes/issues.ts';
 import { bulkIssueRoutes } from './routes/issues-bulk.ts';
@@ -327,6 +328,7 @@ export function buildApp({
   app.register(postRoutes, { db, storage });
   app.register(feedRoutes, { db });
   app.register(feedHighlightRoutes, { db });
+  app.register(insightRoutes, { db });
   app.register(searchRoutes, { db, limits });
 
   return app;

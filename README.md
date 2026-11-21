@@ -111,6 +111,9 @@ Openverse, openly licensed and credited, and now and then as a meme.
 Project health cards say how each project is doing, from its issues, and
 the week's milestones get a Say well done (a project finished, a 10th
 issue, a year with the team), never for anyone who opts out.
+Insights show how long work takes on each project and how much gets done
+each week, from the status changes the audit trail keeps, with the number
+of issues behind every figure, and no figure at all below ten.
 Everything stays inside the workspace, and photos are stored without their
 location.
 
@@ -125,6 +128,9 @@ location.
   </tr>
   <tr>
     <td colspan="2"><img src="imgs/33-feed-week.webp" alt="The Feed's celebrations, each with Say well done, above project health cards: Web App needs a look, Mobile on track, Launch Plan finished"></td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="imgs/34-insights.webp" alt="Insights: Web App's median cycle time of 3.3 days with its spread and twelve weeks of finished issues as bars; Mobile, with two finished, says it has too few to chart"></td>
   </tr>
 </table>
 
@@ -185,6 +191,10 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Insights: cycle time and throughput.** An Insights page: how long work
+  takes on each project and how much gets done each week, from the status
+  changes the audit trail keeps, with the number of issues behind every
+  figure.
 - **Alert rules, tested, with a runbook.** Prometheus alert rules for
   errors, slow requests, the job queue, the audit stream, the live
   connections and the ML service, each tested in CI and explained in a
@@ -193,9 +203,6 @@ with Postgres on the same machine. Method and percentiles in
   trace now reaches the realtime gateway’s fan-out to open tabs and the ML
   service’s duplicate hints, so each is a span in the request that caused
   it.
-- **Log lines that lead to their trace.** Every service now writes
-  structured JSON logs, each line with its service, level, and the trace and
-  span it was written in; the API’s carry the request id too.
 
 <!-- latest:end -->
 

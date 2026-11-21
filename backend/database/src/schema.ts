@@ -707,6 +707,10 @@ export const issues = pgTable(
     index('issues_assignee_idx').on(t.assigneeId),
     index('issues_project_position_idx').on(t.projectId, t.position),
     index('issues_parent_idx').on(t.parentId),
+    // Insights (Phase 6): the issues finished in the last twelve weeks.
+    index('issues_workspace_completed_idx')
+      .on(t.workspaceId, t.completedAt)
+      .where(sql`${t.status} = 'DONE'`),
     check('issues_parent_not_self', sql`${t.parentId} <> ${t.id}`),
     index('issues_search_idx').using('gin', t.searchVector),
   ],
@@ -985,6 +989,10 @@ export const auditEvents = pgTable(
     // seen actor walks the workspace's whole chain before filling a page.
     index('audit_events_workspace_actor_seq_idx').on(t.workspaceId, t.actorId, t.seq),
     index('audit_events_workspace_entity_seq_idx').on(t.workspaceId, t.entityType, t.seq),
+    // Insights (Phase 6): one issue's status moves, however old the first.
+    index('audit_events_status_moves_idx')
+      .on(t.workspaceId, t.entityId, t.seq)
+      .where(sql`${t.eventType} = 'issue.status_changed'`),
     // Null is unsigned; anything else must look like a key id, so no value
     // (an empty string, say) can sit between the two.
     check(
