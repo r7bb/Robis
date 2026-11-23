@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Automation rules: the engine** (2026-11-23). Rules that act on issues by
+  themselves: a trigger, conditions that must all hold, and one action, run
+  once per change and named in the audit trail.
 - **A week view of meetings and due dates** (2026-11-23). A Calendar page:
   the week’s meetings laid out in your own time zone, repeats included, with
   the issues due each day along the top.

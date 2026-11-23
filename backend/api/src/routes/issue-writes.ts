@@ -82,7 +82,8 @@ export async function queueAssignment(
   const job: AssignmentJob = {
     issueId,
     assigneeId,
-    actorId: actor.id,
+    // A rule is not a person to name in a notice (B9); Robis's own notices have none.
+    actorId: actor.kind === 'rule' ? null : actor.id,
     eventId: `${issueId}:${assigneeId}:${noticeWindow()}`,
   };
   await enqueue(tx, NOTIFY_ASSIGNMENT_JOB, job);

@@ -68,6 +68,8 @@ export const PERMISSIONS = [
    * also need the address to be one of HEALTH_OPERATORS.
    */
   'health:read',
+  /** Add, change and remove automation rules, and read their runs (B9). */
+  'automation:manage',
 
   /** Attach an image to an issue or to your own comment. */
   'attachment:create',
@@ -167,6 +169,8 @@ const ADMIN: readonly Permission[] = [
   'audit:read',
   // How well the hints serve the workspace is an administrator's question.
   'health:read',
+  // Rules act on everyone's issues, so who may write them is too.
+  'automation:manage',
   // Who acts on the workspace's behalf is the same kind of question.
   'agent:manage',
   'story:delete_any',

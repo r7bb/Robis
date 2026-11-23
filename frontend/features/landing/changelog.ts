@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-23',
     area: 'Product',
+    title: 'Automation rules: the engine',
+    brief:
+      'Rules that act on issues by themselves: a trigger, conditions that must all hold, and one action, run once per change and named in the audit trail.',
+    summary:
+      'The engine for automation rules. An administrator writes a rule through the API: when an issue is created, changes status or gains a label, and every condition holds (its status, priority, assignee, label or title), set its status or priority, assign it, or comment on it. Rules run on the job queue a moment after the change, in the API, which alone signs the audit trail, and every action is recorded as the rule’s own. A rule never acts on its own change, a chain of rules setting each other off stops three deep with a note saying so, and a job that runs twice does nothing twice. The rules page and more actions come next.',
+    checked:
+      'Eight tests: conditions all holding, a matching rule acting as itself in the trail while a non-matching one records why, a rule that would trigger itself running once, the same job delivered three times leaving one comment, two rules setting each other off stopping three deep with a note, a label added firing its rule but the same labels saved again not, permissions and an assignee outside the workspace refused, and no job queued where no rule listens. The audit, label, queue and contract suites, the full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-23',
+    area: 'Product',
     title: 'A week view of meetings and due dates',
     brief:
       'A Calendar page: the week’s meetings laid out in your own time zone, repeats included, with the issues due each day along the top.',

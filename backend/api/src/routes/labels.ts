@@ -58,6 +58,15 @@ export async function replaceLabels(
     throw ApiError.badRequest('A label is not one of this workspace’s', 'bad_label');
   }
 
+  // Which labels are new to the issue, for the trail and for rules (B9).
+  const before = new Set(
+    (
+      await tx
+        .select({ labelId: issueLabels.labelId })
+        .from(issueLabels)
+        .where(eq(issueLabels.issueId, issueId))
+    ).map((row) => row.labelId),
+  );
   await tx.delete(issueLabels).where(eq(issueLabels.issueId, issueId));
   if (wanted.length) {
     await tx
@@ -69,7 +78,13 @@ export async function replaceLabels(
     entityType: 'issue',
     entityId: issueId,
     eventType: 'issue.labels_changed',
-    payload: { labels: known.map((label) => label.name).sort() },
+    payload: {
+      labels: known.map((label) => label.name).sort(),
+      added: known
+        .filter((label) => !before.has(label.id))
+        .map((label) => label.name)
+        .sort(),
+    },
   });
   return issue;
 }

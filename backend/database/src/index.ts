@@ -10,6 +10,7 @@ export * from './audit-checkpoints.ts';
 export * from './audit-keys.ts';
 export * from './audit-redaction.ts';
 export * from './audit-seal.ts';
+export * from './automation.ts';
 export * from './discussion.ts';
 export * from './documents.ts';
 export * from './erasure.ts';

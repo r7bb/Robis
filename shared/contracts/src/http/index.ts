@@ -4,6 +4,7 @@ import { agentContracts } from './agents.ts';
 import { attachmentContracts } from './attachments.ts';
 import { auditContracts } from './audit.ts';
 import { authContracts } from './auth.ts';
+import { automationContracts } from './automation.ts';
 import { calendarContracts } from './calendar.ts';
 import { channelContracts } from './channels.ts';
 import { type Contract, statusesOf } from './contract.ts';
@@ -38,6 +39,17 @@ export {
   RUNS_SHOWN,
 } from './agents.ts';
 export { SEARCH_KINDS, SEARCH_LIMIT_MAX } from './audit.ts';
+export {
+  AUTOMATION_CONDITIONS_MAX,
+  AUTOMATION_MAX_DEPTH,
+  AUTOMATION_RULES_MAX,
+  AUTOMATION_TRIGGERS,
+  type AutomationAction,
+  type AutomationCondition,
+  automationAction,
+  CONDITION_FIELDS,
+  CONDITION_OPS,
+} from './automation.ts';
 export * from './contract.ts';
 export { DISCUSSION_LIMIT, DISCUSSION_PREVIEW_CHARS } from './discussion.ts';
 export {
@@ -102,6 +114,7 @@ export const contracts = {
   ...feedHighlightContracts,
   ...insightContracts,
   ...calendarContracts,
+  ...automationContracts,
   ...weekContracts,
   ...accountContracts,
 } as const satisfies Record<string, Contract>;

@@ -21,6 +21,8 @@ export type RunnerOptions = {
   batchSize?: number;
   /** Claim only these kinds. Defaults to every kind. */
   kinds?: readonly string[];
+  /** Never claim these kinds: another process runs them. */
+  exceptKinds?: readonly string[];
   /**
    * How long to wait, idle, before looking again without being woken: the
    * fallback poll. The worker sets 30 seconds and is woken by `wake()` as
@@ -53,6 +55,7 @@ export class Runner {
   private readonly batchSize: number;
   private readonly idleDelayMs: number;
   private readonly kinds: readonly string[] | undefined;
+  private readonly exceptKinds: readonly string[] | undefined;
   private readonly onPoll: (() => void) | undefined;
   private readonly beatMs: number;
   private readonly observe: RunnerOptions['observe'];
@@ -69,6 +72,7 @@ export class Runner {
     this.batchSize = options.batchSize ?? 5;
     this.idleDelayMs = options.idleDelayMs ?? 1000;
     this.kinds = options.kinds;
+    this.exceptKinds = options.exceptKinds;
     this.onPoll = options.onPoll;
     this.beatMs = Math.min(options.beatMs ?? BEAT_MS, this.idleDelayMs);
     this.observe = options.observe;
@@ -111,7 +115,14 @@ export class Runner {
   async tick(): Promise<TickResult> {
     const result: TickResult = { claimed: 0, completed: 0, failed: 0, dead: 0 };
 
-    const batch = await claimJobs(this.db, this.workerId, this.batchSize, new Date(), this.kinds);
+    const batch = await claimJobs(
+      this.db,
+      this.workerId,
+      this.batchSize,
+      new Date(),
+      this.kinds,
+      this.exceptKinds,
+    );
     result.claimed = batch.length;
 
     // Sequential rather than parallel: these are database-bound, and running a

@@ -2,6 +2,7 @@ import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { and, asc, desc, eq, gt, lt, type SQL, sql } from 'drizzle-orm';
 import { AUDIT_KEY_ID, type AuditKeyring, auditKeyring } from './audit-keys.ts';
 import { commitPersonal, type PersonalFields, personalHolds } from './audit-redaction.ts';
+import { queueAutomation, triggerOf } from './automation.ts';
 import type { Executor, Tx } from './index.ts';
 import { type ACTOR_KINDS, auditEvents, auditStreamCursors, workspaces } from './schema.ts';
 
@@ -37,6 +38,8 @@ export type AuditActor = {
   id: string | null;
   kind: ActorKind;
   requestId?: string | null;
+  /** For a rule (B9): how many rules deep the change that set it off was. */
+  depth?: number;
 };
 
 export type AuditInput = {
@@ -220,6 +223,16 @@ export async function recordAudit(tx: Tx, actor: AuditActor, input: AuditInput) 
     .values({ ...hashed, ...(personal ?? {}), hash: auditHash(hashed) })
     .returning();
 
+  // Rules listening for this kind of change are asked, after commit (B9).
+  const trigger = triggerOf(input.eventType, input.payload);
+  if (trigger) {
+    await queueAutomation(tx, {
+      eventId: row!.id,
+      workspaceId,
+      trigger,
+      depth: actor.kind === 'rule' ? (actor.depth ?? 0) + 1 : 0,
+    });
+  }
   return row!;
 }
 

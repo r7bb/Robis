@@ -37,7 +37,7 @@ export const activityEvent = z.object({
   actorId: uuid.nullable(),
   actorName: z.string().nullable(),
   /** As the trail recorded it: a person, an agent (B5), or Robis itself. */
-  actorKind: z.enum(['human', 'agent', 'system']),
+  actorKind: z.enum(['human', 'agent', 'system', 'rule']),
   entityType: z.string(),
   entityId: uuid,
   eventType: z.string(),

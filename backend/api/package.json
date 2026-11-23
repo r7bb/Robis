@@ -8,6 +8,8 @@
     "./calendar": "./src/routes/calendar.ts",
     "./calendar-parse": "./src/calendar/parse.ts",
     "./ics": "./src/calendar/ics.ts",
+    "./automation": "./src/automation/evaluate.ts",
+    "./automation-runner": "./src/automation/runner.ts",
     "./avatars": "./src/routes/avatars.ts",
     "./client-network": "./src/plugins/client-network.ts",
     "./contract": "./src/contract.ts",

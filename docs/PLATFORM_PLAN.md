@@ -417,6 +417,19 @@ reason. At most 50 events and 256 KB a file. The week view is next.
 - Trigger, condition, action, run on the job queue, with loop detection (a
   rule cannot trigger itself) and idempotent execution.
 
+**Rules engine, 2026-11-23:** administrators add rules through the API: a
+trigger (issue created, status changed, label added), up to five
+conditions that must all hold (status, priority, assignee, label, title),
+and one action (set the status or priority, assign, comment). Recording a
+trigger's audit event queues a job, only when an enabled rule listens; the
+API runs those jobs itself, since only it signs the trail, and the worker
+leaves them. Each rule's outcome for each event is one row, written with
+its action in one transaction, so a retried job does nothing twice. A
+rule never acts on its own change, and a chain of rules stops three deep
+with a note in the rule's runs. The trail records each action as the
+rule's (actor kind `rule`). Notify, post to a channel, outgoing webhooks
+and the rules page are next.
+
 ## Images on issues and comments (A2 in the build plan)
 
 **Shipped 2026-10-13.** A storage port with local-disk and S3 drivers (the S3

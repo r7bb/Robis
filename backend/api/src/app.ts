@@ -29,6 +29,7 @@ import { attachmentRoutes } from './routes/attachments.ts';
 import { auditRoutes } from './routes/audit.ts';
 import { authRoutes } from './routes/auth.ts';
 import { authRecoveryRoutes } from './routes/auth-recovery.ts';
+import { automationRoutes } from './routes/automations.ts';
 import { avatarRoutes } from './routes/avatars.ts';
 import { calendarRoutes } from './routes/calendar.ts';
 import { calendarImportRoutes } from './routes/calendar-import.ts';
@@ -339,6 +340,7 @@ export function buildApp({
   app.register(calendarRoutes, { db, webOrigin: env.WEB_ORIGIN });
   app.register(calendarImportRoutes, { db });
   app.register(weekRoutes, { db });
+  app.register(automationRoutes, { db });
   app.register(searchRoutes, { db, limits });
 
   return app;

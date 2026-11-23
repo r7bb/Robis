@@ -20,6 +20,7 @@ import {
   doublePrecision,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
@@ -934,7 +935,8 @@ export const postReactions = pgTable(
 );
 
 /** Who acted: a person, an agent acting through a token, or Robis itself. */
-export const ACTOR_KINDS = ['human', 'agent', 'system'] as const;
+/** `rule`: an automation rule acting on its own (B9); the actor id is the rule's. */
+export const ACTOR_KINDS = ['human', 'agent', 'system', 'rule'] as const;
 export const actorKind = pgEnum('actor_kind', ACTOR_KINDS);
 
 /**
@@ -1879,6 +1881,69 @@ export const instrumentReadings = pgTable(
     // edges reinterprets stored minutes: sweep the table (or wait the week)
     // and change this number in the same migration.
     check('instrument_readings_buckets', sql`cardinality(${t.counts}) = 17`),
+  ],
+);
+
+/**
+ * Automation rules (B9): when something happens to an issue (a trigger,
+ * from the audit trail), and it matches every condition, do one thing.
+ * Conditions and the action are JSON checked by the API's contract.
+ */
+export const automationRules = pgTable(
+  'automation_rules',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    enabled: boolean('enabled').notNull().default(true),
+    trigger: text('trigger').notNull(),
+    conditions: jsonb('conditions').notNull().default([]),
+    action: jsonb('action').notNull(),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index('automation_rules_workspace_trigger_idx')
+      .on(t.workspaceId, t.trigger)
+      .where(sql`${t.enabled}`),
+    check(
+      'automation_rules_trigger',
+      sql`${t.trigger} in ('issue.created', 'issue.status_changed', 'issue.label_added')`,
+    ),
+  ],
+);
+
+/**
+ * What each rule did with each event it heard (B9). One row per rule and
+ * event, so a retried job finds its row and does nothing twice; a skipped
+ * or stopped run is recorded too, which is how a stopped chain is seen.
+ */
+export const automationRuns = pgTable(
+  'automation_runs',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    ruleId: uuid('rule_id')
+      .notNull()
+      .references(() => automationRules.id, { onDelete: 'cascade' }),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    eventId: uuid('event_id').notNull(),
+    depth: integer('depth').notNull(),
+    outcome: text('outcome').notNull(),
+    note: text('note'),
+    at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('automation_runs_rule_event_key').on(t.ruleId, t.eventId),
+    index('automation_runs_rule_at_idx').on(t.ruleId, t.at),
+    check(
+      'automation_runs_outcome',
+      sql`${t.outcome} in ('applied', 'unmatched', 'own_change', 'stopped', 'failed')`,
+    ),
   ],
 );
 

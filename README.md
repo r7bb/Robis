@@ -199,16 +199,15 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Automation rules: the engine.** Rules that act on issues by themselves:
+  a trigger, conditions that must all hold, and one action, run once per
+  change and named in the audit trail.
 - **A week view of meetings and due dates.** A Calendar page: the week’s
   meetings laid out in your own time zone, repeats included, with the issues
   due each day along the top.
 - **Import meetings from an .ics file.** Bring meetings in from any calendar
   app’s .ics file: times land right in any zone, weekly repeats come along,
   and for admins, invitees are matched to the workspace by address.
-- **Your meetings in your calendar app, and weekly repeats.** A private
-  calendar feed for your meetings in every workspace, revocable at any
-  moment, and meetings that repeat weekly at the same local time across
-  clock changes.
 
 <!-- latest:end -->
 

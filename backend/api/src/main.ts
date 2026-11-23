@@ -9,6 +9,7 @@ import { mailerFromEnv } from '@robis/mailer';
 import { startTracingFromEnv } from '@robis/telemetry';
 import { setLogService } from '@robis/telemetry/log';
 import { buildApp, rateStoreFromEnv } from './app.ts';
+import { startAutomationRunner } from './automation/runner.ts';
 import { loadEnv } from './env.ts';
 import { serveMetrics } from './metrics.ts';
 
@@ -45,6 +46,8 @@ const app = buildApp({
 
 await app.listen({ port: env.API_PORT, host: env.API_HOST });
 const metricsServer = serveMetrics(app, { port: env.METRICS_PORT, hostname: env.METRICS_HOST });
+// Automation rules run here, not in the worker: only the API signs the trail (B9).
+const stopAutomation = startAutomationRunner(db, app.log);
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.once(signal, async () => {
@@ -52,6 +55,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     // pool goes away, so a deploy doesn't turn into a burst of 500s.
     await app.close();
     metricsServer.stop();
+    await stopAutomation();
     // A failed sign-in is recorded just after its reply; let those land.
     await settleDeferredAccountEvents();
     await settleAgentSteps();

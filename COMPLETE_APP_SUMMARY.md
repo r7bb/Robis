@@ -14,7 +14,7 @@ Written to be checkable. Every row names a file you can open.
 | --- | --- |
 | Services | 5 (web, API, realtime gateway, worker, MCP server for agents) plus an optional ML service |
 | Database tables | 18 |
-| HTTP endpoints | 160 |
+| HTTP endpoints | 165 |
 | Tests | Counted in [docs/ROADMAP.md](docs/ROADMAP.md), the one place they are kept |
 | Screenshots | 35, all captured from the running app |
 | Measured throughput | ~3,600 req/s, zero errors |
@@ -145,6 +145,7 @@ authorisation path.
 
 | Feature | Where |
 | --- | --- |
+| Automation rules (API): a trigger from the audit trail, conditions that must all hold, one action (status, priority, assign, comment); run once per change on the API's own job runner, never on a rule's own change, chains stopped three deep with a note; the trail names the rule | `backend/api/src/automation/`, `backend/api/src/routes/automations.ts`, `backend/database/src/automation.ts` |
 | A week view (Calendar): the workspace's meetings and repeats laid out in the viewer's zone, overlaps side by side, issues due each day along the top, a list of days on a phone | `frontend/features/calendar/`, `backend/api/src/routes/week.ts` |
 | Meetings imported from an .ics file: timed events in UTC, a named zone or floating time, weekly repeats with a count or end, invitees matched to the roster by address for admins only; anything else left out with a reason | `backend/api/src/calendar/parse.ts`, `backend/api/src/routes/calendar-import.ts`, `frontend/features/meetings/import-calendar.tsx` |
 | A private calendar feed per person (Account, Calendar feed): every meeting they are in, each weekly occurrence its own event at its UTC instant, revocable, a 404 once revoked; weekly repeats kept at the organiser's wall-clock time across clock changes | `backend/api/src/routes/calendar.ts`, `backend/api/src/calendar/ics.ts`, `shared/contracts/src/calendar.ts` |

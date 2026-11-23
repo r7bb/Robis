@@ -15,7 +15,7 @@ const auditEvent = z.object({
   workspaceId: uuid,
   seq: z.number().int(),
   occurredAt: z.string(),
-  actor: z.object({ id: uuid.nullable(), kind: z.enum(['human', 'agent', 'system']) }),
+  actor: z.object({ id: uuid.nullable(), kind: z.enum(['human', 'agent', 'system', 'rule']) }),
   actorName: z.string().nullable(),
   requestId: z.string().nullable(),
   entity: z.object({ type: z.string(), id: z.string() }),

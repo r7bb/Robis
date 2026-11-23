@@ -1,4 +1,5 @@
 import {
+  AUTOMATION_JOB,
   createDatabase,
   type EnqueueOptions,
   enqueue,
@@ -55,6 +56,8 @@ const runner = new Runner({
   idleDelayMs: FALLBACK_POLL_MS,
   onPoll: heartbeat(process.env.WORKER_HEARTBEAT_FILE ?? DEFAULT_HEARTBEAT_FILE),
   observe: metrics.observe,
+  // Automation rules run in the API, which signs the trail (B9).
+  exceptKinds: [AUTOMATION_JOB],
 });
 
 /**

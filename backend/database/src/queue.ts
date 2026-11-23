@@ -130,6 +130,8 @@ export async function claimJobs(
   now: Date = new Date(),
   /** Only these kinds, when given. Lets a test deliver mail without running every job. */
   kinds?: readonly string[],
+  /** Never these kinds: another process runs them (B9's rules run in the API). */
+  exceptKinds?: readonly string[],
 ): Promise<ClaimedJob[]> {
   // Asked for no kinds: nothing to claim, and `in ()` is not valid SQL.
   if (kinds?.length === 0) return [];
@@ -154,6 +156,7 @@ export async function claimJobs(
           and ${jobs.runAt} <= ${dueBy}::timestamptz
           and (${jobs.lockedAt} is null or ${jobs.lockedAt} < ${staleCutoff}::timestamptz)
           ${kinds ? sql`and ${jobs.kind} in ${kinds}` : sql``}
+          ${exceptKinds?.length ? sql`and ${jobs.kind} not in ${exceptKinds}` : sql``}
         order by ${jobs.runAt}
         for update skip locked
         limit ${limit}
