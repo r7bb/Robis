@@ -191,7 +191,10 @@ compliance claim: it describes what the code does and what was measured.
 
 From the load harness in this repository (`bun run loadtest`), on one laptop
 with Postgres on the same machine. Method and percentiles in
-[How it works](docs/HOW_IT_WORKS.md).
+[How it works](docs/HOW_IT_WORKS.md), with the
+[failure drills](docs/HOW_IT_WORKS.md#failure-drills) CI runs on every
+push: the worker, the gateway and Postgres each broken on purpose, with
+no write lost and nothing done twice.
 
 <br>
 
@@ -199,15 +202,16 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Failure drills, run on every push.** CI now breaks the stack on purpose:
+  the worker killed mid-send, the gateway killed under an open board,
+  Postgres restarted under writes, the ML service stopped. Nothing is lost
+  and nothing happens twice.
 - **Automations: a page for rules, and more they can do.** An Automations
   page where admins write rules in plain words, and rules that can tell
   someone, post in a channel or send a signed webhook.
 - **Automation rules: the engine.** Rules that act on issues by themselves:
   a trigger, conditions that must all hold, and one action, run once per
   change and named in the audit trail.
-- **A week view of meetings and due dates.** A Calendar page: the week’s
-  meetings laid out in your own time zone, repeats included, with the issues
-  due each day along the top.
 
 <!-- latest:end -->
 

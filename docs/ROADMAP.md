@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-11-23): **1735 TypeScript tests, 106 Python tests, lint and
+Status (2026-11-23): **1736 TypeScript tests, 106 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -71,6 +71,10 @@ reschedule-clears-answers, cancel-not-delete.
 **Search, notifications, background work.** Postgres full-text search over
 issues, documents and comments; a notification inbox with dedupe; mention
 notifications and stale-issue nudges on a `SKIP LOCKED` job queue.
+
+**Failure drills (E2), first part.** The worker, gateway, Postgres and ML
+service each broken on purpose in CI, recovering with no lost write and
+nothing done twice. The soak test and a load baseline in CI are next.
 
 **Automation rules (B9).** Rules with a trigger, conditions and an action
 (field changes, comments, notices, channel posts, signed webhooks to public

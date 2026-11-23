@@ -44,6 +44,7 @@
     "smoke:keyboard": "bun run scripts/smoke/keyboard.ts",
     "journeys": "bun run scripts/journeys/run.ts",
     "demo:life": "bun run scripts/demo/life.ts",
+    "drills": "bun run scripts/drills/run.ts",
     "push:keys": "bun run scripts/push/keys.ts",
     "two-factor:key": "bun run scripts/two-factor/key.ts",
     "smoke:images": "bun run scripts/smoke/image-contents.ts",

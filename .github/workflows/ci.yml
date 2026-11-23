@@ -287,6 +287,13 @@ jobs:
           docker run --rm --network host -v "$PWD/.zap:/zap/wrk:rw" "$ZAP_IMAGE" \
             zap-baseline.py -t http://localhost:3000 -m 2 -c baseline.conf -I
 
+      # Failure drills (E2), last because they break things on purpose: the
+      # worker killed mid-burst, the gateway killed under an open board,
+      # Postgres restarted under writes, the ML service stopped. Each must
+      # recover with no lost write and nothing done twice.
+      - name: Failure drills
+        run: bun run scripts/drills/run.ts
+
       # Health is checked at start-up by `--wait`; this checks it again
       # after real traffic, so a service that fell over during the smoke
       # test fails the job too.

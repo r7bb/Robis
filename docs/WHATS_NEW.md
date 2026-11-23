@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Failure drills, run on every push** (2026-11-23). CI now breaks the
+  stack on purpose: the worker killed mid-send, the gateway killed under an
+  open board, Postgres restarted under writes, the ML service stopped.
+  Nothing is lost and nothing happens twice.
 - **Automations: a page for rules, and more they can do** (2026-11-23). An
   Automations page where admins write rules in plain words, and rules that
   can tell someone, post in a channel or send a signed webhook.

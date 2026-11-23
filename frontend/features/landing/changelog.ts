@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-23',
     area: 'Product',
+    title: 'Failure drills, run on every push',
+    brief:
+      'CI now breaks the stack on purpose: the worker killed mid-send, the gateway killed under an open board, Postgres restarted under writes, the ML service stopped. Nothing is lost and nothing happens twice.',
+    summary:
+      'A drill for each part that can fall over. The worker is killed outright while it sends a burst of emails; once restarted, every address has its email and none has two. The gateway is killed while a board is open in a real browser; an issue filed meanwhile appears on the board when it comes back, with no reload. Postgres is restarted while writes keep arriving with their idempotency keys; every write the API acknowledged is there exactly once. The ML service is stopped; the composer’s hints answer at once with nothing and come back when it does. The results are written up in How it works, linked from the README.',
+    checked:
+      'All four drills pass against the compose stack here, nine checks; they run in CI after the browser journeys. A first run of the Postgres drill flagged writes as missing because the check read only one page of issues; it was the check, and it now caps its writes to one page. The soak test and a load baseline in CI are not done yet.',
+  },
+  {
+    date: '2026-11-23',
+    area: 'Product',
     title: 'Automations: a page for rules, and more they can do',
     brief:
       'An Automations page where admins write rules in plain words, and rules that can tell someone, post in a channel or send a signed webhook.',

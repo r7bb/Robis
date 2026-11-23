@@ -82,6 +82,23 @@ clients in 4.1 ms at p50, and costs 14 follow-up reads across those 50 open
 boards, each one 24 ms at p50. Details, and how to read them, in
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
+### Failure drills
+
+`bun run drills` breaks one part of the running stack at a time and checks
+it recovers with no lost write and nothing done twice. It runs in CI on
+every push and pull request, after the browser journeys. First results,
+on the compose stack here (2026-11-23), all passing:
+
+| Drill | What is broken | What is checked |
+| --- | --- | --- |
+| Worker | killed (SIGKILL) while sending a burst of six sign-up emails | every address got its email after the restart, and none got it twice (a job claimed before the kill is taken back after its 60-second lease) |
+| Gateway | killed with a board open in Chrome; an issue filed while it is down | the open board shows the issue once the gateway is back, without a reload, and syncs again |
+| Postgres | restarted while keyed writes keep arriving | the API answers again, every write it acknowledged is there, and none is there twice (32 writes in the run recorded) |
+| ML service | stopped | the composer's hints answer within two seconds, empty, and come back when it starts |
+
+Not yet: a soak test (a thousand sockets for half an hour) and a load test
+against a stored baseline in CI.
+
 ---
 
 ## How it is put together
