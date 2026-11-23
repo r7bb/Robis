@@ -2,6 +2,7 @@ import { generateSessionToken, hashPassword } from '@robis/auth';
 import {
   attachments,
   authTokens,
+  calendarFeeds,
   type Database,
   deleteStories,
   enqueue,
@@ -105,6 +106,8 @@ async function emptyAccount(tx: Tx, userId: string) {
   // And the covers on their profiles, before the memberships go.
   await queueCoverPurge(tx, eq(workspaceMembers.userId, userId));
   await tx.delete(sessions).where(eq(sessions.userId, userId));
+  // The calendar feed's address stops working with the account (B8).
+  await tx.delete(calendarFeeds).where(eq(calendarFeeds.userId, userId));
   await tx.delete(authTokens).where(eq(authTokens.userId, userId));
   await tx.delete(workspaceMembers).where(eq(workspaceMembers.userId, userId));
   await tx.delete(workspaceInvitations).where(eq(workspaceInvitations.userId, userId));

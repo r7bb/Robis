@@ -1575,14 +1575,43 @@ export const meetings = pgTable(
     joinUrl: text('join_url'),
     organizerId: uuid('organizer_id').references(() => users.id, { onDelete: 'set null' }),
     canceledAt: timestamp('canceled_at', { withTimezone: true }),
+    /**
+     * The organiser's IANA zone (B8): a weekly repeat keeps its wall-clock
+     * time there across clock changes. `starts_at` stays the instant.
+     */
+    timeZone: text('time_zone').notNull().default('UTC'),
+    /** Weekly occurrences in all, 2 to 52; null for a one-off. */
+    repeatCount: integer('repeat_count'),
+    /**
+     * When the last occurrence starts, kept by the API on every write, so
+     * "is any of it still ahead" is one indexed comparison.
+     */
+    lastStartsAt: timestamp('last_starts_at', { withTimezone: true }).notNull(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
   (t) => [
-    // "What is coming up in this workspace" is the only way this is read.
     index('meetings_workspace_starts_idx').on(t.workspaceId, t.startsAt),
+    // Upcoming and recent meetings, repeats included (B8).
+    index('meetings_workspace_last_starts_idx').on(t.workspaceId, t.lastStartsAt),
+    check(
+      'meetings_repeat_count',
+      sql`${t.repeatCount} is null or ${t.repeatCount} between 2 and 52`,
+    ),
   ],
 );
+
+/**
+ * A person's calendar feed (B8): one live token, stored as a hash, in a
+ * URL a calendar app polls. Revoking deletes the row, so the URL is a 404.
+ */
+export const calendarFeeds = pgTable('calendar_feeds', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  tokenHash: text('token_hash').notNull().unique(),
+  createdAt: createdAt(),
+});
 
 /** What an invitee said. `pending` is the absence of an answer, stored
  * explicitly so the UI can distinguish "has not replied" from "not invited". */

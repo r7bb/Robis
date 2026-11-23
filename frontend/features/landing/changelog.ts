@@ -44,6 +44,26 @@ export type Entry = {
 
 export const CHANGELOG: readonly Entry[] = [
   {
+    date: '2026-11-23',
+    area: 'Product',
+    title: 'Your meetings in your calendar app, and weekly repeats',
+    brief:
+      'A private calendar feed for your meetings in every workspace, revocable at any moment, and meetings that repeat weekly at the same local time across clock changes.',
+    summary:
+      'On your account page, make a feed address and paste it into any calendar app: your meetings from every workspace you are in arrive at their own local times. The address is shown once, works like a password, and can be replaced or turned off; once off, it answers not found. Meetings can now repeat weekly, from four times to a year, and keep the organiser’s local time: a 09:00 stand-up in New York stays at 09:00 there when the clocks change, and colleagues in a zone without daylight saving see it move by an hour. The meetings page and the home’s Today show the next occurrence.',
+    checked:
+      'Twenty tests: offsets either side of the November change, the doubled and the missing hour, weekly occurrences from New York and from Kolkata read back in both zones, a feed made either side of 1 November 2026 with each event’s local time checked, only the owner’s meetings in it, the reset pages’ headers, a replaced or revoked address answering 404, bad zones and repeat counts refused, repeats staying upcoming and moving to the past when shortened, zones stored in their canonical spelling with offsets refused, a bare carriage return unable to start a property, a feed dropping a workspace left and a deleted account’s feed gone, and the token kept out of the logs. A security review found no critical or high issues; its medium ones were fixed. Seen in Chrome against the stack: a feed made, fetched as a calendar app would, and turned off. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Calendar feed',
+      where: 'Account: Calendar feed; Meetings: Repeats',
+      layers: [
+        'Screen: make, copy, replace or turn off your feed address; choose a weekly repeat when scheduling',
+        'API: calendar.createFeed and revokeFeed, and the feed itself at /calendar/<token>.ics; meetings take a time zone and a repeat count',
+        'Database: calendar_feeds holds one hashed token per person; meetings gain a time zone, a repeat count and their last start',
+      ],
+    },
+  },
+  {
     date: '2026-11-22',
     area: 'Security',
     title: 'Security checks in CI, a threat model, and how to report',

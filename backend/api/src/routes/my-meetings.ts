@@ -1,15 +1,9 @@
-import {
-  type Database,
-  meetingAttendees,
-  meetings,
-  workspaceMembers,
-  workspaces,
-} from '@robis/database';
+import type { Database } from '@robis/database';
 import { contracts, MY_MEETINGS_LIMIT, MY_MEETINGS_MAX_HOURS } from '@robis/shared';
-import { and, asc, eq, isNull, lt, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { serve } from '../contract.ts';
 import { ApiError } from '../errors.ts';
+import { myOccurrences } from '../meetings/mine.ts';
 import { currentUser, requireAuth, requirePicture } from '../plugins/authz.ts';
 
 /**
@@ -37,41 +31,31 @@ export async function myMeetingRoutes(app: FastifyInstance, opts: { db: Database
         );
       }
 
-      const rows = await db
-        .select({
-          id: meetings.id,
-          title: meetings.title,
-          startsAt: meetings.startsAt,
-          durationMinutes: meetings.durationMinutes,
-          joinUrl: meetings.joinUrl,
-          workspaceId: meetings.workspaceId,
-          workspaceName: workspaces.name,
-          myResponse: meetingAttendees.response,
-        })
-        .from(meetingAttendees)
-        .innerJoin(meetings, eq(meetings.id, meetingAttendees.meetingId))
-        .innerJoin(workspaces, eq(workspaces.id, meetings.workspaceId))
-        // Still a member: an old invitation is no window into a workspace left.
-        .innerJoin(
-          workspaceMembers,
-          and(
-            eq(workspaceMembers.workspaceId, meetings.workspaceId),
-            eq(workspaceMembers.userId, user.id),
-          ),
-        )
-        .where(
-          and(
-            eq(meetingAttendees.userId, user.id),
-            // Nothing from a workspace that requires two-factor until they have it (C4).
-            user.hasTwoFactor ? undefined : eq(workspaces.requireTwoFactor, false),
-            isNull(meetings.canceledAt),
-            lt(meetings.startsAt, to),
-            // Under way counts: it has not ended by the window's start.
-            sql`${meetings.startsAt} + make_interval(mins => ${meetings.durationMinutes}) > ${from.toISOString()}::timestamptz`,
-          ),
-        )
-        .orderBy(asc(meetings.startsAt), asc(meetings.id))
-        .limit(MY_MEETINGS_LIMIT);
+      const occurrences = await myOccurrences(db, user, { from, to, includeCanceled: false });
+      // One row per occurrence, so a weekly meeting shows on each of its days (B8).
+      const rows = occurrences
+        .slice(0, MY_MEETINGS_LIMIT)
+        .map(
+          ({
+            id,
+            title,
+            startsAt,
+            durationMinutes,
+            joinUrl,
+            workspaceId,
+            workspaceName,
+            myResponse,
+          }) => ({
+            id,
+            title,
+            startsAt,
+            durationMinutes,
+            joinUrl,
+            workspaceId,
+            workspaceName,
+            myResponse,
+          }),
+        );
 
       return { meetings: rows };
     },

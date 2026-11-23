@@ -382,6 +382,19 @@ is complete.
 - Issues as time blocks on a week view. Time zones handled explicitly;
   recurrence limited to what is tested.
 
+**Calendar feed and weekly repeats, 2026-11-23:** each person can make
+one private feed address (Account, Calendar feed) for their meetings in
+every workspace they are in. The token is shown once, stored as a hash,
+replaced by a new one, and a revoked or unknown token is a 404; the feed
+carries the reset pages' no-referrer and no-store headers. Meetings now
+keep the organiser's time zone and can repeat weekly (2 to 52 times); a
+repeat keeps its wall-clock time in that zone, so its UTC instant moves at
+a clock change. The feed lists each occurrence as its own UTC event,
+worked out with the runtime's own time-zone data, so no time-zone tables
+are written into the file. Tested: a weekly New York meeting reads 09:00
+there and 18:30, 18:30, 19:30 in Kolkata across 1 November 2026. Import
+and the week view are next.
+
 ## Phase 8. Automation rules (M)
 
 - Trigger, condition, action, run on the job queue, with loop detection (a

@@ -44,12 +44,13 @@ function MeetingCard({
         <h4 className="min-w-0 flex-1 truncate text-sm font-medium text-content">
           {meeting.title}
         </h4>
-        <Pill tone="accent">{formatUntil(meeting.startsAt)}</Pill>
+        <Pill tone="accent">{formatUntil(meeting.nextStartsAt)}</Pill>
       </div>
 
       <p className="mt-0.5 text-xs text-faint">
-        {formatDay(meeting.startsAt)} at {formatTime(meeting.startsAt)} · {meeting.durationMinutes}{' '}
-        min
+        {formatDay(meeting.nextStartsAt)} at {formatTime(meeting.nextStartsAt)} ·{' '}
+        {meeting.durationMinutes} min
+        {meeting.repeatCount ? ` · weekly, ${meeting.repeatCount} times` : ''}
       </p>
 
       {meeting.agenda ? (

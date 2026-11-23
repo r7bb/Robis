@@ -4,6 +4,7 @@ import { agentContracts } from './agents.ts';
 import { attachmentContracts } from './attachments.ts';
 import { auditContracts } from './audit.ts';
 import { authContracts } from './auth.ts';
+import { calendarContracts } from './calendar.ts';
 import { channelContracts } from './channels.ts';
 import { type Contract, statusesOf } from './contract.ts';
 import { discussionContracts } from './discussion.ts';
@@ -98,6 +99,7 @@ export const contracts = {
   ...feedContracts,
   ...feedHighlightContracts,
   ...insightContracts,
+  ...calendarContracts,
   ...accountContracts,
 } as const satisfies Record<string, Contract>;
 

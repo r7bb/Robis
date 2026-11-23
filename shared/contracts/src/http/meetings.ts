@@ -24,6 +24,15 @@ const meeting = z.object({
   canceledAt: timestamp.nullable(),
   /** Null when the organiser's account has since been deleted. */
   organizerId: uuid.nullable(),
+  /** The organiser's zone, which a weekly repeat keeps its time of day in (B8). */
+  timeZone: z.string(),
+  /** Weekly occurrences in all; null for a one-off. */
+  repeatCount: z.number().int().nullable(),
+  /**
+   * The next occurrence still to come (or under way), for a repeat; the
+   * first, for a one-off. `startsAt` stays the first.
+   */
+  nextStartsAt: timestamp,
 });
 
 const attendee = z.object({

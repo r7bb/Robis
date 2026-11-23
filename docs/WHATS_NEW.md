@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Your meetings in your calendar app, and weekly repeats** (2026-11-23). A
+  private calendar feed for your meetings in every workspace, revocable at
+  any moment, and meetings that repeat weekly at the same local time across
+  clock changes.
 - **Security checks in CI, a threat model, and how to report** (2026-11-22).
   An OWASP ZAP scan of the stack runs in CI with its findings triaged, every
   response now carries a policy, pages are cross-origin isolated, and a

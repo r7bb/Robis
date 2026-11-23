@@ -5,6 +5,8 @@
   "type": "module",
   "exports": {
     "./app": "./src/app.ts",
+    "./calendar": "./src/routes/calendar.ts",
+    "./ics": "./src/calendar/ics.ts",
     "./avatars": "./src/routes/avatars.ts",
     "./client-network": "./src/plugins/client-network.ts",
     "./contract": "./src/contract.ts",
@@ -21,6 +23,7 @@
     "./rate-store": "./src/plugins/rate-store.ts",
     "./sign-in-waits": "./src/plugins/sign-in-waits.ts",
     "./suggestions": "./src/suggestions.ts",
+    "./tracing": "./src/plugins/tracing.ts",
     "./sync-lag": "./src/plugins/sync-lag.ts"
   },
   "dependencies": {

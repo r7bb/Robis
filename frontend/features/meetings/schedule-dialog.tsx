@@ -18,6 +18,9 @@ import type { NewMeeting } from './types.ts';
  * failures when you do.
  */
 
+/** Weekly repeats on offer (B8): a month, a quarter, half a year, a year. */
+const REPEATS = [4, 8, 13, 26, 52] as const;
+
 const DURATIONS = [15, 30, 45, 60, 90, 120] as const;
 
 const INPUT =
@@ -93,6 +96,7 @@ export function ScheduleDialog({
   const [agenda, setAgenda] = useState('');
   const [startsAt, setStartsAt] = useState(() => toLocalInputValue(nextSlot()));
   const [durationMinutes, setDurationMinutes] = useState(30);
+  const [repeatCount, setRepeatCount] = useState<number | null>(null);
   const [joinUrl, setJoinUrl] = useState('');
   const [invited, setInvited] = useState<Set<string>>(new Set());
 
@@ -151,6 +155,10 @@ export function ScheduleDialog({
       durationMinutes,
       joinUrl: joinUrl.trim() || null,
       attendeeIds: [...invited],
+      // The organiser's zone: a weekly repeat keeps this time of day here
+      // across clock changes (B8).
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      repeatCount,
     });
   }
 
@@ -216,6 +224,24 @@ export function ScheduleDialog({
             </select>
           </Field>
         </div>
+
+        <Field id={`${fieldId}-repeat`} label="Repeats">
+          <select
+            id={`${fieldId}-repeat`}
+            value={repeatCount ?? ''}
+            onChange={(event) =>
+              setRepeatCount(event.target.value === '' ? null : Number(event.target.value))
+            }
+            className={INPUT}
+          >
+            <option value="">Does not repeat</option>
+            {REPEATS.map((weeks) => (
+              <option key={weeks} value={weeks}>
+                Weekly, {weeks} times
+              </option>
+            ))}
+          </select>
+        </Field>
 
         <Field id={`${fieldId}-agenda`} label="Agenda" optional>
           <textarea

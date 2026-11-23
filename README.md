@@ -199,6 +199,10 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Your meetings in your calendar app, and weekly repeats.** A private
+  calendar feed for your meetings in every workspace, revocable at any
+  moment, and meetings that repeat weekly at the same local time across
+  clock changes.
 - **Security checks in CI, a threat model, and how to report.** An OWASP ZAP
   scan of the stack runs in CI with its findings triaged, every response now
   carries a policy, pages are cross-origin isolated, and a threat model and
@@ -206,10 +210,6 @@ with Postgres on the same machine. Method and percentiles in
 - **A demo that is busy, not still.** Run the stack with the demo profile
   and the seeded teammates stay online while they and two agents chat, post,
   react, comment and move work along.
-- **The repository scanned in CI, and one header fewer.** CI now scans the
-  repository’s lockfiles for critical vulnerabilities with a fix and its
-  files for secrets, and the web app no longer names its framework in a
-  header.
 
 <!-- latest:end -->
 

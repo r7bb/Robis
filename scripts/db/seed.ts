@@ -487,14 +487,19 @@ try {
   const scheduled = await db
     .insert(meetings)
     .values(
-      MEETINGS.map((meeting) => ({
-        workspaceId: workspace!.id,
-        title: meeting.title,
-        agenda: meeting.agenda,
-        startsAt: new Date(Date.now() + meeting.hoursAhead * 3_600_000),
-        durationMinutes: meeting.durationMinutes,
-        organizerId: ownerId,
-      })),
+      MEETINGS.map((meeting) => {
+        const startsAt = new Date(Date.now() + meeting.hoursAhead * 3_600_000);
+        // One-offs: the last start is the start (B8).
+        return {
+          workspaceId: workspace!.id,
+          title: meeting.title,
+          agenda: meeting.agenda,
+          startsAt,
+          lastStartsAt: startsAt,
+          durationMinutes: meeting.durationMinutes,
+          organizerId: ownerId,
+        };
+      }),
     )
     .returning({ id: meetings.id });
 

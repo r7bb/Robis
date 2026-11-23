@@ -16,6 +16,15 @@ declare module 'fastify' {
   }
 }
 
+/**
+ * A URL as the logs may keep it. A calendar feed's address is its secret
+ * (B8), and calendar apps poll it every few minutes, so its token is
+ * replaced; every other URL is kept as it was.
+ */
+export function loggableUrl(url: string): string {
+  return url.replace(/^\/calendar\/[^/?#]+/, '/calendar/[feed]');
+}
+
 export function registerTracing(app: FastifyInstance): void {
   app.decorateRequest('span', null);
 
@@ -32,7 +41,10 @@ export function registerTracing(app: FastifyInstance): void {
     within(context, () => {
       // Fastify's own request lines come before any hook, outside the
       // span; these replace them, inside it (A5).
-      request.log.info({ req: { method: request.method, url: request.url } }, 'incoming request');
+      request.log.info(
+        { req: { method: request.method, url: loggableUrl(request.url) } },
+        'incoming request',
+      );
       done();
     });
   });

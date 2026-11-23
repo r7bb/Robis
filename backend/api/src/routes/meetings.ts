@@ -18,6 +18,7 @@ import { and, asc, eq, gte, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { serve } from '../contract.ts';
 import { ApiError } from '../errors.ts';
+import { lastStartOf, withNext } from '../meetings/schedule.ts';
 import {
   auditActor,
   currentMembership,
@@ -47,6 +48,8 @@ type MeetingRow = {
   joinUrl: string | null;
   organizerId: string | null;
   canceledAt: Date | null;
+  timeZone: string;
+  repeatCount: number | null;
 };
 
 async function loadMeeting(
@@ -65,6 +68,8 @@ async function loadMeeting(
       joinUrl: meetings.joinUrl,
       organizerId: meetings.organizerId,
       canceledAt: meetings.canceledAt,
+      timeZone: meetings.timeZone,
+      repeatCount: meetings.repeatCount,
     })
     .from(meetings)
     .where(and(eq(meetings.id, meetingId), eq(meetings.workspaceId, workspaceId)))
@@ -119,6 +124,20 @@ async function queueMeetingNotice(
   const when = change === 'canceled' ? 'once' : noticeWindow();
   const job: MeetingJob = { meetingId, change, actorId, eventId: `${meetingId}:${change}:${when}` };
   await enqueue(tx, NOTIFY_MEETING_JOB, job);
+}
+
+/**
+ * A meeting's next start as SQL, to within the hour a clock change moves
+ * it (B8): a one-off's start, or a repeat's first start plus whole weeks
+ * up to `cutoff`. Orders the upcoming page so it holds the soonest fifty;
+ * the exact order is set from the shared occurrence rules after.
+ */
+function nextStartSql(cutoff: Date) {
+  const at = sql`${cutoff.toISOString()}::timestamptz`;
+  return sql`case when ${meetings.repeatCount} is null or ${meetings.startsAt} >= ${at}
+    then ${meetings.startsAt}
+    else ${meetings.startsAt} + ceil(extract(epoch from (${at} - ${meetings.startsAt})) / 604800) * interval '7 days'
+  end`;
 }
 
 export async function meetingRoutes(app: FastifyInstance, opts: { db: Database }) {
@@ -180,10 +199,12 @@ export async function meetingRoutes(app: FastifyInstance, opts: { db: Database }
        */
       const cutoff = new Date(Date.now() - GRACE_MINUTES * 60_000);
 
+      // On the last occurrence's start, so a weekly meeting stays upcoming
+      // until its last week (B8).
       const timeFilter =
         scope === 'past'
-          ? or(lt(meetings.startsAt, cutoff), sql`${meetings.canceledAt} is not null`)
-          : and(gte(meetings.startsAt, cutoff), isNull(meetings.canceledAt));
+          ? or(lt(meetings.lastStartsAt, cutoff), sql`${meetings.canceledAt} is not null`)
+          : and(gte(meetings.lastStartsAt, cutoff), isNull(meetings.canceledAt));
 
       const rows = await db
         .select({
@@ -196,17 +217,23 @@ export async function meetingRoutes(app: FastifyInstance, opts: { db: Database }
           canceledAt: meetings.canceledAt,
           organizerId: meetings.organizerId,
           organizerName: users.name,
+          timeZone: meetings.timeZone,
+          repeatCount: meetings.repeatCount,
         })
         .from(meetings)
         .leftJoin(users, eq(users.id, meetings.organizerId))
         .where(and(eq(meetings.workspaceId, workspaceId), timeFilter))
-        .orderBy(scope === 'past' ? sql`${meetings.startsAt} desc` : asc(meetings.startsAt))
+        .orderBy(scope === 'past' ? sql`${meetings.lastStartsAt} desc` : nextStartSql(cutoff))
         .limit(50);
 
       const byMeeting = await attendeesFor(rows.map((row) => row.id));
+      const timed = rows.map((row) => withNext(row, cutoff));
+      // Upcoming by the next occurrence: a weekly one comes round again.
+      if (scope !== 'past')
+        timed.sort((a, b) => a.nextStartsAt.getTime() - b.nextStartsAt.getTime());
 
       return {
-        meetings: rows.map((row) => ({ ...row, attendees: byMeeting.get(row.id) ?? [] })),
+        meetings: timed.map((row) => ({ ...row, attendees: byMeeting.get(row.id) ?? [] })),
       };
     },
   );
@@ -255,6 +282,14 @@ export async function meetingRoutes(app: FastifyInstance, opts: { db: Database }
             durationMinutes: input.durationMinutes,
             joinUrl: input.joinUrl ?? null,
             organizerId: user.id,
+            timeZone: input.timeZone,
+            repeatCount: input.repeatCount ?? null,
+            lastStartsAt: lastStartOf({
+              startsAt: input.startsAt,
+              durationMinutes: input.durationMinutes,
+              timeZone: input.timeZone,
+              repeatCount: input.repeatCount ?? null,
+            }),
           })
           .returning();
 
@@ -290,7 +325,7 @@ export async function meetingRoutes(app: FastifyInstance, opts: { db: Database }
         actorId: user.id,
       });
 
-      return { meeting: created };
+      return { meeting: withNext(created, new Date()) };
     },
   );
 
@@ -309,10 +344,18 @@ export async function meetingRoutes(app: FastifyInstance, opts: { db: Database }
         throw ApiError.conflict('That meeting was cancelled', 'meeting_canceled');
       }
 
+      // The schedule as it will be, so the last start is kept true (B8).
+      const schedule = {
+        startsAt: input.startsAt ?? meeting.startsAt,
+        durationMinutes: input.durationMinutes ?? meeting.durationMinutes,
+        timeZone: input.timeZone ?? meeting.timeZone,
+        repeatCount: input.repeatCount !== undefined ? input.repeatCount : meeting.repeatCount,
+      };
+
       const updated = await db.transaction(async (tx) => {
         const [row] = await tx
           .update(meetings)
-          .set({ ...input, updatedAt: new Date() })
+          .set({ ...input, lastStartsAt: lastStartOf(schedule), updatedAt: new Date() })
           .where(and(eq(meetings.id, meetingId), eq(meetings.workspaceId, workspaceId)))
           .returning();
 
@@ -364,7 +407,7 @@ export async function meetingRoutes(app: FastifyInstance, opts: { db: Database }
         actorId: user.id,
       });
 
-      return { meeting: updated };
+      return { meeting: withNext(updated, new Date()) };
     },
   );
 

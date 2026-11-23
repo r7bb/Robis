@@ -29,6 +29,8 @@ const ROOT = resolve(import.meta.dir, '..');
 /** Served outside the API's contract: health and the like. */
 const OUTSIDE: readonly string[] = [
   'GET /health',
+  // A calendar feed (B8): iCalendar text for calendar apps, not JSON.
+  'GET /calendar/:file',
   // These answer with image bytes, streamed from storage, not JSON.
   'GET /workspaces/:workspaceId/attachments/:attachmentId',
   'GET /users/:userId/avatar',

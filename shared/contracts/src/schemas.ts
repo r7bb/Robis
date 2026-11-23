@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { canonicalZone, MEETING_REPEAT_MAX } from './calendar.ts';
 import { signupTermsVersion } from './consent.ts';
 import { ISSUE_PRIORITIES, ISSUE_STATUSES } from './domain.ts';
 import {
@@ -362,6 +363,22 @@ export const joinUrlSchema = z
   // corridor) -- stored as null rather than an empty string.
   .transform((value) => (value === '' ? null : value));
 
+/** An IANA time zone the runtime knows, like `Europe/London` (B8). */
+export const timeZoneSchema = z
+  .string()
+  .max(64)
+  .transform((zone, context) => {
+    const canonical = canonicalZone(zone);
+    if (canonical === null) {
+      context.addIssue({ code: 'custom', message: 'Not a time zone this server knows' });
+      return z.NEVER;
+    }
+    return canonical;
+  });
+
+/** Weekly occurrences in all (B8); null or absent for a one-off. */
+const repeatCountSchema = z.coerce.number().int().min(2).max(MEETING_REPEAT_MAX).nullable();
+
 export const createMeetingSchema = z.object({
   title: z.string().trim().min(1).max(200),
   agenda: z.string().trim().max(5000).nullable().optional(),
@@ -376,6 +393,9 @@ export const createMeetingSchema = z.object({
   joinUrl: joinUrlSchema.nullable().optional(),
   /** Who to invite. The organiser is added by the server regardless. */
   attendeeIds: z.array(uuid).max(200).optional(),
+  /** The organiser's zone, which a repeat keeps its time of day in. */
+  timeZone: timeZoneSchema.default('UTC'),
+  repeatCount: repeatCountSchema.optional(),
 });
 export type CreateMeetingInput = z.infer<typeof createMeetingSchema>;
 
@@ -386,6 +406,8 @@ export const updateMeetingSchema = z
     startsAt: z.coerce.date(),
     durationMinutes: z.coerce.number().int().min(MEETING_MIN_MINUTES).max(MEETING_MAX_MINUTES),
     joinUrl: joinUrlSchema.nullable(),
+    timeZone: timeZoneSchema,
+    repeatCount: repeatCountSchema,
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, { message: 'No fields to update' });
