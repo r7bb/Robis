@@ -197,6 +197,9 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **A demo that is busy, not still.** Run the stack with the demo profile
+  and the seeded teammates stay online while they and two agents chat, post,
+  react, comment and move work along.
 - **The repository scanned in CI, and one header fewer.** CI now scans the
   repository’s lockfiles for critical vulnerabilities with a fix and its
   files for secrets, and the web app no longer names its framework in a
@@ -204,9 +207,6 @@ with Postgres on the same machine. Method and percentiles in
 - **Whole journeys, tested in a real browser.** Seven journeys run in real
   Chrome against the container stack on every push and pull request, from
   sign-up through the mail sink to a stranger getting not found.
-- **System health on Insights.** Insights now show how often the hints are
-  used and, for the people who run the server, its job queue and how quickly
-  changes sync and reach open tabs, timed as the services work.
 
 <!-- latest:end -->
 

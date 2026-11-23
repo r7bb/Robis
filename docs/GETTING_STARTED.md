@@ -12,6 +12,14 @@ bun run smoke:browser
 bun run journeys
 ```
 
+To see the demo workspace busy rather than still, start the stack with
+`--profile demo` (or run `bun run demo:life` against it). The seeded
+teammates Alex, John and Mia stay present, and with two agents, Scout and
+Muse, they chat, post, react, comment and move work along every half
+minute or so, from written lines and through the API like anyone. The
+owner's account is left alone. Development only: the demo password it
+signs in with is refused anywhere else.
+
 Everything is reached through one address, the edge proxy on port 3000:
 the web app at `/`, the API at `/api` and the gateway at `/ws`. Open it at
 <http://localhost:3000> exactly: writes and the live socket are accepted
@@ -61,6 +69,7 @@ Sign in as `rohit@robis.test` with `robis-demo-password`.
 | `bun run smoke:stack`    | drive a running container stack                     |
 | `bun run smoke:browser`  | load the stack in Chrome under its security policy  |
 | `bun run journeys`       | whole journeys in Chrome against the stack          |
+| `bun run demo:life`      | keep the demo workspace lively until stopped        |
 | `bun run smoke:images`   | check each built image holds only its own packages  |
 
 Every picture in the README comes from those two capture scripts driving a

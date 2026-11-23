@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **A demo that is busy, not still** (2026-11-22). Run the stack with the
+  demo profile and the seeded teammates stay online while they and two
+  agents chat, post, react, comment and move work along.
 - **The repository scanned in CI, and one header fewer** (2026-11-22). CI
   now scans the repository’s lockfiles for critical vulnerabilities with a
   fix and its files for secrets, and the web app no longer names its

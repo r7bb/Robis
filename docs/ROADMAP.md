@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-11-22): **1657 TypeScript tests, 106 Python tests, lint and
+Status (2026-11-22): **1670 TypeScript tests, 106 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -71,6 +71,11 @@ reschedule-clears-answers, cancel-not-delete.
 **Search, notifications, background work.** Postgres full-text search over
 issues, documents and comments; a notification inbox with dedupe; mention
 notifications and stale-issue nudges on a `SKIP LOCKED` job queue.
+
+**A lively demo.** `bun run demo:life`, or the stack with `--profile
+demo`, keeps the seeded teammates present and has them and two agents
+chat, post, react, comment and move work along from written lines,
+through the API. Development only.
 
 **Browser journeys (E1).** Seven whole journeys in real Chrome against
 the container stack, in CI on every push and pull request, each with

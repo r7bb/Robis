@@ -196,6 +196,7 @@ JavaScript.
 | Health endpoints | `backend/api/src/app.ts` |
 | Load harness | `scripts/bench/loadtest.ts` |
 | Screenshot capture over CDP | `scripts/capture/screenshots.ts` |
+| A lively demo: the seeded teammates stay present and, with two agents (a triage agent and a Different shots agent), chat, post, react, comment, file and move issues every half minute or so, from written lines, through the API; development only, in compose under `--profile demo` | `scripts/demo/` |
 | Browser journeys in real Chrome against the container stack, in CI on every push and pull request: sign-up through the mail sink, an offline board write and reconnect, two people on one document, chat delivery, a reschedule clearing answers, a guest with no write controls, a stranger getting not found | `scripts/journeys/` |
 | CI: lint, typecheck, test, build | `.github/workflows/ci.yml` |
 

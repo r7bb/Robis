@@ -45,6 +45,17 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-22',
+    area: 'Product',
+    title: 'A demo that is busy, not still',
+    brief:
+      'Run the stack with the demo profile and the seeded teammates stay online while they and two agents chat, post, react, comment and move work along.',
+    summary:
+      'demo:life keeps the demo workspace lively. Alex, John and Mia sign in and hold live connections, so the workspace shows them here. Two agents join them: Scout, the triage agent, which also leaves its suggestions on new issues, and Muse, which posts the Different shots. Every half minute or so one of them does something a teammate would: a line in a channel, a post to the Feed, a reaction or a comment, a comment on an issue, an issue moved a step along, or a new one filed, never past thirty open. The words are written lines picked at random; no model writes them. Everything goes through the API, so it is audited, rate-limited and arrives live, and over time it gives Insights real figures. The owner’s account is left alone. Development only: it signs in with the demo password, which is refused anywhere else, and it runs only against this machine or the compose network.',
+    checked:
+      'Twelve tests: who may do what (a guest files and moves nothing), weighted choices, the open-issue limit, issues moving one step at a time, no line repeated while fresh ones remain, and every written line free of dashes and short enough to post. Watched against the compose stack, as a host command and as the demo profile’s service: three teammates shown here, and a stream of chat, posts, reactions, comments, moves and new issues. Stopping it revokes the agents’ tokens.',
+  },
+  {
+    date: '2026-11-22',
     area: 'Security',
     title: 'The repository scanned in CI, and one header fewer',
     brief:

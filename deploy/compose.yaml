@@ -226,6 +226,28 @@ services:
   # at /, the API at /api and the gateway at /ws, all on one origin, so the
   # web image holds no addresses and needs no CORS. The API and gateway are
   # not published; only this is. Caddy (Apache-2.0), pinned.
+  # Keeps the demo workspace lively (demo:life, scripts/demo): the seeded
+  # teammates stay present and, with two agents, chat, post, react, comment
+  # and move work along, every half minute or so, through the API like
+  # anyone. Only with `--profile demo`, so CI's stack never runs it; the
+  # demo password it signs in with is refused in production anyway.
+  life:
+    <<: *hardened
+    image: robis-api:stack
+    profiles: [demo]
+    # Mounted inside the API package, like the seed, for its workspace links.
+    command: [bun, backend/api/demo-life/life.ts]
+    volumes:
+      - '../scripts/demo:/app/backend/api/demo-life:ro'
+    environment:
+      LIFE_WEB_URL: http://edge:8080
+      LIFE_WEB_ORIGIN: http://localhost:${STACK_WEB_PORT:-3000}
+    healthcheck: { disable: true }
+    restart: unless-stopped
+    depends_on:
+      edge: { condition: service_healthy }
+      seed: { condition: service_completed_successfully }
+
   edge:
     <<: *hardened
     image: caddy:2.11.7-alpine@sha256:eb4d35b7452d1ab6171fbdbe8d9275b2301dad6dad92115d91e19fb9b24d510f
