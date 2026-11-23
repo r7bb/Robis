@@ -14,7 +14,7 @@ Written to be checkable. Every row names a file you can open.
 | --- | --- |
 | Services | 5 (web, API, realtime gateway, worker, MCP server for agents) plus an optional ML service |
 | Database tables | 18 |
-| HTTP endpoints | 158 |
+| HTTP endpoints | 159 |
 | Tests | Counted in [docs/ROADMAP.md](docs/ROADMAP.md), the one place they are kept |
 | Screenshots | 35, all captured from the running app |
 | Measured throughput | ~3,600 req/s, zero errors |
@@ -145,6 +145,7 @@ authorisation path.
 
 | Feature | Where |
 | --- | --- |
+| Meetings imported from an .ics file: timed events in UTC, a named zone or floating time, weekly repeats with a count or end, invitees matched to the roster by address for admins only; anything else left out with a reason | `backend/api/src/calendar/parse.ts`, `backend/api/src/routes/calendar-import.ts`, `frontend/features/meetings/import-calendar.tsx` |
 | A private calendar feed per person (Account, Calendar feed): every meeting they are in, each weekly occurrence its own event at its UTC instant, revocable, a 404 once revoked; weekly repeats kept at the organiser's wall-clock time across clock changes | `backend/api/src/routes/calendar.ts`, `backend/api/src/calendar/ics.ts`, `shared/contracts/src/calendar.ts` |
 | Schedule with title, agenda, start, duration | `backend/api/src/routes/meetings.ts` |
 | Invite attendees, intersected with the workspace roster | same |

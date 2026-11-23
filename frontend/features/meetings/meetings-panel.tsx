@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Button, EmptyState, InlineError, Pill } from '../../components/ui/primitives.tsx';
 import { ApiError, type Member } from '../../lib/api.ts';
 import { formatDay, formatTime, formatUntil } from '../../lib/time.ts';
+import { ImportCalendar } from './import-calendar.tsx';
 import { ScheduleDialog } from './schedule-dialog.tsx';
 import type { Meeting, MeetingAnswer } from './types.ts';
 import {
@@ -146,9 +147,12 @@ export function MeetingsPanel({
   return (
     <div className="space-y-3">
       {can(role, 'meeting:create') ? (
-        <Button variant="primary" className="w-full" onClick={() => setScheduling(true)}>
-          Schedule a meeting
-        </Button>
+        <>
+          <Button variant="primary" className="w-full" onClick={() => setScheduling(true)}>
+            Schedule a meeting
+          </Button>
+          <ImportCalendar workspaceId={workspaceId} />
+        </>
       ) : null}
 
       {upcoming.isError ? (

@@ -392,8 +392,18 @@ repeat keeps its wall-clock time in that zone, so its UTC instant moves at
 a clock change. The feed lists each occurrence as its own UTC event,
 worked out with the runtime's own time-zone data, so no time-zone tables
 are written into the file. Tested: a weekly New York meeting reads 09:00
-there and 18:30, 18:30, 19:30 in Kolkata across 1 November 2026. Import
-and the week view are next.
+there and 18:30, 18:30, 19:30 in Kolkata across 1 November 2026.
+
+**.ics import, 2026-11-23:** Meetings, Import from an .ics file. Timed
+events at a UTC instant, in a named zone or floating (read in the
+importer's zone), with an end or a duration, and weekly repeats with a
+count or an end date, become meetings organised by the importer. For
+someone who may invite members, invitees are the file's attendees matched
+to the roster by address; for anyone else they are left off, since
+matching would tell a member whose address is whose. Importing the same
+file again skips what is already there. All-day events, other repeats, cancelled events, unknown
+zones and lengths outside 15 minutes to a day are left out, each with a
+reason. At most 50 events and 256 KB a file. The week view is next.
 
 ## Phase 8. Automation rules (M)
 

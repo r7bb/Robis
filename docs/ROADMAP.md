@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-11-23): **1692 TypeScript tests, 106 Python tests, lint and
+Status (2026-11-23): **1711 TypeScript tests, 106 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -74,7 +74,8 @@ notifications and stale-issue nudges on a `SKIP LOCKED` job queue.
 
 **Calendar (B8), first part.** A private feed per person, revocable,
 and weekly repeating meetings kept at the organiser's local time across
-clock changes. Import and the week view are next.
+clock changes, and .ics import with invitees matched to the roster. The
+week view is next.
 
 **Security checks (E3).** Trivy scans the repository and the images, an
 OWASP ZAP baseline scan of the stack runs in CI against triaged rules, and

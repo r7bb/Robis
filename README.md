@@ -199,6 +199,9 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Import meetings from an .ics file.** Bring meetings in from any calendar
+  app’s .ics file: times land right in any zone, weekly repeats come along,
+  and for admins, invitees are matched to the workspace by address.
 - **Your meetings in your calendar app, and weekly repeats.** A private
   calendar feed for your meetings in every workspace, revocable at any
   moment, and meetings that repeat weekly at the same local time across
@@ -207,9 +210,6 @@ with Postgres on the same machine. Method and percentiles in
   scan of the stack runs in CI with its findings triaged, every response now
   carries a policy, pages are cross-origin isolated, and a threat model and
   SECURITY.md are written.
-- **A demo that is busy, not still.** Run the stack with the demo profile
-  and the seeded teammates stay online while they and two agents chat, post,
-  react, comment and move work along.
 
 <!-- latest:end -->
 

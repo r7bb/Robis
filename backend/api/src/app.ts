@@ -31,6 +31,7 @@ import { authRoutes } from './routes/auth.ts';
 import { authRecoveryRoutes } from './routes/auth-recovery.ts';
 import { avatarRoutes } from './routes/avatars.ts';
 import { calendarRoutes } from './routes/calendar.ts';
+import { calendarImportRoutes } from './routes/calendar-import.ts';
 import { channelRoutes } from './routes/channels.ts';
 import { commentRoutes } from './routes/comments.ts';
 import { consentRoutes } from './routes/consent.ts';
@@ -335,6 +336,7 @@ export function buildApp({
   app.register(feedHighlightRoutes, { db });
   app.register(insightRoutes, { db, operators: operatorsFrom(env.HEALTH_OPERATORS) });
   app.register(calendarRoutes, { db, webOrigin: env.WEB_ORIGIN });
+  app.register(calendarImportRoutes, { db });
   app.register(searchRoutes, { db, limits });
 
   return app;

@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Import meetings from an .ics file** (2026-11-23). Bring meetings in from
+  any calendar app’s .ics file: times land right in any zone, weekly repeats
+  come along, and for admins, invitees are matched to the workspace by
+  address.
 - **Your meetings in your calendar app, and weekly repeats** (2026-11-23). A
   private calendar feed for your meetings in every workspace, revocable at
   any moment, and meetings that repeat weekly at the same local time across

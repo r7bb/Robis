@@ -6,6 +6,7 @@
   "exports": {
     "./app": "./src/app.ts",
     "./calendar": "./src/routes/calendar.ts",
+    "./calendar-parse": "./src/calendar/parse.ts",
     "./ics": "./src/calendar/ics.ts",
     "./avatars": "./src/routes/avatars.ts",
     "./client-network": "./src/plugins/client-network.ts",

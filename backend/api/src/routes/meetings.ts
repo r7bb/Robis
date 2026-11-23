@@ -18,6 +18,7 @@ import { and, asc, eq, gte, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { serve } from '../contract.ts';
 import { ApiError } from '../errors.ts';
+import { insertMeeting } from '../meetings/create.ts';
 import { lastStartOf, withNext } from '../meetings/schedule.ts';
 import {
   auditActor,
@@ -271,52 +272,23 @@ export async function meetingRoutes(app: FastifyInstance, opts: { db: Database }
               )
           : [];
 
-      const created = await db.transaction(async (tx) => {
-        const [meeting] = await tx
-          .insert(meetings)
-          .values({
-            workspaceId,
+      const created = await db.transaction((tx) =>
+        insertMeeting(
+          tx,
+          { ...auditActor(request), id: user.id },
+          workspaceId,
+          {
             title: input.title,
             agenda: input.agenda ?? null,
             startsAt: input.startsAt,
             durationMinutes: input.durationMinutes,
             joinUrl: input.joinUrl ?? null,
-            organizerId: user.id,
             timeZone: input.timeZone,
             repeatCount: input.repeatCount ?? null,
-            lastStartsAt: lastStartOf({
-              startsAt: input.startsAt,
-              durationMinutes: input.durationMinutes,
-              timeZone: input.timeZone,
-              repeatCount: input.repeatCount ?? null,
-            }),
-          })
-          .returning();
-
-        // The organiser attends their own meeting, already answered. Anyone
-        // else starts at `pending`, which is a real state: "not replied" is
-        // not the same as "declined".
-        await tx
-          .insert(meetingAttendees)
-          .values([
-            { meetingId: meeting!.id, userId: user.id, response: 'yes', respondedAt: new Date() },
-            ...invitees.map((invitee) => ({ meetingId: meeting!.id, userId: invitee.userId })),
-          ]);
-
-        await recordAudit(tx, auditActor(request), {
-          workspaceId,
-          entityType: 'meeting',
-          entityId: meeting!.id,
-          eventType: 'meeting.created',
-          payload: {
-            title: meeting!.title,
-            startsAt: meeting!.startsAt.toISOString(),
-            invited: invitees.length,
           },
-        });
-
-        return meeting!;
-      });
+          invitees.map((invitee) => invitee.userId),
+        ),
+      );
 
       await publishEvent(db, {
         type: 'meeting.changed',

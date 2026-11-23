@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-23',
     area: 'Product',
+    title: 'Import meetings from an .ics file',
+    brief:
+      'Bring meetings in from any calendar app’s .ics file: times land right in any zone, weekly repeats come along, and for admins, invitees are matched to the workspace by address.',
+    summary:
+      'On the meetings page, Import from an .ics file turns each timed event into a meeting you organise. Times in UTC, in a named zone or floating (read in your own) all land at the right moment, and weekly repeats with a count or an end date keep their local time across clock changes. For an admin, invitees are the file’s attendees already in the workspace, matched by address; for anyone else they are left off and the page says so, since matching them would tell a member which addresses belong to whom. A file imported twice brings nothing new the second time. What cannot be taken, such as all-day events or daily repeats, is listed with the reason rather than guessed at.',
+    checked:
+      'Eighteen tests: UTC, zoned and floating times, a reminder lending its event nothing, repeats with exceptions left out, a UTC repeat staying in UTC, folded and escaped text, weekly repeats by count and by end read back in Kolkata across the November change, every kind of event left out with its reason, the fifty-event cap, invitees matched by address for an admin and nobody added from a member’s file, the same file twice, an unknown zone refused, a repeat keeping its zone, refusals for guests, strangers and empty files, a file over 256 KB refused, and the summary’s wording. A security review found one high issue, a member able to learn whose address is whose, now closed, and its medium ones fixed. Imported through the page in Chrome against the stack. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: '.ics import',
+      where: 'Meetings: Import from an .ics file',
+      layers: [
+        'Screen: choose a file, then a line saying what was imported and what was left out and why',
+        'API: meetings.import reads the file, matches attendees to the roster and schedules each meeting',
+        'Database: meetings and attendees as if scheduled here, each audited as imported',
+      ],
+    },
+  },
+  {
+    date: '2026-11-23',
+    area: 'Product',
     title: 'Your meetings in your calendar app, and weekly repeats',
     brief:
       'A private calendar feed for your meetings in every workspace, revocable at any moment, and meetings that repeat weekly at the same local time across clock changes.',
