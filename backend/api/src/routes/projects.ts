@@ -8,7 +8,7 @@ import {
   queueAttachmentPurge,
   recordAudit,
 } from '@robis/database';
-import { contracts, deriveProjectKey, isUuid } from '@robis/shared';
+import { contracts, deriveProjectKey, isUuid, TEMPLATE_DETAILS } from '@robis/shared';
 import { and, count, eq, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { serve } from '../contract.ts';
@@ -20,6 +20,7 @@ import {
   requireAuth,
   requireMembership,
 } from '../plugins/authz.ts';
+import { fileIssue } from './issues.ts';
 
 /**
  * Load a project, scoped to the workspace from the path.
@@ -135,8 +136,25 @@ export async function projectRoutes(app: FastifyInstance, opts: { db: Database }
           entityType: 'project',
           entityId: created.id,
           eventType: 'project.created',
-          payload: { key: created.key, name: created.name },
+          payload: {
+            key: created.key,
+            name: created.name,
+            ...(input.template ? { template: input.template } : {}),
+          },
         });
+
+        // A template's starter issues (C5), filed as the creator, last first
+        // so the board reads them in order from the top.
+        if (input.template) {
+          for (const starter of [...TEMPLATE_DETAILS[input.template].issues].reverse()) {
+            await fileIssue(tx, auditActor(request), {
+              user,
+              workspaceId,
+              projectId: created.id,
+              input: { title: starter.title, priority: starter.priority, status: 'TODO' },
+            });
+          }
+        }
 
         return created;
       });

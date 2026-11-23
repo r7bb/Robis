@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **A first run, and projects from templates** (2026-11-23). A new account
+  goes straight from sign-up to a board with work on it: name a workspace,
+  pick its look, invite a teammate, and start from a template.
 - **A soak test, and the load test judged in CI** (2026-11-23). A thousand
   live connections held for half an hour with no growth and no ghosts, and
   every pull request’s load test held against the last three runs on main.

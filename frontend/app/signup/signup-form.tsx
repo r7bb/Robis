@@ -47,7 +47,8 @@ export function SignupForm({ token }: { token: string | null }) {
       });
       await getSyncEngine().claimFor(signedIn.user.id);
       await queryClient.invalidateQueries();
-      router.replace('/workspaces');
+      // A new account goes on to its first run (C5).
+      router.replace('/first-run');
     } catch (cause) {
       setError({
         message: cause instanceof ApiError ? cause.message : 'Something went wrong',

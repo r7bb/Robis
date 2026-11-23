@@ -145,6 +145,7 @@ authorisation path.
 
 | Feature | Where |
 | --- | --- |
+| A first run for new accounts: name a workspace or accept an invitation, pick its look and invite a teammate, start a first project from a template (software, event planning, coursework) with five starter issues | `frontend/features/first-run/`, `shared/contracts/src/project-templates.ts` |
 | Automation rules (Automations, for admins): a trigger from the audit trail, conditions that must all hold, one action (status, priority, assign, comment, notify, post in a channel, an outgoing webhook signed per rule to public https addresses only); run once per change on the API's own job runner, never on a rule's own change, chains stopped three deep with a note; the trail names the rule | `backend/api/src/automation/`, `backend/api/src/routes/automations.ts`, `backend/worker/src/webhook.ts`, `frontend/features/automations/` |
 | A week view (Calendar): the workspace's meetings and repeats laid out in the viewer's zone, overlaps side by side, issues due each day along the top, a list of days on a phone | `frontend/features/calendar/`, `backend/api/src/routes/week.ts` |
 | Meetings imported from an .ics file: timed events in UTC, a named zone or floating time, weekly repeats with a count or end, invitees matched to the roster by address for admins only; anything else left out with a reason | `backend/api/src/calendar/parse.ts`, `backend/api/src/routes/calendar-import.ts`, `frontend/features/meetings/import-calendar.tsx` |

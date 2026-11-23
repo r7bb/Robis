@@ -12,6 +12,7 @@ import {
   PASSWORD_MIN_LENGTH,
 } from './limits.ts';
 import { positionSchema } from './ordering.ts';
+import { PROJECT_TEMPLATES } from './project-templates.ts';
 import { ROLES } from './rbac.ts';
 import { THEME_IDS } from './themes.ts';
 import { usernameSchema } from './usernames.ts';
@@ -190,6 +191,8 @@ export const createProjectSchema = z.object({
     .regex(/^[A-Z][A-Z0-9]*$/, 'Key must be uppercase letters and digits, starting with a letter')
     .optional(),
   description: z.string().max(2000).trim().optional(),
+  /** Start it with a template's issues (C5). */
+  template: z.enum(PROJECT_TEMPLATES).optional(),
 });
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 

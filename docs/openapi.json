@@ -884,6 +884,14 @@
                   "description": {
                     "type": "string",
                     "maxLength": 2000
+                  },
+                  "template": {
+                    "type": "string",
+                    "enum": [
+                      "software",
+                      "event",
+                      "coursework"
+                    ]
                   }
                 },
                 "required": [

@@ -5,7 +5,7 @@
  * calls the API directly.
  */
 
-import { focus, press, typeText, WAIT_MS, waitUntil } from '../smoke/browser-input.ts';
+import { WAIT_MS, waitUntil } from '../smoke/browser-input.ts';
 import { startChrome, WEB } from '../smoke/browser-session.ts';
 import type { Checks } from './checks.ts';
 
@@ -37,12 +37,20 @@ export async function signupJourney(checks: Checks, port: number) {
   process.stdout.write('Sign-up with email verification\n');
   const { page, stop } = await startChrome(port, 'journey-signup');
   try {
+    // Every click a person would make, counted for C5's done-when; typing
+    // into a field is not a click.
+    let clicks = 0;
+    const click = async (selector: string, label?: string) => {
+      clicks++;
+      if (label) await page.clickText(selector, label);
+      else await page.click(selector);
+    };
     const run = Date.now().toString(36);
     const email = `journey-${run}@robis.test`;
 
     await page.goto(`${WEB}/login?mode=register`);
     await page.fill('input[type=email]', email);
-    await page.clickText('button[type=submit]', 'Send me a link');
+    await click('button[type=submit]', 'Send me a link');
     checks.check(
       'the form says a link was sent',
       await waitUntil(page, `document.body.innerText.includes(${JSON.stringify(email)})`),
@@ -55,13 +63,13 @@ export async function signupJourney(checks: Checks, port: number) {
     await page.fill('input[autocomplete=name]', 'Journey Tester');
     await page.fill('input[autocomplete=username]', `journey_${run}`);
     await page.fill('input[type=password]', `journey-password-${run}`);
-    await page.click('input[type=checkbox]');
-    await page.clickText('button[type=submit]', 'Create account');
+    await click('input[type=checkbox]');
+    await click('button[type=submit]', 'Create account');
 
     const pictured = await waitUntil(page, `location.pathname.startsWith('/welcome')`);
     checks.check('a new account is asked for a picture first', pictured);
-    await page.clickText('[role=tab]', 'Pick a pattern');
-    await page.click('button[aria-label="Use this pattern"]');
+    await click('[role=tab]', 'Pick a pattern');
+    await click('button[aria-label="Use this pattern"]');
     checks.check(
       'a pattern is chosen',
       await waitUntil(
@@ -69,32 +77,29 @@ export async function signupJourney(checks: Checks, port: number) {
         `!!document.querySelector('button[aria-label="Use this pattern"][aria-pressed=true]')`,
       ),
     );
-    await page.clickText('button', 'Continue');
+    await click('button', 'Continue');
 
-    const home = await waitUntil(
-      page,
-      `[...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'New workspace')`,
-    );
+    // The first run (C5): a workspace, its look and a teammate, a project.
+    const firstRun = await waitUntil(page, `!!document.querySelector('#first-workspace')`);
     checks.check(
-      'the picture chosen, the workspaces page opens',
-      home,
-      `${await page.eval('location.pathname')}: ${(await page.text()).slice(0, 300)}`,
+      'the picture chosen, the first run opens',
+      firstRun,
+      await page.eval('location.pathname'),
     );
-    if (!home) return;
-    await page.clickText('button', 'New workspace');
-    await page.waitFor(`!!document.querySelector('#new-workspace-name')`);
-    await focus(page, '#new-workspace-name');
-    const name = `Journey ${run}`;
-    await typeText(page, name);
-    await press(page, 'Enter');
-    const tile = `[...document.querySelectorAll('a[href^="/workspaces/"]')].find((a) => a.textContent.includes(${JSON.stringify(name)}))`;
-    checks.check('a first workspace is made', await waitUntil(page, `!!(${tile})`));
-    await page.eval(`${tile}?.click()`);
-    const inside = await waitUntil(
-      page,
-      `/^\\/workspaces\\/[0-9a-f-]{36}/.test(location.pathname)`,
+    if (!firstRun) return;
+    await page.fill('#first-workspace', `Journey ${run}`);
+    await click('button[type=submit]', 'Create workspace');
+    await page.waitFor(`document.body.innerText.includes('Its look, and a teammate')`, WAIT_MS);
+    await click('button', 'Continue');
+    await page.waitFor(`!!document.querySelector('#first-project')`, WAIT_MS);
+    await click('button[type=submit]', 'Create the project');
+    const board = await waitUntil(page, `document.querySelectorAll('[data-card]').length === 5`);
+    checks.check(
+      'the board opens with its five starter issues',
+      board,
+      await page.eval('location.pathname'),
     );
-    checks.check('and opens', inside, await page.eval('location.pathname'));
+    checks.check(`from sign-up to a first issue in under ten clicks (${clicks})`, clicks < 10);
   } finally {
     page.close();
     stop();

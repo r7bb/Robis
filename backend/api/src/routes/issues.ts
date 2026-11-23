@@ -79,7 +79,7 @@ async function queueTriage(tx: Tx, job: TriageJob, filedBy: string) {
  * File an issue in the caller's transaction: take the project's next number,
  * check its parent, put it at the top of the board, and record it.
  */
-async function fileIssue(
+export async function fileIssue(
   tx: Tx,
   actor: AuditActor,
   {

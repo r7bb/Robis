@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-23',
     area: 'Product',
+    title: 'A first run, and projects from templates',
+    brief:
+      'A new account goes straight from sign-up to a board with work on it: name a workspace, pick its look, invite a teammate, and start from a template.',
+    summary:
+      'After choosing a picture, a new account is walked through three short steps: name a workspace (or accept an invitation already waiting), pick its look and invite someone by username, then start a first project. A project can start from a template, software, event planning or coursework, each with five starter issues a team of that kind would write first, or empty. From the sign-up form to a board with work on it takes nine clicks.',
+    checked:
+      'The sign-up journey now runs through the first run in Chrome against the stack and counts every click: nine, and the board opens with its five starter issues. Two tests of templates: the issues in order from the top of the board, an unknown template refused, and no issues without one. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'First run',
+      where: 'Straight after sign-up',
+      layers: [
+        'Screen: three steps from a new account to a board with work on it',
+        'API: projects.create takes a template and files its starter issues in the same transaction',
+        'Database: projects and issues as if made by hand, each audited',
+      ],
+    },
+  },
+  {
+    date: '2026-11-23',
+    area: 'Product',
     title: 'A soak test, and the load test judged in CI',
     brief:
       'A thousand live connections held for half an hour with no growth and no ghosts, and every pull request’s load test held against the last three runs on main.',
