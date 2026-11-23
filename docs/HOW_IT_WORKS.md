@@ -96,8 +96,31 @@ on the compose stack here (2026-11-23), all passing:
 | Postgres | restarted while keyed writes keep arriving | the API answers again, every write it acknowledged is there, and none is there twice (32 writes in the run recorded) |
 | ML service | stopped | the composer's hints answer within two seconds, empty, and come back when it starts |
 
-Not yet: a soak test (a thousand sockets for half an hour) and a load test
-against a stored baseline in CI.
+### Soak
+
+`bun run soak -- --sockets=1000 --minutes=30` holds a thousand sockets on
+one gateway, all subscribed and pinging as the web app does, and reads its
+memory, open files and presence once a minute; then half drop without a
+goodbye and half close politely. On this laptop (2026-11-23):
+
+| | Start | After 30 minutes |
+| --- | --- | --- |
+| Sockets held, and present | 1,000 | 1,000 |
+| Gateway memory (RSS) | 134 MB | 128 MB (between 123 and 135 throughout) |
+| Open file descriptors | 1,022 | 1,022 |
+| Presence entries a minute after every socket closed | | 0 |
+
+No growth and no ghosts. One machine, loopback networking: a check for
+leaks, not a capacity figure.
+
+### Load against a baseline in CI
+
+Every CI run also runs the load harness. On main, its p99s for a read, a
+write and the fan-out join the last three main runs, kept in CI's cache.
+A pull request fails when a p99 passes the median of those three by more
+than twice their spread, and never by less than half again, since CI
+runners are noisy; until three runs exist, it reports without judging
+(`scripts/bench/baseline.ts`).
 
 ---
 

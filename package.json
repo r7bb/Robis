@@ -37,6 +37,7 @@
     "docs:whats-new": "bun run scripts/docs/whats-new.ts",
     "openapi": "bun run scripts/docs/openapi.ts",
     "loadtest": "bun run scripts/bench/loadtest.ts",
+    "soak": "bun run scripts/bench/soak.ts",
     "screenshots": "bun run scripts/capture/screenshots.ts",
     "mail:start": "bun run scripts/mail/sink.ts",
     "smoke:stack": "bun run scripts/smoke/stack.ts",

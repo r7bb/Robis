@@ -199,7 +199,7 @@ JavaScript.
 | Alert rules with promtool tests in CI, and a runbook for each | `deploy/prometheus/`, `docs/RUNBOOK.md` |
 | Route-pattern labels (cardinality-safe) | `backend/api/src/metrics.ts` |
 | Health endpoints | `backend/api/src/app.ts` |
-| Load harness | `scripts/bench/loadtest.ts` |
+| Load harness, run in CI against the last three main runs with a margin from their spread, and a soak test (1,000 sockets, 30 minutes) | `scripts/bench/` |
 | Failure drills in CI: the worker killed mid-burst, the gateway killed under an open board, Postgres restarted under writes, the ML service stopped; each recovers with no write lost and nothing done twice | `scripts/drills/run.ts` |
 | Screenshot capture over CDP | `scripts/capture/screenshots.ts` |
 | A lively demo: the seeded teammates stay present and, with two agents (a triage agent and a Different shots agent), chat, post, react, comment, file and move issues every half minute or so, from written lines, through the API; development only, in compose under `--profile demo` | `scripts/demo/` |

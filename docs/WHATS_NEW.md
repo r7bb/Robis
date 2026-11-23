@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **A soak test, and the load test judged in CI** (2026-11-23). A thousand
+  live connections held for half an hour with no growth and no ghosts, and
+  every pull request’s load test held against the last three runs on main.
 - **Failure drills, run on every push** (2026-11-23). CI now breaks the
   stack on purpose: the worker killed mid-send, the gateway killed under an
   open board, Postgres restarted under writes, the ML service stopped.

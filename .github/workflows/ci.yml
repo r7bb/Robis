@@ -137,6 +137,38 @@ jobs:
           S3_ACCESS_KEY_ID: test
           S3_SECRET_ACCESS_KEY: test
 
+      # The load test against a baseline (E2). Main's last three runs are the
+      # baseline, kept in the cache; a pull request fails when a p99 passes
+      # the median by more than twice the three runs' spread (at least half
+      # again), since runners are noisy. Main records instead of judging.
+      - name: Restore the load baseline
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .load-history.json
+          key: load-history-${{ github.run_id }}
+          restore-keys: load-history-
+
+      - name: Load test
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+        run: bun run scripts/bench/loadtest.ts --duration 10 --warmup 3 --json=.load-result.json
+
+      - name: Load test against the baseline
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            bun scripts/bench/baseline.ts compare .load-result.json .load-history.json || true
+            bun scripts/bench/baseline.ts record .load-result.json .load-history.json
+          else
+            bun scripts/bench/baseline.ts compare .load-result.json .load-history.json
+          fi
+
+      - name: Save the load baseline
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .load-history.json
+          key: load-history-${{ github.run_id }}
+
       # `bun --filter <pkg> <script>` -- inserting `run` makes Bun look for a
       # script literally named "run".
       - name: Build web

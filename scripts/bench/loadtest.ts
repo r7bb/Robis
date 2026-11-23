@@ -1,70 +1,15 @@
-/**
- * Load harness.
- *
- *   bun run loadtest
- *   bun run loadtest -- --connections 64 --subscribers 100 --duration 20
- *
- * Measures what the README makes claims about: what the REST API does under
- * concurrency, how long a write takes to reach every other client through
- * Postgres `LISTEN/NOTIFY`, and what that write then costs (stage 3, item
- * 32): each subscriber acts as an open board, scoped to its project, and
- * re-reads the issue list on each new issue after the web app's own 150 ms
- * coalescing, so the report counts follow-up reads per write and times them.
- *
- * The plan called for k6. k6 is a Go binary and there is no way to install one
- * on this machine, so this is written against the same runtime as the app.
- * That is a real downgrade in one specific way -- k6 runs the load generator
- * outside the runtime under test -- and the mitigations are noted below.
- *
- * How it tries to be honest:
- *
- *   - The API and gateway are spawned as *separate processes*, with request
- *     logging off. Driving an in-process server from the same event loop as
- *     the clients would measure the two contending for one thread.
- *   - The API phase is closed-loop (a fixed number of connections, each
- *     waiting for its response), so its numbers describe latency at that
- *     concurrency and cannot show queue collapse. The fan-out phase is
- *     open-loop -- events are offered on a fixed schedule whether or not the
- *     previous one finished -- because coordinated omission would otherwise
- *     hide exactly the backlog it exists to find.
- *   - A warmup period is discarded, so JIT and pool setup are not counted.
- *   - The harness measures its own event-loop lag during the run and reports
- *     it. The subscribers live in this process, so their scheduling delay is
- *     inside the delivery numbers; the lag figure is what lets a reader tell
- *     whether they are measuring the gateway or the harness.
- *   - Everything is created in a throwaway workspace and deleted afterwards.
- *
- * What it is not: a production benchmark. One machine, loopback networking,
- * a local Postgres, and a laptop CPU that thermally throttles. The numbers are
- * useful for comparing changes to this codebase against each other, and for
- * showing the shape of the system. They are not a capacity plan.
- */
-import { createSession, hashPassword, SESSION_COOKIE } from '@robis/auth';
-import {
-  createDatabase,
-  type Database,
-  projects,
-  users,
-  workspaceMembers,
-  workspaces,
-} from '@robis/database';
-import {
-  formatMs,
-  type ServerMessage,
-  type Summary,
-  slugify,
-  summarize,
-  TERMS_VERSION,
-} from '@robis/shared';
+import { createDatabase } from '@robis/database';
+import { formatMs, type ServerMessage, type Summary, summarize } from '@robis/shared';
 import { COALESCE_MS, coalescer } from '@robis/web/lib/realtime-events.ts';
-import { eq, inArray, sql } from 'drizzle-orm';
-
-const FIXTURE_CONSENT = {
-  ageConfirmedAt: new Date(),
-  termsVersion: TERMS_VERSION,
-  termsAcceptedAt: new Date(),
-  usernameConfirmedAt: new Date(),
-};
+import { sql } from 'drizzle-orm';
+import {
+  type Actor,
+  type Fixture,
+  portIsFree,
+  setupFixture,
+  teardownFixture,
+  waitForHealth,
+} from './fixture.ts';
 
 const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://robis:robis@localhost:5433/robis';
 
@@ -116,134 +61,6 @@ const WS_URL = `ws://127.0.0.1:${options.wsPort}/ws`;
 // ---------------------------------------------------------------------------
 // Preflight
 // ---------------------------------------------------------------------------
-
-function portIsFree(port: number): boolean {
-  try {
-    const server = Bun.listen({ hostname: '127.0.0.1', port, socket: { data() {} } });
-    server.stop(true);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function waitForHealth(url: string, name: string, timeoutMs = 20_000) {
-  const deadline = Date.now() + timeoutMs;
-
-  while (Date.now() < deadline) {
-    try {
-      const response = await fetch(url);
-      if (response.ok) {
-        await response.text();
-        return;
-      }
-    } catch {
-      // Not listening yet.
-    }
-    await Bun.sleep(100);
-  }
-
-  throw new Error(`${name} did not become healthy within ${timeoutMs}ms`);
-}
-
-// ---------------------------------------------------------------------------
-// Fixture
-// ---------------------------------------------------------------------------
-
-type Actor = { userId: string; token: string; cookie: string };
-
-type Fixture = {
-  workspaceId: string;
-  projectIds: string[];
-  actors: Actor[];
-};
-
-/**
- * Build the workspace under test.
- *
- * Accounts and sessions are written straight to the database rather than
- * created through `/auth/register`. Registration is deliberately expensive --
- * Argon2id, by design -- and rate limited per address, so driving it here
- * would measure the password hash and then get throttled. Setup is not the
- * thing under test.
- */
-async function setupFixture(db: Database, count: number): Promise<Fixture> {
-  const runId = crypto.randomUUID().slice(0, 8);
-  const name = `Load Test ${runId}`;
-
-  // One hash reused for every account: the cost is per-password, not per-user,
-  // and no one signs in to these.
-  const passwordHash = await hashPassword(`load-${runId}`);
-
-  const created = await db
-    .insert(users)
-    .values(
-      Array.from({ length: count }, (_, i) => ({
-        email: `loadtest-${runId}-${i}@robis.invalid`,
-        name: `Load ${i}`,
-        username: `loadtest_${runId}_${i}`,
-        passwordHash,
-        // Fixture people, not real ones: marked as having agreed and chosen
-        // their names, so a fresh seed does not ask them on every sign-in.
-        ...FIXTURE_CONSENT,
-        // And given a picture: workspaces are closed to an account without
-        // one, so a harness without it measures nothing but refusals.
-        avatarKind: 'generated' as const,
-        avatarRef: `load-${runId}-${i}`,
-      })),
-    )
-    .returning({ id: users.id });
-
-  const ownerId = created[0]!.id;
-
-  const [workspace] = await db
-    .insert(workspaces)
-    .values({ name, slug: slugify(name), createdBy: ownerId })
-    .returning({ id: workspaces.id });
-
-  await db.insert(workspaceMembers).values(
-    created.map((user, i) => ({
-      workspaceId: workspace!.id,
-      userId: user.id,
-      role: i === 0 ? ('OWNER' as const) : ('MEMBER' as const),
-    })),
-  );
-
-  const createdProjects = await db
-    .insert(projects)
-    .values(
-      Array.from({ length: options.projects }, (_, i) => ({
-        workspaceId: workspace!.id,
-        key: `LT${i}`,
-        name: `Load project ${i}`,
-        createdBy: ownerId,
-      })),
-    )
-    .returning({ id: projects.id });
-
-  const actors: Actor[] = [];
-  for (const user of created) {
-    const { token } = await createSession(db, user.id, 'loadtest');
-    actors.push({ userId: user.id, token, cookie: `${SESSION_COOKIE}=${token}` });
-  }
-
-  return {
-    workspaceId: workspace!.id,
-    projectIds: createdProjects.map((p) => p.id),
-    actors,
-  };
-}
-
-/** Workspaces cascade to projects and issues; accounts go after, being referenced. */
-async function teardownFixture(db: Database, fixture: Fixture) {
-  await db.delete(workspaces).where(eq(workspaces.id, fixture.workspaceId));
-  await db.delete(users).where(
-    inArray(
-      users.id,
-      fixture.actors.map((a) => a.userId),
-    ),
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Event-loop lag
@@ -712,7 +529,7 @@ try {
   // Enough accounts for every subscriber to be a distinct session, which is
   // what the gateway would see in production.
   const accounts = Math.max(options.connections, options.subscribers, 1);
-  fixture = await setupFixture(db, accounts);
+  fixture = await setupFixture(db, accounts, options.projects);
 
   console.log('Robis load test');
   console.log(`  api         ${API_URL} (request logging off)`);
@@ -722,8 +539,24 @@ try {
     `  machine     ${process.platform} ${process.arch} · ${navigator.hardwareConcurrency} cores · Bun ${Bun.version}`,
   );
 
-  reportApi(await phaseApi(fixture));
-  reportFanout(await phaseFanout(fixture));
+  const apiResult = await phaseApi(fixture);
+  reportApi(apiResult);
+  const fanoutResult = await phaseFanout(fixture);
+  reportFanout(fanoutResult);
+  // For the CI baseline (E2): the figures a regression would show in.
+  const jsonPath = process.argv.find((a) => a.startsWith('--json='))?.split('=')[1];
+  if (jsonPath) {
+    const p99 = (samples: number[]) => summarize(samples)?.p99 ?? null;
+    await Bun.write(
+      jsonPath,
+      JSON.stringify({
+        read: p99(apiResult.read),
+        write: p99(apiResult.write),
+        fanout: p99(fanoutResult.last),
+        errors: apiResult.errors + fanoutResult.failed,
+      }),
+    );
+  }
 
   console.log('\nSingle machine, loopback networking, local Postgres. Useful for comparing');
   console.log('changes to this codebase against each other; not a capacity plan.\n');

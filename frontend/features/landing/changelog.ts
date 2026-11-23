@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-23',
     area: 'Product',
+    title: 'A soak test, and the load test judged in CI',
+    brief:
+      'A thousand live connections held for half an hour with no growth and no ghosts, and every pull request’s load test held against the last three runs on main.',
+    summary:
+      'The soak test holds a thousand sockets on one gateway for thirty minutes, all pinging as the app does, and reads its memory, open files and presence each minute, then drops half without a goodbye. On this laptop memory stayed between 123 and 135 MB, open files at 1,022, and a minute after every socket closed no presence entry was left. The load harness now runs in CI too: main keeps its last three results, and a pull request fails when a p99 passes their median by more than twice their spread, never by less than half again, because shared runners are noisy.',
+    checked:
+      'The full thirty-minute soak run here, recorded in How it works. Two tests of the ceiling, for close and for noisy baselines. A short load run writing its p99s and the comparison reporting without judging until three runs exist. The CI baseline has no runs yet, so it reports on its first three. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-23',
+    area: 'Product',
     title: 'Failure drills, run on every push',
     brief:
       'CI now breaks the stack on purpose: the worker killed mid-send, the gateway killed under an open board, Postgres restarted under writes, the ML service stopped. Nothing is lost and nothing happens twice.',

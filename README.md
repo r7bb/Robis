@@ -202,6 +202,9 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **A soak test, and the load test judged in CI.** A thousand live
+  connections held for half an hour with no growth and no ghosts, and every
+  pull request’s load test held against the last three runs on main.
 - **Failure drills, run on every push.** CI now breaks the stack on purpose:
   the worker killed mid-send, the gateway killed under an open board,
   Postgres restarted under writes, the ML service stopped. Nothing is lost
@@ -209,9 +212,6 @@ no write lost and nothing done twice.
 - **Automations: a page for rules, and more they can do.** An Automations
   page where admins write rules in plain words, and rules that can tell
   someone, post in a channel or send a signed webhook.
-- **Automation rules: the engine.** Rules that act on issues by themselves:
-  a trigger, conditions that must all hold, and one action, run once per
-  change and named in the audit trail.
 
 <!-- latest:end -->
 
