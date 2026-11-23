@@ -1,8 +1,8 @@
 import type { SQL } from 'drizzle-orm';
-import { sql } from 'drizzle-orm';
+import { and, eq, isNotNull, sql } from 'drizzle-orm';
 import type { Executor } from './index.ts';
 import { enqueue } from './queue.ts';
-import { attachments, messages, posts, stories } from './schema.ts';
+import { attachments, messages, posts, stories, workspaceExports } from './schema.ts';
 
 /** The job that removes stored files whose rows are gone. */
 export const STORAGE_PURGE_JOB = 'storage.purge';
@@ -91,4 +91,22 @@ export async function workspaceStorageUsed(db: Executor, workspaceId: string): P
     })
     .from(sql`(select 1) as one`);
   return Number(row?.used ?? 0);
+}
+
+/**
+ * Queue removal of a workspace's export files (C6), before the workspace is
+ * deleted: an export holds everything the workspace did, so it must not
+ * outlive it in storage once its row has cascaded away.
+ */
+export async function queueExportPurge(tx: Executor, workspaceId: string): Promise<number> {
+  const rows = await tx
+    .select({ key: workspaceExports.storageKey })
+    .from(workspaceExports)
+    .where(
+      and(eq(workspaceExports.workspaceId, workspaceId), isNotNull(workspaceExports.storageKey)),
+    );
+  return queueKeysPurge(
+    tx,
+    rows.flatMap((row) => (row.key ? [row.key] : [])),
+  );
 }

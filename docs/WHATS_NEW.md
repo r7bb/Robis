@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Export a whole workspace** (2026-11-23). An admin can export everything
+  a workspace holds, as JSON lines with its images in one zip, built in the
+  background and downloaded once.
 - **Empty views that say what goes there, and a demo workspace**
   (2026-11-23). Every empty view now says what belongs in it and offers the
   one button that fills it, and a demo workspace with example work can be

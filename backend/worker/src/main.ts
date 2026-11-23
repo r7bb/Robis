@@ -8,6 +8,7 @@ import {
   STORAGE_PURGE_JOB,
   STORY_EXPIRY_INTERVAL_MS,
   STORY_EXPIRY_JOB,
+  WORKSPACE_EXPORT_JOB,
 } from '@robis/database';
 import { mailerFromEnv } from '@robis/mailer';
 import { TRIAGE_JOB } from '@robis/shared';
@@ -56,8 +57,9 @@ const runner = new Runner({
   idleDelayMs: FALLBACK_POLL_MS,
   onPoll: heartbeat(process.env.WORKER_HEARTBEAT_FILE ?? DEFAULT_HEARTBEAT_FILE),
   observe: metrics.observe,
-  // Automation rules run in the API, which signs the trail (B9).
-  exceptKinds: [AUTOMATION_JOB],
+  // Automation rules run in the API, which signs the trail (B9), and so do
+  // exports (C6), which read tables this role is not given.
+  exceptKinds: [AUTOMATION_JOB, WORKSPACE_EXPORT_JOB],
 });
 
 /**

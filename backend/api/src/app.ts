@@ -38,6 +38,7 @@ import { commentRoutes } from './routes/comments.ts';
 import { consentRoutes } from './routes/consent.ts';
 import { discussionRoutes } from './routes/discussion.ts';
 import { documentRoutes } from './routes/documents.ts';
+import { exportRoutes } from './routes/exports.ts';
 import { feedRoutes } from './routes/feed.ts';
 import { feedHighlightRoutes } from './routes/feed-highlights.ts';
 import { feedbackRoutes } from './routes/feedback.ts';
@@ -341,6 +342,7 @@ export function buildApp({
   app.register(calendarImportRoutes, { db });
   app.register(weekRoutes, { db });
   app.register(automationRoutes, { db });
+  app.register(exportRoutes, { db, storage });
   app.register(searchRoutes, { db, limits });
 
   return app;

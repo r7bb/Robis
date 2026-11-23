@@ -15,6 +15,7 @@ import {
   posts,
   queueAttachmentPurge,
   queueCoverPurge,
+  queueExportPurge,
   queueMessageImagePurge,
   queuePostPhotoPurge,
   queueStoryPurge,
@@ -83,6 +84,7 @@ async function settleWorkspace(tx: Tx, userId: string, decision: Decision) {
   await queueCoverPurge(tx, eq(workspaceMembers.workspaceId, decision.id));
   await queueMessageImagePurge(tx, eq(messages.workspaceId, decision.id));
   await queuePostPhotoPurge(tx, eq(posts.workspaceId, decision.id));
+  await queueExportPurge(tx, decision.id);
   await tx.delete(workspaces).where(eq(workspaces.id, decision.id));
 }
 

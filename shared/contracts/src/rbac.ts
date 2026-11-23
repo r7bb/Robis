@@ -70,6 +70,8 @@ export const PERMISSIONS = [
   'health:read',
   /** Add, change and remove automation rules, and read their runs (B9). */
   'automation:manage',
+  /** Export everything the workspace owns, and download it once (C6). */
+  'workspace:export',
 
   /** Attach an image to an issue or to your own comment. */
   'attachment:create',
@@ -171,6 +173,8 @@ const ADMIN: readonly Permission[] = [
   'health:read',
   // Rules act on everyone's issues, so who may write them is too.
   'automation:manage',
+  // An export holds everyone's words, so taking it out is an admin's call.
+  'workspace:export',
   // Who acts on the workspace's behalf is the same kind of question.
   'agent:manage',
   'story:delete_any',

@@ -1,6 +1,6 @@
 # Threat model: the newest surfaces
 
-Uploads, stories, agents, outbound calls and tokens: what someone might
+Uploads, stories, agents, workspace exports, outbound calls and tokens: what someone might
 try, what stands in the way today, and what is left open. Written from the
 code as it is (2026-11-22), not from a test by anyone outside the project,
 so it describes what is checked, not a guarantee. The checks themselves
@@ -70,6 +70,23 @@ server.
 **Left open.** A member-role agent can do anything a member can,
 including deleting issues; there is no narrower agent role yet. Revoking a
 token is immediate, but a request already in flight finishes.
+
+## Workspace exports
+
+An admin can take everything a workspace holds out of Robis as one zip
+(C6). It is the largest single read in the app, so it is fenced in.
+
+| Threat | In the way today | Where |
+| --- | --- | --- |
+| Someone outside the workspace, or a member, getting the file | Asking, making a link and downloading all need `workspace:export` (admins and owners); agents can never hold it; every query is scoped to the workspace in the path | `backend/api/src/routes/exports.ts`, `shared/contracts/src/rbac.ts` |
+| A copied, logged or prefetched link | The link is a 256-bit token stored only as a hash; it lasts five minutes, works once and only with an admin's session; HEAD and cross-site requests are refused; the token is replaced in logged URLs | same, and `backend/api/src/plugins/tracing.ts` |
+| Credentials or addresses travelling in the file | Webhook secrets are dropped and webhook addresses cut to their origin; members appear by name and username, never email; storage keys and search indexes stay behind | `backend/api/src/exports/build.ts` |
+| The file outliving the workspace or the need | Purged half an hour after its download, after seven days if never fetched, and with its workspace or its owner's account | `backend/api/src/exports/job.ts`, `backend/database/src/files.ts` |
+| One build exhausting the API | Capped at 256 MB, checked against stored file sizes before anything is read; one build at a time per API instance, on a loop of its own | `backend/api/src/exports/build.ts`, `backend/api/src/automation/runner.ts` |
+
+**Left open.** The export is built in memory inside the API process, so
+the cap bounds it rather than streaming it. Meeting join links travel as
+members see them, and may carry a passcode.
 
 ## Outbound calls
 

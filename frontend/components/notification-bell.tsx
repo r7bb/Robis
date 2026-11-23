@@ -26,11 +26,25 @@ function hrefFor(item: NotificationItem): string {
   // Not a member yet: the answer is on the workspaces page.
   if (item.kind === 'invitation') return '/workspaces';
 
+  // A workspace export is ready (C6): downloaded from the People page.
+  if (item.kind === 'export' && item.workspaceId) {
+    return `/workspaces/${item.workspaceId}/people#exports`;
+  }
+
   return notificationHref(item);
 }
 
 function headlineFor(item: NotificationItem) {
   if (item.kind === 'nudge') return item.payload.title ?? 'Suggestion';
+
+  if (item.kind === 'export') {
+    return (
+      <>
+        The export of{' '}
+        <span className="font-medium">{item.payload.workspaceName ?? 'a workspace'}</span> is ready
+      </>
+    );
+  }
 
   if (item.kind === 'invitation') {
     return (
@@ -58,6 +72,7 @@ function headlineFor(item: NotificationItem) {
 
 function bodyFor(item: NotificationItem): string | undefined {
   if (item.kind === 'invitation') return 'Accept or decline it on your workspaces page.';
+  if (item.kind === 'export') return 'Download it once, from the People page.';
   return item.kind === 'nudge' ? item.payload.body : describeNotification(item).body;
 }
 

@@ -151,3 +151,4 @@ export function storageFromEnv(env: StorageEnv): MediaStorage {
     region: env.S3_REGION,
   });
 }
+export { readZip, writeZip, type ZipEntry, ZipError } from './zip.ts';

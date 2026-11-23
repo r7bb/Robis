@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-23',
     area: 'Product',
+    title: 'Export a whole workspace',
+    brief:
+      'An admin can export everything a workspace holds, as JSON lines with its images in one zip, built in the background and downloaded once.',
+    summary:
+      'On the People page an admin asks for an export. A job builds a zip of everything the workspace owns, one JSON lines file per kind (projects, issues, labels, comments, documents with their text, channels, messages, meetings, rules, saved views, attachments), with the images and chat pictures under files/ and a manifest of counts. When it is ready the inbox says so. The Download button makes a link that works once, for five minutes, and only signed in as an admin; the file is opened before the link is spent, so a failed download can be tried again, and it is purged half an hour after its download, after seven days if never fetched, or with its workspace. Members appear by name and username, never by email address; webhook rules keep only the origin of their address and never their secret; every table is read from one snapshot. Asking, the link, the file being ready and the download each go in the audit trail, and the link’s token is kept out of the logs.',
+    checked:
+      'A browser journey in Chrome against the stack: ask on the People page, see it built, download it, open the zip and find the issue, see it marked downloaded with no second download offered, and a new link refused. Six API tests: the whole path with the zip read back (rows present, no email address, no webhook secret or full webhook address, the second download and a new link refused, purges queued, four audit events); a wrong token, an expired link and a member refused; a HEAD and a missing file leaving the link unspent; an export past seven days shown expired and a dead build shown failed without blocking another; deleting the workspace queuing its export files; and the token redacted from logged URLs. Six tests of the zip writer and reader, including the system unzip accepting its output, names that climb out, repeat or carry control characters refused, and a directory that does not meet its end record refused. A security review of the export, whose findings were fixed before it shipped. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Workspace export',
+      where: 'People, Export (admins)',
+      layers: [
+        'Screen: Export everything, the list of exports, and a Download that makes a fresh link',
+        'API: exports.create queues the job; exports.link makes a single-use link; the download spends it in the same statement that finds the file',
+        'Database: workspace_exports with only the link’s hash; the zip in the same storage as attachments, purged after download',
+      ],
+    },
+  },
+  {
+    date: '2026-11-23',
+    area: 'Product',
     title: 'Empty views that say what goes there, and a demo workspace',
     brief:
       'Every empty view now says what belongs in it and offers the one button that fills it, and a demo workspace with example work can be opened from the first run.',

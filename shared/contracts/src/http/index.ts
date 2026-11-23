@@ -10,6 +10,7 @@ import { channelContracts } from './channels.ts';
 import { type Contract, statusesOf } from './contract.ts';
 import { discussionContracts } from './discussion.ts';
 import { documentContracts } from './documents.ts';
+import { exportContracts } from './exports.ts';
 import { feedContracts } from './feed.ts';
 import { feedHighlightContracts } from './feed-highlights.ts';
 import { feedbackContracts } from './feedback.ts';
@@ -52,6 +53,12 @@ export {
 } from './automation.ts';
 export * from './contract.ts';
 export { DISCUSSION_LIMIT, DISCUSSION_PREVIEW_CHARS } from './discussion.ts';
+export {
+  EXPORT_KEEP_DAYS,
+  EXPORT_LINK_MINUTES,
+  EXPORT_STATUSES,
+  EXPORTS_SHOWN,
+} from './exports.ts';
 export {
   CELEBRATION_KINDS,
   type CelebrationKind,
@@ -117,6 +124,7 @@ export const contracts = {
   ...automationContracts,
   ...weekContracts,
   ...accountContracts,
+  ...exportContracts,
 } as const satisfies Record<string, Contract>;
 
 export type ContractName = keyof typeof contracts;

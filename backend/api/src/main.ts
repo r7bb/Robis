@@ -4,13 +4,16 @@ import {
   createDatabase,
   settleAgentSteps,
   settleDeferredAccountEvents,
+  WORKSPACE_EXPORT_JOB,
 } from '@robis/database';
 import { mailerFromEnv } from '@robis/mailer';
+import { storageFromEnv } from '@robis/storage';
 import { startTracingFromEnv } from '@robis/telemetry';
 import { setLogService } from '@robis/telemetry/log';
 import { buildApp, rateStoreFromEnv } from './app.ts';
-import { startAutomationRunner } from './automation/runner.ts';
+import { startApiRunner, startAutomationRunner } from './automation/runner.ts';
 import { loadEnv } from './env.ts';
+import { runExportJob } from './exports/job.ts';
 import { serveMetrics } from './metrics.ts';
 
 const env = loadEnv();
@@ -48,6 +51,15 @@ await app.listen({ port: env.API_PORT, host: env.API_HOST });
 const metricsServer = serveMetrics(app, { port: env.METRICS_PORT, hostname: env.METRICS_HOST });
 // Automation rules run here, not in the worker: only the API signs the trail (B9).
 const stopAutomation = startAutomationRunner(db, app.log);
+// Exports run here too (C6), one at a time, against the routes' storage.
+const exportStorage = storageFromEnv(env);
+const stopExports = startApiRunner(
+  db,
+  app.log,
+  'exports',
+  { [WORKSPACE_EXPORT_JOB]: (payload) => runExportJob(db, exportStorage, payload) },
+  1,
+);
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.once(signal, async () => {
@@ -56,6 +68,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     await app.close();
     metricsServer.stop();
     await stopAutomation();
+    await stopExports();
     // A failed sign-in is recorded just after its reply; let those land.
     await settleDeferredAccountEvents();
     await settleAgentSteps();

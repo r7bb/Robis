@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-11-23): **1756 TypeScript tests, 106 Python tests, lint and
+Status (2026-11-23): **1769 TypeScript tests, 106 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -78,6 +78,12 @@ then a first project from a template (software, event planning,
 coursework). Every empty view says what goes there, in its guide's words,
 with the one button that fills it, and a demo workspace with a board, a
 document, a channel and a meeting can be opened from the first run.
+
+**Data in and out (C6), first part.** An admin exports a whole workspace
+as JSON lines with its images in one zip, built by a job and downloaded
+once through a five-minute single-use link, each step audited. Account
+deletion (transfer or delete each owned workspace) came with B3. Import
+from CSV, GitHub Issues and a Robis export is next.
 
 **Load, soak and failure drills (E2).** The worker, gateway, Postgres and
 ML service each broken on purpose in CI, recovering with no lost write

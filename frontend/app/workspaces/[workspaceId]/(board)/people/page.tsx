@@ -4,10 +4,11 @@ import { can } from '@robis/shared';
 import { AgentList } from '../../../../../components/agent-list.tsx';
 import { MemberList } from '../../../../../components/member-list.tsx';
 import { StoriesPolicy } from '../../../../../features/stories/stories-policy.tsx';
+import { ExportsPanel } from '../../../../../features/workspace/exports-panel.tsx';
 import { PageFrame, useWorkspaceRole } from '../../../../../features/workspace/page-frame.tsx';
 import { TwoFactorPolicy } from '../../../../../features/workspace/two-factor-policy.tsx';
 
-/** Who is in the workspace, their roles, invitations, and the agents. */
+/** Who is in the workspace, their roles, invitations, the agents, and the export. */
 export default function PeoplePage() {
   const { workspaceId, role } = useWorkspaceRole();
 
@@ -30,6 +31,11 @@ export default function PeoplePage() {
       {role && can(role, 'agent:manage') ? (
         <div className="mt-10">
           <AgentList workspaceId={workspaceId} />
+        </div>
+      ) : null}
+      {role && can(role, 'workspace:export') ? (
+        <div className="mt-12">
+          <ExportsPanel workspaceId={workspaceId} />
         </div>
       ) : null}
     </PageFrame>

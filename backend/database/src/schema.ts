@@ -1960,3 +1960,32 @@ export const rateLimits = pgTable('rate_limits', {
   lastAt: timestamp('last_at', { withTimezone: true }).notNull(),
   resetAt: timestamp('reset_at', { withTimezone: true }).notNull(),
 });
+
+/**
+ * A workspace export (C6): everything the workspace owns as JSON lines plus
+ * its attachments, in one zip built by a job. An admin downloads it once,
+ * through a link made on request that lasts minutes and works once; only
+ * the link's hash is kept. After the download the file is purged.
+ */
+export const workspaceExports = pgTable(
+  'workspace_exports',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    /** Null once the account that asked is deleted. */
+    requestedBy: uuid('requested_by').references(() => users.id, { onDelete: 'set null' }),
+    /** pending, ready, failed or downloaded. */
+    status: text('status').notNull().default('pending'),
+    storageKey: text('storage_key'),
+    bytes: integer('bytes'),
+    error: text('error'),
+    linkHash: text('link_hash'),
+    linkExpiresAt: timestamp('link_expires_at', { withTimezone: true }),
+    createdAt: createdAt(),
+    readyAt: timestamp('ready_at', { withTimezone: true }),
+    downloadedAt: timestamp('downloaded_at', { withTimezone: true }),
+  },
+  (t) => [index('workspace_exports_workspace_idx').on(t.workspaceId, t.createdAt)],
+);

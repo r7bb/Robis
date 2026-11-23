@@ -38,6 +38,8 @@ const OUTSIDE: readonly string[] = [
   'GET /workspaces/:workspaceId/people/:userId/cover',
   'GET /workspaces/:workspaceId/messages/:messageId/image',
   'GET /workspaces/:workspaceId/posts/:postId/photo',
+  // A workspace export (C6): a zip, streamed from storage, once.
+  'GET /workspaces/:workspaceId/exports/:exportId/download/:token',
 ];
 
 describe('route contracts', () => {

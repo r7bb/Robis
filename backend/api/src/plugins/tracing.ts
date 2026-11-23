@@ -19,10 +19,13 @@ declare module 'fastify' {
 /**
  * A URL as the logs may keep it. A calendar feed's address is its secret
  * (B8), and calendar apps poll it every few minutes, so its token is
- * replaced; every other URL is kept as it was.
+ * replaced, as is an export download link's (C6); every other URL is kept
+ * as it was.
  */
 export function loggableUrl(url: string): string {
-  return url.replace(/^\/calendar\/[^/?#]+/, '/calendar/[feed]');
+  return url
+    .replace(/^\/calendar\/[^/?#]+/, '/calendar/[feed]')
+    .replace(/(\/exports\/[^/?#]+\/download\/)[^/?#]+/, '$1[token]');
 }
 
 export function registerTracing(app: FastifyInstance): void {

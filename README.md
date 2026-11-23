@@ -202,6 +202,9 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Export a whole workspace.** An admin can export everything a workspace
+  holds, as JSON lines with its images in one zip, built in the background
+  and downloaded once.
 - **Empty views that say what goes there, and a demo workspace.** Every
   empty view now says what belongs in it and offers the one button that
   fills it, and a demo workspace with example work can be opened from the
@@ -209,9 +212,6 @@ no write lost and nothing done twice.
 - **A first run, and projects from templates.** A new account goes straight
   from sign-up to a board with work on it: name a workspace, pick its look,
   invite a teammate, and start from a template.
-- **A soak test, and the load test judged in CI.** A thousand live
-  connections held for half an hour with no growth and no ghosts, and every
-  pull request’s load test held against the last three runs on main.
 
 <!-- latest:end -->
 

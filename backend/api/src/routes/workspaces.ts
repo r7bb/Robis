@@ -7,6 +7,7 @@ import {
   posts,
   queueAttachmentPurge,
   queueCoverPurge,
+  queueExportPurge,
   queueMessageImagePurge,
   queuePostPhotoPurge,
   queueStoryPurge,
@@ -245,6 +246,7 @@ export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database
         await queueCoverPurge(tx, eq(workspaceMembers.workspaceId, workspaceId));
         await queueMessageImagePurge(tx, eq(messages.workspaceId, workspaceId));
         await queuePostPhotoPurge(tx, eq(posts.workspaceId, workspaceId));
+        await queueExportPurge(tx, workspaceId);
         await tx.delete(workspaces).where(eq(workspaces.id, workspaceId));
       });
 

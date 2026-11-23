@@ -6,8 +6,9 @@
  * mail sink, an offline board write and reconnect, two people editing one
  * document, chat delivery, a meeting reschedule clearing answers, a guest
  * seeing no write controls, someone outside the workspace getting not
- * found, the empty views (C5) moving to the field that fills them, and
- * the demo workspace opening from the first run.
+ * found, the empty views (C5) moving to the field that fills them, the
+ * demo workspace opening from the first run, and a workspace export
+ * downloaded once (C6).
  * Each journey's people get Chromes of their own and fresh accounts, never
  * the demo ones. Run in CI on every push and pull request.
  *
@@ -18,6 +19,7 @@
 import { WEB } from '../smoke/browser-session.ts';
 import { Checks } from './checks.ts';
 import { demoWorkspaceJourney, emptyViewsJourney } from './empty-views.ts';
+import { exportJourney } from './export.ts';
 import { guestJourney, meetingJourney, strangerJourney } from './meetings-access.ts';
 import { offlineBoardJourney } from './offline-board.ts';
 import { signupJourney } from './signup.ts';
@@ -37,6 +39,7 @@ const JOURNEYS: Record<string, (checks: Checks) => Promise<void>> = {
   stranger: (checks) => strangerJourney(checks, pair(5)),
   empty: (checks) => emptyViewsJourney(checks, FIRST_PORT + 12),
   demo: (checks) => demoWorkspaceJourney(checks, FIRST_PORT + 13),
+  export: (checks) => exportJourney(checks, FIRST_PORT + 14),
 };
 
 async function main() {
