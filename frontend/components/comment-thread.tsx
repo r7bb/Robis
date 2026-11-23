@@ -7,6 +7,7 @@ import { type Attachment, uploadable } from '../features/issues/attachments.tsx'
 import { BASE_URL, type CommentMention, call } from '../lib/api.ts';
 import { useMemberAvatars } from '../lib/use-member-avatars.ts';
 import { DeleteButton } from './delete-button.tsx';
+import { EmptyView } from './empty-view.tsx';
 import { Avatar } from './ui/avatar.tsx';
 import { AgentBadge } from './ui/primitives.tsx';
 
@@ -195,7 +196,9 @@ export function CommentThread({
       </ul>
 
       {items.length === 0 && comments.isSuccess && (
-        <p className="mt-3 text-sm text-faint">No comments yet.</p>
+        <div className="mt-3">
+          <EmptyView view="comments" canFill={canComment} />
+        </div>
       )}
 
       {canComment && (

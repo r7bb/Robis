@@ -508,6 +508,12 @@ export const workspaces = pgTable(
      * it off; off hides the stories there are and refuses new ones.
      */
     storiesEnabled: boolean('stories_enabled').notNull().default(true),
+    /**
+     * A demo workspace (C5): made with example work already in it, to look
+     * around and throw away. Labelled as one wherever it is shown; otherwise
+     * an ordinary workspace, deleted the ordinary way.
+     */
+    demo: boolean('demo').notNull().default(false),
     createdBy: uuid('created_by')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict' }),

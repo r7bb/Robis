@@ -167,3 +167,14 @@ export async function loadUpdate(
 export function documentText(doc: Y.Doc): string {
   return doc.getText('content').toString();
 }
+
+/**
+ * A document's first state holding `text`, as the editor keeps it (one
+ * shared text named `content`): for a document made with words already in
+ * it, such as the demo workspace's (C5).
+ */
+export function textSnapshot(text: string): Uint8Array {
+  const doc = new Y.Doc();
+  doc.getText('content').insert(0, text);
+  return Y.encodeStateAsUpdate(doc);
+}

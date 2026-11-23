@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { type FormEvent, useState } from 'react';
 import { call } from '../lib/api.ts';
 import { DeleteButton } from './delete-button.tsx';
+import { EmptyView } from './empty-view.tsx';
 import { Avatar } from './ui/avatar.tsx';
 import { AgentBadge, RoleBadge } from './ui/primitives.tsx';
 
@@ -244,7 +245,9 @@ export function AgentList({ workspaceId }: { workspaceId: string }) {
       )}
 
       {list.length === 0 && agents.isSuccess && (
-        <p className="mt-3 text-sm text-faint">No agents yet.</p>
+        <div className="mt-3 -mx-2">
+          <EmptyView view="agents" compact />
+        </div>
       )}
 
       <ul className="mt-3 space-y-3 empty:hidden">

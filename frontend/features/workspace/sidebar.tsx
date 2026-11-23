@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { type FormEvent, type ReactNode, useRef, useState } from 'react';
+import { EmptyView } from '../../components/empty-view.tsx';
 import { ThemePicker } from '../../components/theme-picker.tsx';
 import { SectionLabel } from '../../components/ui/primitives.tsx';
 import { ApiError, call } from '../../lib/api.ts';
@@ -218,7 +219,12 @@ function Docs({ workspaceId, role }: { workspaceId: string; role: Role | undefin
         })}
       </ul>
       {documents.isSuccess && rows.length === 0 ? (
-        <p className="px-2 text-xs text-faint">No docs yet.</p>
+        <EmptyView
+          view="docs"
+          workspaceId={workspaceId}
+          canFill={role !== undefined && can(role, 'project:create')}
+          compact
+        />
       ) : null}
     </AddableSection>
   );

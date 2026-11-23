@@ -1,7 +1,6 @@
 import {
   attachments,
   auditEvents,
-  channels,
   type Database,
   type Executor,
   messages,
@@ -18,10 +17,7 @@ import {
   workspaceMembers,
   workspaces,
 } from '@robis/database';
-import { contracts, slugify } from '@robis/shared';
-
-/** The room every new workspace is born with. */
-const DEFAULT_CHANNEL_NAME = 'general';
+import { contracts } from '@robis/shared';
 
 import { and, desc, eq, isNotNull, notLike } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
@@ -38,28 +34,8 @@ import {
   requirePicture,
 } from '../plugins/authz.ts';
 import { rateLimit } from '../plugins/rate-limit.ts';
-
-/**
- * Find a free slug by appending `-2`, `-3`, ... The unique index is still the
- * real guarantee; this only avoids surfacing a conflict for the common case of
- * two workspaces sharing a display name.
- */
-async function availableSlug(db: Executor, base: string): Promise<string> {
-  const root = base || 'workspace';
-
-  for (let suffix = 1; suffix <= 50; suffix++) {
-    const candidate = suffix === 1 ? root : `${root}-${suffix}`;
-    const [taken] = await db
-      .select({ id: workspaces.id })
-      .from(workspaces)
-      .where(eq(workspaces.slug, candidate))
-      .limit(1);
-
-    if (!taken) return candidate;
-  }
-
-  throw ApiError.conflict('Could not derive a unique slug; please supply one', 'slug_exhausted');
-}
+import { insertWorkspace } from '../workspaces/create.ts';
+import { createDemoWorkspace } from '../workspaces/demo.ts';
 
 /**
  * The admin's own two-factor, read in the transaction that turns the
@@ -96,6 +72,7 @@ export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database
           name: workspaces.name,
           slug: workspaces.slug,
           theme: workspaces.theme,
+          demo: workspaces.demo,
           role: workspaceMembers.role,
           createdAt: workspaces.createdAt,
         })
@@ -116,52 +93,34 @@ export async function workspaceRoutes(app: FastifyInstance, opts: { db: Database
       const user = currentUser(request);
       assertReady(user);
 
-      const workspace = await db.transaction(async (tx) => {
-        const slug = input.slug ?? (await availableSlug(tx, slugify(input.name)));
-
-        const [created] = await tx
-          .insert(workspaces)
-          .values({ name: input.name, slug, createdBy: user.id })
-          .onConflictDoNothing({ target: workspaces.slug })
-          .returning();
-
-        if (!created) throw ApiError.conflict('That workspace slug is taken', 'slug_taken');
-
-        // Creating a workspace you cannot administer would be useless, so the
-        // owner membership is part of the same transaction, not a follow-up call.
-        await tx.insert(workspaceMembers).values({
-          workspaceId: created.id,
-          userId: user.id,
-          role: 'OWNER',
-        });
-
-        /*
-         * Every workspace starts with somewhere to talk.
-         *
-         * Without this the shell opens on an empty centre column and the first
-         * thing a new owner has to do is guess that chat needs a room created
-         * first. In the same transaction as the workspace, so there is no state
-         * where one exists without the other.
-         */
-        await tx.insert(channels).values({
-          workspaceId: created.id,
-          name: DEFAULT_CHANNEL_NAME,
-          topic: 'Anything that does not belong anywhere else.',
-          createdById: user.id,
-        });
-
-        await recordAudit(tx, auditActor(request), {
-          workspaceId: created.id,
-          entityType: 'workspace',
-          entityId: created.id,
-          eventType: 'workspace.created',
-          payload: { name: created.name, slug: created.slug },
-        });
-
-        return created;
-      });
+      const workspace = await db.transaction((tx) =>
+        insertWorkspace(tx, auditActor(request), user.id, input),
+      );
 
       return { workspace: { ...workspace, role: 'OWNER' as const } };
+    },
+  );
+
+  // A demo workspace to look around (C5): one per person, so asking again
+  // goes back to it. Rate limited as well, since making one writes a few
+  // dozen rows.
+  serve(
+    app,
+    contracts['workspaces.createDemo'],
+    {
+      preHandler: [
+        requireAuth,
+        requirePicture,
+        rateLimit({ name: 'workspace-demo', limit: 10, windowMs: 60_000 }),
+      ],
+    },
+    async (request, { body }) => {
+      const user = currentUser(request);
+      assertReady(user);
+      const { workspace, projectId } = await createDemoWorkspace(db, auditActor(request), user, {
+        ...(body.timeZone ? { timeZone: body.timeZone } : {}),
+      });
+      return { workspace: { ...workspace, role: 'OWNER' as const }, projectId };
     },
   );
 

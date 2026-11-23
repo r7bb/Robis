@@ -477,6 +477,13 @@
       "when": 1795413938739,
       "tag": "0067_automation_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1795475573466,
+      "tag": "0068_workspace_demo",
+      "breakpoints": true
     }
   ]
 }

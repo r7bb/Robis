@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Empty views that say what goes there, and a demo workspace**
+  (2026-11-23). Every empty view now says what belongs in it and offers the
+  one button that fills it, and a demo workspace with example work can be
+  opened from the first run.
 - **A first run, and projects from templates** (2026-11-23). A new account
   goes straight from sign-up to a board with work on it: name a workspace,
   pick its look, invite a teammate, and start from a template.

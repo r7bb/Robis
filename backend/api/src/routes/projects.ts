@@ -1,4 +1,5 @@
 import {
+  type AuditActor,
   attachments,
   type Database,
   type Executor,
@@ -7,8 +8,15 @@ import {
   publishEvent,
   queueAttachmentPurge,
   recordAudit,
+  type Tx,
 } from '@robis/database';
-import { contracts, deriveProjectKey, isUuid, TEMPLATE_DETAILS } from '@robis/shared';
+import {
+  type CreateProjectInput,
+  contracts,
+  deriveProjectKey,
+  isUuid,
+  TEMPLATE_DETAILS,
+} from '@robis/shared';
 import { and, count, eq, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { serve } from '../contract.ts';
@@ -58,6 +66,69 @@ async function availableKey(db: Executor, workspaceId: string, base: string): Pr
     'Could not derive a unique project key; please supply one',
     'key_exhausted',
   );
+}
+
+/**
+ * Make a project, audited, with a template's starter issues if one is
+ * named (C5). Shared by the create route and the demo workspace.
+ */
+export async function insertProject(
+  tx: Tx,
+  actor: AuditActor,
+  {
+    workspaceId,
+    user,
+    input,
+  }: {
+    workspaceId: string;
+    user: { id: string; kind: string };
+    input: CreateProjectInput;
+  },
+) {
+  const key = input.key ?? (await availableKey(tx, workspaceId, deriveProjectKey(input.name)));
+
+  const [created] = await tx
+    .insert(projects)
+    .values({
+      workspaceId,
+      key,
+      name: input.name,
+      description: input.description ?? null,
+      createdBy: user.id,
+    })
+    .onConflictDoNothing({ target: [projects.workspaceId, projects.key] })
+    .returning();
+
+  if (!created) {
+    throw ApiError.conflict(`Project key "${key}" is already used here`, 'key_taken');
+  }
+
+  await recordAudit(tx, actor, {
+    workspaceId,
+    entityType: 'project',
+    entityId: created.id,
+    eventType: 'project.created',
+    payload: {
+      key: created.key,
+      name: created.name,
+      ...(input.template ? { template: input.template } : {}),
+    },
+  });
+
+  // A template's starter issues, filed as the creator, last first so the
+  // board reads them in order from the top.
+  if (input.template) {
+    for (const starter of [...TEMPLATE_DETAILS[input.template].issues].reverse()) {
+      await fileIssue(tx, actor, {
+        user,
+        workspaceId,
+        projectId: created.id,
+        input: { title: starter.title, priority: starter.priority, status: 'TODO' },
+      });
+    }
+  }
+
+  return created;
 }
 
 export async function projectRoutes(app: FastifyInstance, opts: { db: Database }) {
@@ -111,53 +182,9 @@ export async function projectRoutes(app: FastifyInstance, opts: { db: Database }
       const user = currentUser(request);
       const { workspaceId } = currentMembership(request);
 
-      const project = await db.transaction(async (tx) => {
-        const key =
-          input.key ?? (await availableKey(tx, workspaceId, deriveProjectKey(input.name)));
-
-        const [created] = await tx
-          .insert(projects)
-          .values({
-            workspaceId,
-            key,
-            name: input.name,
-            description: input.description ?? null,
-            createdBy: user.id,
-          })
-          .onConflictDoNothing({ target: [projects.workspaceId, projects.key] })
-          .returning();
-
-        if (!created) {
-          throw ApiError.conflict(`Project key "${key}" is already used here`, 'key_taken');
-        }
-
-        await recordAudit(tx, auditActor(request), {
-          workspaceId,
-          entityType: 'project',
-          entityId: created.id,
-          eventType: 'project.created',
-          payload: {
-            key: created.key,
-            name: created.name,
-            ...(input.template ? { template: input.template } : {}),
-          },
-        });
-
-        // A template's starter issues (C5), filed as the creator, last first
-        // so the board reads them in order from the top.
-        if (input.template) {
-          for (const starter of [...TEMPLATE_DETAILS[input.template].issues].reverse()) {
-            await fileIssue(tx, auditActor(request), {
-              user,
-              workspaceId,
-              projectId: created.id,
-              input: { title: starter.title, priority: starter.priority, status: 'TODO' },
-            });
-          }
-        }
-
-        return created;
-      });
+      const project = await db.transaction((tx) =>
+        insertProject(tx, auditActor(request), { workspaceId, user, input }),
+      );
 
       await publishEvent(db, {
         type: 'project.created',

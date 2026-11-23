@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { type FormEvent, useState } from 'react';
 import { DeleteButton } from '../../components/delete-button.tsx';
-import { Button, EmptyState, InlineError } from '../../components/ui/primitives.tsx';
+import { Button, InlineError } from '../../components/ui/primitives.tsx';
 import { call } from '../../lib/api.ts';
 
 /**
@@ -93,9 +93,8 @@ export function ProjectsPanel({ workspaceId, role }: { workspaceId: string; role
 
       {projects.isError ? <InlineError>Could not load projects.</InlineError> : null}
 
-      {projects.isSuccess && rows.length === 0 ? (
-        <EmptyState>No projects yet.</EmptyState>
-      ) : (
+      {/* Shown only on a workspace with no boards, whose page says so above. */}
+      {rows.length === 0 ? null : (
         <ul className="space-y-1.5">
           {rows.map((project) => (
             <li

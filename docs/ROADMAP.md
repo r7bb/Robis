@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-11-23): **1742 TypeScript tests, 106 Python tests, lint and
+Status (2026-11-23): **1756 TypeScript tests, 106 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -72,10 +72,12 @@ reschedule-clears-answers, cancel-not-delete.
 issues, documents and comments; a notification inbox with dedupe; mention
 notifications and stale-issue nudges on a `SKIP LOCKED` job queue.
 
-**First run (C5), first part.** A new account goes from sign-up to a board
-with work on it in nine clicks: a workspace, its look and a teammate, then
-a first project from a template (software, event planning, coursework).
-Empty states and a demo workspace are next.
+**First run and empty views (C5).** A new account goes from sign-up to a
+board with work on it in nine clicks: a workspace, its look and a teammate,
+then a first project from a template (software, event planning,
+coursework). Every empty view says what goes there, in its guide's words,
+with the one button that fills it, and a demo workspace with a board, a
+document, a channel and a meeting can be opened from the first run.
 
 **Load, soak and failure drills (E2).** The worker, gateway, Postgres and
 ML service each broken on purpose in CI, recovering with no lost write

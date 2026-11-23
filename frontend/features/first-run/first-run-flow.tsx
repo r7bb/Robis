@@ -20,7 +20,8 @@ import { useRequireAvatar } from '../../lib/use-require-avatar.ts';
  * The first run (C5): from a new account to a board with work on it in a
  * few steps. Name a workspace (or accept an invitation already waiting),
  * pick its look, invite someone by username, and start a first project
- * from a template. Everything after the first step can be skipped.
+ * from a template. Everything after the first step can be skipped, and the
+ * first can be put off by looking around a demo workspace instead.
  */
 
 type Step = 'workspace' | 'team' | 'project';
@@ -78,6 +79,15 @@ export function FirstRunFlow() {
       setStep('team');
     });
   };
+  // Example work to look around first (C5): the demo opens on its board,
+  // and the real workspace can be made whenever, from home.
+  const openDemo = () =>
+    run(async () => {
+      const made = await call(contracts['workspaces.createDemo'], {
+        body: { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+      });
+      router.replace(`/workspaces/${made.workspace.id}/projects/${made.projectId}`);
+    });
   const chooseTheme = (id: ThemeId) =>
     run(async () => {
       setTheme(id);
@@ -136,6 +146,20 @@ export function FirstRunFlow() {
           </form>
           <div className="mt-6">
             <MyInvitations me={me.data} focusAfter="first-workspace" />
+          </div>
+          <div className="mt-8 border-t border-line pt-5">
+            <p className="text-xs text-muted">
+              Or look around first: a demo workspace with a board, a document, a channel and a
+              meeting already in it, to change and throw away.
+            </p>
+            <button
+              type="button"
+              className={`${QUIET} mt-3`}
+              disabled={busy}
+              onClick={() => void openDemo()}
+            >
+              Look around a demo workspace
+            </button>
           </div>
         </>
       ) : null}

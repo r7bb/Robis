@@ -11,6 +11,7 @@ import { StoryRing } from '../features/stories/story-ring.tsx';
 import { call, type Member } from '../lib/api.ts';
 import { personHref } from '../lib/links.ts';
 import { DeleteButton } from './delete-button.tsx';
+import { EmptyView } from './empty-view.tsx';
 import { SentInvitations } from './sent-invitations.tsx';
 import { Avatar } from './ui/avatar.tsx';
 import { AgentBadge, RoleBadge } from './ui/primitives.tsx';
@@ -234,6 +235,12 @@ export function MemberList({
           );
         })}
       </ul>
+
+      {members.data?.members.length === 1 ? (
+        <div className="mt-3">
+          <EmptyView view="members" workspaceId={workspaceId} canFill={canManage} />
+        </div>
+      ) : null}
 
       {canManage && (
         <SentInvitations workspaceId={workspaceId} focusAfter={`members-heading-${workspaceId}`} />

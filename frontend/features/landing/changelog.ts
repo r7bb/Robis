@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-23',
     area: 'Product',
+    title: 'Empty views that say what goes there, and a demo workspace',
+    brief:
+      'Every empty view now says what belongs in it and offers the one button that fills it, and a demo workspace with example work can be opened from the first run.',
+    summary:
+      'An empty board, docs list, chat room, meeting list, comment thread, agent list, rules page or member list now says what goes there, in the same words as the matching guide, with the one button that fills it and a link to the guide. Most buttons move straight to the field already on the page. The first run also offers a demo workspace: a board of eight example issues at every stage, a document with words in it, a #relaunch channel beside #general and a check-in at 10:00 on the next weekday wherever the person is. It is labelled Demo wherever its name appears, asking again returns the same one (with a new board if its board was deleted), and it is deleted like any other workspace. The guides lost their dashes and their note that inviting was by email or API only.',
+    checked:
+      'Two browser journeys in Chrome against the stack: a blank board shows its empty view, its button moves to the new issue field, the view goes once an issue is filed, an issue with no comments moves to the comment box, and the docs list offers the sample; and one click from the first run opens the demo board with its eight cards, its Demo label and its document. Six API tests of the demo (its contents, the document text read back from its CRDT, one per person even for two requests at once, a demo whose board was deleted found again and given a new one, an unknown zone falling back to UTC, signed out refused, the meeting time across a weekend and in Tokyo) and seven of the empty view copy. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Demo workspace',
+      where: 'First run, step one: Look around a demo workspace',
+      layers: [
+        'Screen: one button on the first run; a Demo label in the top bar and on the home tile',
+        'API: workspaces.createDemo makes the workspace, board, issues, document, channel and meeting in one transaction, or returns the one already owned',
+        'Database: a demo flag on workspaces; the document stored as a ready CRDT snapshot with its search text',
+      ],
+    },
+  },
+  {
+    date: '2026-11-23',
+    area: 'Product',
     title: 'A first run, and projects from templates',
     brief:
       'A new account goes straight from sign-up to a board with work on it: name a workspace, pick its look, invite a teammate, and start from a template.',

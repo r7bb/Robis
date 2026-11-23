@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { DeleteButton } from '../../components/delete-button.tsx';
+import { EmptyView } from '../../components/empty-view.tsx';
 import { SyncStatus } from '../../components/sync-status.tsx';
 import { Avatar } from '../../components/ui/avatar.tsx';
 import { LabelDot, PriorityBadge, StatusHeading } from '../../components/ui/badges.tsx';
@@ -301,6 +302,12 @@ export function ProjectBoard({
           }}
         />
       )}
+
+      {!board.loading && board.issues.length === 0 ? (
+        <div className="mt-6">
+          <EmptyView view="issues" workspaceId={workspaceId} canFill={canCreate} />
+        </div>
+      ) : null}
 
       {/* Columns never narrower than a card's title needs: between the left
           rail and the right one the board scrolls sideways instead. */}

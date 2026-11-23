@@ -41,7 +41,7 @@ export const NUDGE_GUIDES: Record<NudgeKind, NudgeGuide> = {
       'A workspace is the container for everything else: projects, issues, documents and the people who can see them.',
     steps: [
       'Open the workspaces page.',
-      'Type a name in the box at the top — your team, your company, or just "Personal".',
+      'Type a name in the box at the top: a team, a company, or just "Personal".',
       'Press Create. You become its owner, which means you can invite others and change its settings.',
     ],
     action: { kind: 'link', label: 'Go to workspaces', to: 'workspaces' },
@@ -54,8 +54,8 @@ export const NUDGE_GUIDES: Record<NudgeKind, NudgeGuide> = {
       'Projects group related issues and give them short readable keys, so you can say "REL-104" instead of pasting a URL.',
     steps: [
       'Open your workspace.',
-      'Type a project name in the box under the heading.',
-      'Press Create project. The key is derived from the name — "Web App" becomes REL.',
+      'Type a project name in the box under the heading, or pick a template when making the first.',
+      'Press Add. The key comes from the name, so "Web App" becomes WA.',
     ],
     action: { kind: 'workspace', label: 'Open your workspace' },
   },
@@ -71,7 +71,7 @@ export const NUDGE_GUIDES: Record<NudgeKind, NudgeGuide> = {
       'Use the status dropdown to move it across the board.',
     ],
     action: { kind: 'workspace', label: 'Open your workspace' },
-    note: 'The board keeps working with no connection — try switching your network off and adding one anyway.',
+    note: 'The board keeps working with no connection. Try switching the network off and adding one anyway.',
   },
 
   try_document: {
@@ -82,7 +82,7 @@ export const NUDGE_GUIDES: Record<NudgeKind, NudgeGuide> = {
       'Create a document from your workspace page.',
       'Open the same document in a second window.',
       'Type in both at once, in the same sentence.',
-      'Watch both edits survive — nothing is lost and no one has to take turns.',
+      'Watch both edits survive. Nothing is lost and no one has to take turns.',
     ],
     action: { kind: 'sample-document', label: 'Create a sample document' },
     note: 'This is a CRDT. The merge rules live in the data, so the server never has to pick a winner.',
@@ -94,12 +94,12 @@ export const NUDGE_GUIDES: Record<NudgeKind, NudgeGuide> = {
       'Presence, mentions and live editing all need a second person before they show you anything interesting.',
     steps: [
       'Open your workspace and find the Members list.',
-      'Invite by email — they need an account already.',
+      'Invite by username or email address.',
       'Pick a role: admins manage people, members manage work, guests can read and comment.',
       'Open a board in two browsers to see presence and live updates.',
     ],
     action: { kind: 'workspace', label: 'Open your workspace' },
-    note: 'Member management is API-only for now: POST to /workspaces/:id/members.',
+    note: 'An invitation waits until it is accepted, and can be withdrawn before then.',
   },
 
   stale_issues: {
@@ -122,7 +122,7 @@ export const SAMPLE_DOCUMENT_TITLE = 'Getting started';
 export const SAMPLE_DOCUMENT_BODY = `Welcome to Robis documents.
 
 This text is a CRDT. Open this page in a second window and type in both at the
-same time — in this very paragraph, if you like. Both sets of edits survive.
+same time, in this very paragraph if you like. Both sets of edits survive.
 
 Try it:
   1. Copy the URL of this page.

@@ -2,7 +2,8 @@
 
 import { can, type Role } from '@robis/shared';
 import { useState } from 'react';
-import { Button, EmptyState, InlineError, Pill } from '../../components/ui/primitives.tsx';
+import { EmptyView } from '../../components/empty-view.tsx';
+import { Button, InlineError, Pill } from '../../components/ui/primitives.tsx';
 import { ApiError, type Member } from '../../lib/api.ts';
 import { formatDay, formatTime, formatUntil } from '../../lib/time.ts';
 import { ImportCalendar } from './import-calendar.tsx';
@@ -160,7 +161,7 @@ export function MeetingsPanel({
       ) : upcoming.isPending ? (
         <p className="text-xs text-faint">Loading…</p>
       ) : meetings.length === 0 ? (
-        <EmptyState>Nothing scheduled.</EmptyState>
+        <EmptyView view="meetings" workspaceId={workspaceId} />
       ) : (
         <ul className="space-y-2">
           {meetings.map((meeting) => (

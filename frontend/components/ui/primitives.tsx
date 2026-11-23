@@ -55,21 +55,6 @@ export function SectionLabel({ children, action }: { children: ReactNode; action
   );
 }
 
-/**
- * What to show when a list is legitimately empty.
- *
- * Distinct from an error on purpose. "No meetings scheduled" and "we could
- * not load your meetings" look identical if both render as blank space, and
- * the difference decides whether the reader should retry or relax.
- */
-export function EmptyState({ children }: { children: ReactNode }) {
-  return (
-    <p className="rounded-md border border-dashed border-line px-3 py-6 text-center text-xs text-faint">
-      {children}
-    </p>
-  );
-}
-
 export function InlineError({ children }: { children: ReactNode }) {
   return (
     <p role="alert" className="text-xs text-danger-soft">
@@ -102,6 +87,21 @@ export function RoleBadge({ role }: { role: string }) {
   return (
     <span className="rounded-full border border-line px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted">
       {role}
+    </span>
+  );
+}
+
+/**
+ * Marks a demo workspace (C5) wherever its name is shown, so example work
+ * is never mistaken for real work. Deleted like any workspace, from home.
+ */
+export function DemoBadge() {
+  return (
+    <span
+      title="Example work to look around. Delete it from the home page when done."
+      className="rounded-full border border-accent-soft/50 bg-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent-soft"
+    >
+      Demo
     </span>
   );
 }

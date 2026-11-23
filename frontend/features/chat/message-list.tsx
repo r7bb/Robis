@@ -3,8 +3,8 @@
 import type { Avatar as AvatarRef } from '@robis/shared';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
+import { EmptyView } from '../../components/empty-view.tsx';
 import { Avatar } from '../../components/ui/avatar.tsx';
-import { EmptyState } from '../../components/ui/primitives.tsx';
 import { BASE_URL } from '../../lib/api.ts';
 import { personHref } from '../../lib/links.ts';
 import { formatDaySeparator, formatExact, formatTime, isSameDay } from '../../lib/time.ts';
@@ -103,7 +103,7 @@ export function MessageList({
 
         {messages.length === 0 ? (
           <div className="pt-8">
-            <EmptyState>No messages yet. Say something.</EmptyState>
+            <EmptyView view="messages" />
           </div>
         ) : null}
 

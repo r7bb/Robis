@@ -1,6 +1,7 @@
 'use client';
 
 import type { CSSProperties } from 'react';
+import { EmptyView } from '../../components/empty-view.tsx';
 import type { WorkspaceSummary } from '../../lib/api.ts';
 import type { WorkspaceOverview } from './use-overview.ts';
 import { type TileSignals, WorkspaceTile } from './workspace-tile.tsx';
@@ -39,11 +40,8 @@ export function WorkspaceGrid({
 
   if (workspaces.length === 0) {
     return (
-      <div className="mt-5 rounded-2xl border border-dashed border-line px-6 py-14 text-center">
-        <p className="text-content">No workspaces yet.</p>
-        <p className="mt-1 text-sm text-muted">
-          Make one for your team, or accept an invitation above.
-        </p>
+      <div className="mt-5">
+        <EmptyView view="workspaces" />
       </div>
     );
   }

@@ -23,6 +23,8 @@ const workspace = z.object({
   requireTwoFactor: z.boolean().default(false),
   /** People here may post stories (B2); defaults on, owners decide. */
   storiesEnabled: z.boolean().default(true),
+  /** Made with example work in it, to look around and throw away (C5). */
+  demo: z.boolean().default(false),
   createdBy: uuid,
   createdAt: timestamp,
   updatedAt: timestamp,
@@ -54,7 +56,7 @@ export const workspaceContracts = {
     response: z.object({
       workspaces: z.array(
         workspace
-          .pick({ id: true, name: true, slug: true, theme: true, createdAt: true })
+          .pick({ id: true, name: true, slug: true, theme: true, demo: true, createdAt: true })
           .extend({ role: z.enum(ROLES) }),
       ),
     }),
@@ -66,6 +68,18 @@ export const workspaceContracts = {
     body: createWorkspaceSchema,
     status: 201,
     response: z.object({ workspace: workspaceWithRole }),
+  }),
+  'workspaces.createDemo': contract({
+    method: 'POST',
+    path: '/workspaces/demo',
+    summary:
+      'Make a demo workspace with example issues, a document, a channel and a meeting, or return the one you already own.',
+    body: z.object({
+      /** Where the demo meeting is set, so it lands in working hours; UTC if not a known zone. */
+      timeZone: z.string().max(64).optional(),
+    }),
+    status: 201,
+    response: z.object({ workspace: workspaceWithRole, projectId: uuid }),
   }),
   'workspaces.get': contract({
     method: 'GET',

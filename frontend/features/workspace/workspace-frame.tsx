@@ -181,6 +181,7 @@ export function WorkspaceFrame({ children }: { children: ReactNode }) {
               workspaceId={workspaceId}
               workspaceName={workspace.data?.workspace.name ?? '…'}
               role={role}
+              demo={workspace.data?.workspace.demo === true}
               userName={me.data?.user.name ?? null}
               userId={me.data?.user.id ?? null}
               userAvatar={me.data?.user.avatar ?? null}

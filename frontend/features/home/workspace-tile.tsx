@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { type CSSProperties, type PointerEvent, useEffect, useState } from 'react';
 import { DeleteButton } from '../../components/delete-button.tsx';
 import { Avatar } from '../../components/ui/avatar.tsx';
-import { RoleBadge } from '../../components/ui/primitives.tsx';
+import { DemoBadge, RoleBadge } from '../../components/ui/primitives.tsx';
 import type { WorkspaceSummary } from '../../lib/api.ts';
 import { type ConnectionState, useRealtime } from '../../lib/realtime.ts';
 import { formatRelative } from '../../lib/time.ts';
@@ -98,7 +98,10 @@ export function WorkspaceTile({
         >
           <span className="block truncate">{workspace.name}</span>
         </Link>
-        <RoleBadge role={workspace.role} />
+        <span className="flex shrink-0 items-center gap-1.5">
+          {workspace.demo ? <DemoBadge /> : null}
+          <RoleBadge role={workspace.role} />
+        </span>
       </div>
 
       <div className="mt-6 flex items-end justify-between gap-4 fit:mt-3">

@@ -6,7 +6,7 @@ import { NotificationBell } from '../../components/notification-bell.tsx';
 import { SearchBox } from '../../components/search-box.tsx';
 import { Avatar } from '../../components/ui/avatar.tsx';
 import { Kbd } from '../../components/ui/kbd.tsx';
-import { RoleBadge } from '../../components/ui/primitives.tsx';
+import { DemoBadge, RoleBadge } from '../../components/ui/primitives.tsx';
 import type { Me } from '../../lib/api.ts';
 import { PaletteButton } from '../command/palette-button.tsx';
 
@@ -15,6 +15,7 @@ export function TopBar({
   workspaceId,
   workspaceName,
   role,
+  demo,
   userName,
   userId,
   userAvatar,
@@ -28,6 +29,8 @@ export function TopBar({
   workspaceId: string;
   workspaceName: string;
   role: Role | undefined;
+  /** A demo workspace (C5), labelled as one. */
+  demo: boolean;
   userName: string | null;
   userId: string | null;
   userAvatar: Me['user']['avatar'];
@@ -88,6 +91,7 @@ export function TopBar({
         </span>
         <span className="truncate font-medium text-content">{workspaceName}</span>
         {role ? <RoleBadge role={role} /> : null}
+        {demo ? <DemoBadge /> : null}
       </nav>
 
       <div className="col-span-2 col-start-1 row-start-2 md:col-span-1 md:col-start-2 md:row-start-1">

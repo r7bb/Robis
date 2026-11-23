@@ -3,6 +3,7 @@
 import { type AutomationAction, contracts } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
+import { EmptyView } from '../../components/empty-view.tsx';
 import { call } from '../../lib/api.ts';
 import { type Rule, ruleSentence, runsLine, TRIGGER_LABELS } from './rule-model.ts';
 
@@ -296,9 +297,7 @@ export function RulesView({ workspaceId }: { workspaceId: string }) {
           The rules could not be loaded. Try again in a moment.
         </p>
       ) : (rules.data?.rules ?? []).length === 0 && !rules.isPending ? (
-        <p className="text-sm text-muted">
-          No rules yet. A rule does one thing when something happens to an issue.
-        </p>
+        <EmptyView view="rules" workspaceId={workspaceId} />
       ) : (
         <ul className="space-y-2.5">
           {(rules.data?.rules ?? []).map((rule) => (

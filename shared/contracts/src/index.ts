@@ -5,6 +5,7 @@ export * from './avatars.ts';
 export * from './calendar.ts';
 export * from './consent.ts';
 export * from './demo.ts';
+export * from './demo-workspace.ts';
 export * from './domain.ts';
 export * from './events.ts';
 export * from './http/index.ts';
