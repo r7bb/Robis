@@ -178,12 +178,14 @@ describe('session cookies in production', () => {
 });
 
 describe('API responses', () => {
-  test('may not run script or be framed when opened directly, and are not sniffed', async () => {
+  test('may not run script, be framed or be embedded elsewhere, and are not sniffed', async () => {
     const response = await request('/health');
     expect(response.headers['content-security-policy']).toBe(
       "default-src 'none'; frame-ancestors 'none'; sandbox",
     );
     expect(response.headers['x-content-type-options']).toBe('nosniff');
+    // Not for another site to embed (E3).
+    expect(response.headers['cross-origin-resource-policy']).toBe('same-origin');
     // Plain HTTP in tests: nothing pins it.
     expect(response.headers['strict-transport-security']).toBeUndefined();
   });

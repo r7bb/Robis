@@ -1,0 +1,6 @@
+# The landing and the public pages may be indexed; a workspace, the API
+# and the account pages are for the people signed in.
+User-agent: *
+Disallow: /api/
+Disallow: /workspaces/
+Disallow: /account

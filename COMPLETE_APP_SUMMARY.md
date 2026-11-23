@@ -191,6 +191,7 @@ JavaScript.
 | Prometheus `/metrics` on internal ports of the API, gateway, MCP server and worker, off the public ports; the worker reads the queue and the audit stream's lag at each scrape | `backend/metrics/`, `backend/api/src/metrics.ts`, `backend/worker/src/metrics.ts` |
 | Traces across every service with OpenTelemetry: a request, the jobs it queued and the mail they sent are one trace, through the realtime fan-out and the ML service too | `backend/telemetry/`, `backend/api/src/plugins/tracing.ts`, `robis-ml/robis_ml/telemetry.py` |
 | Structured JSON logs in every service, each line naming its trace | `backend/telemetry/src/log.ts` |
+| Security checks in CI: Trivy over the repository and every image, an OWASP ZAP baseline scan of the stack with its findings triaged, a strict nonce policy with a deny-all fallback at the proxy, and cross-origin isolation headers | `.github/workflows/ci.yml`, `deploy/zap/baseline.conf`, `deploy/caddy-routes`, `docs/SECURITY_CHECKS.md` |
 | Alert rules with promtool tests in CI, and a runbook for each | `deploy/prometheus/`, `docs/RUNBOOK.md` |
 | Route-pattern labels (cardinality-safe) | `backend/api/src/metrics.ts` |
 | Health endpoints | `backend/api/src/app.ts` |
@@ -223,4 +224,8 @@ blocks filing an issue.
 Kept in one place, [docs/ROADMAP.md](docs/ROADMAP.md): what is left, the
 known gaps, and what Robis deliberately does not do. This document is the
 inventory of what exists; the reasoning is in
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). What is checked for security,
+and the ZAP triage, is in [docs/SECURITY_CHECKS.md](docs/SECURITY_CHECKS.md);
+the threat model for uploads, stories, agents, outbound calls and tokens in
+[docs/THREAT_MODEL.md](docs/THREAT_MODEL.md); how to report a problem in
+[SECURITY.md](SECURITY.md).

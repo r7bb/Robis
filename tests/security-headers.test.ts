@@ -85,6 +85,9 @@ describe('the fixed headers', () => {
   test('refuse sniffing and framing in any environment', () => {
     expect(header(false, 'X-Content-Type-Options')).toBe('nosniff');
     expect(header(false, 'X-Frame-Options')).toBe('DENY');
+    expect(header(false, 'Cross-Origin-Resource-Policy')).toBe('same-origin');
+    expect(header(false, 'Cross-Origin-Embedder-Policy')).toBe('require-corp');
+    expect(header(false, 'Cross-Origin-Opener-Policy')).toBe('same-origin');
   });
 });
 

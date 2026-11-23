@@ -45,6 +45,17 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-22',
+    area: 'Security',
+    title: 'Security checks in CI, a threat model, and how to report',
+    brief:
+      'An OWASP ZAP scan of the stack runs in CI with its findings triaged, every response now carries a policy, pages are cross-origin isolated, and a threat model and SECURITY.md are written.',
+    summary:
+      'The rest of the security checks (E3). A passive OWASP ZAP baseline scan of the running stack now runs in CI against a rules file: the protections the app means to have fail the build if missing, and everything ignored is triaged with its reason in docs/SECURITY_CHECKS.md. Its first run found three things to fix, all fixed: a framework banner, static files and 404s served with no Content-Security-Policy (the edge proxy now gives those a policy that allows nothing, apart from the service worker), and no cross-origin isolation headers (pages and files now carry Cross-Origin-Resource-, Embedder- and Opener-Policy). Inline styles stay allowed, as an accepted risk written down: scripts remain nonce-only. docs/THREAT_MODEL.md sets out uploads, stories, agents, outbound calls and tokens, with what is in the way and what is left open, and SECURITY.md says how to report a problem privately. Describes what is checked, not a claim of security.',
+    checked:
+      'ZAP run locally against the compose stack with the CI rules: no failures, only the triaged items ignored. The browser smoke test (including the WebGL landing under its policy), the seven journeys and the keyboard test all pass with the new headers. Header tests for the web app and the API. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-22',
     area: 'Product',
     title: 'A demo that is busy, not still',
     brief:

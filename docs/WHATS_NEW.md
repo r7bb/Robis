@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Security checks in CI, a threat model, and how to report** (2026-11-22).
+  An OWASP ZAP scan of the stack runs in CI with its findings triaged, every
+  response now carries a policy, pages are cross-origin isolated, and a
+  threat model and SECURITY.md are written.
 - **A demo that is busy, not still** (2026-11-22). Run the stack with the
   demo profile and the seeded teammates stay online while they and two
   agents chat, post, react, comment and move work along.

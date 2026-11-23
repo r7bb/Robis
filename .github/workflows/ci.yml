@@ -181,6 +181,8 @@ jobs:
       # Pinned by digest, and run as an image rather than through a
       # third-party action, so the scanner never sees the job's token.
       TRIVY_IMAGE: aquasec/trivy:0.74.0@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969
+      # The OWASP ZAP baseline scanner (E3), pinned the same way.
+      ZAP_IMAGE: zaproxy/zap-stable:2.17.0@sha256:9624669db72f54d86c4b46a7064518bd9bf79d8c61a4c31befa9923489f328af
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -272,6 +274,18 @@ jobs:
       # request; a broken offline queue fails it.
       - name: Browser journeys
         run: bun run scripts/journeys/run.ts
+
+      # A passive OWASP ZAP baseline scan of the running stack (E3): it
+      # spiders the public pages for two minutes and judges every response
+      # against deploy/zap/baseline.conf. A FAIL rule found fails the job;
+      # what is ignored is triaged, with reasons, in docs/SECURITY_CHECKS.md;
+      # anything else is printed as a warning for a person to read.
+      - name: OWASP ZAP baseline scan
+        run: |
+          mkdir -p .zap && chmod 777 .zap
+          cp deploy/zap/baseline.conf .zap/
+          docker run --rm --network host -v "$PWD/.zap:/zap/wrk:rw" "$ZAP_IMAGE" \
+            zap-baseline.py -t http://localhost:3000 -m 2 -c baseline.conf -I
 
       # Health is checked at start-up by `--wait`; this checks it again
       # after real traffic, so a service that fell over during the smoke

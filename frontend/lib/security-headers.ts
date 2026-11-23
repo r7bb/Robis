@@ -73,6 +73,15 @@ export function staticSecurityHeaders(production: boolean): { key: string; value
     // For browsers too old for frame-ancestors.
     { key: 'X-Frame-Options', value: 'DENY' },
     { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+    // Nothing here is for another site to embed (E3): no email or page
+    // elsewhere loads these files, so a browser refuses to hand them over.
+    { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
+    // Cross-origin isolation (E3): every page loads only this origin's
+    // files (fonts are self-hosted, pictures stored here), so it costs
+    // nothing, and another window can neither embed a page's resources
+    // nor hold a handle on it.
+    { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
+    { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
     {
       key: 'Permissions-Policy',
       value:

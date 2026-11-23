@@ -20,6 +20,8 @@
   <a href="docs/WHATS_NEW.md">What's new</a>
   &nbsp;&nbsp;|&nbsp;&nbsp;
   <a href="docs/GETTING_STARTED.md">Run it yourself</a>
+  &nbsp;&nbsp;|&nbsp;&nbsp;
+  <a href="SECURITY.md">Security</a>
 </p>
 
 <p align="center">
@@ -197,6 +199,10 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **Security checks in CI, a threat model, and how to report.** An OWASP ZAP
+  scan of the stack runs in CI with its findings triaged, every response now
+  carries a policy, pages are cross-origin isolated, and a threat model and
+  SECURITY.md are written.
 - **A demo that is busy, not still.** Run the stack with the demo profile
   and the seeded teammates stay online while they and two agents chat, post,
   react, comment and move work along.
@@ -204,9 +210,6 @@ with Postgres on the same machine. Method and percentiles in
   repository’s lockfiles for critical vulnerabilities with a fix and its
   files for secrets, and the web app no longer names its framework in a
   header.
-- **Whole journeys, tested in a real browser.** Seven journeys run in real
-  Chrome against the container stack on every push and pull request, from
-  sign-up through the mail sink to a stranger getting not found.
 
 <!-- latest:end -->
 

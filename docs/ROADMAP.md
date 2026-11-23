@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-11-22): **1670 TypeScript tests, 106 Python tests, lint and
+Status (2026-11-22): **1671 TypeScript tests, 106 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -71,6 +71,13 @@ reschedule-clears-answers, cancel-not-delete.
 **Search, notifications, background work.** Postgres full-text search over
 issues, documents and comments; a notification inbox with dedupe; mention
 notifications and stale-issue nudges on a `SKIP LOCKED` job queue.
+
+**Security checks (E3).** Trivy scans the repository and the images, an
+OWASP ZAP baseline scan of the stack runs in CI against triaged rules, and
+a threat model covers uploads, stories, agents, outbound calls and tokens
+([SECURITY_CHECKS.md](SECURITY_CHECKS.md), [THREAT_MODEL.md](THREAT_MODEL.md),
+[SECURITY.md](../SECURITY.md)). What is checked, not a claim of security.
+No active scan yet, and nobody outside the project has tested it.
 
 **A lively demo.** `bun run demo:life`, or the stack with `--profile
 demo`, keeps the seeded teammates present and has them and two agents

@@ -20,6 +20,13 @@ handle /mcp/* {
 	reverse_proxy mcp:4002
 }
 
+# The web app sets a nonce policy on every page. Anything it serves without
+# one (static files, a 404 for a file name) gets a policy that allows
+# nothing, set only when none came back (E3). Not the service worker: a
+# worker's policy comes from its own response, and this one would stop it
+# fetching anything.
 handle {
+	@unpoliced not path /sw.js
+	header @unpoliced ?Content-Security-Policy "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
 	reverse_proxy web:3000
 }

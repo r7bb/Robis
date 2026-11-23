@@ -106,6 +106,8 @@ export function apiSecurityHeaders(production: boolean): Record<string, string> 
   return {
     'x-content-type-options': 'nosniff',
     'content-security-policy': "default-src 'none'; frame-ancestors 'none'; sandbox",
+    // Pictures are for this app's own pages, never another site's (E3).
+    'cross-origin-resource-policy': 'same-origin',
     ...(production ? { 'strict-transport-security': `max-age=${HSTS_MAX_AGE_S}` } : {}),
   };
 }
