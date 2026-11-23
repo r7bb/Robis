@@ -3,12 +3,16 @@ import { evaluateAutomation, matches } from '@robis/api/automation';
 import { runAutomationJobs } from '@robis/api/automation-runner';
 import {
   AUTOMATION_JOB,
+  AUTOMATION_WEBHOOK_JOB,
   auditEvents,
   automationRuns,
   comments,
   issues,
   jobs,
+  messages,
+  notifications,
 } from '@robis/database';
+import { isPublicAddress, refusalFor, sendWebhook, signature } from '@robis/worker/webhook';
 import { and, eq } from 'drizzle-orm';
 import {
   type Actor,
@@ -99,6 +103,7 @@ describe('conditions', () => {
     status: 'TODO',
     priority: 'URGENT',
     assigneeId: null,
+    createdBy: null,
     labels: ['bug'],
   };
   test('every condition must hold', () => {
@@ -280,5 +285,130 @@ describe('managing rules', () => {
     await file(owner, workspace.id, project.id);
     const { ownerDb } = await getHarness();
     expect(await ownerDb.select().from(jobs).where(eq(jobs.kind, AUTOMATION_JOB))).toHaveLength(0);
+  });
+});
+
+describe('telling someone or something else', () => {
+  test('notify the reporter, and post to a channel, as the rule', async () => {
+    const { owner, workspace, project } = await setUp();
+    const { ownerDb } = await getHarness();
+    const channels = (
+      await request(`/workspaces/${workspace.id}/channels`, { actor: owner })
+    ).json().channels as { id: string }[];
+    await rule(owner, workspace.id, {
+      name: 'Tell me',
+      trigger: 'issue.created',
+      action: { kind: 'notify', who: 'reporter', message: 'Your issue is in.' },
+    });
+    await rule(owner, workspace.id, {
+      name: 'Announce',
+      trigger: 'issue.created',
+      action: { kind: 'post_to_channel', channelId: channels[0]!.id, body: 'A new issue came in' },
+    });
+    const id = await file(owner, workspace.id, project.id);
+    await drain();
+    const [notice] = await ownerDb
+      .select()
+      .from(notifications)
+      .where(eq(notifications.entityId, id));
+    expect(notice?.kind).toBe('nudge');
+    expect(notice?.userId).toBe(owner.id);
+    const [posted] = await ownerDb
+      .select({ body: messages.body })
+      .from(messages)
+      .where(eq(messages.channelId, channels[0]!.id));
+    expect(posted?.body).toContain('by the automation “Announce”');
+  });
+
+  test('a webhook rule gets a secret it never chose, and its sending is queued for the worker', async () => {
+    const { owner, workspace, project } = await setUp();
+    const made = await request(`/workspaces/${workspace.id}/automations`, {
+      method: 'POST',
+      actor: owner,
+      payload: {
+        name: 'Hook',
+        trigger: 'issue.created',
+        action: { kind: 'webhook', url: 'https://hooks.example.com/robis', secret: 'chosen' },
+      },
+    });
+    const secret = made.json().rule.action.secret as string;
+    expect(secret).not.toBe('chosen');
+    expect(secret.length).toBeGreaterThan(20);
+    await file(owner, workspace.id, project.id);
+    await drain();
+    const { ownerDb } = await getHarness();
+    expect(
+      await ownerDb.select().from(jobs).where(eq(jobs.kind, AUTOMATION_WEBHOOK_JOB)),
+    ).toHaveLength(1);
+    const plain = await request(`/workspaces/${workspace.id}/automations`, {
+      method: 'POST',
+      actor: owner,
+      payload: {
+        name: 'Plain',
+        trigger: 'issue.created',
+        action: { kind: 'webhook', url: 'http://hooks.example.com' },
+      },
+    });
+    expect(plain.statusCode).toBe(400);
+  });
+
+  test('the worker refuses private addresses; the signature is HMAC-SHA256 of the body', async () => {
+    for (const address of [
+      '127.0.0.1',
+      '10.0.0.5',
+      '172.20.1.1',
+      '192.168.1.1',
+      '169.254.169.254',
+      '100.64.0.1',
+      '::1',
+      'fd00::1',
+      'fe80::1',
+      '::ffff:10.0.0.1',
+    ]) {
+      expect(isPublicAddress(address)).toBe(false);
+    }
+    expect(isPublicAddress('93.184.216.34')).toBe(true);
+    expect(isPublicAddress('2606:2800:220:1::1')).toBe(true);
+    expect(await refusalFor('https://127.0.0.1/hook')).toBe(
+      'it resolves to an address inside a private network',
+    );
+    expect(await refusalFor('https://[::1]/hook')).toBe(
+      'it resolves to an address inside a private network',
+    );
+    expect(await refusalFor('http://93.184.216.34/hook')).toBe('only https on the default port');
+    expect(await refusalFor('https://93.184.216.34:8443/hook')).toBe(
+      'only https on the default port',
+    );
+    expect(signature('s3cret', '{"a":1}')).toBe(
+      `sha256=${new Bun.CryptoHasher('sha256', 's3cret').update('{"a":1}').digest('hex')}`,
+    );
+  });
+
+  test('a queued webhook to a private address fails the job, so it is retried and seen', async () => {
+    const { owner, workspace, project } = await setUp();
+    const made = await request(`/workspaces/${workspace.id}/automations`, {
+      method: 'POST',
+      actor: owner,
+      payload: {
+        name: 'Inside',
+        trigger: 'issue.created',
+        action: { kind: 'webhook', url: 'https://127.0.0.1/hook' },
+      },
+    });
+    const id = await file(owner, workspace.id, project.id);
+    const { workerDb } = await getHarness();
+    await expect(
+      sendWebhook(
+        {
+          ruleId: made.json().rule.id,
+          workspaceId: workspace.id,
+          eventId: crypto.randomUUID(),
+          trigger: 'issue.created',
+          issueId: id,
+          issueKey: 'WEB-1',
+        },
+        { db: workerDb },
+      ),
+    ).rejects.toThrow('inside a private network');
   });
 });

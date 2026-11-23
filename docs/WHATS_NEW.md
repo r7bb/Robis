@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Automations: a page for rules, and more they can do** (2026-11-23). An
+  Automations page where admins write rules in plain words, and rules that
+  can tell someone, post in a channel or send a signed webhook.
 - **Automation rules: the engine** (2026-11-23). Rules that act on issues by
   themselves: a trigger, conditions that must all hold, and one action, run
   once per change and named in the audit trail.

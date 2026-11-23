@@ -279,6 +279,8 @@ export const WORKER_GRANTS: TableGrants = {
   suggestion_feedback: ['select', 'delete'],
   // System health's timings, swept after a week (Phase 6).
   instrument_readings: ['select', 'delete'],
+  // A rule's webhook address and secret, read before it sends one (B9).
+  automation_rules: ['select'],
   agent_tokens: [
     'select (id, agent_id, workspace_id, revoked_at, expires_at)',
     // Every column, as an insert names them all; the defaults fill the rest.

@@ -36,6 +36,34 @@ export const automationAction = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('set_priority'), priority: z.enum(ISSUE_PRIORITIES) }),
   z.object({ kind: z.literal('assign'), userId: uuid.nullable() }),
   z.object({ kind: z.literal('comment'), body: z.string().trim().min(1).max(2000) }),
+  /** A notice in the bell (as a nudge, so a person's nudge setting governs it). */
+  z.object({
+    kind: z.literal('notify'),
+    who: z.enum(['assignee', 'reporter']),
+    message: z.string().trim().min(1).max(200),
+  }),
+  z.object({
+    kind: z.literal('post_to_channel'),
+    channelId: uuid,
+    body: z.string().trim().min(1).max(500),
+  }),
+  /**
+   * A POST to an https address outside the server's own network, with the
+   * ids of what happened (never its words), signed with this rule's secret.
+   * The secret is made by the server and shown to administrators.
+   */
+  z.object({
+    kind: z.literal('webhook'),
+    url: z
+      .string()
+      .trim()
+      .max(500)
+      .refine(
+        (url) => /^https:\/\/[^\s/]+(\/\S*)?$/i.test(url),
+        'A webhook must be an https:// address',
+      ),
+    secret: z.string().max(64).optional(),
+  }),
 ]);
 export type AutomationAction = z.infer<typeof automationAction>;
 export type AutomationCondition = z.infer<typeof condition>;

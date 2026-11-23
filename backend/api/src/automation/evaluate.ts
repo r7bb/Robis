@@ -1,15 +1,20 @@
 import {
   AUTOMATION_JOB,
+  AUTOMATION_WEBHOOK_JOB,
   type AuditActor,
   type AutomationJob,
   auditEvents,
   automationRules,
   automationRuns,
+  channels,
   comments,
   type Database,
+  enqueue,
   issueLabels,
   issues,
   labels,
+  messages,
+  notify,
   projects,
   publishEvent,
   recordAudit,
@@ -54,6 +59,7 @@ type Issue = {
   status: string;
   priority: string;
   assigneeId: string | null;
+  createdBy: string | null;
   labels: string[];
 };
 
@@ -68,6 +74,7 @@ async function issueOf(db: Database, workspaceId: string, issueId: string): Prom
       status: issues.status,
       priority: issues.priority,
       assigneeId: issues.assigneeId,
+      createdBy: issues.createdBy,
     })
     .from(issues)
     .innerJoin(projects, eq(projects.id, issues.projectId))
@@ -120,9 +127,82 @@ function holdBack(
   return null;
 }
 
-/** Do the rule's one thing, as the rule. Throws, with a reason, when it cannot. */
-async function applyAction(tx: Tx, rule: Rule, issue: Issue, actor: AuditActor) {
+type Change = 'issue' | 'comment' | { messageId: string; channelId: string } | 'quiet';
+
+/** Whether someone is still in the workspace. */
+async function stillHere(tx: Tx, workspaceId: string, userId: string | null) {
+  if (!userId) return false;
+  const [member] = await tx
+    .select({ userId: workspaceMembers.userId })
+    .from(workspaceMembers)
+    .where(and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, userId)));
+  return member !== undefined;
+}
+
+/** The actions that tell someone or something else, rather than change the issue. */
+async function applyOutward(tx: Tx, rule: Rule, issue: Issue, job: AutomationJob): Promise<Change> {
   const action = rule.action as AutomationAction;
+  if (action.kind === 'notify') {
+    const to = action.who === 'assignee' ? issue.assigneeId : issue.createdBy;
+    if (!(await stillHere(tx, rule.workspaceId, to)))
+      throw new Error(`The issue has no ${action.who} in the workspace to tell.`);
+    await notify(tx, [
+      {
+        userId: to!,
+        workspaceId: rule.workspaceId,
+        actorId: null,
+        kind: 'nudge',
+        entityType: 'issue',
+        entityId: issue.id,
+        dedupeKey: `automation:${rule.id}:${job.eventId}`,
+        payload: { title: `${issue.key}: ${rule.name}`, body: action.message, issueId: issue.id },
+      },
+    ]);
+    return 'quiet';
+  }
+  if (action.kind === 'post_to_channel') {
+    if (!rule.createdBy)
+      throw new Error('The person who wrote this rule has left, so it cannot post.');
+    const [channel] = await tx
+      .select({ id: channels.id })
+      .from(channels)
+      .where(and(eq(channels.id, action.channelId), eq(channels.workspaceId, rule.workspaceId)));
+    if (!channel) throw new Error('The channel this rule posts to is gone.');
+    const [row] = await tx
+      .insert(messages)
+      .values({
+        workspaceId: rule.workspaceId,
+        channelId: channel.id,
+        authorId: rule.createdBy,
+        body: `${action.body} (${issue.key}, by the automation “${rule.name}”)`,
+      })
+      .returning({ id: messages.id });
+    return { messageId: row!.id, channelId: channel.id };
+  }
+  // A webhook: the worker sends it, and may retry; the job holds ids only.
+  await enqueue(tx, AUTOMATION_WEBHOOK_JOB, {
+    ruleId: rule.id,
+    workspaceId: rule.workspaceId,
+    eventId: job.eventId,
+    trigger: job.trigger,
+    issueId: issue.id,
+    issueKey: issue.key,
+  });
+  return 'quiet';
+}
+
+/** Do the rule's one thing, as the rule. Throws, with a reason, when it cannot. */
+async function applyAction(
+  tx: Tx,
+  rule: Rule,
+  issue: Issue,
+  actor: AuditActor,
+  job: AutomationJob,
+): Promise<Change> {
+  const action = rule.action as AutomationAction;
+  if (action.kind === 'notify' || action.kind === 'post_to_channel' || action.kind === 'webhook') {
+    return applyOutward(tx, rule, issue, job);
+  }
   if (action.kind === 'comment') {
     if (!rule.createdBy)
       throw new Error('The person who wrote this rule has left, so it cannot comment.');
@@ -219,7 +299,7 @@ async function runRule(db: Database, rule: Rule, event: Event, issue: Issue, job
         outcome?.note ?? null,
       );
       if (!fresh || outcome) return null;
-      return applyAction(tx, rule, issue, actor);
+      return applyAction(tx, rule, issue, actor, job);
     });
     if (changed === 'issue') {
       await publishEvent(db, {
@@ -234,6 +314,15 @@ async function runRule(db: Database, rule: Rule, event: Event, issue: Issue, job
         type: 'comment.created',
         workspaceId: rule.workspaceId,
         issueId: issue.id,
+        actorId: rule.id,
+      });
+    }
+    if (changed && typeof changed === 'object') {
+      await publishEvent(db, {
+        type: 'message.created',
+        workspaceId: rule.workspaceId,
+        channelId: changed.channelId,
+        messageId: changed.messageId,
         actorId: rule.id,
       });
     }

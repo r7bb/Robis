@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import {
   automationRules,
   automationRuns,
@@ -57,6 +58,20 @@ function wire(row: Row, counted: (ruleId: string, outcome: string) => number) {
       failed: counted(row.id, 'failed'),
     },
   };
+}
+
+/**
+ * A webhook action gets a secret to sign with, made here (never chosen by
+ * the client), kept when the rule is changed and the address stays put.
+ */
+function withSecret(action: AutomationAction, previous?: unknown): AutomationAction {
+  if (action.kind !== 'webhook') return action;
+  const before = previous as { kind?: string; secret?: string } | undefined;
+  const secret =
+    before?.kind === 'webhook' && before.secret
+      ? before.secret
+      : randomBytes(24).toString('base64url');
+  return { ...action, secret };
 }
 
 /** An assign action may name only someone in the workspace. */
@@ -120,7 +135,7 @@ export async function automationRoutes(app: FastifyInstance, opts: { db: Databas
       }
       const [row] = await tx
         .insert(automationRules)
-        .values({ workspaceId, ...body, createdBy: actor.id })
+        .values({ workspaceId, ...body, action: withSecret(body.action), createdBy: actor.id })
         .returning();
       await recordAudit(tx, actor, {
         workspaceId,
@@ -140,12 +155,16 @@ export async function automationRoutes(app: FastifyInstance, opts: { db: Databas
 
   serve(app, contracts['automations.update'], guard, async (request, { params, body }) => {
     const { workspaceId } = currentMembership(request);
-    await ruleIn(db, workspaceId, params.ruleId);
+    const existing = await ruleIn(db, workspaceId, params.ruleId);
     await checkAction(db, workspaceId, body.action);
     const updated = await db.transaction(async (tx) => {
       const [row] = await tx
         .update(automationRules)
-        .set({ ...body, updatedAt: new Date() })
+        .set({
+          ...body,
+          ...(body.action ? { action: withSecret(body.action, existing.action) } : {}),
+          updatedAt: new Date(),
+        })
         .where(
           and(eq(automationRules.id, params.ruleId), eq(automationRules.workspaceId, workspaceId)),
         )

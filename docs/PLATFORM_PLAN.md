@@ -427,8 +427,17 @@ leaves them. Each rule's outcome for each event is one row, written with
 its action in one transaction, so a retried job does nothing twice. A
 rule never acts on its own change, and a chain of rules stops three deep
 with a note in the rule's runs. The trail records each action as the
-rule's (actor kind `rule`). Notify, post to a channel, outgoing webhooks
-and the rules page are next.
+rule's (actor kind `rule`).
+
+**Actions and the rules page, 2026-11-23:** rules can also tell the
+assignee or reporter (as a nudge, so a person's nudge setting governs it),
+post in a channel (under the rule creator's name, marked as the rule's),
+or send an outgoing webhook through the worker: https only, public
+addresses only, no redirects, five seconds, ids only, signed with a
+secret the server makes per rule. Administrators manage rules on the
+Automations page, each written as one sentence with a month of what it
+did; the activity feed names an automation when one acts. Phase 8 is
+complete, and with it the platform plan.
 
 ## Images on issues and comments (A2 in the build plan)
 

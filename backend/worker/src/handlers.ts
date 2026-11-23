@@ -23,6 +23,7 @@ import {
 import { notifyHandlers } from './notify.ts';
 import { scanNudges } from './nudges.ts';
 import type { Handlers } from './runner.ts';
+import { webhookHandlers } from './webhook.ts';
 
 /**
  * Job handlers.
@@ -86,6 +87,8 @@ export const runStoryExpiry = async (_payload: unknown, { db }: { db: Database }
 export const handlers: Handlers = {
   // Mentions, comments on your issue, assignments, meeting changes (C3).
   ...notifyHandlers,
+  // A rule's outgoing webhook (B9); the rules themselves run in the API.
+  ...webhookHandlers,
   'sessions.cleanup': cleanupSessions,
   'nudges.scan': runNudgeScan,
   'agents.judge': judgeAgentWork,

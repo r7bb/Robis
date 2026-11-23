@@ -4,7 +4,7 @@ import { contracts } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import { call } from '../lib/api.ts';
 import { describeEvent } from '../lib/audit-events.ts';
-import { AgentBadge } from './ui/primitives.tsx';
+import { AgentBadge, RuleBadge } from './ui/primitives.tsx';
 
 /**
  * The workspace audit trail.
@@ -81,9 +81,10 @@ export function ActivityFeed({ workspaceId }: { workspaceId: string }) {
             <div className="flex items-center justify-between gap-3">
               <span className="flex min-w-0 items-center gap-2">
                 <span className="truncate font-medium text-content">
-                  {event.actorName ?? 'Someone'}
+                  {event.actorKind === 'rule' ? 'An automation' : (event.actorName ?? 'Someone')}
                 </span>
                 {event.actorKind === 'agent' && <AgentBadge />}
+                {event.actorKind === 'rule' && <RuleBadge />}
               </span>
               <time
                 dateTime={event.createdAt}

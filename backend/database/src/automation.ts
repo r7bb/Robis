@@ -14,6 +14,18 @@ import { automationRules } from './schema.ts';
 /** The job, run by the API's own runner: only the API signs the trail. */
 export const AUTOMATION_JOB = 'automation.evaluate';
 
+/** A rule's outgoing webhook, sent by the worker, which may reach the internet. */
+export const AUTOMATION_WEBHOOK_JOB = 'automation.webhook';
+
+export type AutomationWebhookJob = {
+  ruleId: string;
+  workspaceId: string;
+  eventId: string;
+  trigger: string;
+  issueId: string;
+  issueKey: string;
+};
+
 export type AutomationTrigger = (typeof AUTOMATION_TRIGGERS)[number];
 
 export type AutomationJob = {

@@ -10,6 +10,7 @@
     "./mail": "./src/mail.ts",
     "./metrics": "./src/metrics.ts",
     "./nudges": "./src/nudges.ts",
+    "./webhook": "./src/webhook.ts",
     "./pictures": "./src/pictures/job.ts",
     "./pictures-sources": "./src/pictures/sources.ts",
     "./push": "./src/push.ts",

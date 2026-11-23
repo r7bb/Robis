@@ -15677,6 +15677,80 @@
                                   "body"
                                 ],
                                 "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "notify"
+                                  },
+                                  "who": {
+                                    "type": "string",
+                                    "enum": [
+                                      "assignee",
+                                      "reporter"
+                                    ]
+                                  },
+                                  "message": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "who",
+                                  "message"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "post_to_channel"
+                                  },
+                                  "channelId": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                  },
+                                  "body": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 500
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "channelId",
+                                  "body"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "webhook"
+                                  },
+                                  "url": {
+                                    "type": "string",
+                                    "maxLength": 500
+                                  },
+                                  "secret": {
+                                    "type": "string",
+                                    "maxLength": 64
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "url"
+                                ],
+                                "additionalProperties": false
                               }
                             ]
                           },
@@ -15917,6 +15991,77 @@
                           "kind",
                           "body"
                         ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "notify"
+                          },
+                          "who": {
+                            "type": "string",
+                            "enum": [
+                              "assignee",
+                              "reporter"
+                            ]
+                          },
+                          "message": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "who",
+                          "message"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "post_to_channel"
+                          },
+                          "channelId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "body": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "channelId",
+                          "body"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "webhook"
+                          },
+                          "url": {
+                            "type": "string",
+                            "maxLength": 500
+                          },
+                          "secret": {
+                            "type": "string",
+                            "maxLength": 64
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "url"
+                        ]
                       }
                     ]
                   },
@@ -16091,6 +16236,80 @@
                               "required": [
                                 "kind",
                                 "body"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "notify"
+                                },
+                                "who": {
+                                  "type": "string",
+                                  "enum": [
+                                    "assignee",
+                                    "reporter"
+                                  ]
+                                },
+                                "message": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 200
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "who",
+                                "message"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "post_to_channel"
+                                },
+                                "channelId": {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                },
+                                "body": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 500
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "channelId",
+                                "body"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "webhook"
+                                },
+                                "url": {
+                                  "type": "string",
+                                  "maxLength": 500
+                                },
+                                "secret": {
+                                  "type": "string",
+                                  "maxLength": 64
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "url"
                               ],
                               "additionalProperties": false
                             }
@@ -16342,6 +16561,77 @@
                           "kind",
                           "body"
                         ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "notify"
+                          },
+                          "who": {
+                            "type": "string",
+                            "enum": [
+                              "assignee",
+                              "reporter"
+                            ]
+                          },
+                          "message": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "who",
+                          "message"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "post_to_channel"
+                          },
+                          "channelId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "body": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "channelId",
+                          "body"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "webhook"
+                          },
+                          "url": {
+                            "type": "string",
+                            "maxLength": 500
+                          },
+                          "secret": {
+                            "type": "string",
+                            "maxLength": 64
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "url"
+                        ]
                       }
                     ]
                   },
@@ -16511,6 +16801,80 @@
                               "required": [
                                 "kind",
                                 "body"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "notify"
+                                },
+                                "who": {
+                                  "type": "string",
+                                  "enum": [
+                                    "assignee",
+                                    "reporter"
+                                  ]
+                                },
+                                "message": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 200
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "who",
+                                "message"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "post_to_channel"
+                                },
+                                "channelId": {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                },
+                                "body": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 500
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "channelId",
+                                "body"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "webhook"
+                                },
+                                "url": {
+                                  "type": "string",
+                                  "maxLength": 500
+                                },
+                                "secret": {
+                                  "type": "string",
+                                  "maxLength": 64
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "url"
                               ],
                               "additionalProperties": false
                             }

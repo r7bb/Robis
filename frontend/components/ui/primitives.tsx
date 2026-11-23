@@ -121,6 +121,18 @@ export function AgentBadge() {
   );
 }
 
+/** An automation rule acting on its own (B9). */
+export function RuleBadge() {
+  return (
+    <span
+      title="An automation rule an admin wrote: it acts when something happens"
+      className="rounded-full border border-line bg-surface px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted"
+    >
+      Rule
+    </span>
+  );
+}
+
 export function ErrorState({ message }: { message: string }) {
   return (
     <main className="mx-auto max-w-md px-6 py-24 text-center">

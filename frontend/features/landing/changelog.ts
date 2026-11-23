@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-23',
     area: 'Product',
+    title: 'Automations: a page for rules, and more they can do',
+    brief:
+      'An Automations page where admins write rules in plain words, and rules that can tell someone, post in a channel or send a signed webhook.',
+    summary:
+      'Administrators now manage automation rules on their own page, each written out as one sentence (when an issue is filed and its priority is urgent, assign it to Ada) with a month of what it did. Rules can also tell an issue’s assignee or reporter, post in a channel, or send a webhook. A webhook goes only to an https address outside private networks, follows no redirects, carries the ids of what happened and never its words, and is signed with a secret the server made for that rule. When a rule acts, the activity feed says an automation did it.',
+    checked:
+      'Seven more tests: a notice to the reporter and a channel post written as the rule, a webhook rule given a secret it never chose and its sending queued, private and loopback addresses refused in every form, the HMAC signature, a queued webhook to a private address failing so it is retried and seen, and each rule’s sentence. Written on the page in Chrome against the stack: a new issue was made urgent by the rule within seconds and the activity feed named the automation. Not sent to a real webhook receiver: none is reachable from here. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Automations',
+      where: 'Sidebar: Automations (admins)',
+      layers: [
+        'Screen: every rule as a sentence with its month of runs, a switch and a delete; a form for a new rule',
+        'API: automations.create, update, delete, list and runs; rules run on the API’s own job runner',
+        'Database: automation_rules and automation_runs; a webhook job the worker sends',
+      ],
+    },
+  },
+  {
+    date: '2026-11-23',
+    area: 'Product',
     title: 'Automation rules: the engine',
     brief:
       'Rules that act on issues by themselves: a trigger, conditions that must all hold, and one action, run once per change and named in the audit trail.',
