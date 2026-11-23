@@ -33,6 +33,7 @@ const { db, close } = createDatabase(DATABASE_URL, { max: 10 });
 const gateway = Bun.spawn(['bun', 'backend/realtime/src/main.ts'], {
   env: {
     ...process.env,
+    NODE_ENV: process.env.NODE_ENV ?? 'development',
     DATABASE_URL,
     REALTIME_PORT: String(PORT),
     WEB_ORIGIN: 'http://localhost:3000',

@@ -486,6 +486,8 @@ try {
 
 const childEnv = {
   ...process.env,
+  // The servers refuse to start without one; a harness run is development.
+  NODE_ENV: process.env.NODE_ENV ?? 'development',
   DATABASE_URL,
   API_PORT: String(options.apiPort),
   REALTIME_PORT: String(options.wsPort),
