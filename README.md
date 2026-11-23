@@ -197,16 +197,16 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **The repository scanned in CI, and one header fewer.** CI now scans the
+  repository’s lockfiles for critical vulnerabilities with a fix and its
+  files for secrets, and the web app no longer names its framework in a
+  header.
 - **Whole journeys, tested in a real browser.** Seven journeys run in real
   Chrome against the container stack on every push and pull request, from
   sign-up through the mail sink to a stranger getting not found.
 - **System health on Insights.** Insights now show how often the hints are
   used and, for the people who run the server, its job queue and how quickly
   changes sync and reach open tabs, timed as the services work.
-- **Insights: cycle time and throughput.** An Insights page: how long work
-  takes on each project and how much gets done each week, from the status
-  changes the audit trail keeps, with the number of issues behind every
-  figure.
 
 <!-- latest:end -->
 

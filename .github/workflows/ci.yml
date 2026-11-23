@@ -191,6 +191,18 @@ jobs:
         with:
           bun-version: 1.4.2
 
+      # The repository itself, before anything is built (E3): every lockfile
+      # (bun.lock, the Python locks) for critical vulnerabilities that have a
+      # fix, and every committed file for secrets, under the same rules as
+      # the image scan below. Run on the fresh checkout, so it sees exactly
+      # what is committed and nothing a build left behind.
+      - name: Scan the repository's dependencies and files (Trivy)
+        run: |
+          mkdir -p .trivy
+          docker run --rm -v "$PWD:/src:ro" -v "$PWD/.trivy:/trivy" -e TRIVY_CACHE_DIR=/trivy/cache \
+            "$TRIVY_IMAGE" fs --quiet --scanners vuln,secret --severity CRITICAL --ignore-unfixed \
+            --skip-dirs /src/.trivy --exit-code 1 /src
+
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       # Each image's layers from the last run, one folder per image so they

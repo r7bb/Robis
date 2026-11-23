@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **The repository scanned in CI, and one header fewer** (2026-11-22). CI
+  now scans the repository’s lockfiles for critical vulnerabilities with a
+  fix and its files for secrets, and the web app no longer names its
+  framework in a header.
 - **Whole journeys, tested in a real browser** (2026-11-21). Seven journeys
   run in real Chrome against the container stack on every push and pull
   request, from sign-up through the mail sink to a stranger getting not

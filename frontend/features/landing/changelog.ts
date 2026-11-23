@@ -44,6 +44,17 @@ export type Entry = {
 
 export const CHANGELOG: readonly Entry[] = [
   {
+    date: '2026-11-22',
+    area: 'Security',
+    title: 'The repository scanned in CI, and one header fewer',
+    brief:
+      'CI now scans the repository’s lockfiles for critical vulnerabilities with a fix and its files for secrets, and the web app no longer names its framework in a header.',
+    summary:
+      'The first of the security checks (E3). Before anything is built, CI scans the fresh checkout with the same pinned Trivy as the images: every lockfile for critical vulnerabilities that have a fix, and every committed file for secrets. A first ZAP baseline scan of the stack found the web app sending X-Powered-By on every response; it is gone. The rest of that scan’s findings are to be triaged in a document with the remaining checks.',
+    checked:
+      'The header is absent on the rebuilt stack. The repository scan runs in CI only, on the clean checkout. Lint, typecheck and docs:links.',
+  },
+  {
     date: '2026-11-21',
     area: 'Product',
     title: 'Whole journeys, tested in a real browser',

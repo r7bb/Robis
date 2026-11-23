@@ -67,6 +67,9 @@ const config: NextConfig = {
    * it reads as a rendering bug rather than as tooling.
    */
   devIndicators: false,
+  // No `X-Powered-By: Next.js` on every response (flagged by the ZAP baseline
+  // scan, E3): it tells a visitor nothing they need and a scanner what to try.
+  poweredByHeader: false,
   /*
    * Every response gets the fixed security headers (the per-page
    * Content-Security-Policy comes from `middleware.ts`).
