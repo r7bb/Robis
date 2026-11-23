@@ -62,6 +62,7 @@ import { searchRoutes } from './routes/search.ts';
 import { signupRoutes } from './routes/signup.ts';
 import { storyRoutes } from './routes/stories.ts';
 import { twoFactorRoutes } from './routes/two-factor.ts';
+import { weekRoutes } from './routes/week.ts';
 import { workspaceRoutes } from './routes/workspaces.ts';
 import { createSuggestionClient, type SuggestionClient } from './suggestions.ts';
 
@@ -337,6 +338,7 @@ export function buildApp({
   app.register(insightRoutes, { db, operators: operatorsFrom(env.HEALTH_OPERATORS) });
   app.register(calendarRoutes, { db, webOrigin: env.WEB_ORIGIN });
   app.register(calendarImportRoutes, { db });
+  app.register(weekRoutes, { db });
   app.register(searchRoutes, { db, limits });
 
   return app;

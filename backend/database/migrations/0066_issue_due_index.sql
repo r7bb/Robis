@@ -1,0 +1,1 @@
+CREATE INDEX "issues_workspace_due_idx" ON "issues" USING btree ("workspace_id","due_on") WHERE "issues"."due_on" is not null;

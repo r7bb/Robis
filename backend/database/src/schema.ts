@@ -707,6 +707,8 @@ export const issues = pgTable(
     index('issues_assignee_idx').on(t.assigneeId),
     index('issues_project_position_idx').on(t.projectId, t.position),
     index('issues_parent_idx').on(t.parentId),
+    // The week view (B8): the issues due on the dates it shows.
+    index('issues_workspace_due_idx').on(t.workspaceId, t.dueOn).where(sql`${t.dueOn} is not null`),
     // Insights (Phase 6): the issues finished in the last twelve weeks.
     index('issues_workspace_completed_idx')
       .on(t.workspaceId, t.completedAt)

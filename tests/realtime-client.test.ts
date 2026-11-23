@@ -73,6 +73,7 @@ describe('what an event makes stale', () => {
       ['feed-projects', W],
       ['feed-celebrations', W],
       ['insights-flow', W],
+      ['calendar-week', W],
     ]);
   });
 

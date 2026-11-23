@@ -28,6 +28,7 @@ import { pushContracts } from './push.ts';
 import { savedViewContracts } from './saved-views.ts';
 import { storyContracts } from './stories.ts';
 import { twoFactorContracts } from './two-factor.ts';
+import { weekContracts } from './week.ts';
 import { workspaceContracts } from './workspaces.ts';
 
 export {
@@ -68,6 +69,7 @@ export {
 export { ISSUE_LABELS_MAX } from './labels.ts';
 export { MY_MEETINGS_LIMIT, MY_MEETINGS_MAX_HOURS } from './meetings.ts';
 export { SAVED_VIEWS_PER_PROJECT } from './saved-views.ts';
+export { WEEK_WINDOW_MAX_HOURS } from './week.ts';
 
 /** Every route the API serves through a contract, by name. */
 export const contracts = {
@@ -100,6 +102,7 @@ export const contracts = {
   ...feedHighlightContracts,
   ...insightContracts,
   ...calendarContracts,
+  ...weekContracts,
   ...accountContracts,
 } as const satisfies Record<string, Contract>;
 

@@ -26,6 +26,8 @@ export function staleKeys(event: ServerEvent): unknown[][] {
         ['feed-celebrations', event.workspaceId],
         // Insights' cycle time and throughput come from status moves (Phase 6).
         ['insights-flow', event.workspaceId],
+        // The week view shows issues by their due date (B8).
+        ['calendar-week', event.workspaceId],
       ];
     case 'project.created':
     case 'project.deleted':
@@ -60,7 +62,11 @@ export function staleKeys(event: ServerEvent): unknown[][] {
     case 'channel.deleted':
       return [['channels', event.workspaceId]];
     case 'meeting.changed':
-      return [['meetings', event.workspaceId]];
+      // The week view shows meetings too (B8).
+      return [
+        ['meetings', event.workspaceId],
+        ['calendar-week', event.workspaceId],
+      ];
     case 'document.created':
       return [['documents', event.workspaceId]];
     case 'feed.changed':

@@ -401,7 +401,14 @@ count or an end date, become meetings organised by the importer. For
 someone who may invite members, invitees are the file's attendees matched
 to the roster by address; for anyone else they are left off, since
 matching would tell a member whose address is whose. Importing the same
-file again skips what is already there. All-day events, other repeats, cancelled events, unknown
+file again skips what is already there.
+
+**Week view, 2026-11-23:** Calendar in the sidebar: the workspace's
+meetings for a week, repeats included, laid out in the viewer's own zone
+(a 25-hour day as long as it really is), overlapping meetings side by
+side, your own answer shown by the block's border, and the issues due
+each day along the top. A list of days on a phone. Due dates already
+existed; they gained an index. Phase 7 is complete. All-day events, other repeats, cancelled events, unknown
 zones and lengths outside 15 minutes to a day are left out, each with a
 reason. At most 50 events and 256 KB a file. The week view is next.
 

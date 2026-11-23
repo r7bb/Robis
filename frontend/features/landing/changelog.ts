@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-23',
     area: 'Product',
+    title: 'A week view of meetings and due dates',
+    brief:
+      'A Calendar page: the week’s meetings laid out in your own time zone, repeats included, with the issues due each day along the top.',
+    summary:
+      'Calendar in the sidebar shows a week at a time, Monday to Sunday, in your own time zone. Every meeting in the workspace is there, each weekly repeat in the week it falls in; overlapping meetings sit side by side, and the border says whether you are invited and have answered. The issues due each day line the top of their column, done ones struck through. The day the clocks change is drawn as long as it really is. On a phone it becomes a list of days.',
+    checked:
+      'Six tests: the week’s days and window in New York and Kolkata, the 25-hour day of 1 November 2026 laid out to scale, spans clipped to their day, overlaps in lanes, repeats and due issues in the right weeks over HTTP with your own answer, and refusals for a bad window and a stranger. Seen in Chrome against the stack at desktop and phone widths. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Week view',
+      where: 'Sidebar: Calendar',
+      layers: [
+        'Screen: a seven-day grid in your zone with meetings side by side and due issues on top; a list of days on a phone',
+        'API: calendar.week returns the window’s meeting occurrences with your answer, and the issues due on its dates',
+        'Database: an index on issues’ due dates',
+      ],
+    },
+  },
+  {
+    date: '2026-11-23',
+    area: 'Product',
     title: 'Import meetings from an .ics file',
     brief:
       'Bring meetings in from any calendar app’s .ics file: times land right in any zone, weekly repeats come along, and for admins, invitees are matched to the workspace by address.',

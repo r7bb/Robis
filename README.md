@@ -199,6 +199,9 @@ with Postgres on the same machine. Method and percentiles in
 
 <!-- latest:start -->
 
+- **A week view of meetings and due dates.** A Calendar page: the week’s
+  meetings laid out in your own time zone, repeats included, with the issues
+  due each day along the top.
 - **Import meetings from an .ics file.** Bring meetings in from any calendar
   app’s .ics file: times land right in any zone, weekly repeats come along,
   and for admins, invitees are matched to the workspace by address.
@@ -206,10 +209,6 @@ with Postgres on the same machine. Method and percentiles in
   calendar feed for your meetings in every workspace, revocable at any
   moment, and meetings that repeat weekly at the same local time across
   clock changes.
-- **Security checks in CI, a threat model, and how to report.** An OWASP ZAP
-  scan of the stack runs in CI with its findings triaged, every response now
-  carries a policy, pages are cross-origin isolated, and a threat model and
-  SECURITY.md are written.
 
 <!-- latest:end -->
 

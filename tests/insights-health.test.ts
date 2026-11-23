@@ -332,7 +332,7 @@ describe('sync lag, as the API counts it', () => {
     await app.syncLag.flush();
     const counts = await readInstrument(ownerDb, 'sync_lag', new Date(Date.now() - DAY));
     expect(counts[bucketOf(20)]).toBe(PER_PERSON_PER_MINUTE);
-  });
+  }, 75_000); // It may wait out a minute's turn before it starts.
 });
 
 describe('the health page', () => {
