@@ -9,6 +9,7 @@ import {
   STORAGE_PURGE_JOB,
   STORY_EXPIRY_INTERVAL_MS,
   STORY_EXPIRY_JOB,
+  scheduleRecurring,
   WORKSPACE_EXPORT_JOB,
 } from '@robis/database';
 import { mailerFromEnv } from '@robis/mailer';
@@ -91,13 +92,17 @@ function positiveMs(raw: string | undefined, fallback: number): number {
 }
 
 async function scheduleMaintenance() {
-  await enqueue(db, 'sessions.cleanup', {}, { delayMs: HOUR_MS });
-  await enqueue(db, 'nudges.scan', {}, { delayMs: NUDGE_INTERVAL_MS });
-  await enqueue(db, 'agents.judge', {}, { delayMs: HOUR_MS });
-  // Hourly, so the day's digests go out within the hour of DIGEST_HOUR_UTC (C3).
-  await enqueue(db, 'digests.scan', {}, { delayMs: HOUR_MS });
-  // Stories past their 24 hours (B2): hidden at once, deleted within this.
-  await enqueue(db, STORY_EXPIRY_JOB, {}, { delayMs: STORY_EXPIRY_INTERVAL_MS });
+  // Once each, however often the worker restarts: see `scheduleRecurring`.
+  const { dropped } = await scheduleRecurring(db, [
+    { kind: 'sessions.cleanup', delayMs: HOUR_MS },
+    { kind: 'nudges.scan', delayMs: NUDGE_INTERVAL_MS },
+    { kind: 'agents.judge', delayMs: HOUR_MS },
+    // Hourly, so the day's digests go out within the hour of DIGEST_HOUR_UTC (C3).
+    { kind: 'digests.scan', delayMs: HOUR_MS },
+    // Stories past their 24 hours (B2): hidden at once, deleted within this.
+    { kind: STORY_EXPIRY_JOB, delayMs: STORY_EXPIRY_INTERVAL_MS },
+  ]);
+  if (dropped > 0) log.info(`maintenance: dropped ${dropped} repeated waiting jobs`);
 }
 
 // Recurring jobs re-enqueue themselves after running, which keeps the schedule

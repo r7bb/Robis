@@ -260,6 +260,40 @@ export async function hasPendingJob(db: Executor, kind: string): Promise<boolean
   return row !== undefined;
 }
 
+/**
+ * Start each recurring job only if none of its kind is waiting, after
+ * dropping any extra copies already waiting (not one running), the soonest
+ * kept. Before this check was made at start-up, every restart began another
+ * self-rescheduling chain, and the copies came due together, holding up the
+ * mail queued behind them.
+ */
+export async function scheduleRecurring(
+  db: Executor,
+  schedule: readonly { kind: string; delayMs: number }[],
+): Promise<{ started: string[]; dropped: number }> {
+  if (schedule.length === 0) return { started: [], dropped: 0 };
+  const kinds = sql.join(
+    schedule.map(({ kind }) => sql`${kind}`),
+    sql`, `,
+  );
+  const extra = await db.execute(sql`
+    with waiting as (
+      select id, row_number() over (partition by kind order by run_at, id) as place
+        from ${jobs}
+       where kind in (${kinds}) and status = 'pending' and locked_at is null
+    )
+    delete from ${jobs} where id in (select id from waiting where place > 1)
+    returning id
+  `);
+  const started: string[] = [];
+  for (const { kind, delayMs } of schedule) {
+    if (await hasPendingJob(db, kind)) continue;
+    await enqueue(db, kind, {}, { delayMs });
+    started.push(kind);
+  }
+  return { started, dropped: [...extra].length };
+}
+
 export async function deadLetterCount(db: Executor): Promise<number> {
   const rows = await db.select({ id: jobs.id }).from(jobs).where(eq(jobs.status, 'failed'));
   return rows.length;
