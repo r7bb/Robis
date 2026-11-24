@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Share a photo or link to Robis from a phone',
+    brief:
+      'With Robis installed, a photo, a link or some words shared from another app become an issue on the board you pick, with or without a signal.',
+    summary:
+      'Installed Robis appears in the phone’s share sheet. Whatever is shared, up to four photos, a link and some words, is caught by the service worker and kept on the phone, even with no signal, and the share page opens to show it. Pick the board, check the title (taken from what was shared), and it becomes an issue there: the photos attached and the link and words as its first comment, all through the same queue as other offline changes, so it lands once the phone is back online. Discard drops it; nothing shared stays on the phone once it is made into an issue.',
+    checked:
+      'A browser journey at phone size posts what a share sheet sends (a title, a link and a photo) through the service worker, sees the share page show the photo and the link, makes the issue, and finds on the server the issue with its photo attached and the link as a comment, and the share gone from the phone. The offline journeys still pass with the new service worker. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Share to Robis',
+      where: 'A phone’s share sheet, with Robis installed',
+      layers: [
+        'Manifest: a share target taking a title, a link, words and photos',
+        'Service worker: keeps what was shared on the phone and opens the share page',
+        'Screen: pick the board and title; the issue, photos and comment go through the offline queue',
+      ],
+    },
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Issues and comments offline',
     brief:
       'An issue seen once opens again with no network, and a comment written then waits on the device and is sent once when the connection is back.',

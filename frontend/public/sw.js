@@ -36,12 +36,23 @@
  * and claims open clients. That machinery already existed; it had simply
  * never run, because the version had never changed.
  */
-const VERSION = 'robis-v3';
+const VERSION = 'robis-v4';
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 
 /** Served when a navigation fails and nothing matching is cached. */
 const OFFLINE_FALLBACK = '/offline.html';
+
+/**
+ * Things shared to Robis from another app (C8), waiting for the share page
+ * to turn them into an issue. Not versioned, so a new worker does not throw
+ * away a photo shared a moment before it took over.
+ */
+const SHARE_CACHE = 'robis-share';
+const SHARE_PATH = '/share';
+/** At most this many pictures from one share, each at most 8 MB, as uploads are. */
+const SHARE_FILES_MAX = 4;
+const SHARE_FILE_BYTES = 8 * 1024 * 1024;
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -60,7 +71,9 @@ self.addEventListener('activate', (event) => {
       .keys()
       .then((keys) =>
         Promise.all(
-          keys.filter((key) => !key.startsWith(VERSION)).map((key) => caches.delete(key)),
+          keys
+            .filter((key) => !key.startsWith(VERSION) && key !== SHARE_CACHE)
+            .map((key) => caches.delete(key)),
         ),
       )
       .then(() => self.clients.claim()),
@@ -119,8 +132,46 @@ async function cacheFirst(request) {
   return response;
 }
 
+/**
+ * A share from another app (C8): the phone posts the photo, link or words
+ * here. Kept in the share cache, with or without a network, and then the
+ * share page opens to say which board they go on.
+ */
+async function receiveShare(request) {
+  const form = await request.formData();
+  const cache = await caches.open(SHARE_CACHE);
+  for (const key of await cache.keys()) await cache.delete(key);
+  const files = form
+    .getAll('files')
+    .filter((file) => typeof file === 'object' && file.type.startsWith('image/'))
+    .filter((file) => file.size <= SHARE_FILE_BYTES)
+    .slice(0, SHARE_FILES_MAX);
+  const text = (name) => String(form.get(name) ?? '').slice(0, 2000);
+  await cache.put(
+    `${SHARE_PATH}/inbox/meta`,
+    Response.json({
+      title: text('title'),
+      text: text('text'),
+      url: text('url'),
+      files: files.length,
+    }),
+  );
+  for (const [index, file] of files.entries()) {
+    await cache.put(
+      `${SHARE_PATH}/inbox/file-${index}`,
+      new Response(file, { headers: { 'content-type': file.type } }),
+    );
+  }
+  return Response.redirect(SHARE_PATH, 303);
+}
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+
+  if (request.method === 'POST' && new URL(request.url).pathname === SHARE_PATH) {
+    event.respondWith(receiveShare(request));
+    return;
+  }
 
   // Only GET is cacheable; a mutation must always reach the server or fail
   // loudly so the sync queue can retry it.

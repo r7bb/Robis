@@ -9,7 +9,8 @@
  * found, the empty views (C5) moving to the field that fills them, the
  * demo workspace opening from the first run, and a workspace export
  * downloaded once and a CSV imported once (C6), every page fitting a
- * phone's width, and an issue read and commented on offline (C8).
+ * phone's width, an issue read and commented on offline, and a photo and
+ * link shared to Robis (C8).
  * Each journey's people get Chromes of their own and fresh accounts, never
  * the demo ones. Run in CI on every push and pull request.
  *
@@ -26,6 +27,7 @@ import { guestJourney, meetingJourney, strangerJourney } from './meetings-access
 import { offlineBoardJourney } from './offline-board.ts';
 import { offlineIssueJourney } from './offline-issue.ts';
 import { phoneJourney } from './phone.ts';
+import { shareJourney } from './share.ts';
 import { signupJourney } from './signup.ts';
 import { chatJourney, documentJourney } from './together.ts';
 
@@ -47,6 +49,7 @@ const JOURNEYS: Record<string, (checks: Checks) => Promise<void>> = {
   import: (checks) => importJourney(checks, FIRST_PORT + 15),
   phone: (checks) => phoneJourney(checks, FIRST_PORT + 16),
   'offline-issue': (checks) => offlineIssueJourney(checks, FIRST_PORT + 17),
+  share: (checks) => shareJourney(checks, FIRST_PORT + 18),
 };
 
 async function main() {

@@ -204,16 +204,15 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Share a photo or link to Robis from a phone.** With Robis installed, a
+  photo, a link or some words shared from another app become an issue on the
+  board you pick, with or without a signal.
 - **Issues and comments offline.** An issue seen once opens again with no
   network, and a comment written then waits on the device and is sent once
   when the connection is back.
 - **Install Robis on a phone.** Robis can be added to a phone’s home screen
   and opened as an app of its own, and every page has been checked at phone
   width.
-- **An API reference, generated from the contracts.** A readable API
-  reference sits beside the OpenAPI document, both written from the
-  contracts the server validates against, and a running server serves its
-  own document.
 
 <!-- latest:end -->
 

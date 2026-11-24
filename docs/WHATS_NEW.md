@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Share a photo or link to Robis from a phone** (2026-11-24). With Robis
+  installed, a photo, a link or some words shared from another app become an
+  issue on the board you pick, with or without a signal.
 - **Issues and comments offline** (2026-11-24). An issue seen once opens
   again with no network, and a comment written then waits on the device and
   is sent once when the connection is back.

@@ -24,5 +24,18 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
       { src: '/icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
     ],
+    // Share a photo, a link or some words to Robis from another app (C8): the
+    // service worker keeps them and the share page makes an issue of them.
+    share_target: {
+      action: '/share',
+      method: 'POST',
+      enctype: 'multipart/form-data',
+      params: {
+        title: 'title',
+        text: 'text',
+        url: 'url',
+        files: [{ name: 'files', accept: ['image/png', 'image/jpeg', 'image/webp', 'image/avif'] }],
+      },
+    },
   };
 }

@@ -70,7 +70,9 @@ network, its page from the service worker and its fields, comments and
 images from IndexedDB; a comment written then waits in the same queue,
 marked not sent yet, and goes once on reconnect under the same kind of
 key. Chat is online only and says so, rather than keeping words it cannot
-send. Robis installs to a phone's home screen from its manifest.
+send. Robis installs to a phone's home screen from its manifest, and a
+photo or link shared to it from another app is kept by the service worker
+until it is made into an issue, signal or none.
 
 ---
 
