@@ -9,7 +9,7 @@ import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
  * stack above the posts. The tab you left on is remembered in this browser.
  */
 
-export const FEED_TABS = ['following', 'everyone', 'highlights'] as const;
+const FEED_TABS = ['following', 'everyone', 'highlights'] as const;
 export type FeedTab = (typeof FEED_TABS)[number];
 
 const LABELS: Record<FeedTab, string> = {
