@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'A burn-up chart for the cycle',
+    brief:
+      'Chart on the cycle bar draws how much of the cycle was done by the end of each day so far, against a dashed line of an even pace to all of it by the last day.',
+    summary:
+      'While a cycle runs, Chart on the cycle bar opens a small burn-up: done by the end of each day so far, in the accent, against a dashed even pace from none on the first morning to all of the planned work (canceled issues left out) by the last day. Each issue counts on the day it was last moved to done, on the person’s own calendar, and work finished before the cycle began counts from its first day. Hovering a day names it and its count; the caption says it in a sentence, such as 5 of 9 done after day 7 of 14 and where an even pace would be, and screen readers get that sentence and every day in a list. The cycle bar’s counts and the chart now also refresh as soon as an issue on the board changes, rather than on the next visit.',
+    checked:
+      'Two tests through the API: done by the end of each day so far out of what is planned, read by a guest; an unknown zone refused and a stranger finding no cycle. Four tests of the day-by-day count (work done before the cycle, after it, and a cycle not yet started) and the even pace, two of how the chart is said, and the realtime test now expecting the cycle keys. In the browser, a fourteen-day cycle on day seven drew its line just above the pace with the caption 5 of 9 done after day 7 of 14. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Ask Sapha how the cycle is going',
     brief:
       'Type “how is the cycle going” or “what’s left in the sprint on Web” in the command palette, and Sapha answers there: done of planned, days left and what is still open.',

@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **A burn-up chart for the cycle** (2026-11-24). Chart on the cycle bar
+  draws how much of the cycle was done by the end of each day so far,
+  against a dashed line of an even pace to all of it by the last day.
 - **Ask Sapha how the cycle is going** (2026-11-24). Type “how is the cycle
   going” or “what’s left in the sprint on Web” in the command palette, and
   Sapha answers there: done of planned, days left and what is still open.

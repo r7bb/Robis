@@ -66,7 +66,7 @@ describe('which events a page acts on', () => {
 });
 
 describe('what an event makes stale', () => {
-  test('a new issue refreshes its project’s issues, the project list, what is blocked, the Feed and Insights', () => {
+  test('a new issue refreshes its project’s issues, the project list, what is blocked, the Feed, Insights and its board’s cycles', () => {
     expect(staleKeys(issueCreated)).toEqual([
       ['issues', W, 'p1'],
       ['projects', W],
@@ -76,6 +76,8 @@ describe('what an event makes stale', () => {
       ['feed-celebrations', W],
       ['insights-flow', W],
       ['calendar-week', W],
+      ['cycles', W, 'p1'],
+      ['cycle-burnup', W],
     ]);
   });
 

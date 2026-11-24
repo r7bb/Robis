@@ -31,6 +31,9 @@ export function staleKeys(event: ServerEvent): unknown[][] {
         ['insights-flow', event.workspaceId],
         // The week view shows issues by their due date (B8).
         ['calendar-week', event.workspaceId],
+        // A cycle's counts and burn-up are its issues' statuses.
+        ['cycles', event.workspaceId, event.projectId],
+        ['cycle-burnup', event.workspaceId],
       ];
     case 'project.created':
     case 'project.deleted':

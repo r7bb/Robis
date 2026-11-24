@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { call } from '../../lib/api.ts';
 import { localToday } from '../../lib/due-date.ts';
+import { BurnUpChart } from './burn-up-chart.tsx';
 import { addDays, daysLeftLine } from './cycle-days.ts';
 import { LeftOverLine } from './left-over-line.tsx';
 import { currentCycle, cyclesKey, useCycles } from './use-cycles.ts';
@@ -41,6 +42,7 @@ export function CycleBar({
     <div className="mt-3 rounded-lg border border-line bg-raised px-3 py-2">
       {cycle ? (
         <CycleProgress
+          workspaceId={workspaceId}
           cycle={cycle}
           today={today}
           showingOnly={showingOnly === cycle.id}
@@ -80,11 +82,13 @@ export function CycleBar({
 }
 
 function CycleProgress({
+  workspaceId,
   cycle,
   today,
   showingOnly,
   onToggle,
 }: {
+  workspaceId: string;
   cycle: NonNullable<ReturnType<typeof currentCycle>>;
   today: string;
   showingOnly: boolean;
@@ -93,6 +97,7 @@ function CycleProgress({
   const counted = cycle.total - cycle.canceled;
   const share = counted > 0 ? Math.round((cycle.done / counted) * 100) : 0;
   const running = cycle.startsOn <= today;
+  const [charting, setCharting] = useState(false);
   return (
     <div>
       <div className="flex flex-wrap items-baseline justify-between gap-2 text-xs">
@@ -102,18 +107,31 @@ function CycleProgress({
           {' · '}
           {cycle.done} of {counted} done
         </span>
-        <button
-          type="button"
-          aria-pressed={showingOnly}
-          onClick={onToggle}
-          className="rounded px-1.5 py-0.5 text-[11px] text-muted hover:text-content"
-        >
-          {showingOnly ? 'Show every issue' : 'Only this cycle'}
-        </button>
+        <span className="flex gap-1">
+          {running ? (
+            <button
+              type="button"
+              aria-expanded={charting}
+              onClick={() => setCharting((was) => !was)}
+              className="rounded px-1.5 py-0.5 text-[11px] text-muted hover:text-content"
+            >
+              {charting ? 'Hide chart' : 'Chart'}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            aria-pressed={showingOnly}
+            onClick={onToggle}
+            className="rounded px-1.5 py-0.5 text-[11px] text-muted hover:text-content"
+          >
+            {showingOnly ? 'Show every issue' : 'Only this cycle'}
+          </button>
+        </span>
       </div>
       <div aria-hidden="true" className="mt-1.5 h-1 rounded-full bg-surface">
         <div className="h-full rounded-full bg-accent" style={{ width: `${share}%` }} />
       </div>
+      {charting ? <BurnUpChart workspaceId={workspaceId} cycleId={cycle.id} /> : null}
     </div>
   );
 }

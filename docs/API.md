@@ -19,7 +19,7 @@ way.
 `{ "error": "<code>", "message": "<words for people>" }`. A stranger to a
 workspace gets 404, never 403, so its existence is not given away.
 
-240 routes.
+241 routes.
 
 ## activity
 
@@ -607,6 +607,14 @@ Rename a cycle or move its days.
 - Body: `name`, `startsOn`, `endsOn`
 - Answers: 200
 - Name: `cycles.update`
+
+### `GET /workspaces/{workspaceId}/cycles/{cycleId}/burnup`
+
+How many of a cycle’s issues were done by the end of each of its days so far, on the asker’s calendar, out of how many are planned (canceled ones left out).
+
+- Query: `timeZone`
+- Answers: 200
+- Name: `cycles.burnup`
 
 ### `POST /workspaces/{workspaceId}/cycles/{cycleId}/rollover`
 

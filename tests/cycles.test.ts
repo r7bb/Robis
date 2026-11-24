@@ -194,3 +194,50 @@ describe('moving a cycle’s unfinished issues on', () => {
     expect(refused.statusCode).toBe(404);
   });
 });
+
+describe('a cycle’s burn-up', () => {
+  const dayFrom = (offset: number) =>
+    new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
+
+  test('done by the end of each day so far, out of what is planned', async () => {
+    const { owner, workspace, project, ws, file } = await board();
+    const cycle = (
+      await plan(owner, ws, project.id, { name: 'Now', startsOn: dayFrom(-2), endsOn: dayFrom(9) })
+    ).json().cycle;
+    const issues = [await file('A'), await file('B'), await file('C'), await file('D')];
+    for (const issue of issues) await put(owner, ws, issue.id, cycle.id);
+    const set = (issueId: string, status: string) =>
+      request(`${ws}/issues/${issueId}`, { method: 'PATCH', actor: owner, payload: { status } });
+    await set(issues[0]!.id, 'DONE');
+    await set(issues[1]!.id, 'DONE');
+    await set(issues[2]!.id, 'CANCELED');
+
+    const guest = await createActor('Guest');
+    await addMember(owner, workspace.id, guest, 'GUEST');
+    const answer = await request(`${ws}/cycles/${cycle.id}/burnup?timeZone=UTC`, { actor: guest });
+    expect(answer.statusCode).toBe(200);
+    expect(answer.json() as Record<string, unknown>).toEqual({
+      startsOn: dayFrom(-2),
+      endsOn: dayFrom(9),
+      today: dayFrom(0),
+      planned: 3,
+      done: [0, 0, 2],
+    });
+  });
+
+  test('a zone it does not know is refused; a stranger finds no cycle', async () => {
+    const { owner, project, ws } = await board();
+    const cycle = (await plan(owner, ws, project.id, TWO_WEEKS)).json().cycle;
+    const bad = await request(`${ws}/cycles/${cycle.id}/burnup?timeZone=Not/AZone`, {
+      actor: owner,
+    });
+    expect(bad.statusCode).toBe(400);
+    expect(bad.json().error).toBe('bad_zone');
+    const stranger = await createActor('Stranger');
+    const theirs = await createWorkspace(stranger);
+    const refused = await request(`/workspaces/${theirs.id}/cycles/${cycle.id}/burnup`, {
+      actor: stranger,
+    });
+    expect(refused.statusCode).toBe(404);
+  });
+});

@@ -86,6 +86,21 @@ export const cycleContracts = {
     body: z.object({ toCycleId: uuid }),
     response: z.object({ moved: z.number().int().nonnegative(), cycle }),
   }),
+  'cycles.burnup': contract({
+    method: 'GET',
+    path: '/workspaces/:workspaceId/cycles/:cycleId/burnup',
+    summary:
+      'How many of a cycle’s issues were done by the end of each of its days so far, on the asker’s calendar, out of how many are planned (canceled ones left out).',
+    params: workspaceParams.extend({ cycleId: z.string() }),
+    query: z.object({ timeZone: z.string().max(64).optional() }),
+    response: z.object({
+      startsOn: z.string(),
+      endsOn: z.string(),
+      today: z.string(),
+      planned: z.number().int().nonnegative(),
+      done: z.array(z.number().int().nonnegative()),
+    }),
+  }),
   'cycles.remove': contract({
     method: 'DELETE',
     path: '/workspaces/:workspaceId/cycles/:cycleId',

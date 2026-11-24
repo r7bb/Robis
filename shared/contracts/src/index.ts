@@ -2,6 +2,7 @@
 import './no-eval.ts';
 
 export * from './avatars.ts';
+export * from './burn-up.ts';
 export * from './calendar.ts';
 export * from './consent.ts';
 export * from './demo.ts';

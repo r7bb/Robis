@@ -41,6 +41,7 @@ import { channelRoutes } from './routes/channels.ts';
 import { chatReadRoutes } from './routes/chat-reads.ts';
 import { commentRoutes } from './routes/comments.ts';
 import { consentRoutes } from './routes/consent.ts';
+import { cycleBurnUpRoutes } from './routes/cycle-burnup.ts';
 import { cycleRoutes } from './routes/cycles.ts';
 import { currentCycleRoutes } from './routes/cycles-current.ts';
 import { discussionRoutes } from './routes/discussion.ts';
@@ -355,6 +356,7 @@ export function buildApp({
   app.register(chatReadRoutes, { db });
   app.register(cycleRoutes, { db });
   app.register(currentCycleRoutes, { db });
+  app.register(cycleBurnUpRoutes, { db });
   app.register(projectUpdateRoutes, { db });
   app.register(repeatRoutes, { db });
   app.register(workloadRoutes, { db });
