@@ -589,6 +589,13 @@
       "when": 1795517203604,
       "tag": "0083_chat_reads_reactions",
       "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1795522839245,
+      "tag": "0084_meeting_notes",
+      "breakpoints": true
     }
   ]
 }

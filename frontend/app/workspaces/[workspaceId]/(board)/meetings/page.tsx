@@ -20,7 +20,10 @@ export default function MeetingsPage() {
   });
 
   return (
-    <PageFrame title="Meetings" lead="What is coming up, who is in it, and the agenda.">
+    <PageFrame
+      title="Meetings"
+      lead="What is coming up, who is in it, the agenda, and the notes after."
+    >
       {role ? (
         <MeetingsPanel
           workspaceId={workspaceId}

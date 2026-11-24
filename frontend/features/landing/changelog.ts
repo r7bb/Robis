@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Meeting notes, with follow-ups that become issues',
+    brief:
+      'Each meeting has notes that anyone in it can write and everyone can read; checklist, TODO and Action lines are follow-ups, and Make an issue files one and ticks its line with the new key.',
+    summary:
+      'A meeting card now opens its notes. Whoever is in the meeting (the organiser or an attendee), or an admin, writes them; everyone who may see the meeting reads them, with who saved last. A line like “- [ ] Send the budget”, “TODO: …” or “Action: …” is a follow-up, listed under the notes; Make an issue files it on the board chosen and ticks the line with the issue’s key, which links to it, so nothing is filed twice. A save made over someone else’s since is refused with a way to load the newer notes, and what was written stays on screen to copy, so two people writing never silently undo each other. The meetings page has a Recent tab, for the notes of meetings just held. The audit log records that notes were saved and how long they are, not what they say.',
+    checked:
+      'Four tests of reading follow-ups (checklist, TODO and Action lines, done ones and their keys, ticking one and leaving the rest as written) and four through the API (an attendee writes and everyone reads who did, someone not in it may not write, a save over a newer one is refused and the newer kept, another workspace’s meeting not found and a length limit). In the browser, Make an issue filed OPS-1 and ticked its line. The meeting, accessibility, keyboard and phone journeys. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Meeting notes',
+      where: 'Meetings, Notes on a meeting card, and the Recent tab',
+      layers: [
+        'Screen: notes with Save and who saved last, follow-ups with Make an issue',
+        'API: meetings.notes and meetings.saveNotes, a save over a newer one refused',
+        'Shared: follow-ups read from the notes, ticked with their key once filed',
+      ],
+    },
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Asked before? Similar threads while you write one',
     brief:
       'As a thread’s title is typed, threads anywhere in the workspace that share at least two of its words appear under it, answered ones first, so a question asked before is found instead of asked again.',

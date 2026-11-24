@@ -8,6 +8,7 @@ export * from './demo.ts';
 export * from './demo-workspace.ts';
 export * from './domain.ts';
 export * from './events.ts';
+export * from './follow-ups.ts';
 export * from './http/index.ts';
 export * from './images.ts';
 export * from './limits.ts';

@@ -9,16 +9,52 @@ import { formatDay, formatTime, formatUntil } from '../../lib/time.ts';
 import { useScrollToHash } from '../../lib/use-scroll-to-hash.ts';
 import { DraftAgenda } from '../assist/draft-agenda.tsx';
 import { ImportCalendar } from './import-calendar.tsx';
+import { MeetingNotes } from './meeting-notes.tsx';
 import { ScheduleDialog } from './schedule-dialog.tsx';
 import type { Meeting, MeetingAnswer } from './types.ts';
 import {
   countAccepted,
+  type MeetingScope,
   responseOf,
   useCancelMeeting,
   useMeetings,
   useRespondToMeeting,
   useScheduleMeeting,
 } from './use-meetings.ts';
+
+/** Upcoming or Recent, as two tabs over the list. */
+function ScopeTabs({
+  scope,
+  onChange,
+}: {
+  scope: MeetingScope;
+  onChange: (scope: MeetingScope) => void;
+}) {
+  return (
+    <div className="flex gap-1 border-b border-line">
+      {(
+        [
+          ['upcoming', 'Upcoming'],
+          ['past', 'Recent'],
+        ] as const
+      ).map(([value, label]) => (
+        <button
+          key={value}
+          type="button"
+          aria-pressed={scope === value}
+          onClick={() => onChange(value)}
+          className={`-mb-px border-b-2 px-2.5 py-1.5 text-xs transition-colors ${
+            scope === value
+              ? 'border-accent text-content'
+              : 'border-transparent text-muted hover:text-content'
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 const RESPONSES: { value: MeetingAnswer; label: string }[] = [
   { value: 'yes', label: 'Yes' },
@@ -127,6 +163,7 @@ function MeetingCard({
           </button>
         ) : null}
       </div>
+      {workspaceId ? <MeetingNotes workspaceId={workspaceId} meetingId={meeting.id} /> : null}
     </article>
   );
 }
@@ -144,8 +181,10 @@ export function MeetingsPanel({
   currentUserId: string | null;
 }) {
   const [scheduling, setScheduling] = useState(false);
+  // Upcoming, or what has been: where the notes of a meeting just held are.
+  const [scope, setScope] = useState<MeetingScope>('upcoming');
 
-  const upcoming = useMeetings(workspaceId, 'upcoming');
+  const upcoming = useMeetings(workspaceId, scope);
   const schedule = useScheduleMeeting(workspaceId);
   const respond = useRespondToMeeting(workspaceId);
   const cancel = useCancelMeeting(workspaceId);
@@ -164,6 +203,8 @@ export function MeetingsPanel({
           <ImportCalendar workspaceId={workspaceId} />
         </>
       ) : null}
+
+      <ScopeTabs scope={scope} onChange={setScope} />
 
       {upcoming.isError ? (
         <InlineError>Could not load meetings.</InlineError>

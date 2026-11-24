@@ -15,6 +15,7 @@ import {
 } from './hardening.ts';
 import { operatorsFrom } from './insights/operators.ts';
 import { DECODE_RETRY_AFTER_SECONDS, ImagesBusyError } from './media/images.ts';
+import { meetingNotesRoutes } from './meetings/notes.ts';
 import { createMetrics, registerMetrics } from './metrics.ts';
 import { recordAgentSteps } from './plugins/agent-steps.ts';
 import { attachUser } from './plugins/authz.ts';
@@ -340,6 +341,7 @@ export function buildApp({
   app.register(documentRoutes, { db });
   app.register(channelRoutes, { db });
   app.register(meetingRoutes, { db });
+  app.register(meetingNotesRoutes, { db });
   app.register(notificationRoutes, { db });
   app.register(chatReadRoutes, { db });
   app.register(reminderRoutes, { db });

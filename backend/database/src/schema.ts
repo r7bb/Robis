@@ -1891,6 +1891,14 @@ export const meetings = pgTable(
      * "is any of it still ahead" is one indexed comparison.
      */
     lastStartsAt: timestamp('last_starts_at', { withTimezone: true }).notNull(),
+    /**
+     * What was said and agreed, written by anyone in it; follow-ups are its
+     * checklist lines. Who last saved it, and when, is what a second writer
+     * checks against, so one save never silently undoes another.
+     */
+    notes: text('notes').notNull().default(''),
+    notesUpdatedAt: timestamp('notes_updated_at', { withTimezone: true }),
+    notesUpdatedBy: uuid('notes_updated_by').references(() => users.id, { onDelete: 'set null' }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
     /** For search: the title weighs more than the agenda. */

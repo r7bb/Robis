@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MEETING_NOTES_MAX_LENGTH } from '../follow-ups.ts';
 import {
   createMeetingSchema,
   respondToMeetingSchema,
@@ -10,6 +11,14 @@ import { contract, timestamp } from './contract.ts';
 
 /** The id stays a plain string: one that is not a meeting is a 404, not a 400. */
 const meetingParams = workspaceParams.extend({ meetingId: z.string() });
+
+/** A meeting's notes as read: what they say, and who saved them last. */
+const meetingNotes = z.object({
+  notes: z.string(),
+  updatedAt: timestamp.nullable(),
+  updatedByName: z.string().nullable(),
+  canEdit: z.boolean(),
+});
 
 /** A meeting as it is stored: the plan, with no conferencing behind it. */
 const meeting = z.object({
@@ -114,5 +123,25 @@ export const meetingContracts = {
     params: meetingParams,
     body: respondToMeetingSchema,
     response: z.object({ ok: z.literal(true), response: z.enum(['yes', 'no', 'maybe']) }),
+  }),
+  'meetings.notes': contract({
+    method: 'GET',
+    path: '/workspaces/:workspaceId/meetings/:meetingId/notes',
+    summary: 'A meeting’s notes, who last saved them and when, and whether you may write them.',
+    params: meetingParams,
+    response: meetingNotes,
+  }),
+  'meetings.saveNotes': contract({
+    method: 'PUT',
+    path: '/workspaces/:workspaceId/meetings/:meetingId/notes',
+    summary:
+      'Save a meeting’s notes, for anyone in it. With the time they were read, a save over someone else’s since is refused, not lost.',
+    params: meetingParams,
+    body: z.object({
+      notes: z.string().max(MEETING_NOTES_MAX_LENGTH),
+      /** When the notes being replaced were saved, as read; null when they never were. */
+      basedOn: timestamp.nullable().optional(),
+    }),
+    response: meetingNotes,
   }),
 } as const;

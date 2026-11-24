@@ -19,7 +19,7 @@ way.
 `{ "error": "<code>", "message": "<words for people>" }`. A stranger to a
 workspace gets 404, never 403, so its existence is not given away.
 
-214 routes.
+216 routes.
 
 ## activity
 
@@ -1041,6 +1041,21 @@ Change a meeting you organise, or call it off.
 - Body: `title`, `agenda`, `startsAt`, `durationMinutes`, `joinUrl`, `timeZone`, `repeatCount`
 - Answers: 200
 - Name: `meetings.update`
+
+### `GET /workspaces/{workspaceId}/meetings/{meetingId}/notes`
+
+A meeting’s notes, who last saved them and when, and whether you may write them.
+
+- Answers: 200
+- Name: `meetings.notes`
+
+### `PUT /workspaces/{workspaceId}/meetings/{meetingId}/notes`
+
+Save a meeting’s notes, for anyone in it. With the time they were read, a save over someone else’s since is refused, not lost.
+
+- Body: `notes` (required), `basedOn`
+- Answers: 200
+- Name: `meetings.saveNotes`
 
 ### `POST /workspaces/{workspaceId}/meetings/{meetingId}/response`
 

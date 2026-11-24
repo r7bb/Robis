@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Meeting notes, with follow-ups that become issues** (2026-11-24). Each
+  meeting has notes that anyone in it can write and everyone can read;
+  checklist, TODO and Action lines are follow-ups, and Make an issue files
+  one and ticks its line with the new key.
 - **Asked before? Similar threads while you write one** (2026-11-24). As a
   thread’s title is typed, threads anywhere in the workspace that share at
   least two of its words appear under it, answered ones first, so a question

@@ -204,6 +204,10 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Meeting notes, with follow-ups that become issues.** Each meeting has
+  notes that anyone in it can write and everyone can read; checklist, TODO
+  and Action lines are follow-ups, and Make an issue files one and ticks its
+  line with the new key.
 - **Asked before? Similar threads while you write one.** As a thread’s title
   is typed, threads anywhere in the workspace that share at least two of its
   words appear under it, answered ones first, so a question asked before is
@@ -212,11 +216,6 @@ no write lost and nothing done twice.
   Each room shows how many messages wait for you, the room name carries a
   dot when another room has news, a New line marks where you stopped
   reading, and any message takes a quick reaction.
-- **Ask Sapha in the command palette: plain requests, done once you say
-  yes.** Type “move REL-4 to done”, “give REL-4 to Ana”, “remind me about
-  REL-12 tomorrow 9am”, “schedule Retro friday 3pm” or “what’s due today”
-  into the palette; Sapha says what it will do, and changes nothing until Do
-  it.
 
 <!-- latest:end -->
 
