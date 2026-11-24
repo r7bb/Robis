@@ -204,6 +204,9 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Releases, with notes written when they ship.** Plan a release, put
+  issues from any board in it, watch how much is done, and Ship it to stamp
+  it and get its notes, written from what was done, ready to copy.
 - **Issue templates.** Save any issue as a template, then file from it on
   any board: its title to finish, its description to fill in, its priority
   and labels come along.
@@ -211,9 +214,6 @@ no write lost and nothing done twice.
   day, everyone with an issue still open in it hears that it ends tomorrow
   and how many of theirs are open, with a link to the board narrowed to the
   cycle.
-- **Workload for the cycles running now.** While a cycle runs, Workload on
-  Insights can count only what each person has planned in the cycles running
-  now, rather than everything open.
 
 <!-- latest:end -->
 

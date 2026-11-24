@@ -11,6 +11,7 @@ import {
   queueAttachmentPurge,
   recordAgentChanges,
   recordAudit,
+  releases,
   type Tx,
   users,
   workspaceMembers,
@@ -47,6 +48,45 @@ export async function assertAssignable(db: Executor, workspaceId: string, assign
     throw ApiError.badRequest(
       'An agent cannot be an assignee; a person answers for the work',
       'assignee_not_person',
+    );
+  }
+}
+
+/** A release, held until the change commits so it cannot ship or go meanwhile. */
+async function heldRelease(tx: Tx, workspaceId: string, releaseId: string) {
+  const [row] = await tx
+    .select({ shippedAt: releases.shippedAt })
+    .from(releases)
+    .where(and(eq(releases.id, releaseId), eq(releases.workspaceId, workspaceId)))
+    .for('share');
+  return row ?? null;
+}
+
+/**
+ * Whether an issue may move from one release to another (either may be
+ * none): into one of this workspace's still to ship, and never out of one
+ * that shipped, whose notes say what was in it. Each is held for the rest
+ * of the transaction, so shipping waits for the change, or the change for
+ * the shipping.
+ */
+async function assertReleaseMove(
+  tx: Tx,
+  workspaceId: string,
+  from: string | null,
+  to: string | null,
+) {
+  if (from && (await heldRelease(tx, workspaceId, from))?.shippedAt) {
+    throw ApiError.badRequest('A shipped release keeps its issues', 'release_shipped');
+  }
+  if (!to) return;
+  const target = await heldRelease(tx, workspaceId, to);
+  if (!target) {
+    throw ApiError.badRequest('That release is not one of this workspace’s', 'bad_release');
+  }
+  if (target.shippedAt) {
+    throw ApiError.badRequest(
+      'That release has shipped; it takes no more issues',
+      'release_shipped',
     );
   }
 }
@@ -102,12 +142,19 @@ export async function queueAssignment(
 export async function applyIssueUpdate(tx: Tx, actor: AuditActor, update: IssueUpdate) {
   const { workspaceId, issueId, input } = update;
   const [current] = await tx
-    .select({ status: issues.status, assigneeId: issues.assigneeId })
+    .select({
+      status: issues.status,
+      assigneeId: issues.assigneeId,
+      releaseId: issues.releaseId,
+    })
     .from(issues)
     .where(and(eq(issues.id, issueId), eq(issues.workspaceId, workspaceId)))
     .for('update');
 
   if (!current) throw ApiError.notFound('Issue not found');
+  if (input.releaseId !== undefined && input.releaseId !== current.releaseId) {
+    await assertReleaseMove(tx, workspaceId, current.releaseId, input.releaseId);
+  }
   const statusChanged = input.status !== undefined && input.status !== current.status;
 
   const [row] = await tx

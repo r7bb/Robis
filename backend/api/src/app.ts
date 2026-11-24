@@ -75,6 +75,7 @@ import { profileRoutes } from './routes/profiles.ts';
 import { projectUpdateRoutes } from './routes/project-updates.ts';
 import { projectRoutes } from './routes/projects.ts';
 import { pushKey, pushRoutes } from './routes/push.ts';
+import { releaseRoutes } from './routes/releases.ts';
 import { reminderRoutes } from './routes/reminders.ts';
 import { repeatRoutes } from './routes/repeats.ts';
 import { savedViewRoutes } from './routes/saved-views.ts';
@@ -359,6 +360,7 @@ export function buildApp({
   app.register(currentCycleRoutes, { db });
   app.register(cycleBurnUpRoutes, { db });
   app.register(issueTemplateRoutes, { db });
+  app.register(releaseRoutes, { db });
   app.register(projectUpdateRoutes, { db });
   app.register(repeatRoutes, { db });
   app.register(workloadRoutes, { db });

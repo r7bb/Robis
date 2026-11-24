@@ -25,6 +25,7 @@ import {
   positionBetween,
   TRIAGE_JOB,
   type TriageJob,
+  type UpdateIssueInput,
 } from '@robis/shared';
 import { and, asc, desc, eq, inArray, type SQL, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
@@ -77,6 +78,18 @@ async function queueTriage(tx: Tx, job: TriageJob, filedBy: string) {
     .limit(1);
   const agentId = workspace?.triageAgentId;
   if (agentId && agentId !== filedBy) await enqueue(tx, TRIAGE_JOB, job);
+}
+
+/**
+ * A cycle removed between the check and the save: said as for one not on
+ * this board, rather than a server error. (A release is held for the save,
+ * so it cannot go meanwhile.) Anything else, as it was.
+ */
+function removedMeanwhile(input: UpdateIssueInput, error: unknown): unknown {
+  if (input.cycleId && pgErrorCode(error) === FOREIGN_KEY_VIOLATION) {
+    return ApiError.badRequest('That cycle is not on this board', 'bad_cycle');
+  }
+  return error;
 }
 
 /**
@@ -434,12 +447,7 @@ export async function issueRoutes(
             });
           })
           .catch((error: unknown) => {
-            // The cycle was removed between the check and the save: say so,
-            // as for any cycle not on this board, rather than a server error.
-            if (input.cycleId && pgErrorCode(error) === FOREIGN_KEY_VIOLATION) {
-              throw ApiError.badRequest('That cycle is not on this board', 'bad_cycle');
-            }
-            throw error;
+            throw removedMeanwhile(input, error);
           });
 
         await publishEvent(db, {

@@ -36,6 +36,9 @@ export function staleKeys(event: ServerEvent): unknown[][] {
         ['cycle-burnup', event.workspaceId],
         ['cycles-current', event.workspaceId],
         ['workload', event.workspaceId],
+        // A release's counts are its issues' statuses, on any board.
+        ['releases', event.workspaceId],
+        ['release', event.workspaceId],
       ];
     case 'project.created':
     case 'project.deleted':

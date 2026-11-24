@@ -19,6 +19,7 @@ import { may } from '../../lib/permissions.ts';
 import { remembered } from '../../lib/remembered.ts';
 import { useCommands } from '../command/command-provider.tsx';
 import { CyclePicker } from '../cycles/cycle-picker.tsx';
+import { ReleasePicker } from '../releases/release-picker.tsx';
 import { RemindMe } from '../reminders/remind-me.tsx';
 import { SaveAsTemplate } from '../templates/save-as-template.tsx';
 import { IssueAttachments } from './attachments.tsx';
@@ -210,6 +211,15 @@ export function IssueDetail({
                 value={data.cycleId}
                 canEdit={canEdit}
                 onChange={(cycleId) => update.mutate({ cycleId })}
+              />
+            </Field>
+
+            <Field label="Release">
+              <ReleasePicker
+                workspaceId={workspaceId}
+                value={data.releaseId}
+                canEdit={canEdit}
+                onChange={(releaseId) => update.mutate({ releaseId })}
               />
             </Field>
 

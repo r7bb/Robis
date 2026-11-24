@@ -22,13 +22,22 @@ import { fileIssue } from './issues.ts';
 import { replaceLabels } from './labels.ts';
 import { loadProject } from './projects.ts';
 
-/** Of these label ids, those still the workspace's, in the order given. */
-async function labelsStillHere(db: Executor, workspaceId: string, ids: readonly string[]) {
+/**
+ * Of these label ids, those still the workspace's, in the order given. In a
+ * transaction, `hold` keeps them from being removed until it commits.
+ */
+async function labelsStillHere(
+  db: Executor,
+  workspaceId: string,
+  ids: readonly string[],
+  hold = false,
+) {
   if (ids.length === 0) return [];
-  const rows = await db
+  const query = db
     .select({ id: labels.id })
     .from(labels)
     .where(and(eq(labels.workspaceId, workspaceId), inArray(labels.id, [...ids])));
+  const rows = hold ? await query.for('share') : await query;
   const here = new Set(rows.map((row) => row.id));
   return ids.filter((id) => here.has(id));
 }
@@ -140,7 +149,7 @@ export async function issueTemplateRoutes(app: FastifyInstance, opts: { db: Data
               priority: template.priority,
             },
           });
-          const wanted = await labelsStillHere(tx, workspaceId, template.labelIds);
+          const wanted = await labelsStillHere(tx, workspaceId, template.labelIds, true);
           if (wanted.length > 0) {
             await replaceLabels(tx, auditActor(request), {
               workspaceId,

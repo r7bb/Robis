@@ -252,6 +252,8 @@ export const updateIssueSchema = z
     parentId: uuid.nullable(),
     /** The cycle it is planned for, one of its board's, or null for none. */
     cycleId: uuid.nullable(),
+    /** The release it is part of, one not yet shipped, or null for none. */
+    releaseId: uuid.nullable(),
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, { message: 'No fields to update' });

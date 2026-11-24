@@ -40,6 +40,8 @@ const issue = z.object({
   parentId: uuid.nullable(),
   /** The cycle it is planned for, or null. */
   cycleId: uuid.nullable().default(null),
+  /** The release it is part of, or null. */
+  releaseId: uuid.nullable().default(null),
   createdBy: uuid,
   createdAt: timestamp,
   updatedAt: timestamp,

@@ -651,6 +651,28 @@ export const projects = pgTable(
   ],
 );
 
+/**
+ * A release: a version of the work, gathered from any of the workspace's
+ * boards, aimed at a day. Shipping it stamps it and keeps its notes, written
+ * from what was done; a shipped release takes no more issues.
+ */
+export const releases = pgTable(
+  'releases',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    targetOn: date('target_on', { mode: 'string' }),
+    shippedAt: timestamp('shipped_at', { withTimezone: true }),
+    notes: text('notes'),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [index('releases_workspace_idx').on(t.workspaceId, t.targetOn)],
+);
+
 export const issues = pgTable(
   'issues',
   {
@@ -696,6 +718,8 @@ export const issues = pgTable(
     }),
     /** The cycle it is planned for, one of its own board's; none when unplanned. */
     cycleId: uuid('cycle_id').references((): AnyPgColumn => cycles.id, { onDelete: 'set null' }),
+    /** The release it is part of, from any board, or null; removing the release clears it. */
+    releaseId: uuid('release_id').references(() => releases.id, { onDelete: 'set null' }),
     createdBy: uuid('created_by')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict' }),
@@ -728,6 +752,7 @@ export const issues = pgTable(
     index('issues_assignee_idx').on(t.assigneeId),
     index('issues_project_position_idx').on(t.projectId, t.position),
     index('issues_parent_idx').on(t.parentId),
+    index('issues_release_idx').on(t.releaseId),
     // The week view (B8): the issues due on the dates it shows.
     index('issues_workspace_due_idx').on(t.workspaceId, t.dueOn).where(sql`${t.dueOn} is not null`),
     // Insights (Phase 6): the issues finished in the last twelve weeks.

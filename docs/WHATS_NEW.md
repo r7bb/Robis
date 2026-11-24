@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Releases, with notes written when they ship** (2026-11-24). Plan a
+  release, put issues from any board in it, watch how much is done, and Ship
+  it to stamp it and get its notes, written from what was done, ready to
+  copy.
 - **Issue templates** (2026-11-24). Save any issue as a template, then file
   from it on any board: its title to finish, its description to fill in, its
   priority and labels come along.

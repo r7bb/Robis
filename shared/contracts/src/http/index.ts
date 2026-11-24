@@ -37,6 +37,7 @@ import { projectUpdateContracts } from './project-updates.ts';
 import { projectContracts } from './projects.ts';
 import { pushContracts } from './push.ts';
 import { apiReference } from './reference.ts';
+import { releaseContracts } from './releases.ts';
 import { reminderContracts } from './reminders.ts';
 import { repeatContracts } from './repeats.ts';
 import { savedViewContracts } from './saved-views.ts';
@@ -157,6 +158,7 @@ export const contracts = {
   ...reminderContracts,
   ...repeatContracts,
   ...issueTemplateContracts,
+  ...releaseContracts,
   ...notificationSettingContracts,
   ...unsubscribeContracts,
   ...pushContracts,

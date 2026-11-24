@@ -19,7 +19,7 @@ way.
 `{ "error": "<code>", "message": "<words for people>" }`. A stranger to a
 workspace gets 404, never 403, so its existence is not given away.
 
-245 routes.
+250 routes.
 
 ## activity
 
@@ -945,7 +945,7 @@ One issue, with its labels, the issue it is part of, and its sub-issues.
 
 Change an issue: its title, description, status, priority, assignee, place on the board, due day or parent.
 
-- Body: `title`, `description`, `status`, `priority`, `assigneeId`, `position`, `dueOn`, `parentId`, `cycleId`
+- Body: `title`, `description`, `status`, `priority`, `assigneeId`, `position`, `dueOn`, `parentId`, `cycleId`, `releaseId`
 - Answers: 200
 - Name: `issues.update`
 
@@ -1603,6 +1603,44 @@ The server's public push key, or null when web push is not set up.
 
 - Answers: 200
 - Name: `push.key`
+
+## releases
+
+### `GET /workspaces/{workspaceId}/releases`
+
+The workspace’s releases: those still to ship by the day they are aimed at, then those shipped, latest first, each with how its issues stand.
+
+- Answers: 200
+- Name: `releases.list`
+
+### `POST /workspaces/{workspaceId}/releases`
+
+Plan a release: a name and, if it has one, the day it is aimed at.
+
+- Body: `name` (required), `targetOn`
+- Answers: 201
+- Name: `releases.create`
+
+### `DELETE /workspaces/{workspaceId}/releases/{releaseId}`
+
+Remove a release; its issues stay where they are, in no release.
+
+- Answers: 204
+- Name: `releases.remove`
+
+### `GET /workspaces/{workspaceId}/releases/{releaseId}`
+
+One release with its issues from every board, by board and number.
+
+- Answers: 200
+- Name: `releases.get`
+
+### `POST /workspaces/{workspaceId}/releases/{releaseId}/ship`
+
+Ship a release: stamp it and keep its notes, written from what was done in it. Once only.
+
+- Answers: 200
+- Name: `releases.ship`
 
 ## reminders
 

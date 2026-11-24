@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Releases, with notes written when they ship',
+    brief:
+      'Plan a release, put issues from any board in it, watch how much is done, and Ship it to stamp it and get its notes, written from what was done, ready to copy.',
+    summary:
+      'A new Releases page plans versions of the work, each with a name and, if it has one, the day it is aimed at. Any issue on any board joins one from its Release field. Each release shows how much of it is done (canceled issues left out) and, opened, its issues by board. Ship it stamps the release once and keeps its notes: its name and the day, then what was done, by board and in issue order, ready to copy; work still open or canceled is left out of them. A shipped release keeps exactly what it shipped with: it takes no more issues, and none is taken out or moved to another release. Shipping waits for any issue being moved in or out at that moment, so the notes are what was in it. Whoever planned one, or an admin, removes it, which leaves its issues where they were, in no release. Guests read releases but do not plan or ship them.',
+    checked:
+      'Five tests through the API: a release made, given issues from two boards, counted and listed with its issues by board; shipping writing notes from the done issue only, and refusing more issues, a second ship, and an issue taken out or moved to another release while its other fields still change; two ships at once shipping it once; removing it leaving its issue in no release, with a guest unable to plan or ship; another workspace’s release refused to an issue and not found. One test of the notes themselves, including a release with nothing done. The realtime test now expects the release keys. In the browser, Version 2.0 across Web and App read 2 of 3 done and shipped with notes listing the two done issues by board. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Issue templates',
     brief:
       'Save any issue as a template, then file from it on any board: its title to finish, its description to fill in, its priority and labels come along.',

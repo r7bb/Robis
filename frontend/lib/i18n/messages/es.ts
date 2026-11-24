@@ -12,6 +12,7 @@ export const es: Record<MessageKey, string> = {
   'nav.calendar': 'Calendario',
   'nav.activity': 'Actividad',
   'nav.insights': 'Análisis',
+  'nav.releases': 'Versiones',
   'nav.automations': 'Automatizaciones',
   'nav.people': 'Personas',
   'nav.boards': 'Tableros',

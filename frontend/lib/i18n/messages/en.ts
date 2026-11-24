@@ -14,6 +14,7 @@ export const en = {
   'nav.calendar': 'Calendar',
   'nav.activity': 'Activity',
   'nav.insights': 'Insights',
+  'nav.releases': 'Releases',
   'nav.automations': 'Automations',
   'nav.people': 'People',
   'nav.boards': 'Boards',
