@@ -24,6 +24,7 @@ import {
 import { rateLimit } from '../plugins/rate-limit.ts';
 import { leadingPeople, leadingReplies, sinceOf } from '../spaces/leaders.ts';
 import { spaceReplyRoutes } from '../spaces/reply-routes.ts';
+import { similarThreadRoutes } from '../spaces/similar.ts';
 import {
   reactionTotal,
   type SpaceRow,
@@ -320,4 +321,5 @@ export async function spaceRoutes(app: FastifyInstance, opts: { db: Database }) 
   );
 
   await spaceReplyRoutes(app, { db, notify, writeLimit });
+  await similarThreadRoutes(app, { db });
 }

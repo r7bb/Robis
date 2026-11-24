@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Asked before? Similar threads while you write one** (2026-11-24). As a
+  thread’s title is typed, threads anywhere in the workspace that share at
+  least two of its words appear under it, answered ones first, so a question
+  asked before is found instead of asked again.
 - **Chat keeps your place: unread counts, a New line, and quick reactions**
   (2026-11-24). Each room shows how many messages wait for you, the room
   name carries a dot when another room has news, a New line marks where you

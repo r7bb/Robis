@@ -16,7 +16,8 @@ import { ReactionBar } from '../feed/reaction-bar.tsx';
 import { RemindMe } from '../reminders/remind-me.tsx';
 import { useWorkspaceRole } from '../workspace/page-frame.tsx';
 import { ReplyBox, ReplyList, type TreeContext } from './reply-tree.tsx';
-import { KindChip, SolvedChip } from './space-view.tsx';
+import { SolvedChip } from './solved-chip.tsx';
+import { KindChip } from './space-view.tsx';
 import {
   nestReplies,
   type Reply,

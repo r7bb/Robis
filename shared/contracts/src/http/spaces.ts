@@ -219,4 +219,23 @@ export const spaceContracts = {
     query: z.object({ period: z.enum(LEADER_PERIODS).default('month') }),
     response: z.object({ people: z.array(leader), replies: z.array(topReply) }),
   }),
+  'spaces.similar': contract({
+    method: 'GET',
+    path: '/workspaces/:workspaceId/space-threads/similar',
+    summary:
+      'Threads in any space here sharing words with a draft title, answered ones first: asked before? At most five.',
+    params: workspaceParams,
+    query: z.object({ q: z.string().max(200).default('') }),
+    response: z.object({
+      threads: z.array(
+        z.object({
+          id: uuid,
+          title: z.string(),
+          spaceName: z.string(),
+          solved: z.boolean(),
+          replyCount: z.number().int().nonnegative(),
+        }),
+      ),
+    }),
+  }),
 } as const;

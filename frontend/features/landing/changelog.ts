@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Asked before? Similar threads while you write one',
+    brief:
+      'As a thread’s title is typed, threads anywhere in the workspace that share at least two of its words appear under it, answered ones first, so a question asked before is found instead of asked again.',
+    summary:
+      'The thread composer now looks for threads in every space of the workspace whose title or body shares at least two words with the draft title, stemmed so “dropped” finds “dropping”, and shows up to five under the title: answered ones first with Solved, then the closest, each with its space and reply count, opening in a new tab so the draft is kept. It waits for typing to pause and for ten characters, and a single word in common is not enough. Separately, the worker no longer starts another copy of each recurring job on every restart: copies had stacked up (574 here) and came due together, which could hold an email behind them for half a minute; now one of each waits, and the extra ones are dropped on start-up.',
+    checked:
+      'Four tests through the API: answered first and named with their space, too short or nothing in common finds nothing, punctuation and query syntax are only words, and never another workspace’s threads; three of recurring jobs (ten restarts leave one each, stacked copies dropped with the soonest kept, one running and other kinds untouched). In the browser, a draft about a VPN dropping found the answered thread and left out one sharing a single word; after a rebuild the worker dropped the stacked copies and the stack smoke test passed at once. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Asked before?',
+      where: 'Spaces, under the title of a new thread',
+      layers: [
+        'Screen: up to five similar threads under the draft title, answered first',
+        'API: spaces.similar, full text over every space, two words in common at least',
+        'Worker: recurring jobs once each, however often it restarts',
+      ],
+    },
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Chat keeps your place: unread counts, a New line, and quick reactions',
     brief:
       'Each room shows how many messages wait for you, the room name carries a dot when another room has news, a New line marks where you stopped reading, and any message takes a quick reaction.',

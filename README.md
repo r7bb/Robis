@@ -204,6 +204,10 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Asked before? Similar threads while you write one.** As a thread’s title
+  is typed, threads anywhere in the workspace that share at least two of its
+  words appear under it, answered ones first, so a question asked before is
+  found instead of asked again.
 - **Chat keeps your place: unread counts, a New line, and quick reactions.**
   Each room shows how many messages wait for you, the room name carries a
   dot when another room has news, a New line marks where you stopped
@@ -213,11 +217,6 @@ no write lost and nothing done twice.
   REL-12 tomorrow 9am”, “schedule Retro friday 3pm” or “what’s due today”
   into the palette; Sapha says what it will do, and changes nothing until Do
   it.
-- **Snooze anything in your inbox, and Remind me on issues, messages and
-  threads.** Put an inbox entry off until later today, tomorrow, next week
-  or a time you type in plain words, and it comes back unread then; Remind
-  me on an issue, a chat message or a space thread does the same for
-  something nobody told you about.
 
 <!-- latest:end -->
 

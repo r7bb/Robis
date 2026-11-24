@@ -14,7 +14,7 @@ Written to be checkable. Every row names a file you can open.
 | --- | --- |
 | Services | 5 (web, API, realtime gateway, worker, MCP server for agents) plus an optional ML service |
 | Database tables | 18 |
-| HTTP endpoints | 224 |
+| HTTP endpoints | 225 |
 | Tests | Counted in [docs/ROADMAP.md](docs/ROADMAP.md), the one place they are kept |
 | Screenshots | 35, all captured from the running app |
 | Measured throughput | ~3,600 req/s, zero errors |
@@ -206,6 +206,7 @@ JavaScript.
 | Snooze and Remind me: an entry put off waits under Later and comes back unread; a reminder of an issue, message or thread is a snoozed note to yourself, pushed at its time; times in plain words | `backend/api/src/routes/reminders.ts`, `shared/contracts/src/when.ts`, `frontend/components/inbox-entry.tsx` |
 | Sapha in the command palette: plain requests read in the browser into a dozen intents (status, priority, assignee, due day, new issue, reminder, meeting, open, search, go), changes shown on a card and done as the person only after Do it | `shared/contracts/src/sapha.ts`, `frontend/features/sapha/` |
 | Chat that keeps your place: unread counts per room, a New line, marking read while in view, and quick reactions on messages | `backend/api/src/routes/chat-reads.ts`, `frontend/features/chat/use-reads.ts`, `frontend/features/chat/message-reactions.tsx` |
+| Asked before? Up to five threads sharing two or more words with a draft title, answered first | `backend/api/src/spaces/similar.ts`, `frontend/features/spaces/asked-before.tsx` |
 | Space notifications: a reply tells the thread's author and the reply it answers, a marked answer tells its author once; stale news tells no one | `backend/worker/src/notify-spaces.ts` |
 | Mention notifications | `backend/worker/src/handlers.ts` |
 | Stale-issue nudges | `backend/worker/src/nudges.ts` |

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 import { ApiError, call } from '../../lib/api.ts';
 import { threadHref } from '../../lib/links.ts';
+import { AskedBefore } from './asked-before.tsx';
 import { KINDS, spacesKey, type ThreadKind } from './spaces-model.ts';
 
 /** Asking or sharing in a space: what kind of thread, a title, and the details. */
@@ -98,6 +99,7 @@ export function ThreadComposer({
           required
         />
       </label>
+      <AskedBefore workspaceId={workspaceId} title={title} />
       <label className="mt-3 block text-xs font-medium text-muted">
         Details
         <textarea

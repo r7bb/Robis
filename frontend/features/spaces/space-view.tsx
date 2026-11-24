@@ -11,6 +11,7 @@ import { spacesHref, threadHref } from '../../lib/links.ts';
 import { usePeople } from '../../lib/use-people.ts';
 import { REACTION_MARKS, type Reaction } from '../feed/feed-model.ts';
 import { useWorkspaceRole } from '../workspace/page-frame.tsx';
+import { SolvedChip } from './solved-chip.tsx';
 import {
   KINDS,
   repliesLine,
@@ -34,23 +35,6 @@ export function KindChip({ kind }: { kind: ThreadSummary['kind'] }) {
       className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ${KINDS[kind].tone}`}
     >
       {KINDS[kind].label}
-    </span>
-  );
-}
-
-export function SolvedChip() {
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-300 ring-1 ring-emerald-400/30">
-      <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3 w-3" fill="none">
-        <path
-          d="m3.5 8.5 3 3 6-7"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-      Solved
     </span>
   );
 }

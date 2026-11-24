@@ -19,7 +19,7 @@ way.
 `{ "error": "<code>", "message": "<words for people>" }`. A stranger to a
 workspace gets 404, never 403, so its existence is not given away.
 
-213 routes.
+214 routes.
 
 ## activity
 
@@ -1458,6 +1458,14 @@ Reply to a thread, or to a reply in it.
 - Body: `body` (required), `parentId`
 - Answers: 201
 - Name: `spaces.reply`
+
+### `GET /workspaces/{workspaceId}/space-threads/similar`
+
+Threads in any space here sharing words with a draft title, answered ones first: asked before? At most five.
+
+- Query: `q`
+- Answers: 200
+- Name: `spaces.similar`
 
 ## spaces
 
