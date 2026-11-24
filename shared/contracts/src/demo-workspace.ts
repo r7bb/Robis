@@ -74,6 +74,24 @@ This is a demo document. Edit it freely, or open it in a second window and type 
   ],
   /** The board's work planned in a two-week cycle from the day the demo is made. */
   cycle: { name: 'Relaunch, part one', days: 14 },
+  /** A template for the board's bugs, to file from. */
+  template: {
+    name: 'Bug report',
+    title: 'Bug:',
+    description: 'What happened:\n\nWhat should have happened:\n\nHow to see it:',
+    priority: 'HIGH',
+  },
+  /** A release three weeks out, with the work it must carry, by title. */
+  release: {
+    name: 'Relaunch 1.0',
+    days: 21,
+    issues: [
+      'Agree what the new home page must say',
+      'Draft the new navigation',
+      'Fix the contact form on small phones',
+      'Set up redirects from the old addresses',
+    ],
+  },
   /** An issue filed every week, as a team would. */
   repeat: {
     title: 'Weekly check of the site on small phones',

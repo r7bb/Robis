@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **The demo arrives with a template and a release** (2026-11-24). A new
+  demo workspace now keeps a Bug report template to file from, and a release
+  three weeks out carrying four of the board’s issues.
 - **Releases, with notes written when they ship** (2026-11-24). Plan a
   release, put issues from any board in it, watch how much is done, and Ship
   it to stamp it and get its notes, written from what was done, ready to

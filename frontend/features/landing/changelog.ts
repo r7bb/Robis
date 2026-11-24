@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'The demo arrives with a template and a release',
+    brief:
+      'A new demo workspace now keeps a Bug report template to file from, and a release three weeks out carrying four of the board’s issues.',
+    summary:
+      'Making a demo workspace now also keeps a Bug report template (a title to finish, a description with what happened, what should have and how to see it, and high priority), so Templates on the board has one to try, and plans Relaunch 1.0, aimed three weeks from that day on the maker’s calendar, carrying four of the board’s issues, one of them already done. The Releases page opens with it at 1 of 4 done.',
+    checked:
+      'The demo test now finds the template and the release with its four issues, one done, aimed after today. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Releases, with notes written when they ship',
     brief:
       'Plan a release, put issues from any board in it, watch how much is done, and Ship it to stamp it and get its notes, written from what was done, ready to copy.',

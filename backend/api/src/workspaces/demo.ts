@@ -6,11 +6,13 @@ import {
   documents,
   issueBlocks,
   issues,
+  issueTemplates,
   meetings,
   projects,
   projectUpdates,
   recordAudit,
   recurringIssues,
+  releases,
   type Tx,
   textSnapshot,
   workspaceMembers,
@@ -112,6 +114,31 @@ async function planDemoCycle(
   }
 }
 
+/** A release three weeks out on the maker's clock, carrying some of the board's work. */
+async function planDemoRelease(
+  tx: Tx,
+  owner: Owner,
+  workspaceId: string,
+  board: Awaited<ReturnType<typeof fillBoard>>,
+  zone: string,
+  now: Date,
+) {
+  const aimed = addDays(wallOf(now, zone), DEMO_WORKSPACE.release.days);
+  const [release] = await tx
+    .insert(releases)
+    .values({
+      workspaceId,
+      name: DEMO_WORKSPACE.release.name,
+      targetOn: `${aimed.year}-${String(aimed.month).padStart(2, '0')}-${String(aimed.day).padStart(2, '0')}`,
+      createdBy: owner.id,
+    })
+    .returning({ id: releases.id });
+  const carried = DEMO_WORKSPACE.release.issues.flatMap((title) => board.ids.get(title) ?? []);
+  if (carried.length > 0) {
+    await tx.update(issues).set({ releaseId: release!.id }).where(inArray(issues.id, carried));
+  }
+}
+
 /**
  * The board as a team would have it after a while: its own word on how it
  * is going, one issue waiting on another, and a weekly check filed for it.
@@ -156,12 +183,23 @@ async function fillBoardExtras(
     createdBy: owner.id,
   });
   await planDemoCycle(tx, owner, workspaceId, board, zone, now);
+  await planDemoRelease(tx, owner, workspaceId, board, zone, now);
+  await tx
+    .insert(issueTemplates)
+    .values({ workspaceId, ...DEMO_WORKSPACE.template, createdBy: owner.id });
   await recordAudit(tx, actor, {
     workspaceId,
     entityType: 'project',
     entityId: board.projectId,
     eventType: 'project.demo_filled',
-    payload: { update: true, blocks: blocks.length, repeats: 1, cycles: 1 },
+    payload: {
+      update: true,
+      blocks: blocks.length,
+      repeats: 1,
+      cycles: 1,
+      releases: 1,
+      templates: 1,
+    },
   });
 }
 

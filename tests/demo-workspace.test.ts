@@ -14,6 +14,12 @@ import { closeHarness, createActor, getHarness, request, resetDatabase } from '.
 beforeEach(resetDatabase);
 afterAll(closeHarness);
 
+/** Today in London, as the demo below is made there. */
+const wallDay = (now: Date) => {
+  const wall = wallOf(now, 'Europe/London');
+  return `${wall.year}-${String(wall.month).padStart(2, '0')}-${String(wall.day).padStart(2, '0')}`;
+};
+
 type Made = {
   workspace: { id: string; demo: boolean; role: string; name: string };
   projectId: string;
@@ -104,6 +110,24 @@ describe('the demo workspace', () => {
     expect(planned.cycles).toEqual([
       expect.objectContaining({ name: DEMO_WORKSPACE.cycle.name, total: notDone, done: 0 }),
     ]);
+
+    const templates = (await request(`${base}/issue-templates`, { actor: owner })).json();
+    expect(templates.templates).toEqual([
+      expect.objectContaining({ name: DEMO_WORKSPACE.template.name, priority: 'HIGH' }),
+    ]);
+    const releases = (await request(`${base}/releases`, { actor: owner })).json();
+    const inRelease = DEMO_WORKSPACE.issues.filter((issue) =>
+      (DEMO_WORKSPACE.release.issues as readonly string[]).includes(issue.title),
+    );
+    expect(releases.releases).toEqual([
+      expect.objectContaining({
+        name: DEMO_WORKSPACE.release.name,
+        shippedAt: null,
+        total: inRelease.length,
+        done: inRelease.filter((issue) => issue.status === 'DONE').length,
+      }),
+    ]);
+    expect(releases.releases[0].targetOn > wallDay(new Date())).toBe(true);
 
     const meetings = (await request(`${base}/meetings`, { actor: owner })).json();
     const notes = (

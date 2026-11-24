@@ -204,16 +204,15 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **The demo arrives with a template and a release.** A new demo workspace
+  now keeps a Bug report template to file from, and a release three weeks
+  out carrying four of the board’s issues.
 - **Releases, with notes written when they ship.** Plan a release, put
   issues from any board in it, watch how much is done, and Ship it to stamp
   it and get its notes, written from what was done, ready to copy.
 - **Issue templates.** Save any issue as a template, then file from it on
   any board: its title to finish, its description to fill in, its priority
   and labels come along.
-- **A notice the day before a cycle ends.** The day before a cycle’s last
-  day, everyone with an issue still open in it hears that it ends tomorrow
-  and how many of theirs are open, with a link to the board narrowed to the
-  cycle.
 
 <!-- latest:end -->
 
