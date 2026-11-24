@@ -98,6 +98,15 @@ describe('reading a request', () => {
     expect(read("what's blocking REL-4?")).toEqual({ kind: 'blockers', issueKey: 'REL-4' });
     expect(read('what is REL-4 waiting on')).toEqual({ kind: 'blockers', issueKey: 'REL-4' });
     expect(read('rel-4 blocked by')).toEqual({ kind: 'blockers', issueKey: 'REL-4' });
+    for (const asked of [
+      'who has REL-4?',
+      "who's working on REL-4",
+      'status of rel-4',
+      "how's REL-4 going",
+      'tell me about REL-4',
+    ]) {
+      expect(read(asked)).toEqual({ kind: 'about', issueKey: 'REL-4' });
+    }
   });
 
   test('a greeting, a polite word and her name change nothing', () => {
@@ -140,6 +149,7 @@ describe('saying what it will do', () => {
     expect(at('find vpn')).toBe('Search for “vpn”');
     expect(at('my day')).toBe('Show your day');
     expect(at('what is blocking REL-4')).toBe('What REL-4 waits on');
+    expect(at('who has REL-4')).toBe('How REL-4 stands');
   });
 
   test('which intents change something, and so need a yes', () => {

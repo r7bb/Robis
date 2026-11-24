@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Sapha answers: who has an issue, and how it stands** (2026-11-24). Ask
+  the palette “who has REL-4?”, “status of REL-4” or “how’s REL-4 going?”
+  and Sapha answers there: its status, who has it, when it is due, its
+  priority, and what it waits on.
 - **Project updates: the team’s word on how a board is going** (2026-11-24).
   A board can carry a short written update, marked on track, at risk or off
   track; the latest shows above the board and on the feed’s project card

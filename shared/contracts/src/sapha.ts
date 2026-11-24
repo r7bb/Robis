@@ -25,6 +25,8 @@ export type SaphaIntent =
   | { kind: 'open'; issueKey: string }
   /** A question: what an issue waits on, answered in the palette. */
   | { kind: 'blockers'; issueKey: string }
+  /** A question: who has an issue and how it stands, answered in the palette. */
+  | { kind: 'about'; issueKey: string }
   | { kind: 'search'; query: string }
   | { kind: 'go'; place: SaphaPlace };
 
@@ -34,6 +36,7 @@ export const LOOKING_INTENTS: ReadonlySet<SaphaIntent['kind']> = new Set([
   'search',
   'go',
   'blockers',
+  'about',
 ]);
 
 const KEY = '([a-z][a-z0-9]{0,9}-\\d{1,9})';
@@ -177,6 +180,10 @@ function looking(text: string, request: string): SaphaIntent | null {
   if (m) return { kind: 'blockers', issueKey: key(m[1]!) };
   m = new RegExp(`^(?:what (?:does|is) )?${KEY} (?:wait(?:ing)? on|blocked by)$`).exec(text);
   if (m) return { kind: 'blockers', issueKey: key(m[1]!) };
+  m = new RegExp(
+    `^(?:who(?:'s| is) (?:on|working on|doing|assigned(?: to)?)|who has|(?:what(?:'s| is) )?(?:the )?status of|how(?:'s| is)|tell me about|what about) ${KEY}(?: going| doing)?$`,
+  ).exec(text);
+  if (m) return { kind: 'about', issueKey: key(m[1]!) };
   m = new RegExp(`^(?:open |show |go to )?${KEY}$`).exec(text);
   if (m) return { kind: 'open', issueKey: key(m[1]!) };
   m = /^(?:find|search(?: for)?|look for|look up) (.+)$/.exec(text);
@@ -247,6 +254,8 @@ export function describeIntent(intent: SaphaIntent, _now: Date = new Date()): st
       return `Open ${intent.issueKey}`;
     case 'blockers':
       return `What ${intent.issueKey} waits on`;
+    case 'about':
+      return `How ${intent.issueKey} stands`;
     case 'search':
       return `Search for “${intent.query}”`;
     case 'go':
@@ -266,6 +275,7 @@ export const SAPHA_KINDS = [
   'schedule',
   'open',
   'blockers',
+  'about',
   'search',
   'go',
   'none',
@@ -333,6 +343,8 @@ function issueIntent(parts: SaphaParts, issueKey: string, now: Date): SaphaInten
       return { kind: 'open', issueKey };
     case 'blockers':
       return { kind: 'blockers', issueKey };
+    case 'about':
+      return { kind: 'about', issueKey };
     default:
       return null;
   }

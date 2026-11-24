@@ -11,8 +11,14 @@ import { placeOf } from './run-intent.ts';
 /** Shorter than this, a request is more likely a search than something to do. */
 const ASK_FROM = 8;
 
+/** A question about an issue, answered in the palette. */
+export type Question = { kind: 'blockers' | 'about'; issueKey: string };
+
 /** A change Sapha read, shown in the palette to be confirmed. */
-export type Proposal = Exclude<SaphaIntent, { kind: 'open' | 'search' | 'go' | 'blockers' }>;
+export type Proposal = Exclude<
+  SaphaIntent,
+  { kind: 'open' | 'search' | 'go' | 'blockers' | 'about' }
+>;
 
 /** What a role must be allowed to do for Sapha to offer the change. */
 function actionFor(intent: SaphaIntent): Action | undefined {
@@ -42,8 +48,8 @@ export function useSaphaCommand(
   query: string,
   propose: (intent: Proposal) => void,
   ask: (request: string) => void,
-  /** A question to answer in the palette: what an issue waits on. */
-  answer: (issueKey: string) => void,
+  /** A question to answer in the palette: what an issue waits on, or how it stands. */
+  answer: (question: Question) => void,
 ): Command[] {
   const router = useRouter();
   const { available } = useAssist(workspaceId);
@@ -62,7 +68,7 @@ export function useSaphaCommand(
       },
     ];
   }
-  if (intent.kind === 'blockers') {
+  if (intent.kind === 'blockers' || intent.kind === 'about') {
     return [
       {
         id: 'sapha',
@@ -70,7 +76,7 @@ export function useSaphaCommand(
         group: 'Sapha',
         hint: 'Answers here',
         keepOpen: true,
-        run: () => answer(intent.issueKey),
+        run: () => answer({ kind: intent.kind, issueKey: intent.issueKey }),
       },
     ];
   }

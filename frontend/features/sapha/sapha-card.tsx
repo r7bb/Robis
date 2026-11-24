@@ -7,7 +7,7 @@ import { useEffect, useRef } from 'react';
 import { useMyId } from '../../lib/use-people.ts';
 import { runIntent } from './run-intent.ts';
 
-type Change = Exclude<SaphaIntent, { kind: 'open' | 'search' | 'go' | 'blockers' }>;
+type Change = Exclude<SaphaIntent, { kind: 'open' | 'search' | 'go' | 'blockers' | 'about' }>;
 
 /**
  * What Sapha is about to do, and nothing done until Do it (Sapha, tier 0).

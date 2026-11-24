@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Sapha answers: who has an issue, and how it stands',
+    brief:
+      'Ask the palette “who has REL-4?”, “status of REL-4” or “how’s REL-4 going?” and Sapha answers there: its status, who has it, when it is due, its priority, and what it waits on.',
+    summary:
+      'Sapha answers a second kind of question about an issue. Asked who has it, its status, how it is going or about it, the palette shows its key and title, then how it stands in one line (status, who has it or that nobody does, its due day, and its priority when high or urgent), then what it still waits on, each a link, with a way to open it. All of it is read with your own access, as the issue page would be. Asked through the assistant, the same question opens the issue.',
+    checked:
+      'Reading tests for the question in five phrasings and the sentence shown. In the browser, “who has WEB-2?” answered that it is in progress, with its assignee, due Friday, high, and waiting on WEB-1. The keyboard journey. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Project updates: the team’s word on how a board is going',
     brief:
       'A board can carry a short written update, marked on track, at risk or off track; the latest shows above the board and on the feed’s project card beside the health worked out from its issues.',

@@ -20,7 +20,7 @@ import {
 import { SaphaAnswer } from '../sapha/sapha-answer.tsx';
 import { SaphaAsk } from '../sapha/sapha-ask.tsx';
 import { SaphaCard } from '../sapha/sapha-card.tsx';
-import { type Proposal, useSaphaCommand } from '../sapha/use-sapha-command.ts';
+import { type Proposal, type Question, useSaphaCommand } from '../sapha/use-sapha-command.ts';
 import { usePaletteSources } from './use-palette-sources.ts';
 
 /**
@@ -55,7 +55,7 @@ export function CommandPalette({
   // A request Sapha is asking the assistant to read (tier 1).
   const [asking, setAsking] = useState<string | null>(null);
   // An issue Sapha is answering about, in place of the list.
-  const [answering, setAnswering] = useState<string | null>(null);
+  const [answering, setAnswering] = useState<Question | null>(null);
   const parent = stack.at(-1);
   const sapha = useSaphaCommand(
     workspaceId,
@@ -402,7 +402,7 @@ function SaphaPane({
 }: {
   workspaceId: string;
   asking: string | null;
-  answering: string | null;
+  answering: Question | null;
   proposal: Proposal | null;
   onAsked: (intent: Proposal) => void;
   onBack: () => void;
@@ -418,7 +418,7 @@ function SaphaPane({
     return (
       <SaphaAnswer
         workspaceId={workspaceId}
-        issueKey={answering}
+        question={answering}
         onBack={onBack}
         onClose={onClose}
       />

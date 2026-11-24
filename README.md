@@ -204,6 +204,10 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Sapha answers: who has an issue, and how it stands.** Ask the palette
+  “who has REL-4?”, “status of REL-4” or “how’s REL-4 going?” and Sapha
+  answers there: its status, who has it, when it is due, its priority, and
+  what it waits on.
 - **Project updates: the team’s word on how a board is going.** A board can
   carry a short written update, marked on track, at risk or off track; the
   latest shows above the board and on the feed’s project card beside the
@@ -213,10 +217,6 @@ no write lost and nothing done twice.
   people who may no longer file issues, two opposite blocked-by links at
   once cannot make a loop, and assistance switched off sends nothing still
   waiting.
-- **Repeats: issues filed on a schedule.** A board can file an issue on a
-  schedule (every day, every weekday, every week on a day or every month on
-  a date) at an hour on the clock of whoever set it up, such as a weekly
-  release check.
 
 <!-- latest:end -->
 
