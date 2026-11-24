@@ -19,7 +19,7 @@ way.
 `{ "error": "<code>", "message": "<words for people>" }`. A stranger to a
 workspace gets 404, never 403, so its existence is not given away.
 
-241 routes.
+245 routes.
 
 ## activity
 
@@ -892,6 +892,38 @@ The issue a key such as REL-4 names in this workspace, in any case.
 
 - Answers: 200
 - Name: `issues.byKey`
+
+## issue-templates
+
+### `GET /workspaces/{workspaceId}/issue-templates`
+
+The workspace’s issue templates, by name.
+
+- Answers: 200
+- Name: `issueTemplates.list`
+
+### `POST /workspaces/{workspaceId}/issue-templates`
+
+Keep a template: a name, the title to start from, a description, a priority and labels.
+
+- Body: `name` (required), `title` (required), `description`, `priority`, `labelIds`
+- Answers: 201
+- Name: `issueTemplates.create`
+
+### `DELETE /workspaces/{workspaceId}/issue-templates/{templateId}`
+
+Remove a template; issues filed from it stay as they are.
+
+- Answers: 204
+- Name: `issueTemplates.remove`
+
+### `POST /workspaces/{workspaceId}/issue-templates/{templateId}/issues`
+
+File an issue from a template onto a board: its title (or the one given), description, priority and labels.
+
+- Body: `projectId` (required), `title`
+- Answers: 201
+- Name: `issueTemplates.file`
 
 ## issues
 

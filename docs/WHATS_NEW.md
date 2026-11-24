@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Issue templates** (2026-11-24). Save any issue as a template, then file
+  from it on any board: its title to finish, its description to fill in, its
+  priority and labels come along.
 - **A notice the day before a cycle ends** (2026-11-24). The day before a
   cycle’s last day, everyone with an issue still open in it hears that it
   ends tomorrow and how many of theirs are open, with a link to the board

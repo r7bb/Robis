@@ -21,6 +21,7 @@ import { githubContracts } from './github.ts';
 import { importContracts } from './imports.ts';
 import { insightContracts } from './insights.ts';
 import { issueBlockContracts } from './issue-blocks.ts';
+import { issueTemplateContracts } from './issue-templates.ts';
 import { issueContracts } from './issues.ts';
 import { bulkIssueContracts } from './issues-bulk.ts';
 import { labelContracts } from './labels.ts';
@@ -104,6 +105,7 @@ export {
   SUGGESTION_DAYS,
 } from './insights.ts';
 export { BLOCKERS_MAX } from './issue-blocks.ts';
+export { ISSUE_TEMPLATES_MAX } from './issue-templates.ts';
 export {
   BULK_ISSUES_MAX,
   BULK_SKIP_REASONS,
@@ -154,6 +156,7 @@ export const contracts = {
   ...notificationContracts,
   ...reminderContracts,
   ...repeatContracts,
+  ...issueTemplateContracts,
   ...notificationSettingContracts,
   ...unsubscribeContracts,
   ...pushContracts,

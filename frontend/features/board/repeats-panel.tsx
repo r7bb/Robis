@@ -10,9 +10,10 @@ import {
   type ResponseOf,
 } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { type FormEvent, useEffect, useRef, useState } from 'react';
+import { type FormEvent, useState } from 'react';
 import { call } from '../../lib/api.ts';
 import { dateFormat } from '../../lib/i18n/format.ts';
+import { useDropdown } from '../../lib/use-dropdown.ts';
 
 type Repeat = ResponseOf<(typeof contracts)['repeats.list']>['repeats'][number];
 
@@ -80,24 +81,8 @@ export function RepeatsPanel({
   /** Whether this person may file issues here, and so set up repeats. */
   allowed: boolean;
 }) {
-  const [open, setOpen] = useState(false);
-  const box = useRef<HTMLDivElement>(null);
   // A dropdown: a click away or Escape closes it.
-  useEffect(() => {
-    if (!open) return;
-    const away = (event: MouseEvent) => {
-      if (!box.current?.contains(event.target as Node)) setOpen(false);
-    };
-    const onEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('mousedown', away);
-    document.addEventListener('keydown', onEscape);
-    return () => {
-      document.removeEventListener('mousedown', away);
-      document.removeEventListener('keydown', onEscape);
-    };
-  }, [open]);
+  const { open, setOpen, box } = useDropdown();
   const repeats = useQuery({
     queryKey: ['repeats', workspaceId, projectId],
     queryFn: () => call(contracts['repeats.list'], { params: { workspaceId, projectId } }),

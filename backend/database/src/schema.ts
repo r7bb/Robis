@@ -798,6 +798,30 @@ export const projectUpdates = pgTable(
 );
 
 /**
+ * An issue template: a starting point for a kind of issue (a title to
+ * finish, the description to fill in, a priority and labels), kept for the
+ * workspace and filed onto any of its boards. Labels are kept by id; one
+ * removed since is left off when the template is used.
+ */
+export const issueTemplates = pgTable(
+  'issue_templates',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    title: text('title').notNull(),
+    description: text('description'),
+    priority: text('priority', { enum: ISSUE_PRIORITIES }).notNull().default('NONE'),
+    labelIds: uuid('label_ids').array().notNull().default(sql`'{}'::uuid[]`),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [index('issue_templates_workspace_idx').on(t.workspaceId, t.name)],
+);
+
+/**
  * An issue filed on a schedule (Repeats): a title and its settings, a
  * cadence and an hour on the clock of whoever set it up, and when it is
  * next due. The API files it then, as that person would, and works out the

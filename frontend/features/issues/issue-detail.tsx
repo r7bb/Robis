@@ -20,6 +20,7 @@ import { remembered } from '../../lib/remembered.ts';
 import { useCommands } from '../command/command-provider.tsx';
 import { CyclePicker } from '../cycles/cycle-picker.tsx';
 import { RemindMe } from '../reminders/remind-me.tsx';
+import { SaveAsTemplate } from '../templates/save-as-template.tsx';
 import { IssueAttachments } from './attachments.tsx';
 import { BlockedBy } from './blocked-by.tsx';
 import { DueField } from './due-field.tsx';
@@ -219,6 +220,12 @@ export function IssueDetail({
             <Field label="Reminder">
               <RemindMe workspaceId={workspaceId} about="issue" id={issueId} />
             </Field>
+
+            {may(role, 'newIssue') ? (
+              <Field label="Template">
+                <SaveAsTemplate workspaceId={workspaceId} issue={data} />
+              </Field>
+            ) : null}
 
             <Field label="Part of">
               <ParentPicker

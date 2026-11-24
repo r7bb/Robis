@@ -57,6 +57,7 @@ import { importRoutes } from './routes/imports.ts';
 import { insightRoutes } from './routes/insights.ts';
 import { invitationRoutes } from './routes/invitations.ts';
 import { issueBlockRoutes } from './routes/issue-blocks.ts';
+import { issueTemplateRoutes } from './routes/issue-templates.ts';
 import { issueRoutes } from './routes/issues.ts';
 import { bulkIssueRoutes } from './routes/issues-bulk.ts';
 import { labelRoutes } from './routes/labels.ts';
@@ -357,6 +358,7 @@ export function buildApp({
   app.register(cycleRoutes, { db });
   app.register(currentCycleRoutes, { db });
   app.register(cycleBurnUpRoutes, { db });
+  app.register(issueTemplateRoutes, { db });
   app.register(projectUpdateRoutes, { db });
   app.register(repeatRoutes, { db });
   app.register(workloadRoutes, { db });

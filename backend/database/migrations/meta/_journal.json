@@ -645,6 +645,13 @@
       "when": 1795555061675,
       "tag": "0091_drop_cycle_notice_marker",
       "breakpoints": true
+    },
+    {
+      "idx": 92,
+      "version": "7",
+      "when": 1795556913834,
+      "tag": "0092_issue_templates",
+      "breakpoints": true
     }
   ]
 }

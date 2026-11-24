@@ -204,6 +204,9 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Issue templates.** Save any issue as a template, then file from it on
+  any board: its title to finish, its description to fill in, its priority
+  and labels come along.
 - **A notice the day before a cycle ends.** The day before a cycle’s last
   day, everyone with an issue still open in it hears that it ends tomorrow
   and how many of theirs are open, with a link to the board narrowed to the
@@ -211,9 +214,6 @@ no write lost and nothing done twice.
 - **Workload for the cycles running now.** While a cycle runs, Workload on
   Insights can count only what each person has planned in the cycles running
   now, rather than everything open.
-- **A burn-up chart for the cycle.** Chart on the cycle bar draws how much
-  of the cycle was done by the end of each day so far, against a dashed line
-  of an even pace to all of it by the last day.
 
 <!-- latest:end -->
 

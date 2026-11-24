@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Issue templates',
+    brief:
+      'Save any issue as a template, then file from it on any board: its title to finish, its description to fill in, its priority and labels come along.',
+    summary:
+      'Save as template on an issue keeps its title, description, priority and labels for the workspace under a name. Templates on any board lists them: choose one, finish its title (one ending in a colon leaves room to carry on), and File it puts the issue on that board with the description, priority and labels already set, in one step, as filing it by hand would. A label removed since is simply left off. Members make and use templates; guests do not; whoever made one, or an admin, removes it, and issues filed from it stay as they are. A workspace keeps up to fifty.',
+    checked:
+      'Five tests through the API: a template made, listed and filed with its description, priority and labels; its own title used when none is given and a removed label left off; a label from another workspace refused, and a board from one not found; a guest unable to make or file and a member unable to remove another’s, while its maker can; another workspace’s template not found. In the browser, a bug issue saved as Bug report and filed from the board as Bug: the login loops, high priority with its label. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'A notice the day before a cycle ends',
     brief:
       'The day before a cycle’s last day, everyone with an issue still open in it hears that it ends tomorrow and how many of theirs are open, with a link to the board narrowed to the cycle.',

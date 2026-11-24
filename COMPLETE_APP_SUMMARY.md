@@ -14,7 +14,7 @@ Written to be checkable. Every row names a file you can open.
 | --- | --- |
 | Services | 5 (web, API, realtime gateway, worker, MCP server for agents) plus an optional ML service |
 | Database tables | 18 |
-| HTTP endpoints | 252 |
+| HTTP endpoints | 256 |
 | Tests | Counted in [docs/ROADMAP.md](docs/ROADMAP.md), the one place they are kept |
 | Screenshots | 35, all captured from the running app |
 | Measured throughput | ~3,600 req/s, zero errors |
@@ -217,6 +217,7 @@ JavaScript.
 | Repeats: issues filed on a board on a schedule at an hour on the creator's clock, by the API's runner, once each time due | `shared/contracts/src/repeats.ts`, `backend/api/src/repeats/run.ts`, `backend/api/src/routes/repeats.ts`, `frontend/features/board/repeats-panel.tsx` |
 | Project updates: a short written status marked on track, at risk or off track, above the board and on the feed's project card | `backend/api/src/routes/project-updates.ts`, `frontend/features/projects/` |
 | Cycles: a board's work planned in stretches of days, issues put in one of their own board's, progress and days left on the board, and a cycle filter | `backend/api/src/routes/cycles.ts`, `frontend/features/cycles/` |
+| Issue templates: a starting point for a kind of issue (title, description, priority, labels) kept for the workspace, saved from any issue and filed onto any board from Templates, its labels set in the same transaction; a label removed since is left off; whoever made one or an admin removes it | `backend/api/src/routes/issue-templates.ts`, `frontend/features/templates/` |
 | Cycle burn-up: on the cycle bar, Chart draws done by the end of each day so far, from when each issue was last moved to done on the person's own calendar, against a dashed even pace to all of it by the last day; hover names a day, screen readers get a sentence and every day | `backend/api/src/routes/cycle-burnup.ts`, `shared/contracts/src/burn-up.ts`, `frontend/features/cycles/burn-up-chart.tsx` |
 | Cycle ending notice: the day before a cycle's last day, from nine on the planner's clock, each person with an issue still open in it is told once for that end date, in the inbox and by their mail and push settings, with how many are theirs; a setting turns it off | `backend/worker/src/cycle-ending.ts`, `frontend/components/inbox-entry.tsx` |
 | Left over: when a cycle ended with issues neither done nor canceled, the board says how many, and one press moves them to the cycle running or the next, each move recorded as an edit | `backend/api/src/routes/cycles.ts`, `frontend/features/cycles/left-over.ts`, `frontend/features/cycles/left-over-line.tsx` |
