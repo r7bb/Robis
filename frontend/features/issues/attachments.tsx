@@ -209,6 +209,7 @@ export function IssueAttachments({
             <input
               ref={fileInput}
               type="file"
+              aria-label="Choose pictures"
               accept="image/*"
               multiple
               className="sr-only"
@@ -221,6 +222,7 @@ export function IssueAttachments({
             <input
               ref={cameraInput}
               type="file"
+              aria-label="Take a photo"
               accept="image/*"
               capture="environment"
               className="sr-only"

@@ -47,18 +47,32 @@ describe('theme definitions', () => {
    */
   test('content has adequate contrast against the surface in every theme', () => {
     for (const id of THEME_IDS) {
-      const { surface, content, muted } = THEMES[id].tokens;
+      const { surface, raised, content, muted, faint } = THEMES[id].tokens;
 
-      expect(contrastRatio(content, surface), `${id} content`).toBeGreaterThanOrEqual(4.5);
-      // Secondary text is allowed to be dimmer, but still has to be legible.
-      expect(contrastRatio(muted, surface), `${id} muted`).toBeGreaterThanOrEqual(3);
+      // WCAG AA for small text (C9): 4.5:1, on the page and on a card, for
+      // every text colour, the dimmest included, since all of them are used
+      // for words people have to read.
+      for (const [name, colour] of Object.entries({ content, muted, faint })) {
+        expect(contrastRatio(colour, surface), `${id} ${name} on surface`).toBeGreaterThanOrEqual(
+          4.5,
+        );
+        expect(contrastRatio(colour, raised), `${id} ${name} on raised`).toBeGreaterThanOrEqual(
+          4.5,
+        );
+      }
     }
   });
 
   test('accent contrast text is readable on the accent', () => {
     for (const id of THEME_IDS) {
       const { accent, accentContrast } = THEMES[id].tokens;
-      expect(contrastRatio(accentContrast, accent), `${id} accent`).toBeGreaterThanOrEqual(3);
+      // Buttons carry small text, so AA for small text (C9), hovered too.
+      expect(contrastRatio(accentContrast, accent), `${id} accent`).toBeGreaterThanOrEqual(4.5);
+      const { accentHover } = THEMES[id].tokens;
+      expect(
+        contrastRatio(accentContrast, accentHover),
+        `${id} accent hovered`,
+      ).toBeGreaterThanOrEqual(4.5);
     }
   });
 

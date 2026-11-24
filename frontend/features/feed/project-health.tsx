@@ -56,7 +56,6 @@ function HealthCard({ workspaceId, project }: { workspaceId: string; project: Pr
   return (
     <Link
       href={boardHref(workspaceId, project.id)}
-      aria-label={`${project.name}: ${label}. ${facts.join(', ')}. Open the board.`}
       className="group block rounded-xl border border-line bg-raised p-3.5 transition-[border-color,background-color] duration-200 hover:border-accent-soft/40 hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
     >
       <div className="flex items-start justify-between gap-3">

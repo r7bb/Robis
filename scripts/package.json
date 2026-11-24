@@ -13,6 +13,7 @@
     "@robis/web": "workspace:*",
     "@robis/worker": "workspace:*",
     "@types/smtp-server": "3.5.13",
+    "axe-core": "4.14.1",
     "drizzle-orm": "^0.45.4",
     "embedded-postgres": "18.4.0-beta.17",
     "postgres": "^3.4.9",

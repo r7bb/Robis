@@ -134,6 +134,7 @@ export function PostComposer({
       <input
         ref={fileInput}
         type="file"
+        aria-label="Choose pictures"
         accept="image/*"
         className="sr-only"
         tabIndex={-1}

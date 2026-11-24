@@ -12,12 +12,15 @@ export function PaletteButton({ className = '' }: { className?: string }) {
     <button
       type="button"
       onClick={open}
-      aria-label="Open the command palette"
       title={`Command palette (${mod} K)`}
       className={`flex items-center gap-0.5 rounded px-1 py-0.5 transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft ${className}`}
     >
-      <Kbd>{mod}</Kbd>
-      <Kbd>K</Kbd>
+      {/* Named by hidden text, with the shortcut shown but not read (C9). */}
+      <span className="sr-only">Open the command palette</span>
+      <span aria-hidden="true" className="flex items-center gap-0.5">
+        <Kbd>{mod}</Kbd>
+        <Kbd>K</Kbd>
+      </span>
     </button>
   );
 }

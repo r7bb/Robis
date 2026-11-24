@@ -160,3 +160,10 @@ tool only: it is never shipped with Robis.
 Scans every built image for known vulnerabilities in the `containers` job.
 It is never shipped with Robis.
 
+
+**axe-core** (`axe-core@4.14.1`, pinned), Mozilla Public License 2.0, by
+Deque Systems. Checks every page the screenshot script captures for
+accessibility problems in the `containers` job's browser journeys (C9). A
+development tool only: it is injected into the test browser and never shipped
+with Robis. Flagged for review: MPL 2.0 is a file-level copyleft; this
+project does not modify or redistribute axe-core's files.

@@ -50,9 +50,11 @@ export const THEMES: Record<ThemeId, Theme> = {
     id: 'midnight',
     label: 'Midnight',
     colorScheme: 'dark',
-    swatch: '#6366f1',
+    swatch: '#5b5dee',
     // Softer, warmer neutrals than the blue slate it had (idea 8): the
-    // interface recedes and the work in it reads first. Accent unchanged.
+    // interface recedes and the work in it reads first. The accent is a
+    // shade deeper than the logo's indigo, so white on a button meets 4.5:1
+    // (C9); the logo keeps its own.
     tokens: {
       surface: '15 15 17',
       raised: '23 23 26',
@@ -60,8 +62,9 @@ export const THEMES: Record<ThemeId, Theme> = {
       content: '231 229 226',
       muted: '166 162 158',
       faint: '145 141 137',
-      accent: '99 102 241',
-      accentHover: '129 140 248',
+      accent: '91 93 238',
+      // Darker on hover, not lighter: white on the lighter shade was 3:1.
+      accentHover: '79 70 229',
       accentSoft: '165 180 252',
       accentContrast: '255 255 255',
     },

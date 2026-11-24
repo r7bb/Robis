@@ -1,6 +1,7 @@
 'use client';
 
 import { type RefObject, useEffect, useRef, useState } from 'react';
+import { useReducedMotion } from '../../lib/use-reduced-motion.ts';
 import {
   FIELD_MODES,
   type FieldMode,
@@ -114,6 +115,10 @@ export function Field({
   // must never cause a React render.
   const live = useRef({ mode, pulseAt: Number.NEGATIVE_INFINITY, redraw: () => {} });
 
+  // Followed live: turning reduced motion on with the page open stills the
+  // field at once, and off sets it moving again (C9).
+  const reduced = useReducedMotion();
+
   useEffect(() => {
     live.current.mode = mode;
     live.current.redraw();
@@ -159,7 +164,6 @@ export function Field({
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
     // Decided once rather than per frame: under reduced motion time stands
     // still, swells and repeating rings are off, and formations land at once.
@@ -289,7 +293,7 @@ export function Field({
       // twice on the same canvas, and a context lost on the first cleanup is
       // the one the second run gets back, which leaves the field blank.
     };
-  }, [generation, activityAt]);
+  }, [generation, activityAt, reduced]);
 
   return (
     // Hidden from assistive technology by the caller's wrapper, which is

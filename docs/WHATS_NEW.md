@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Accessibility checked on every page, and what it found fixed**
+  (2026-11-24). axe now checks every page the screenshots capture, on three
+  themes, in CI, and the contrast, naming and keyboard problems it found are
+  fixed.
 - **Share a photo or link to Robis from a phone** (2026-11-24). With Robis
   installed, a photo, a link or some words shared from another app become an
   issue on the board you pick, with or without a signal.

@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Accessibility checked on every page, and what it found fixed',
+    brief:
+      'axe now checks every page the screenshots capture, on three themes, in CI, and the contrast, naming and keyboard problems it found are fixed.',
+    summary:
+      'A browser journey runs axe-core against the WCAG 2.1 A and AA rules on every page the screenshot script captures, signed out and signed in, on the default, the light and a green theme, with the inbox open and an issue being edited, and any serious or critical finding fails CI. It found real problems, now fixed: white on the default indigo button was 4.47:1, so the indigo is a shade deeper and darkens on hover instead of lightening; status, priority and label colours made for dark themes now take their deeper shades on the light one; the landing page’s inactive steps were dimmed past reading; hidden photo and camera inputs had no names; the issue’s status, priority and assignee menus had none either; the Inbox, chat and palette buttons were named in words that did not match what they show; and the calendar’s scrolling week could not be reached from the keyboard. The landing page’s WebGL field, already still under reduced motion, now also stills the moment reduced motion is turned on with the page open. The theme tests now hold every text colour, and button text hovered or not, to 4.5:1 in every theme.',
+    checked:
+      'The accessibility journey passes on 31 pages and states, and counts the landing field’s animation frames: moving normally, none once reduced motion is turned on, none when it was on from the start. The theme tests check 4.5:1 for content, muted and faint text on the page and on cards, and for button text on the accent and its hover, in all six themes. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Share a photo or link to Robis from a phone',
     brief:
       'With Robis installed, a photo, a link or some words shared from another app become an issue on the board you pick, with or without a signal.',

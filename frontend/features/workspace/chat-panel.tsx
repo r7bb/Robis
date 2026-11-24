@@ -180,11 +180,12 @@ export function ChatPanel({
         <button
           type="button"
           onClick={() => closeChat(panel)}
-          aria-label="Hide chat"
           title="Hide chat (Ctrl `)"
           className="flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-xs text-muted transition-colors hover:bg-surface hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
         >
-          <span className="hidden xl:inline-flex">
+          {/* Named by hidden text, with the shortcut shown but not read (C9). */}
+          <span className="sr-only">Hide chat</span>
+          <span aria-hidden="true" className="hidden xl:inline-flex">
             <Kbd>Ctrl</Kbd>
             <Kbd>`</Kbd>
           </span>

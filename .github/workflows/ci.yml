@@ -299,11 +299,17 @@ jobs:
       - name: Every board action without a mouse
         run: bun run scripts/smoke/keyboard.ts
 
+      # The accessibility journey injects axe-core (C9), a dev dependency;
+      # the rest of this job needs nothing installed.
+      - name: Install dependencies for the journeys
+        run: bun install --frozen-lockfile
+
       # Whole journeys in real Chrome (E1): sign-up through the mail sink,
       # an offline board write and reconnect, two people on one document,
       # chat delivery, a reschedule clearing answers, a guest with no write
-      # controls, and a stranger getting not found. On every push and pull
-      # request; a broken offline queue fails it.
+      # controls, and a stranger getting not found; then the C5 to C8 flows,
+      # and axe on every page the screenshot script captures, failing on any
+      # serious or critical finding (C9). On every push and pull request.
       - name: Browser journeys
         run: bun run scripts/journeys/run.ts
 

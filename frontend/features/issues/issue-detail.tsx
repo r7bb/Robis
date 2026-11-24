@@ -150,6 +150,7 @@ export function IssueDetail({
           <dl className="mt-6 grid gap-4 sm:grid-cols-3">
             <Field label="Status">
               <Select
+                label="Status"
                 value={data.status}
                 disabled={!canEdit}
                 onChange={(value) => update.mutate({ status: value as IssueStatus })}
@@ -162,6 +163,7 @@ export function IssueDetail({
 
             <Field label="Priority">
               <Select
+                label="Priority"
                 value={data.priority}
                 disabled={!canEdit}
                 onChange={(value) => update.mutate({ priority: value as IssuePriority })}
@@ -174,6 +176,7 @@ export function IssueDetail({
 
             <Field label="Assignee">
               <Select
+                label="Assignee"
                 value={data.assigneeId ?? ''}
                 disabled={!canEdit}
                 onChange={(value) => update.mutate({ assigneeId: value || null })}
@@ -440,11 +443,14 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function Select({
+  label,
   value,
   options,
   onChange,
   disabled,
 }: {
+  /** Its name for assistive technology: the field's own heading (C9). */
+  label: string;
   value: string;
   options: { value: string; label: string }[];
   onChange: (value: string) => void;
@@ -452,6 +458,7 @@ function Select({
 }) {
   return (
     <select
+      aria-label={label}
       value={value}
       disabled={disabled}
       onChange={(event) => onChange(event.target.value)}

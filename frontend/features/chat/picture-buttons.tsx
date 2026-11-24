@@ -42,6 +42,7 @@ export function PictureButtons({
       <input
         ref={fileInput}
         type="file"
+        aria-label="Choose pictures"
         accept="image/*"
         multiple
         className="sr-only"
@@ -54,6 +55,7 @@ export function PictureButtons({
       <input
         ref={cameraInput}
         type="file"
+        aria-label="Take a photo"
         accept="image/*"
         capture="environment"
         className="sr-only"
@@ -68,7 +70,8 @@ export function PictureButtons({
         className={QUIET}
         disabled={disabled || sending}
         onClick={() => fileInput.current?.click()}
-        aria-label="Send a picture"
+        // Names start with the word shown, so speech control can say it (C9).
+        aria-label={sending ? 'Sending a picture' : 'Photo: send a picture'}
       >
         {sending ? 'Sending…' : 'Photo'}
       </button>
@@ -77,7 +80,7 @@ export function PictureButtons({
         className={QUIET}
         disabled={disabled || sending}
         onClick={() => (coarse ? cameraInput.current?.click() : setCamera(true))}
-        aria-label="Take a photo"
+        aria-label="Camera: take a photo"
       >
         Camera
       </button>

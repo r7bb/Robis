@@ -138,14 +138,15 @@ export function NotificationBell() {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        aria-label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'}
         aria-expanded={open}
         className="relative rounded-md px-2 py-1 text-sm text-muted hover:text-content"
       >
+        {/* Named by its own words, the count read as "N unread" (C9). */}
         Inbox
         {unread > 0 && (
           <span className="ml-1.5 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-semibold text-accent-contrast">
             {unread}
+            <span className="sr-only"> unread</span>
           </span>
         )}
       </button>

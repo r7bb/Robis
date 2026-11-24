@@ -188,7 +188,14 @@ export function WeekView({ workspaceId }: { workspaceId: string }) {
             </div>
           ))}
         </div>
-        <div ref={grid} className="max-h-[32rem] overflow-y-auto">
+        {/* Reachable by Tab, so the hours can be scrolled from the keyboard (C9). */}
+        <section
+          ref={grid}
+          // biome-ignore lint/a11y/noNoninteractiveTabindex: a scrollable area must take focus to be scrolled without a mouse (WCAG 2.1.1)
+          tabIndex={0}
+          aria-label="The week, hour by hour"
+          className="max-h-[32rem] overflow-y-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+        >
           <div className="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))]">
             <div className="relative" style={{ height: DAY_PX }} aria-hidden="true">
               {HOURS.map((hour) => (
@@ -205,7 +212,7 @@ export function WeekView({ workspaceId }: { workspaceId: string }) {
               <DayColumn key={dateKey(day)} day={day} zone={zone} meetings={meetingsOn(day)} />
             ))}
           </div>
-        </div>
+        </section>
       </div>
     </section>
   );

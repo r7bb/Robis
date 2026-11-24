@@ -27,8 +27,9 @@
       // Every script is run by name from the root package.json or CI.
       "entry": ["*/*.ts"],
       // Never imported: installed for the Postgres binaries it brings, which
-      // scripts/db/pg-paths.ts finds on disk.
-      "ignoreDependencies": ["embedded-postgres"]
+      // scripts/db/pg-paths.ts finds on disk; and axe-core, whose script the
+      // accessibility journey reads from disk and injects into the browser.
+      "ignoreDependencies": ["embedded-postgres", "axe-core"]
     },
     "tests": {
       "entry": ["*.test.ts"],

@@ -24,8 +24,8 @@
    * values match the Midnight theme's (warmer since idea 8).
    */
   --faint: 145 141 137;
-  --accent: 99 102 241;
-  --accent-hover: 129 140 248;
+  --accent: 91 93 238;
+  --accent-hover: 79 70 229;
   --accent-soft: 165 180 252;
   --accent-contrast: 255 255 255;
 }
@@ -372,8 +372,9 @@ body {
   transform: scaleY(var(--progress, 0));
 }
 
+/* Dimmed, but still readable: at 0.85 the muted line stays above 4.5:1 (C9). */
 [data-step][data-active="false"] {
-  opacity: 0.32;
+  opacity: 0.85;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -637,4 +638,32 @@ body {
     rgb(var(--accent-hover)),
     rgb(var(--accent-soft))
   );
+}
+
+/*
+ * Status, priority and label colours on a light theme (C9). They are the
+ * pale 200 and 300 shades, chosen to read on the dark themes; on a light
+ * page those fall well below 4.5:1, so each takes its 700 shade instead.
+ * One place, rather than a light variant on every badge.
+ */
+:root[data-scheme="light"] :is(.text-slate-300) {
+  color: rgb(51 65 85);
+}
+:root[data-scheme="light"] :is(.text-sky-200, .text-sky-300) {
+  color: rgb(3 105 161);
+}
+:root[data-scheme="light"] :is(.text-emerald-200, .text-emerald-300) {
+  color: rgb(4 120 87);
+}
+:root[data-scheme="light"] :is(.text-amber-200, .text-amber-300) {
+  color: rgb(180 83 9);
+}
+:root[data-scheme="light"] :is(.text-rose-200, .text-rose-300) {
+  color: rgb(190 18 60);
+}
+:root[data-scheme="light"] :is(.text-red-200) {
+  color: rgb(185 28 28);
+}
+:root[data-scheme="light"] :is(.text-violet-200, .text-violet-300) {
+  color: rgb(109 40 217);
 }

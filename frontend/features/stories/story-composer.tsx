@@ -243,6 +243,7 @@ function PhotoStep({ busy, onPost }: { busy: boolean; onPost: (image: Blob) => v
       <input
         ref={fileInput}
         type="file"
+        aria-label="Choose pictures"
         accept="image/*"
         className="sr-only"
         tabIndex={-1}
@@ -251,6 +252,7 @@ function PhotoStep({ busy, onPost }: { busy: boolean; onPost: (image: Blob) => v
       <input
         ref={cameraInput}
         type="file"
+        aria-label="Take a photo"
         accept="image/*"
         capture="environment"
         className="sr-only"

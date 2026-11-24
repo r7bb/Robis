@@ -24,6 +24,9 @@ export function useApplyTheme(themeId: ThemeId | string | null | undefined) {
     // dark dropdowns.
     root.style.colorScheme = theme.colorScheme;
     root.dataset.theme = theme.id;
+    // Lets status and label colours, chosen for dark themes, deepen on a
+    // light one, where their pale shades fall below 4.5:1 (C9).
+    root.dataset.scheme = theme.colorScheme;
   }, [themeId]);
 }
 
