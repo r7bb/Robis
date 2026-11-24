@@ -13,6 +13,8 @@ import { api, leave, type Person, person, project } from './people.ts';
 
 const TITLE = 'Broken sign by the lift';
 const LINK = 'https://example.com/the-sign';
+/** Half-second looks for the upload to land: a minute in all. */
+const SETTLE_TRIES = 120;
 
 export async function shareJourney(checks: Checks, port: number) {
   process.stdout.write('Sharing to Robis\n');
@@ -82,7 +84,9 @@ export async function shareJourney(checks: Checks, port: number) {
       return { attachments: attachments.length, link: comments.some((c) => c.body.includes(LINK)) };
     };
     let result = await settled();
-    for (let i = 0; i < 30 && !(result && result.attachments === 1 && result.link); i++) {
+    // The photo is queued, uploaded and resized after the board opens; a busy
+    // CI runner has taken longer than 15 s, so this allows a minute.
+    for (let i = 0; i < SETTLE_TRIES && !(result && result.attachments === 1 && result.link); i++) {
       await Bun.sleep(500);
       result = await settled();
     }
