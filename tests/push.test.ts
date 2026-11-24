@@ -252,6 +252,21 @@ describe('sending', () => {
     expect(sent).toHaveLength(1);
   });
 
+  test('one snoozed again before its push waits: no ping until its new time', async () => {
+    const { alice, bob, workspace, project, sent, push } = await setUp();
+    await give(alice, bob, workspace.id, project.id);
+    const { ownerDb, workerDb: db } = await getHarness();
+    // The notification is made; its push is left waiting in the queue.
+    await new Runner({ db, handlers, kinds: Object.keys(handlers) }).tick();
+    const [row] = await db.select().from(notifications).where(eq(notifications.userId, bob.id));
+    await ownerDb
+      .update(notifications)
+      .set({ snoozedUntil: new Date(Date.now() + 3_600_000) })
+      .where(eq(notifications.id, row!.id));
+    await push['push.notification']!({ notificationId: row!.id }, { db });
+    expect(sent).toHaveLength(0);
+  });
+
   test('a device the service says is gone is forgotten', async () => {
     const { alice, bob, workspace, project, push } = await setUp(410);
     await give(alice, bob, workspace.id, project.id);

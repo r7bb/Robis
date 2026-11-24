@@ -1567,6 +1567,11 @@ export const notifications = pgTable(
     /** When it was pushed to its person's devices (C3); a retry after that pushes nothing. */
     pushedAt: timestamp('pushed_at', { withTimezone: true }),
     readAt: timestamp('read_at', { withTimezone: true }),
+    /**
+     * Put off until then: listed under Later, out of the unread count, and
+     * back as unread once the time comes. Null for one never snoozed.
+     */
+    snoozedUntil: timestamp('snoozed_until', { withTimezone: true }),
     createdAt: createdAt(),
   },
   (t) => [

@@ -203,11 +203,15 @@ export function pushHandlers(deps: {
           workspaceId: notifications.workspaceId,
           kind: notifications.kind,
           pushedAt: notifications.pushedAt,
+          snoozedUntil: notifications.snoozedUntil,
         })
         .from(notifications)
         .where(eq(notifications.id, notificationId));
       // Dismissed, or pushed already (a retry after it went): nothing to do.
       if (!row || row.pushedAt) return;
+      // A reminder put off again since: its push waits for no one, and the
+      // inbox shows it when its new time comes.
+      if (row.snoozedUntil && row.snoozedUntil.getTime() > Date.now()) return;
       // Push turned off for this kind since it was made: stop here too.
       const channels = await channelsFor(db, [row.userId], row.kind as NotificationKind);
       if (!channels.get(row.userId)?.push) return;

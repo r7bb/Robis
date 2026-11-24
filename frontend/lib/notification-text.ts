@@ -1,3 +1,5 @@
+import { channelHref } from './links.ts';
+
 /**
  * What an inbox entry says about something done to you (C3): who did it,
  * what they did, and to what. Invitations and nudges speak for themselves
@@ -17,6 +19,8 @@ type Item = {
     change?: 'moved' | 'changed' | 'canceled';
     threadId?: string;
     replyId?: string;
+    channelId?: string;
+    messageId?: string;
   };
 };
 
@@ -63,6 +67,14 @@ export function describeNotification(item: Item): {
         subject: payload.title ?? 'a thread',
         body: payload.excerpt,
       };
+    case 'reminder':
+      // Set by the reader for themselves: no actor, only the subject.
+      return {
+        actor: 'Reminder',
+        did: 'about',
+        subject: payload.issueKey ?? payload.title ?? null,
+        body: payload.issueTitle ?? payload.excerpt,
+      };
     case 'space_answer':
       return {
         actor,
@@ -85,6 +97,9 @@ export function notificationHref(item: Item): string {
   const { payload, workspaceId } = item;
   if (payload.issueId && workspaceId) {
     return `/workspaces/${workspaceId}/issues/${payload.issueId}`;
+  }
+  if (payload.channelId && payload.messageId && workspaceId) {
+    return `${channelHref(workspaceId, payload.channelId)}#message-${payload.messageId}`;
   }
   if (payload.threadId && workspaceId) {
     const reply = payload.replyId ? `#reply-${payload.replyId}` : '';

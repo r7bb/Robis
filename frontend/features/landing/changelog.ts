@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Snooze anything in your inbox, and Remind me on issues, messages and threads',
+    brief:
+      'Put an inbox entry off until later today, tomorrow, next week or a time you type in plain words, and it comes back unread then; Remind me on an issue, a chat message or a space thread does the same for something nobody told you about.',
+    summary:
+      'Each inbox entry has Snooze: Later today, Tomorrow, Next week, or a time typed as you would say it (“in 2 hours”, “friday 3pm”, “tomorrow at 17:30”), read back before it is set. A snoozed entry waits under a new Later tab, soonest first, out of the unread count and out of Mark all read, and returns unread at the top when its time comes; Bring back returns it at once. Remind me, on an issue, beside a chat message and on a space thread, sets the same kind of entry for yourself alone, which names what it is about and leads back to it; where a device takes pushes, one is sent at that time and not before. Times are read on your own clock, must be ahead and within 90 days, and anything not understood sets nothing. Thirty reminders an hour, and two hundred waiting, per person.',
+    checked:
+      'Eight tests of the plain-words reader (spans, tomorrow, weekdays, a time alone, past or impossible times refused, the presets), five of snooze through the API (out of the count and Mark all read, back unread and first, brought back early, refused times, nobody else’s entry), five of reminders (an issue, a message and a thread with their links, the push queued for its time, another workspace not found, a guest’s own), the inbox’s Later tab, and the push held for one snoozed again. The phone, accessibility, keyboard, Spaces and chat journeys. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Snooze and reminders',
+      where: 'The inbox (Snooze, Later), and Remind me on issues, chat messages and space threads',
+      layers: [
+        'Screen: Snooze with three choices or typed words, a Later tab with Bring back, and Remind me',
+        'API: notifications.snooze and reminders.create, times checked to be ahead and near',
+        'Worker: a reminder’s push sent at its time, held if it was put off again',
+      ],
+    },
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Search finds chat, spaces and meetings too',
     brief:
       'The search box, the search page and the command palette now find chat messages, space threads and their replies, and meetings, each opening right where it is.',

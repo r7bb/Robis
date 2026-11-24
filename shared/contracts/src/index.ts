@@ -27,3 +27,4 @@ export * from './text.ts';
 export * from './themes.ts';
 export * from './usernames.ts';
 export * from './uuid.ts';
+export * from './when.ts';

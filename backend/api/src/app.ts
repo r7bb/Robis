@@ -65,6 +65,7 @@ import { postRoutes } from './routes/posts.ts';
 import { profileRoutes } from './routes/profiles.ts';
 import { projectRoutes } from './routes/projects.ts';
 import { pushKey, pushRoutes } from './routes/push.ts';
+import { reminderRoutes } from './routes/reminders.ts';
 import { savedViewRoutes } from './routes/saved-views.ts';
 import { searchRoutes } from './routes/search.ts';
 import { signupRoutes } from './routes/signup.ts';
@@ -339,6 +340,7 @@ export function buildApp({
   app.register(channelRoutes, { db });
   app.register(meetingRoutes, { db });
   app.register(notificationRoutes, { db });
+  app.register(reminderRoutes, { db });
   app.register(notificationSettingRoutes, { db, limits });
   app.register(pushRoutes, { db, limits, publicKey: pushKey(env.VAPID_PUBLIC_KEY) });
   app.register(auditRoutes, { db, limits });

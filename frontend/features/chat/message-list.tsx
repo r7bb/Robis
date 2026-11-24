@@ -10,6 +10,7 @@ import { personHref } from '../../lib/links.ts';
 import { formatDaySeparator, formatExact, formatTime, isSameDay } from '../../lib/time.ts';
 import { useScrollToHash } from '../../lib/use-scroll-to-hash.ts';
 import { IssueFromMessage } from '../assist/issue-from-message.tsx';
+import { RemindMe } from '../reminders/remind-me.tsx';
 import { StoryRing } from '../stories/story-ring.tsx';
 import { MessageBody } from './message-body.tsx';
 import type { ChatMessage } from './types.ts';
@@ -222,6 +223,7 @@ function MessageRow({
       </div>
 
       {message.body ? <IssueFromMessage workspaceId={workspaceId} messageId={message.id} /> : null}
+      <RemindMe workspaceId={workspaceId} about="message" id={message.id} subtle />
       {deletable ? (
         <button
           type="button"

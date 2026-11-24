@@ -2,79 +2,18 @@
 
 import { contracts } from '@robis/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { call, type NotificationItem } from '../lib/api.ts';
+import { call } from '../lib/api.ts';
 import { INBOX_TAB_NAMES, INBOX_TABS, type InboxTab, splitInbox } from '../lib/inbox-tabs.ts';
-import { describeNotification, notificationHref } from '../lib/notification-text.ts';
 import { useInbox } from '../lib/use-inbox.ts';
+import { InboxEntry } from './inbox-entry.tsx';
 
-/**
- * Where a notification takes you.
- *
- * A nudge about creating your first workspace has no workspace to link to, so
- * it falls back to the index -- which is exactly where the action is.
- */
-function hrefFor(item: NotificationItem): string {
-  // A nudge opens its guide rather than dumping the reader somewhere and
-  // leaving them to work out what was being suggested.
-  if (item.kind === 'nudge' && item.payload.nudge) {
-    const workspace = item.workspaceId ? `?w=${item.workspaceId}` : '';
-    return `/guide/${item.payload.nudge}${workspace}`;
-  }
-
-  // Not a member yet: the answer is on the workspaces page.
-  if (item.kind === 'invitation') return '/workspaces';
-
-  // A workspace export is ready (C6): downloaded from the People page.
-  if (item.kind === 'export' && item.workspaceId) {
-    return `/workspaces/${item.workspaceId}/people#exports`;
-  }
-
-  return notificationHref(item);
-}
-
-function headlineFor(item: NotificationItem) {
-  if (item.kind === 'nudge') return item.payload.title ?? 'Suggestion';
-
-  if (item.kind === 'export') {
-    return (
-      <>
-        The export of{' '}
-        <span className="font-medium">{item.payload.workspaceName ?? 'a workspace'}</span> is ready
-      </>
-    );
-  }
-
-  if (item.kind === 'invitation') {
-    return (
-      <>
-        <span className="font-medium">{item.actorName ?? 'Someone'}</span> invited you to{' '}
-        <span className="font-medium">{item.payload.workspaceName ?? 'a workspace'}</span>
-      </>
-    );
-  }
-
-  // A mention, a comment on your issue, an assignment or a meeting change (C3).
-  const { actor, did, subject } = describeNotification(item);
-  const isIssue = item.kind !== 'meeting';
-  return (
-    <>
-      <span className="font-medium">{actor}</span> {did}
-      {subject && (
-        <span className={isIssue ? 'ml-1 font-mono text-xs text-faint' : 'ml-1 font-medium'}>
-          {subject}
-        </span>
-      )}
-    </>
-  );
-}
-
-function bodyFor(item: NotificationItem): string | undefined {
-  if (item.kind === 'invitation') return 'Accept or decline it on your workspaces page.';
-  if (item.kind === 'export') return 'Download it once, from the People page.';
-  return item.kind === 'nudge' ? item.payload.body : describeNotification(item).body;
-}
+const EMPTY_LINES: Record<InboxTab, string> = {
+  priority:
+    'Nothing needs you. Mentions, issues given to you, invitations and meeting changes land here.',
+  other: 'Nothing else yet. Comments on your issues, replies in spaces and suggestions land here.',
+  later: 'Nothing snoozed. Snooze an entry to have it come back when it suits you.',
+};
 
 /**
  * Inbox for the signed-in user.
@@ -172,65 +111,19 @@ export function NotificationBell() {
           <InboxTabs current={tab} split={split} onChoose={setTab} />
 
           {items.length === 0 ? (
-            <p className="px-4 py-6 text-center text-sm text-faint">
-              {tab === 'priority'
-                ? 'Nothing needs you. Mentions, issues given to you, invitations and meeting changes land here.'
-                : 'Nothing else yet. Comments on your issues and suggestions land here.'}
-            </p>
+            <p className="px-4 py-6 text-center text-sm text-faint">{EMPTY_LINES[tab]}</p>
           ) : (
             <ul className="max-h-96 divide-y divide-line overflow-y-auto">
               {items.map((item) => (
-                <li
+                <InboxEntry
                   key={item.id}
-                  className={`flex items-start hover:bg-surface ${item.readAt ? 'opacity-60' : ''}`}
-                >
-                  <Link
-                    href={hrefFor(item)}
-                    onClick={() => {
-                      if (!item.readAt) markRead.mutate(item.id);
-                      setOpen(false);
-                    }}
-                    className="min-w-0 flex-1 px-4 py-3"
-                  >
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="text-sm text-content">{headlineFor(item)}</span>
-
-                      {!item.readAt && (
-                        <span
-                          aria-hidden
-                          className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent-soft"
-                        />
-                      )}
-                    </div>
-
-                    {bodyFor(item) && (
-                      <p className="mt-1 line-clamp-2 text-xs text-faint">{bodyFor(item)}</p>
-                    )}
-                  </Link>
-
-                  {/* No confirmation here: dismissing an inbox entry destroys
-                      nothing, and a modal per notification would be worse than
-                      the mistake it prevents. */}
-                  <button
-                    type="button"
-                    onClick={() => dismiss.mutate(item.id)}
-                    aria-label="Dismiss notification"
-                    title="Dismiss"
-                    className="mr-2 mt-2.5 shrink-0 rounded p-1.5 text-faint transition hover:bg-danger/10 hover:text-danger-soft"
-                  >
-                    <svg
-                      viewBox="0 0 16 16"
-                      aria-hidden="true"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      className="h-3.5 w-3.5"
-                    >
-                      <path d="M4 4l8 8M12 4l-8 8" />
-                    </svg>
-                  </button>
-                </li>
+                  item={item}
+                  onOpen={() => {
+                    if (!item.readAt) markRead.mutate(item.id);
+                    setOpen(false);
+                  }}
+                  onDismiss={() => dismiss.mutate(item.id)}
+                />
               ))}
             </ul>
           )}

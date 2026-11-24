@@ -113,7 +113,11 @@ function SearchResults() {
         </button>
       </form>
 
-      <nav aria-label="Kind of result" className="mt-4 flex gap-1 border-b border-line">
+      <nav
+        aria-label="Kind of result"
+        // Seven tabs outgrow a phone: the strip scrolls sideways, not the page.
+        className="mt-4 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-line [scrollbar-width:none]"
+      >
         {TABS.map((tab) => {
           const current = tab.kind === type;
           return (
@@ -122,7 +126,7 @@ function SearchResults() {
               href={searchHref(workspaceId, q, tab.kind)}
               aria-current={current ? 'page' : undefined}
               className={[
-                '-mb-px border-b-2 px-3 py-2 text-sm transition-colors',
+                '-mb-px shrink-0 whitespace-nowrap border-b-2 px-3 py-2 text-sm transition-colors',
                 current
                   ? 'border-accent text-content'
                   : 'border-transparent text-muted hover:text-content',

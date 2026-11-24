@@ -19,7 +19,7 @@ way.
 `{ "error": "<code>", "message": "<words for people>" }`. A stranger to a
 workspace gets 404, never 403, so its existence is not given away.
 
-207 routes.
+209 routes.
 
 ## activity
 
@@ -1111,7 +1111,7 @@ Hide someone’s posts from your Everyone feed. Nobody is told.
 
 ### `GET /notifications`
 
-Your last 100 notifications, newest first, with how many are unread.
+Your last 100 notifications, newest first (one back from a snooze counts from then), with how many are unread; snoozed ones are listed but not counted.
 
 - Query: `unread`
 - Answers: 200
@@ -1130,6 +1130,14 @@ Mark one notification read.
 
 - Answers: 200
 - Name: `notifications.read`
+
+### `PUT /notifications/{notificationId}/snooze`
+
+Put a notification off until a time up to 90 days ahead, back as unread then; null brings it back now.
+
+- Body: `until` (required)
+- Answers: 200
+- Name: `notifications.snooze`
 
 ### `POST /notifications/read-all`
 
@@ -1343,6 +1351,16 @@ The server's public push key, or null when web push is not set up.
 
 - Answers: 200
 - Name: `push.key`
+
+## reminders
+
+### `POST /workspaces/{workspaceId}/reminders`
+
+Be reminded of an issue, a chat message or a space thread at a time up to 90 days ahead, in your own inbox.
+
+- Body: `about` (required), `id` (required), `at` (required)
+- Answers: 201
+- Name: `reminders.create`
 
 ## search
 

@@ -6,6 +6,11 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Snooze anything in your inbox, and Remind me on issues, messages and
+  threads** (2026-11-24). Put an inbox entry off until later today,
+  tomorrow, next week or a time you type in plain words, and it comes back
+  unread then; Remind me on an issue, a chat message or a space thread does
+  the same for something nobody told you about.
 - **Search finds chat, spaces and meetings too** (2026-11-24). The search
   box, the search page and the command palette now find chat messages, space
   threads and their replies, and meetings, each opening right where it is.

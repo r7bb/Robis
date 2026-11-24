@@ -35,4 +35,21 @@ describe('the inbox in two', () => {
     expect(split.other.items.map((i) => i.id)).toEqual([1, 3]);
     expect(split.other.unread).toBe(1);
   });
+
+  test('what is snoozed waits under Later, soonest first, and counts as nothing yet', () => {
+    const now = Date.parse('2026-11-24T10:00:00Z');
+    const items = [
+      { id: 1, kind: 'mention', readAt: null, snoozedUntil: '2026-11-27T09:00:00Z' },
+      { id: 2, kind: 'issue_comment', readAt: null, snoozedUntil: '2026-11-25T09:00:00Z' },
+      // Its time has come: back where it belongs, unread.
+      { id: 3, kind: 'mention', readAt: null, snoozedUntil: '2026-11-24T09:00:00Z' },
+      { id: 4, kind: 'nudge', readAt: null, snoozedUntil: null },
+    ];
+    const split = splitInbox(items, now);
+    expect(split.later.items.map((i) => i.id)).toEqual([2, 1]);
+    expect(split.later.unread).toBe(0);
+    expect(split.priority.items.map((i) => i.id)).toEqual([3]);
+    expect(split.priority.unread).toBe(1);
+    expect(split.other.items.map((i) => i.id)).toEqual([4]);
+  });
 });

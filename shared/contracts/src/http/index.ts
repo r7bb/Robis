@@ -32,6 +32,7 @@ import { profileContracts } from './profiles.ts';
 import { projectContracts } from './projects.ts';
 import { pushContracts } from './push.ts';
 import { apiReference } from './reference.ts';
+import { reminderContracts } from './reminders.ts';
 import { savedViewContracts } from './saved-views.ts';
 import { spaceContracts } from './spaces.ts';
 import { storyContracts } from './stories.ts';
@@ -102,6 +103,7 @@ export {
 export { ISSUE_LABELS_MAX } from './labels.ts';
 export { MY_MEETINGS_LIMIT, MY_MEETINGS_MAX_HOURS } from './meetings.ts';
 export { TOKEN_LIFETIMES, TOKEN_SCOPES, TOKENS_MAX } from './personal-tokens.ts';
+export { REMINDER_SUBJECTS } from './reminders.ts';
 export { SAVED_VIEWS_PER_PROJECT } from './saved-views.ts';
 export {
   WEBHOOK_ATTEMPTS,
@@ -129,6 +131,7 @@ export const contracts = {
   ...channelContracts,
   ...meetingContracts,
   ...notificationContracts,
+  ...reminderContracts,
   ...notificationSettingContracts,
   ...unsubscribeContracts,
   ...pushContracts,

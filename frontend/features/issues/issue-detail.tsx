@@ -18,6 +18,7 @@ import { issueCommands } from '../../lib/page-commands.ts';
 import { may } from '../../lib/permissions.ts';
 import { remembered } from '../../lib/remembered.ts';
 import { useCommands } from '../command/command-provider.tsx';
+import { RemindMe } from '../reminders/remind-me.tsx';
 import { IssueAttachments } from './attachments.tsx';
 import { DueField } from './due-field.tsx';
 import { IssueInChat } from './issue-in-chat.tsx';
@@ -197,6 +198,10 @@ export function IssueDetail({
                 canEdit={canEdit}
                 onChange={(dueOn) => update.mutate({ dueOn })}
               />
+            </Field>
+
+            <Field label="Reminder">
+              <RemindMe workspaceId={workspaceId} about="issue" id={issueId} />
             </Field>
 
             <Field label="Part of">

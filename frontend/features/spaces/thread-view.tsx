@@ -13,6 +13,7 @@ import { useMyId, usePeople } from '../../lib/use-people.ts';
 import { useScrollToHash } from '../../lib/use-scroll-to-hash.ts';
 import type { Reaction } from '../feed/feed-model.ts';
 import { ReactionBar } from '../feed/reaction-bar.tsx';
+import { RemindMe } from '../reminders/remind-me.tsx';
 import { useWorkspaceRole } from '../workspace/page-frame.tsx';
 import { ReplyBox, ReplyList, type TreeContext } from './reply-tree.tsx';
 import { KindChip, SolvedChip } from './space-view.tsx';
@@ -96,16 +97,19 @@ function ThreadArticle({
           pending={react.isPending}
           onToggle={(reaction, on) => react.mutate({ reaction, on })}
         />
-        {mayRemove ? (
-          <button
-            type="button"
-            onClick={() => remove.mutate()}
-            disabled={remove.isPending}
-            className="ml-auto rounded-md px-2 py-1 text-xs text-muted hover:bg-surface hover:text-content disabled:opacity-50"
-          >
-            Take down the thread
-          </button>
-        ) : null}
+        <div className="ml-auto flex items-center gap-1">
+          <RemindMe workspaceId={workspaceId} about="thread" id={thread.id} />
+          {mayRemove ? (
+            <button
+              type="button"
+              onClick={() => remove.mutate()}
+              disabled={remove.isPending}
+              className="rounded-md px-2 py-1 text-xs text-muted hover:bg-surface hover:text-content disabled:opacity-50"
+            >
+              Take down the thread
+            </button>
+          ) : null}
+        </div>
       </div>
     </article>
   );

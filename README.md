@@ -204,6 +204,11 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Snooze anything in your inbox, and Remind me on issues, messages and
+  threads.** Put an inbox entry off until later today, tomorrow, next week
+  or a time you type in plain words, and it comes back unread then; Remind
+  me on an issue, a chat message or a space thread does the same for
+  something nobody told you about.
 - **Search finds chat, spaces and meetings too.** The search box, the search
   page and the command palette now find chat messages, space threads and
   their replies, and meetings, each opening right where it is.
@@ -211,11 +216,6 @@ no write lost and nothing done twice.
   Whoever asks hears of each reply, whoever is replied to hears too, and
   whoever answered hears once their reply is marked as the answer; each can
   be turned off like any other notification.
-- **Assistance you can turn on: summaries, draft agendas and issues from
-  chat.** With a provider key on the server and an admin switching it on, a
-  long thread or busy channel gets a Summarise button, a meeting a Draft
-  agenda, and a chat message Make an issue; all marked as generated and
-  saved nowhere until someone uses them.
 
 <!-- latest:end -->
 

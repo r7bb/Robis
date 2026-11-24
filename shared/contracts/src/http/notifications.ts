@@ -40,6 +40,8 @@ const notification = z.object({
   entityId: z.string().nullable(),
   payload,
   readAt: timestamp.nullable(),
+  /** Put off until then; in the future, it is waiting under Later. */
+  snoozedUntil: timestamp.nullable(),
   createdAt: timestamp,
   actorId: uuid.nullable(),
   actorName: z.string().nullable(),
@@ -49,7 +51,8 @@ export const notificationContracts = {
   'notifications.list': contract({
     method: 'GET',
     path: '/notifications',
-    summary: 'Your last 100 notifications, newest first, with how many are unread.',
+    summary:
+      'Your last 100 notifications, newest first (one back from a snooze counts from then), with how many are unread; snoozed ones are listed but not counted.',
     // `1` or `true` for unread only.
     query: z.object({ unread: z.string().optional() }),
     response: z.object({ notifications: z.array(notification), unreadCount: z.number().int() }),
@@ -68,6 +71,21 @@ export const notificationContracts = {
     params: notificationParams,
     status: 204,
     response: null,
+  }),
+  'notifications.snooze': contract({
+    method: 'PUT',
+    path: '/notifications/:notificationId/snooze',
+    summary:
+      'Put a notification off until a time up to 90 days ahead, back as unread then; null brings it back now.',
+    params: notificationParams,
+    body: z.object({ until: z.coerce.date().nullable() }),
+    response: z.object({
+      notification: z.object({
+        id: uuid,
+        readAt: timestamp.nullable(),
+        snoozedUntil: timestamp.nullable(),
+      }),
+    }),
   }),
   'notifications.readAll': contract({
     method: 'POST',
