@@ -6,6 +6,15 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Project updates: the team’s word on how a board is going** (2026-11-24).
+  A board can carry a short written update, marked on track, at risk or off
+  track; the latest shows above the board and on the feed’s project card
+  beside the health worked out from its issues.
+- **Fixes from a review of the day’s work** (2026-11-24). Six fixes from an
+  independent review: a repeat that fails no longer holds up the rest,
+  repeats stop for people who may no longer file issues, two opposite
+  blocked-by links at once cannot make a loop, and assistance switched off
+  sends nothing still waiting.
 - **Repeats: issues filed on a schedule** (2026-11-24). A board can file an
   issue on a schedule (every day, every weekday, every week on a day or
   every month on a date) at an hour on the clock of whoever set it up, such

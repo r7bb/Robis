@@ -46,6 +46,36 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Project updates: the team’s word on how a board is going',
+    brief:
+      'A board can carry a short written update, marked on track, at risk or off track; the latest shows above the board and on the feed’s project card beside the health worked out from its issues.',
+    summary:
+      'Members write a few words on how a board is going and pick on track, at risk or off track. The latest shows in a line above the board, with the rest a click away, and on the feed each project card carries the team’s latest word from the last thirty days under the figures from its issues, labelled as the team’s, so the two are never confused. Guests read them; an update’s author or an admin takes one down. The audit log records that an update was posted, its health and its length, not its words.',
+    checked:
+      'Four tests through the API: written by a member and read newest first with the latest on the feed, an update older than a month left off the feed, a guest unable to write and only the author or an admin taking one down, and another workspace’s board and update not found. In the browser, an at-risk update showed above the board and on the feed card. The offline, guest, phone and keyboard journeys, and the stack smoke test. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Project updates',
+      where: 'A board, above its columns; the feed, Projects',
+      layers: [
+        'Screen: the latest update above the board, all of them a click away, and on the feed card',
+        'API: projectUpdates.list, latest, create and remove',
+      ],
+    },
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
+    title: 'Fixes from a review of the day’s work',
+    brief:
+      'Six fixes from an independent review: a repeat that fails no longer holds up the rest, repeats stop for people who may no longer file issues, two opposite blocked-by links at once cannot make a loop, and assistance switched off sends nothing still waiting.',
+    summary:
+      'A review of the day’s changes found nothing critical and six things worth fixing, all fixed. A repeat that failed to file is now moved to its next run instead of failing at the front of every pass and holding up the repeats behind it. A repeat pauses when its creator may no longer file issues (made a guest, say), not only when they leave, and an assignee who has left is not given the new issue. Blocked by now checks for a loop and the limit inside the save, one link at a time per workspace, so two opposite links made at the same moment leave one. An ask for assistance that was waiting when an admin switched assistance off is not sent, and its words are cleared. Changing a repeat’s title no longer moves a run that is already due. And saving meeting notes always names the version it replaces, so no save can skip the check.',
+    checked:
+      'New tests: a creator made a guest pauses the repeat, an assignee who left is not given the issue, two opposite links at once leave one, and an ask waiting when assistance was turned off sends nothing and fails with its words cleared; the existing repeats, blocked-by, assistance and meeting-notes tests updated where the contract changed. The full suite, lint, typecheck and knip.',
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Repeats: issues filed on a schedule',
     brief:
       'A board can file an issue on a schedule (every day, every weekday, every week on a day or every month on a date) at an hour on the clock of whoever set it up, such as a weekly release check.',

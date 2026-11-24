@@ -1,12 +1,13 @@
 'use client';
 
-import { contracts } from '@robis/shared';
+import { contracts, type ProjectUpdateHealth } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { HealthBadge, healthFill } from '../../components/ui/badges.tsx';
 import { call } from '../../lib/api.ts';
 import { localToday } from '../../lib/due-date.ts';
 import { boardHref } from '../../lib/links.ts';
+import { UpdateHealth } from '../projects/update-health.tsx';
 import {
   factsOf,
   type ProjectHealth,
@@ -27,6 +28,12 @@ export function ProjectHealthCards({ workspaceId }: { workspaceId: string }) {
     queryFn: () =>
       call(contracts['feed.projects'], { params: { workspaceId }, query: { today: localToday() } }),
   });
+  // The team's latest word on each board, beside what its issues say.
+  const updates = useQuery({
+    queryKey: ['project-updates-latest', workspaceId],
+    queryFn: () => call(contracts['projectUpdates.latest'], { params: { workspaceId } }),
+  });
+  const latest = new Map((updates.data?.updates ?? []).map((u) => [u.projectId, u]));
   const list = projects.data?.projects ?? [];
   if (list.length === 0) return null;
 
@@ -41,7 +48,11 @@ export function ProjectHealthCards({ workspaceId }: { workspaceId: string }) {
       <ul className="mt-2 grid gap-2 sm:grid-cols-2">
         {list.map((project) => (
           <li key={project.id}>
-            <HealthCard workspaceId={workspaceId} project={project} />
+            <HealthCard
+              workspaceId={workspaceId}
+              project={project}
+              update={latest.get(project.id)}
+            />
           </li>
         ))}
       </ul>
@@ -49,7 +60,17 @@ export function ProjectHealthCards({ workspaceId }: { workspaceId: string }) {
   );
 }
 
-function HealthCard({ workspaceId, project }: { workspaceId: string; project: ProjectHealth }) {
+type LatestUpdate = { health: ProjectUpdateHealth; body: string; authorName: string };
+
+function HealthCard({
+  workspaceId,
+  project,
+  update,
+}: {
+  workspaceId: string;
+  project: ProjectHealth;
+  update?: LatestUpdate;
+}) {
   const progress = progressOf(project);
   const label = STATE_LABELS[project.state];
   const facts = factsOf(project);
@@ -78,6 +99,15 @@ function HealthCard({ workspaceId, project }: { workspaceId: string; project: Pr
         <span className="shrink-0 text-[11px] tabular-nums text-faint">{progress}% done</span>
       </div>
       <p className="mt-2 text-pretty text-xs leading-relaxed text-muted">{facts.join(' · ')}</p>
+      {update ? (
+        <p className="mt-2 flex items-start gap-1.5 border-t border-line pt-2 text-xs text-muted">
+          <span className="shrink-0 text-faint">Team:</span>
+          <UpdateHealth health={update.health} />
+          <span className="line-clamp-2 min-w-0">
+            {update.body} <span className="text-faint">· {update.authorName}</span>
+          </span>
+        </p>
+      ) : null}
     </Link>
   );
 }

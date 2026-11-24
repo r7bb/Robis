@@ -204,17 +204,19 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Project updates: the team’s word on how a board is going.** A board can
+  carry a short written update, marked on track, at risk or off track; the
+  latest shows above the board and on the feed’s project card beside the
+  health worked out from its issues.
+- **Fixes from a review of the day’s work.** Six fixes from an independent
+  review: a repeat that fails no longer holds up the rest, repeats stop for
+  people who may no longer file issues, two opposite blocked-by links at
+  once cannot make a loop, and assistance switched off sends nothing still
+  waiting.
 - **Repeats: issues filed on a schedule.** A board can file an issue on a
   schedule (every day, every weekday, every week on a day or every month on
   a date) at an hour on the clock of whoever set it up, such as a weekly
   release check.
-- **Workload: who is carrying what.** Insights now shows each person’s open
-  issues as a bar, with what is in progress, overdue, due this week or
-  urgent, and says when someone is carrying well above the team’s typical
-  load.
-- **Sapha answers: what is blocking an issue?.** Ask the palette “what’s
-  blocking REL-4?” or “what is REL-4 waiting on?” and Sapha answers there,
-  each blocker a link and finished ones struck through.
 
 <!-- latest:end -->
 

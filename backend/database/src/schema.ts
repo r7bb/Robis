@@ -4,6 +4,7 @@ import {
   LABEL_COLOURS,
   MESSAGE_REACTIONS,
   POST_REACTIONS,
+  PROJECT_UPDATE_HEALTH,
   REPEAT_CADENCES,
   ROLES,
   SPACE_THREAD_KINDS,
@@ -733,6 +734,31 @@ export const issues = pgTable(
     check('issues_parent_not_self', sql`${t.parentId} <> ${t.id}`),
     index('issues_search_idx').using('gin', t.searchVector),
   ],
+);
+
+/**
+ * A project update: a few words on how a board is going, and whether it
+ * is on track, at risk or off track, in the team's own judgement beside
+ * the health worked out from its issues.
+ */
+export const projectUpdates = pgTable(
+  'project_updates',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    authorId: uuid('author_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    health: text('health', { enum: PROJECT_UPDATE_HEALTH }).notNull(),
+    body: text('body').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index('project_updates_project_created_idx').on(t.projectId, t.createdAt.desc())],
 );
 
 /**

@@ -617,6 +617,13 @@
       "when": 1795534327181,
       "tag": "0087_recurring_issues",
       "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1795535267805,
+      "tag": "0088_project_updates",
+      "breakpoints": true
     }
   ]
 }

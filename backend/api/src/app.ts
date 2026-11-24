@@ -68,6 +68,7 @@ import { passkeyRoutes } from './routes/passkeys.ts';
 import { personalTokenRoutes } from './routes/personal-tokens.ts';
 import { postRoutes } from './routes/posts.ts';
 import { profileRoutes } from './routes/profiles.ts';
+import { projectUpdateRoutes } from './routes/project-updates.ts';
 import { projectRoutes } from './routes/projects.ts';
 import { pushKey, pushRoutes } from './routes/push.ts';
 import { reminderRoutes } from './routes/reminders.ts';
@@ -350,6 +351,7 @@ export function buildApp({
   app.register(meetingNotesRoutes, { db });
   app.register(notificationRoutes, { db });
   app.register(chatReadRoutes, { db });
+  app.register(projectUpdateRoutes, { db });
   app.register(repeatRoutes, { db });
   app.register(workloadRoutes, { db });
   app.register(issueBlockRoutes, { db });

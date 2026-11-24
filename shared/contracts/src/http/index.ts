@@ -31,6 +31,7 @@ import { overviewContracts } from './overview.ts';
 import { passkeyContracts } from './passkeys.ts';
 import { personalTokenContracts } from './personal-tokens.ts';
 import { profileContracts } from './profiles.ts';
+import { projectUpdateContracts } from './project-updates.ts';
 import { projectContracts } from './projects.ts';
 import { pushContracts } from './push.ts';
 import { apiReference } from './reference.ts';
@@ -109,6 +110,12 @@ export {
 export { ISSUE_LABELS_MAX } from './labels.ts';
 export { MY_MEETINGS_LIMIT, MY_MEETINGS_MAX_HOURS } from './meetings.ts';
 export { TOKEN_LIFETIMES, TOKEN_SCOPES, TOKENS_MAX } from './personal-tokens.ts';
+export {
+  PROJECT_UPDATE_FRESH_DAYS,
+  PROJECT_UPDATE_HEALTH,
+  PROJECT_UPDATE_MAX_LENGTH,
+  type ProjectUpdateHealth,
+} from './project-updates.ts';
 export { REMINDER_SUBJECTS } from './reminders.ts';
 export { SAVED_VIEWS_PER_PROJECT } from './saved-views.ts';
 export {
@@ -127,6 +134,7 @@ export const contracts = {
   ...workspaceContracts,
   ...workloadContracts,
   ...projectContracts,
+  ...projectUpdateContracts,
   ...memberContracts,
   ...agentContracts,
   ...feedbackContracts,

@@ -19,7 +19,7 @@ way.
 `{ "error": "<code>", "message": "<words for people>" }`. A stranger to a
 workspace gets 404, never 403, so its existence is not given away.
 
-230 routes.
+234 routes.
 
 ## activity
 
@@ -1119,7 +1119,7 @@ A meeting’s notes, who last saved them and when, and whether you may write the
 
 Save a meeting’s notes, for anyone in it. With the time they were read, a save over someone else’s since is refused, not lost.
 
-- Body: `notes` (required), `basedOn`
+- Body: `notes` (required), `basedOn` (required)
 - Answers: 200
 - Name: `meetings.saveNotes`
 
@@ -1360,6 +1360,22 @@ Post a photo to the feed; re-encoded and stripped of metadata, within the worksp
 - Answers: 201
 - Name: `posts.createPhoto`
 
+## project-updates
+
+### `DELETE /workspaces/{workspaceId}/project-updates/{updateId}`
+
+Take down an update you wrote, or as an admin, any.
+
+- Answers: 204
+- Name: `projectUpdates.remove`
+
+### `GET /workspaces/{workspaceId}/project-updates/latest`
+
+Each board’s latest written update from the last thirty days, for the feed.
+
+- Answers: 200
+- Name: `projectUpdates.latest`
+
 ## projects
 
 ### `GET /workspaces/{workspaceId}/projects`
@@ -1460,6 +1476,21 @@ File an issue on this board on a schedule: daily, on weekdays, weekly on a day o
 - Body: `title` (required), `description` (required), `priority` (required), `assigneeId` (required), `cadence` (required), `weekday` (required), `monthDay` (required), `hour` (required), `timeZone` (required)
 - Answers: 201
 - Name: `repeats.create`
+
+### `GET /workspaces/{workspaceId}/projects/{projectId}/updates`
+
+A board’s written updates, newest first, the latest twenty.
+
+- Answers: 200
+- Name: `projectUpdates.list`
+
+### `POST /workspaces/{workspaceId}/projects/{projectId}/updates`
+
+Write how a board is going, and whether it is on track, at risk or off track.
+
+- Body: `health` (required), `body` (required)
+- Answers: 201
+- Name: `projectUpdates.create`
 
 ### `GET /workspaces/{workspaceId}/projects/{projectId}/views`
 

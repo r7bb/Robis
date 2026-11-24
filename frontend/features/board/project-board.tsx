@@ -37,6 +37,7 @@ import { useCommands, useOpenPalette } from '../command/command-provider.tsx';
 import { DuplicateHints } from '../issues/duplicate-hints.tsx';
 import { usePeek } from '../issues/issue-peek.tsx';
 import { PriorityHint } from '../issues/priority-hint.tsx';
+import { ProjectUpdates } from '../projects/project-updates.tsx';
 import { useLive, useLiveEvents } from '../workspace/live.tsx';
 import { useBoardDrag } from './board-drag.ts';
 import { BoardFilters } from './board-filters.tsx';
@@ -296,6 +297,7 @@ export function ProjectBoard({
           )}
         </span>
       </div>
+      <ProjectUpdates workspaceId={workspaceId} projectId={projectId} canWrite={canEdit} />
       <RepeatsPanel workspaceId={workspaceId} projectId={projectId} allowed={canCreate} />
       {helpOpen && <ShortcutHelp role={role} onClose={() => setHelpOpen(false)} />}
 
