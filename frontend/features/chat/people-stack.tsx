@@ -72,7 +72,7 @@ export function PeopleStack({
       >
         <span className="flex -space-x-1.5">
           {faces.map((member) => (
-            <span key={member.userId} className="rounded-full ring-2 ring-raised">
+            <span key={member.userId} className="flex shrink-0 rounded-full ring-2 ring-raised">
               <Avatar name={member.name} seed={member.userId} avatar={member.avatar} size="sm" />
             </span>
           ))}

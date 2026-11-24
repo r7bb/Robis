@@ -155,11 +155,22 @@ function TileMembers({
         : '';
   return (
     <div className="mt-5 flex items-center gap-3 fit:mt-3">
-      <div className="flex -space-x-2">
+      {/*
+        Each face in a box exactly its own size (an inline span took the
+        line's height and sat on the baseline, so its ring was an offset
+        oval). Someone here gets the accent ring with a band of the card's
+        own colour outside it, so overlapping faces part cleanly instead of
+        one ring cutting across the next face.
+      */}
+      <div className="flex items-center -space-x-1.5">
         {(overview?.members ?? []).map((member) => (
           <span
             key={member.id}
-            className={`rounded-full ring-2 ${here.has(member.id) ? 'ring-[rgb(var(--tile-accent))]' : 'ring-raised'}`}
+            className={`relative flex shrink-0 rounded-full ${
+              here.has(member.id)
+                ? 'shadow-[0_0_0_2px_rgb(var(--tile-accent)),0_0_0_4px_rgb(var(--raised))]'
+                : 'shadow-[0_0_0_2px_rgb(var(--raised))]'
+            }`}
             title={here.has(member.id) ? `${member.name}, here now` : member.name}
           >
             <Avatar name={member.name} seed={member.id} avatar={member.avatar} size="sm" />

@@ -54,7 +54,7 @@ export function PresenceBar({
           // `Avatar` renders initials and is `aria-hidden`, so the name is
           // carried by the wrapper: a tooltip for a mouse, and text for a
           // screen reader, which a bare `title` would not reliably give.
-          <span key={user.userId} title={describe(user, here)}>
+          <span key={user.userId} title={describe(user, here)} className="flex shrink-0">
             <Avatar
               name={user.name}
               seed={user.userId}

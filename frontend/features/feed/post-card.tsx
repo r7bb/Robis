@@ -153,7 +153,7 @@ function Reactions({
             {ids.length > 0 ? (
               <span className="flex -space-x-1.5" aria-hidden="true">
                 {ids.slice(0, 3).map((id) => (
-                  <span key={id} className="rounded-full ring-2 ring-raised">
+                  <span key={id} className="flex shrink-0 rounded-full ring-2 ring-raised">
                     <Avatar
                       name={people.get(id)?.name ?? '?'}
                       seed={id}
