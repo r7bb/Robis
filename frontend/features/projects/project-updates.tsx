@@ -7,7 +7,7 @@ import {
   type ProjectUpdateHealth,
 } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, type ReactNode, useState } from 'react';
 import { call } from '../../lib/api.ts';
 import { formatRelative } from '../../lib/time.ts';
 import { UPDATE_HEALTH_NAMES, UpdateHealth } from './update-health.tsx';
@@ -20,10 +20,13 @@ export function ProjectUpdates({
   workspaceId,
   projectId,
   canWrite,
+  aside,
 }: {
   workspaceId: string;
   projectId: string;
   canWrite: boolean;
+  /** More of the board's own controls, on the same line (Repeats). */
+  aside?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const updates = useQuery({
@@ -32,7 +35,7 @@ export function ProjectUpdates({
   });
   const list = updates.data?.updates ?? [];
   const latest = list[0];
-  if (!latest && !canWrite) return null;
+  if (!latest && !canWrite && !aside) return null;
 
   return (
     <div className="mt-3">
@@ -59,6 +62,7 @@ export function ProjectUpdates({
         >
           {open ? 'Close' : canWrite ? 'Updates' : 'All updates'}
         </button>
+        {aside}
       </div>
       {open ? (
         <section

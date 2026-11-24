@@ -10,7 +10,7 @@ import {
   type ResponseOf,
 } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { call } from '../../lib/api.ts';
 import { dateFormat } from '../../lib/i18n/format.ts';
 
@@ -81,6 +81,23 @@ export function RepeatsPanel({
   allowed: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  // A dropdown: a click away or Escape closes it.
+  useEffect(() => {
+    if (!open) return;
+    const away = (event: MouseEvent) => {
+      if (!box.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', away);
+    document.addEventListener('keydown', onEscape);
+    return () => {
+      document.removeEventListener('mousedown', away);
+      document.removeEventListener('keydown', onEscape);
+    };
+  }, [open]);
   const repeats = useQuery({
     queryKey: ['repeats', workspaceId, projectId],
     queryFn: () => call(contracts['repeats.list'], { params: { workspaceId, projectId } }),
@@ -90,21 +107,19 @@ export function RepeatsPanel({
   if (!allowed) return null;
 
   return (
-    <div className="mt-2">
-      <div className="flex justify-end">
-        <button
-          type="button"
-          aria-expanded={open}
-          onClick={() => setOpen((was) => !was)}
-          className="rounded px-1.5 py-0.5 text-xs text-muted transition-colors hover:text-content focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-soft"
-        >
-          Repeats{list.length > 0 ? ` · ${list.length}` : ''}
-        </button>
-      </div>
+    <div ref={box} className="relative shrink-0">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((was) => !was)}
+        className="rounded px-1.5 py-0.5 text-xs text-muted transition-colors hover:text-content focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-soft"
+      >
+        Repeats{list.length > 0 ? ` · ${list.length}` : ''}
+      </button>
       {open ? (
         <section
           aria-label="Repeats"
-          className="mt-2 space-y-3 rounded-lg border border-line bg-raised p-3"
+          className="absolute right-0 top-full z-20 mt-1 w-[min(36rem,calc(100vw-2rem))] space-y-3 rounded-lg border border-line bg-raised p-3 shadow-xl"
         >
           <p className="text-xs text-faint">
             Issues filed here on a schedule, at the hour on your own clock.

@@ -307,8 +307,12 @@ export function ProjectBoard({
           )}
         </span>
       </div>
-      <ProjectUpdates workspaceId={workspaceId} projectId={projectId} canWrite={canEdit} />
-      <RepeatsPanel workspaceId={workspaceId} projectId={projectId} allowed={canCreate} />
+      <ProjectUpdates
+        workspaceId={workspaceId}
+        projectId={projectId}
+        canWrite={canEdit}
+        aside={<RepeatsPanel workspaceId={workspaceId} projectId={projectId} allowed={canCreate} />}
+      />
       {helpOpen && <ShortcutHelp role={role} onClose={() => setHelpOpen(false)} />}
 
       {selection.on && (
