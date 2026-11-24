@@ -170,6 +170,34 @@ The long version, with the rejected alternatives spelled out, is in
 
 ---
 
+## Webhooks
+
+A workspace admin can send chosen events to another system (Automations,
+Webhooks). Each delivery is a `POST` with a JSON body of ids, never words,
+and four headers:
+
+| Header | Holds |
+| --- | --- |
+| `x-robis-delivery` | The delivery id, the same on every retry: drop one already seen |
+| `x-robis-event` | The event, such as `issue.created` |
+| `x-robis-timestamp` | Seconds since 1970 when this attempt was signed |
+| `x-robis-signature` | `sha256=` and the HMAC-SHA256 of `<timestamp>.<body>` with the secret shown when the webhook was made |
+
+A receiver should compute the signature itself and compare it in constant
+time, refuse a timestamp more than five minutes off, and keep the delivery
+ids it has handled. `receive` in `backend/worker/src/workspace-webhook.ts`
+does exactly that, and the tests use it as the receiver; a real receiver
+keeps the ids in its own store for about three hours, as long as retries
+can come. A delivery not answered with a 2xx is tried again after a
+minute, five, thirty and a hundred and twenty, five tries in all, and each
+attempt is in the admin's delivery log. The body names who acted by their
+account id and kind, never by name or address; that id is still personal
+data to the receiver, so a webhook should go only somewhere the workspace
+would share its member list. Before every attempt the
+address is checked again (https, and every address it resolves to public),
+and the admin who made the webhook must still be able to read the event;
+if not, it is skipped and logged as such.
+
 ## Machine learning
 
 `robis-ml/` finds possible duplicate issues and suggests a priority. Both are

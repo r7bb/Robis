@@ -65,6 +65,7 @@ import { searchRoutes } from './routes/search.ts';
 import { signupRoutes } from './routes/signup.ts';
 import { storyRoutes } from './routes/stories.ts';
 import { twoFactorRoutes } from './routes/two-factor.ts';
+import { webhookRoutes } from './routes/webhooks.ts';
 import { weekRoutes } from './routes/week.ts';
 import { workspaceRoutes } from './routes/workspaces.ts';
 import { createSuggestionClient, type SuggestionClient } from './suggestions.ts';
@@ -345,6 +346,7 @@ export function buildApp({
   app.register(automationRoutes, { db });
   app.register(exportRoutes, { db, storage });
   app.register(importRoutes, { db });
+  app.register(webhookRoutes, { db });
   app.register(searchRoutes, { db, limits });
 
   return app;

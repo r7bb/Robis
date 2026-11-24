@@ -44,6 +44,26 @@ export type Entry = {
 
 export const CHANGELOG: readonly Entry[] = [
   {
+    date: '2026-11-24',
+    area: 'Product',
+    title: 'Outgoing webhooks, signed, retried and logged',
+    brief:
+      'Admins can send chosen events to another system: each delivery signed with HMAC, carrying an id a receiver can drop repeats by, retried over two and a half hours and shown in a delivery log.',
+    summary:
+      'On the Automations page an admin adds an https address and picks events: an issue filed, changed, moved or deleted, a comment, a board, a document, a meeting, someone joining or being removed. Each event becomes a delivery queued in the same transaction as the change. The worker signs it with HMAC-SHA256 over a timestamp and the body, with the secret shown once when the webhook was made, and sends ids, an issue’s key and status, never words. A delivery not answered with success is tried again after a minute, five, thirty and a hundred and twenty, five tries in all; each attempt, with its answer, is in the webhook’s log. Before every attempt the address is checked again, and the admin who made the webhook must still be able to read the event; a webhook whose maker has left sends nothing.',
+    checked:
+      'The test the track asked for: a receiver on the test machine checks every signature and drops a retried delivery by its id. A tampered body, an old timestamp and a missing one refused; a failing receiver retried after one, five, thirty and a hundred and twenty minutes and then logged as failed; a name that does not resolve counted as a failed try; a webhook whose maker was removed, and one turned off, sending nothing; members refused, plain http and unknown events refused. The worker runs these as its own database role, with only the grants it was given. A security review found that an IPv4 address written as IPv6 slipped past the private-address check shared with automation webhooks; the check now allows only global addresses, and that and its other findings were fixed before this shipped. How it works shows a receiver what to check. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Webhooks',
+      where: 'Automations, Webhooks (admins)',
+      layers: [
+        'Screen: add a webhook with its events, its secret shown once, on and off, and each delivery log',
+        'API: webhooks.* for admins; every audited event a webhook listens for queues a delivery',
+        'Database: workspace_webhooks and webhook_deliveries, the log and the idempotency key in one row',
+      ],
+    },
+  },
+  {
     date: '2026-11-23',
     area: 'Product',
     title: 'Import issues from CSV, a Robis export or GitHub',

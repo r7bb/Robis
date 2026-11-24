@@ -2012,3 +2012,63 @@ export const issueImports = pgTable(
   },
   (t) => [primaryKey({ columns: [t.projectId, t.sourceKey] })],
 );
+
+/**
+ * A workspace's outgoing webhook (C7): an https address, the events it
+ * wants, and the secret its deliveries are signed with. Payloads carry ids
+ * and only fields the admin who made it may still read; the secret is
+ * shown once, when it is made.
+ */
+export const workspaceWebhooks = pgTable(
+  'workspace_webhooks',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    url: text('url').notNull(),
+    events: text('events').array().notNull(),
+    secret: text('secret').notNull(),
+    enabled: boolean('enabled').notNull().default(true),
+    /** Whose reading rights shape the payload; null once that account is gone. */
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [index('workspace_webhooks_workspace_idx').on(t.workspaceId)],
+);
+
+/**
+ * One event's delivery to one webhook (C7): the id is the idempotency key
+ * a receiver sees on every attempt, and the row is the delivery log.
+ */
+export const webhookDeliveries = pgTable(
+  'webhook_deliveries',
+  {
+    id: id(),
+    webhookId: uuid('webhook_id')
+      .notNull()
+      .references(() => workspaceWebhooks.id, { onDelete: 'cascade' }),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    eventId: uuid('event_id').notNull(),
+    eventType: text('event_type').notNull(),
+    /** What the event was about and who did it, copied from the trail as it was written. */
+    entityType: text('entity_type').notNull(),
+    entityId: uuid('entity_id').notNull(),
+    actorId: uuid('actor_id'),
+    actorKind: text('actor_kind').notNull(),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
+    /** pending, delivered, failed or skipped. */
+    status: text('status').notNull().default('pending'),
+    attempts: integer('attempts').notNull().default(0),
+    lastStatusCode: integer('last_status_code'),
+    lastError: text('last_error'),
+    createdAt: createdAt(),
+    deliveredAt: timestamp('delivered_at', { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex('webhook_deliveries_once').on(t.webhookId, t.eventId),
+    index('webhook_deliveries_log_idx').on(t.webhookId, t.createdAt),
+  ],
+);

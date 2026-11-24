@@ -68,6 +68,8 @@ const TABLES = [
   'jobs',
   'workspace_exports',
   'issue_imports',
+  'webhook_deliveries',
+  'workspace_webhooks',
   'notifications',
   'document_updates',
   'documents',

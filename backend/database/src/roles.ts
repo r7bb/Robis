@@ -281,6 +281,13 @@ export const WORKER_GRANTS: TableGrants = {
   instrument_readings: ['select', 'delete'],
   // A rule's webhook address and secret, read before it sends one (B9).
   automation_rules: ['select'],
+  // A workspace webhook and its delivery log (C7): read before each send,
+  // and the log's outcome written after it. The API makes both.
+  workspace_webhooks: ['select'],
+  webhook_deliveries: [
+    'select',
+    'update (status, attempts, last_status_code, last_error, delivered_at)',
+  ],
   agent_tokens: [
     'select (id, agent_id, workspace_id, revoked_at, expires_at)',
     // Every column, as an insert names them all; the defaults fill the rest.

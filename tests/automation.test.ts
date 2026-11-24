@@ -364,9 +364,18 @@ describe('telling someone or something else', () => {
       'fd00::1',
       'fe80::1',
       '::ffff:10.0.0.1',
+      // As a URL writes them: IPv4 in IPv6, in hex (C7 review).
+      '::ffff:7f00:1',
+      '::ffff:a9fe:a9fe',
+      '64:ff9b::a00:1',
+      '2002:a00::1',
+      '2001:db8::1',
+      '198.18.0.1',
+      '192.0.2.5',
     ]) {
       expect(isPublicAddress(address)).toBe(false);
     }
+    expect(await refusalFor('https://[::ffff:127.0.0.1]/hook')).toContain('private network');
     expect(isPublicAddress('93.184.216.34')).toBe(true);
     expect(isPublicAddress('2606:2800:220:1::1')).toBe(true);
     expect(await refusalFor('https://127.0.0.1/hook')).toBe(

@@ -5,6 +5,7 @@ import { commitPersonal, type PersonalFields, personalHolds } from './audit-reda
 import { queueAutomation, triggerOf } from './automation.ts';
 import type { Executor, Tx } from './index.ts';
 import { type ACTOR_KINDS, auditEvents, auditStreamCursors, workspaces } from './schema.ts';
+import { queueWebhooks } from './webhooks.ts';
 
 /**
  * The audit trail: write, read, verify.
@@ -233,6 +234,8 @@ export async function recordAudit(tx: Tx, actor: AuditActor, input: AuditInput) 
       depth: actor.kind === 'rule' ? (actor.depth ?? 0) + 1 : 0,
     });
   }
+  // And webhooks listening for it are sent it, after commit (C7).
+  await queueWebhooks(tx, row!);
   return row!;
 }
 

@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Outgoing webhooks, signed, retried and logged** (2026-11-24). Admins can
+  send chosen events to another system: each delivery signed with HMAC,
+  carrying an id a receiver can drop repeats by, retried over two and a half
+  hours and shown in a delivery log.
 - **Import issues from CSV, a Robis export or GitHub** (2026-11-23). A board
   can take issues from a CSV file, a Robis workspace export or a GitHub
   repository, with statuses and labels mapped, and running the same import

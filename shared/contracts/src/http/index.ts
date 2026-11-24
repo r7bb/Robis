@@ -31,6 +31,7 @@ import { pushContracts } from './push.ts';
 import { savedViewContracts } from './saved-views.ts';
 import { storyContracts } from './stories.ts';
 import { twoFactorContracts } from './two-factor.ts';
+import { webhookContracts } from './webhooks.ts';
 import { weekContracts } from './week.ts';
 import { workspaceContracts } from './workspaces.ts';
 
@@ -94,6 +95,14 @@ export {
 export { ISSUE_LABELS_MAX } from './labels.ts';
 export { MY_MEETINGS_LIMIT, MY_MEETINGS_MAX_HOURS } from './meetings.ts';
 export { SAVED_VIEWS_PER_PROJECT } from './saved-views.ts';
+export {
+  WEBHOOK_ATTEMPTS,
+  WEBHOOK_DELIVERIES_SHOWN,
+  WEBHOOK_EVENT_NAMES,
+  WEBHOOK_EVENTS,
+  WEBHOOKS_MAX,
+  type WebhookEvent,
+} from './webhooks.ts';
 export { WEEK_WINDOW_MAX_HOURS } from './week.ts';
 
 /** Every route the API serves through a contract, by name. */
@@ -132,6 +141,7 @@ export const contracts = {
   ...accountContracts,
   ...exportContracts,
   ...importContracts,
+  ...webhookContracts,
 } as const satisfies Record<string, Contract>;
 
 export type ContractName = keyof typeof contracts;

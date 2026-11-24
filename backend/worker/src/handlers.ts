@@ -24,6 +24,7 @@ import { notifyHandlers } from './notify.ts';
 import { scanNudges } from './nudges.ts';
 import type { Handlers } from './runner.ts';
 import { webhookHandlers } from './webhook.ts';
+import { workspaceWebhookHandlers } from './workspace-webhook.ts';
 
 /**
  * Job handlers.
@@ -89,6 +90,7 @@ export const handlers: Handlers = {
   ...notifyHandlers,
   // A rule's outgoing webhook (B9); the rules themselves run in the API.
   ...webhookHandlers,
+  ...workspaceWebhookHandlers,
   'sessions.cleanup': cleanupSessions,
   'nudges.scan': runNudgeScan,
   'agents.judge': judgeAgentWork,

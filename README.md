@@ -202,6 +202,10 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Outgoing webhooks, signed, retried and logged.** Admins can send chosen
+  events to another system: each delivery signed with HMAC, carrying an id a
+  receiver can drop repeats by, retried over two and a half hours and shown
+  in a delivery log.
 - **Import issues from CSV, a Robis export or GitHub.** A board can take
   issues from a CSV file, a Robis workspace export or a GitHub repository,
   with statuses and labels mapped, and running the same import again adds
@@ -209,10 +213,6 @@ no write lost and nothing done twice.
 - **Export a whole workspace.** An admin can export everything a workspace
   holds, as JSON lines with its images in one zip, built in the background
   and downloaded once.
-- **Empty views that say what goes there, and a demo workspace.** Every
-  empty view now says what belongs in it and offers the one button that
-  fills it, and a demo workspace with example work can be opened from the
-  first run.
 
 <!-- latest:end -->
 
