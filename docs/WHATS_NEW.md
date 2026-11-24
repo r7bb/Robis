@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Install Robis on a phone** (2026-11-24). Robis can be added to a phone’s
+  home screen and opened as an app of its own, and every page has been
+  checked at phone width.
 - **An API reference, generated from the contracts** (2026-11-24). A
   readable API reference sits beside the OpenAPI document, both written from
   the contracts the server validates against, and a running server serves

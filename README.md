@@ -204,6 +204,9 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Install Robis on a phone.** Robis can be added to a phone’s home screen
+  and opened as an app of its own, and every page has been checked at phone
+  width.
 - **An API reference, generated from the contracts.** A readable API
   reference sits beside the OpenAPI document, both written from the
   contracts the server validates against, and a running server serves its
@@ -211,10 +214,6 @@ no write lost and nothing done twice.
 - **GitHub pull requests on issues.** A pull request whose title or branch
   names an issue key shows on that issue with its state, and merging it can
   move the issue to done.
-- **Personal access tokens for the API, read only unless allowed to write.**
-  A person can make tokens for scripts that use the API as them: read only
-  unless allowed to write, shown once, stored as a hash, revoked at once,
-  with the last time each was used.
 
 <!-- latest:end -->
 

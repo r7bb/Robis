@@ -36,6 +36,7 @@
     "docs:links": "bun run scripts/docs/links.ts",
     "docs:whats-new": "bun run scripts/docs/whats-new.ts",
     "openapi": "bun run scripts/docs/openapi.ts",
+    "icons": "bun run scripts/brand/icons.ts",
     "loadtest": "bun run scripts/bench/loadtest.ts",
     "soak": "bun run scripts/bench/soak.ts",
     "screenshots": "bun run scripts/capture/screenshots.ts",

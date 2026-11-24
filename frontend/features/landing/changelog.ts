@@ -45,6 +45,17 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
+    area: 'Product',
+    title: 'Install Robis on a phone',
+    brief:
+      'Robis can be added to a phone’s home screen and opened as an app of its own, and every page has been checked at phone width.',
+    summary:
+      'A web app manifest names Robis, its colours and its icons, so a phone offers to install it and opens it without the browser’s bars; iOS gets its own touch icon and status bar setting, and the page runs edge to edge with room kept for the notch. The icons are drawn by a script from the same squares as the site icon, with a maskable version that keeps the logo inside the part every launcher keeps. Every page, from the home screen and the board to the account page and the guides, opens at 390 by 844 without the page scrolling sideways.',
+    checked:
+      'A browser journey in Chrome at 390 by 844 as a touch phone opens seventeen pages (home, a board, an issue, a document, the feed, meetings, the calendar, activity, insights, automations, people, import, search, account, the first run, a guide and the landing page) and checks none is wider than the screen; their screenshots were looked over. The manifest and icons are served by the rebuilt stack. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-24',
     area: 'Site',
     title: 'An API reference, generated from the contracts',
     brief:

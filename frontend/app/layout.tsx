@@ -8,6 +8,10 @@ import { Providers } from './providers.tsx';
 export const metadata: Metadata = {
   title: 'Robis',
   description: 'Collaborative workspace for issues, projects and documents.',
+  // Installed on a phone (C8): the manifest at /manifest.webmanifest, and
+  // what iOS reads instead of it.
+  appleWebApp: { capable: true, title: 'Robis', statusBarStyle: 'black-translucent' },
+  icons: { apple: '/icons/apple-touch-icon.png' },
 };
 
 /**
@@ -18,6 +22,8 @@ export const metadata: Metadata = {
  */
 export const viewport: Viewport = {
   themeColor: '#0e1014',
+  // Installed, the page runs under the notch and home bar; env(safe-area-*) keeps content clear.
+  viewportFit: 'cover',
 };
 
 /**
