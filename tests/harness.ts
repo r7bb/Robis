@@ -67,6 +67,7 @@ const TABLES = [
   'audit_tombstones',
   'jobs',
   'workspace_exports',
+  'issue_imports',
   'notifications',
   'document_updates',
   'documents',

@@ -42,6 +42,7 @@ import { exportRoutes } from './routes/exports.ts';
 import { feedRoutes } from './routes/feed.ts';
 import { feedHighlightRoutes } from './routes/feed-highlights.ts';
 import { feedbackRoutes } from './routes/feedback.ts';
+import { importRoutes } from './routes/imports.ts';
 import { insightRoutes } from './routes/insights.ts';
 import { invitationRoutes } from './routes/invitations.ts';
 import { issueRoutes } from './routes/issues.ts';
@@ -343,6 +344,7 @@ export function buildApp({
   app.register(weekRoutes, { db });
   app.register(automationRoutes, { db });
   app.register(exportRoutes, { db, storage });
+  app.register(importRoutes, { db });
   app.register(searchRoutes, { db, limits });
 
   return app;

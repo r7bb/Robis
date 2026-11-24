@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Import issues from CSV or a Robis export** (2026-11-23). A board can
+  take issues from a CSV file or a Robis workspace export, with statuses and
+  labels mapped, and running the same import again adds nothing.
 - **Export a whole workspace** (2026-11-23). An admin can export everything
   a workspace holds, as JSON lines with its images in one zip, built in the
   background and downloaded once.

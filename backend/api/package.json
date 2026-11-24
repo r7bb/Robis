@@ -11,6 +11,8 @@
     "./automation": "./src/automation/evaluate.ts",
     "./automation-runner": "./src/automation/runner.ts",
     "./export-job": "./src/exports/job.ts",
+    "./imports-csv": "./src/imports/csv.ts",
+    "./imports-model": "./src/imports/model.ts",
     "./avatars": "./src/routes/avatars.ts",
     "./client-network": "./src/plugins/client-network.ts",
     "./contract": "./src/contract.ts",

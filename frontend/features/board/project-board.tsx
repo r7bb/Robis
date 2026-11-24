@@ -264,6 +264,14 @@ export function ProjectBoard({
           {filterSummary(filter, shown.length, board.issues.length)}
         </p>
         <span className="flex items-center gap-3">
+          {canCreate && (
+            <Link
+              href={`/workspaces/${workspaceId}/projects/${projectId}/import`}
+              className="rounded px-1.5 py-0.5 text-xs text-muted transition-colors hover:text-content focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-soft"
+            >
+              Import
+            </Link>
+          )}
           <button
             type="button"
             onClick={() => setHelpOpen(true)}

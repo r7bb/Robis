@@ -14,6 +14,7 @@ import { exportContracts } from './exports.ts';
 import { feedContracts } from './feed.ts';
 import { feedHighlightContracts } from './feed-highlights.ts';
 import { feedbackContracts } from './feedback.ts';
+import { importContracts } from './imports.ts';
 import { insightContracts } from './insights.ts';
 import { issueContracts } from './issues.ts';
 import { bulkIssueContracts } from './issues-bulk.ts';
@@ -71,6 +72,11 @@ export {
   SUGGESTION_KINDS,
 } from './feedback.ts';
 export {
+  IMPORT_CSV_MAX_BYTES,
+  IMPORT_PROBLEMS_SHOWN,
+  IMPORT_ZIP_MAX_BYTES,
+} from './imports.ts';
+export {
   HEALTH_HOURS,
   INSIGHT_MIN_SAMPLE,
   INSIGHT_WEEKS,
@@ -125,6 +131,7 @@ export const contracts = {
   ...weekContracts,
   ...accountContracts,
   ...exportContracts,
+  ...importContracts,
 } as const satisfies Record<string, Contract>;
 
 export type ContractName = keyof typeof contracts;

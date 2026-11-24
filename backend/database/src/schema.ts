@@ -1989,3 +1989,26 @@ export const workspaceExports = pgTable(
   },
   (t) => [index('workspace_exports_workspace_idx').on(t.workspaceId, t.createdAt)],
 );
+
+/**
+ * Where an imported issue came from (C6): its key in the source (a CSV row's
+ * id, a Robis export's issue id, a GitHub issue's number), so running the
+ * same import again finds it here and creates nothing new.
+ */
+export const issueImports = pgTable(
+  'issue_imports',
+  {
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    sourceKey: text('source_key').notNull(),
+    issueId: uuid('issue_id')
+      .notNull()
+      .references(() => issues.id, { onDelete: 'cascade' }),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.projectId, t.sourceKey] })],
+);

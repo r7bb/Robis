@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-23',
     area: 'Product',
+    title: 'Import issues from CSV or a Robis export',
+    brief:
+      'A board can take issues from a CSV file or a Robis workspace export, with statuses and labels mapped, and running the same import again adds nothing.',
+    summary:
+      'Each board has an Import page. A CSV file names its columns in its first row, in any order: title, description, status, priority, labels and an id; words such as open, in progress, closed or P0 are mapped to this app’s statuses and priorities, and labels are matched by name or made. A Robis export brings every issue in it, with its labels and comments, so a workspace can be moved by exporting it and importing it into another. Each issue is remembered by its key in the source, so running the same import again adds nothing; rows that cannot be read are listed back with why. An import lands whole or not at all, takes up to a thousand issues, twenty labels an issue and a hundred new labels, and goes in the audit trail as one entry. An issue deleted after importing comes back if the same file is imported again.',
+    checked:
+      'The test the track asked for: a workspace with labelled, commented issues at several stages, exported, downloaded and imported into a fresh workspace by someone else, reproduces every issue’s title, status, priority, labels and comments, and a second import adds nothing. A CSV with quotes, commas and line breaks inside fields, statuses, priorities and labels mapped, a row without a title reported, and a rerun skipped; a guest refused; a zip that is not an export refused; a five-thousand-character id imported once, labels stopped at twenty an issue, more than a hundred new labels refused, and a file over 1 MB refused before it is read. A review of the import, whose findings were fixed before it shipped. A browser journey in Chrome against the stack chooses a CSV on the import page, sees two issues added, then none. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Import issues',
+      where: 'A board, Import',
+      layers: [
+        'Screen: a page per board with a CSV and an export upload, and what landed',
+        'API: imports.csv and imports.robis take the file itself, map it and file each issue in one transaction',
+        'Database: issue_imports remembers each source key, so a rerun is skipped',
+      ],
+    },
+  },
+  {
+    date: '2026-11-23',
+    area: 'Product',
     title: 'Export a whole workspace',
     brief:
       'An admin can export everything a workspace holds, as JSON lines with its images in one zip, built in the background and downloaded once.',

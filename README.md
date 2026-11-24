@@ -202,6 +202,9 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Import issues from CSV or a Robis export.** A board can take issues from
+  a CSV file or a Robis workspace export, with statuses and labels mapped,
+  and running the same import again adds nothing.
 - **Export a whole workspace.** An admin can export everything a workspace
   holds, as JSON lines with its images in one zip, built in the background
   and downloaded once.
@@ -209,9 +212,6 @@ no write lost and nothing done twice.
   empty view now says what belongs in it and offers the one button that
   fills it, and a demo workspace with example work can be opened from the
   first run.
-- **A first run, and projects from templates.** A new account goes straight
-  from sign-up to a board with work on it: name a workspace, pick its look,
-  invite a teammate, and start from a template.
 
 <!-- latest:end -->
 

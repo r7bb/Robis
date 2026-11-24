@@ -71,10 +71,12 @@ server.
 including deleting issues; there is no narrower agent role yet. Revoking a
 token is immediate, but a request already in flight finishes.
 
-## Workspace exports
+## Workspace exports and imports
 
-An admin can take everything a workspace holds out of Robis as one zip
-(C6). It is the largest single read in the app, so it is fenced in.
+An admin can take everything a workspace holds out of Robis as one zip,
+and a member can bring issues in from a CSV file or such a zip (C6). The
+export is the largest single read in the app and the import the largest
+single write, so both are fenced in.
 
 | Threat | In the way today | Where |
 | --- | --- | --- |
@@ -82,6 +84,7 @@ An admin can take everything a workspace holds out of Robis as one zip
 | A copied, logged or prefetched link | The link is a 256-bit token stored only as a hash; it lasts five minutes, works once and only with an admin's session; HEAD and cross-site requests are refused; the token is replaced in logged URLs | same, and `backend/api/src/plugins/tracing.ts` |
 | Credentials or addresses travelling in the file | Webhook secrets are dropped and webhook addresses cut to their origin; members appear by name and username, never email; storage keys and search indexes stay behind | `backend/api/src/exports/build.ts` |
 | The file outliving the workspace or the need | Purged half an hour after its download, after seven days if never fetched, and with its workspace or its owner's account | `backend/api/src/exports/job.ts`, `backend/database/src/files.ts` |
+| A crafted import file | CSV and export files are size-limited as they stream in; every export line is validated against the schema (statuses and priorities from the fixed lists, lengths capped); ids are bounded or hashed; labels, comments and issues per import are capped; an import is one transaction under a per-board lock, and needs the role that makes labels | `backend/api/src/imports/`, `backend/storage/src/zip.ts` |
 | One build exhausting the API | Capped at 256 MB, checked against stored file sizes before anything is read; one build at a time per API instance, on a loop of its own | `backend/api/src/exports/build.ts`, `backend/api/src/automation/runner.ts` |
 
 **Left open.** The export is built in memory inside the API process, so
