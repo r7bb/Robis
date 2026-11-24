@@ -204,6 +204,10 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **The demo shows the new things at work.** A demo workspace now arrives
+  with the team’s update on its board, one issue waiting on another, a
+  weekly repeat and last week’s meeting notes with follow-ups; and the
+  demo’s people react to chat and write the odd project update.
 - **Sapha answers: who has an issue, and how it stands.** Ask the palette
   “who has REL-4?”, “status of REL-4” or “how’s REL-4 going?” and Sapha
   answers there: its status, who has it, when it is due, its priority, and
@@ -212,11 +216,6 @@ no write lost and nothing done twice.
   carry a short written update, marked on track, at risk or off track; the
   latest shows above the board and on the feed’s project card beside the
   health worked out from its issues.
-- **Fixes from a review of the day’s work.** Six fixes from an independent
-  review: a repeat that fails no longer holds up the rest, repeats stop for
-  people who may no longer file issues, two opposite blocked-by links at
-  once cannot make a loop, and assistance switched off sends nothing still
-  waiting.
 
 <!-- latest:end -->
 

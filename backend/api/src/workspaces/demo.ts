@@ -3,14 +3,18 @@ import {
   channels,
   type Database,
   documents,
+  issueBlocks,
+  meetings,
   projects,
+  projectUpdates,
   recordAudit,
+  recurringIssues,
   type Tx,
   textSnapshot,
   workspaceMembers,
   workspaces,
 } from '@robis/database';
-import { canonicalZone, DEMO_WORKSPACE, demoMeetingStart } from '@robis/shared';
+import { canonicalZone, DEMO_WORKSPACE, demoMeetingStart, nextRunAfter } from '@robis/shared';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { insertMeeting } from '../meetings/create.ts';
 import { fileIssue } from '../routes/issues.ts';
@@ -46,18 +50,77 @@ async function existingDemo(tx: Tx, userId: string) {
   return row ?? null;
 }
 
-/** The demo's board and its example issues. */
+/** The demo's board and its example issues, with each issue's id by title. */
 async function fillBoard(tx: Tx, actor: AuditActor, owner: Owner, workspaceId: string) {
   const project = await insertProject(tx, actor, {
     workspaceId,
     user: owner,
     input: { name: DEMO_WORKSPACE.project },
   });
+  const ids = new Map<string, string>();
   // Last first, so the board reads them in order from the top.
   for (const issue of [...DEMO_WORKSPACE.issues].reverse()) {
-    await fileIssue(tx, actor, { user: owner, workspaceId, projectId: project.id, input: issue });
+    const filed = await fileIssue(tx, actor, {
+      user: owner,
+      workspaceId,
+      projectId: project.id,
+      input: issue,
+    });
+    ids.set(issue.title, filed.id);
   }
-  return project.id;
+  return { projectId: project.id, ids };
+}
+
+/**
+ * The board as a team would have it after a while: its own word on how it
+ * is going, one issue waiting on another, and a weekly check filed for it.
+ */
+async function fillBoardExtras(
+  tx: Tx,
+  actor: AuditActor,
+  owner: Owner,
+  workspaceId: string,
+  board: Awaited<ReturnType<typeof fillBoard>>,
+  zone: string,
+  now: Date,
+) {
+  const { update, blocks, repeat } = DEMO_WORKSPACE;
+  await tx.insert(projectUpdates).values({
+    workspaceId,
+    projectId: board.projectId,
+    authorId: owner.id,
+    health: update.health,
+    body: update.body,
+  });
+  for (const link of blocks) {
+    const blockedId = board.ids.get(link.blocked);
+    const blockerId = board.ids.get(link.blocker);
+    if (!blockedId || !blockerId) continue;
+    await tx.insert(issueBlocks).values({ blockedId, blockerId, workspaceId, createdBy: owner.id });
+  }
+  const schedule = {
+    cadence: repeat.cadence,
+    weekday: repeat.weekday,
+    monthDay: null,
+    hour: repeat.hour,
+    timeZone: zone,
+  };
+  await tx.insert(recurringIssues).values({
+    workspaceId,
+    projectId: board.projectId,
+    title: repeat.title,
+    priority: repeat.priority,
+    ...schedule,
+    nextRunAt: nextRunAfter(schedule, now),
+    createdBy: owner.id,
+  });
+  await recordAudit(tx, actor, {
+    workspaceId,
+    entityType: 'project',
+    entityId: board.projectId,
+    eventType: 'project.demo_filled',
+    payload: { update: true, blocks: blocks.length, repeats: 1 },
+  });
 }
 
 async function fillDemo(
@@ -68,7 +131,8 @@ async function fillDemo(
   zone: string,
   now: Date,
 ) {
-  const projectId = await fillBoard(tx, actor, owner, workspaceId);
+  const board = await fillBoard(tx, actor, owner, workspaceId);
+  await fillBoardExtras(tx, actor, owner, workspaceId, board, zone, now);
 
   const { title, body } = DEMO_WORKSPACE.document;
   const [document] = await tx
@@ -102,7 +166,7 @@ async function fillDemo(
   });
 
   const { meeting } = DEMO_WORKSPACE;
-  await insertMeeting(
+  const made = await insertMeeting(
     tx,
     { ...actor, id: owner.id },
     workspaceId,
@@ -117,8 +181,12 @@ async function fillDemo(
     },
     [],
   );
+  await tx
+    .update(meetings)
+    .set({ notes: meeting.notes, notesUpdatedAt: now, notesUpdatedBy: owner.id })
+    .where(eq(meetings.id, made.id));
 
-  return projectId;
+  return board.projectId;
 }
 
 export async function createDemoWorkspace(
@@ -135,7 +203,7 @@ export async function createDemoWorkspace(
     const existing = await existingDemo(tx, owner.id);
     if (existing) {
       const projectId =
-        existing.projectId ?? (await fillBoard(tx, actor, owner, existing.workspace.id));
+        existing.projectId ?? (await fillBoard(tx, actor, owner, existing.workspace.id)).projectId;
       return { workspace: existing.workspace, projectId };
     }
     const workspace = await insertWorkspace(tx, actor, owner.id, {

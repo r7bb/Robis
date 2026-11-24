@@ -238,6 +238,47 @@ async function markHelpful(actor: Actor, world: World) {
   return `found a reply helpful in ${space.name}`;
 }
 
+const MESSAGE_REACTIONS = ['ok', 'love', 'laugh', 'party', 'eyes', 'done'] as const;
+
+/** A quick reaction on someone else's recent message. */
+async function reactToMessage(actor: Actor, world: World) {
+  const { channels } = await actor.call<{ channels: { id: string; name: string }[] }>(
+    'GET',
+    `${base(world)}/channels`,
+  );
+  const channel = pickOne(channels, world.random);
+  if (!channel) return null;
+  const { messages } = await actor.call<{ messages: { id: string; authorId: string }[] }>(
+    'GET',
+    `${base(world)}/channels/${channel.id}/messages?limit=20`,
+  );
+  const message = pickOne(
+    messages.filter((m) => m.authorId !== actor.userId),
+    world.random,
+  );
+  if (!message) return null;
+  const reaction = pickOne(MESSAGE_REACTIONS, world.random)!;
+  await actor.call('PUT', `${base(world)}/messages/${message.id}/reactions/${reaction}`);
+  return `reacted ${reaction} in #${channel.name}`;
+}
+
+const UPDATE_LINES = [
+  ['on_track', 'The week went to plan: what was promised moved, and nothing new is in the way.'],
+  ['on_track', 'Two items closed and the next two are started. On course for the date.'],
+  ['at_risk', 'One piece is waiting on another team; the rest is moving. Watching it daily.'],
+  ['at_risk', 'Review is slower than hoped. If it is not through by Thursday the date moves.'],
+] as const;
+
+/** Now and then, a word on how a board is going. */
+async function projectUpdate(actor: Actor, world: World) {
+  const boards = await boardOf(actor, world);
+  const board = pickOne(boards, world.random);
+  if (!board) return null;
+  const [health, body] = pickOne(UPDATE_LINES, world.random)!;
+  await actor.call('POST', `${base(world)}/projects/${board.project.id}/updates`, { health, body });
+  return `wrote an update on ${board.project.name}`;
+}
+
 export const DO: Readonly<Record<Action, (actor: Actor, world: World) => Promise<string | null>>> =
   {
     chat,
@@ -250,4 +291,6 @@ export const DO: Readonly<Record<Action, (actor: Actor, world: World) => Promise
     ask,
     answer,
     markHelpful,
+    reactToMessage,
+    projectUpdate,
   };

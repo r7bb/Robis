@@ -71,6 +71,39 @@ describe('the demo workspace', () => {
     expect(wallOf(starts, 'Europe/London')).toMatchObject({ hour: 10, minute: 0 });
   });
 
+  test('arrives as a team would have it: an update, a blocked issue, a repeat and meeting notes', async () => {
+    const { owner, made } = await makeDemo('Europe/London');
+    const base = `/workspaces/${made.workspace.id}`;
+    const updates = (
+      await request(`${base}/projects/${made.projectId}/updates`, { actor: owner })
+    ).json();
+    expect(updates.updates).toEqual([
+      expect.objectContaining({ health: 'at_risk', body: DEMO_WORKSPACE.update.body }),
+    ]);
+
+    const blocked = (
+      await request(`${base}/projects/${made.projectId}/blocked`, { actor: owner })
+    ).json();
+    expect(blocked.issueIds).toHaveLength(1);
+
+    const repeats = (
+      await request(`${base}/projects/${made.projectId}/repeats`, { actor: owner })
+    ).json();
+    expect(repeats.repeats).toEqual([
+      expect.objectContaining({
+        title: DEMO_WORKSPACE.repeat.title,
+        cadence: 'weekly',
+        timeZone: 'Europe/London',
+      }),
+    ]);
+
+    const meetings = (await request(`${base}/meetings`, { actor: owner })).json();
+    const notes = (
+      await request(`${base}/meetings/${meetings.meetings[0].id}/notes`, { actor: owner })
+    ).json();
+    expect(notes.notes).toContain('- [ ] Ask legal to read the pricing page');
+  });
+
   test('asking again returns the same demo rather than another', async () => {
     const { owner, made } = await makeDemo();
     const again = await request('/workspaces/demo', { method: 'POST', actor: owner, payload: {} });

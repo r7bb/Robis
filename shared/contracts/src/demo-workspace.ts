@@ -51,6 +51,34 @@ This is a demo document. Edit it freely, or open it in a second window and type 
     durationMinutes: 30,
     /** Local time it starts, on the next weekday. */
     hour: 10,
+    /** Notes as if from last week's check-in, with follow-ups to try. */
+    notes: [
+      'Last check-in: navigation is close; pricing copy needs a second pass.',
+      '',
+      '- [ ] Share the navigation draft with the whole team',
+      '- [ ] Ask legal to read the pricing page',
+      'TODO: List every old address that needs a redirect',
+    ].join('\n'),
+  },
+  /** The team's word on the board, beside what its issues say. */
+  update: {
+    health: 'at_risk',
+    body: 'Navigation is in review, but the contact form on small phones is still broken and the redirects have not started. A demo update.',
+  },
+  /** Which demo issue waits on which, by title. */
+  blocks: [
+    {
+      blocked: 'Plan the launch announcement',
+      blocker: 'Set up redirects from the old addresses',
+    },
+  ],
+  /** An issue filed every week, as a team would. */
+  repeat: {
+    title: 'Weekly check of the site on small phones',
+    cadence: 'weekly',
+    weekday: 1,
+    hour: 9,
+    priority: 'MEDIUM',
   },
 } as const;
 

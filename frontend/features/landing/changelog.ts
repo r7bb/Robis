@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'The demo shows the new things at work',
+    brief:
+      'A demo workspace now arrives with the team’s update on its board, one issue waiting on another, a weekly repeat and last week’s meeting notes with follow-ups; and the demo’s people react to chat and write the odd project update.',
+    summary:
+      'Making a demo workspace now fills in what a team would have after a few weeks: an at-risk update on the board, the launch announcement waiting on the redirects (so the board shows Blocked), a weekly check of the site on small phones as a repeat at nine on your own clock, and notes from last week’s check-in with three follow-ups ready to become issues. In the shared demo, the simulated teammates also react to each other’s chat messages and now and then write how a board is going, alongside everything they did before.',
+    checked:
+      'A test that a new demo arrives with the update, a blocked issue, the repeat on its maker’s clock and the meeting notes; the demo’s life tests with the two new actions. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Sapha answers: who has an issue, and how it stands',
     brief:
       'Ask the palette “who has REL-4?”, “status of REL-4” or “how’s REL-4 going?” and Sapha answers there: its status, who has it, when it is due, its priority, and what it waits on.',

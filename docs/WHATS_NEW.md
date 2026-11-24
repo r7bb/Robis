@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **The demo shows the new things at work** (2026-11-24). A demo workspace
+  now arrives with the team’s update on its board, one issue waiting on
+  another, a weekly repeat and last week’s meeting notes with follow-ups;
+  and the demo’s people react to chat and write the odd project update.
 - **Sapha answers: who has an issue, and how it stands** (2026-11-24). Ask
   the palette “who has REL-4?”, “status of REL-4” or “how’s REL-4 going?”
   and Sapha answers there: its status, who has it, when it is due, its
