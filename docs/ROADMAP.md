@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-11-24): **1873 TypeScript tests, 106 Python tests, lint and
+Status (2026-11-24): **1873 TypeScript tests, 123 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -180,19 +180,14 @@ fingerprint rather than a timer.
 
 ### 1. A labelled set somebody else wrote
 
-Now the most useful next step, because the current set has reached what it
-can say:
-
-- **Its author built the model.** A second author, or real duplicate pairs
-  from a live workspace, would test whether these numbers survive somebody
-  else's wording.
-- **Its test half has been read**, so it can no longer confirm a change.
-- **All 4 word-form gap queries landed in dev**, so test cannot measure
-  word-form gaps at all.
-
-Write the new set with the split stratified by gap kind as well as category.
-Then re-test the one unconfirmed candidate: `char_wb 3-5`, which had 2 of 11
-hard-negative false alarms against 4 of 11 on both halves of the current set.
+**Partly done (D1, 2026-11-24).** A second set of 120 queries, tagged by gap
+kind, with its split stratified by kind and topic and committed before the
+report; a test freezes the test half to the report alone. Results are in
+the ML README: `char_wb 3-5` again had fewer hard-negative false alarms (1 of
+15 against 5 of 15) and neither model found a lexical gap (0 of 10). It was
+written by the AI assistant that built the model, at the owner's request,
+so it is not independent. What remains is a second author following
+`robis-ml/robis_ml/datasets/independent/GUIDE.md` without seeing the model.
 
 ### 2. Stemming, then embeddings, for the lexical gap
 

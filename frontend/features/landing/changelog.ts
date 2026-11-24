@@ -45,6 +45,17 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
+    area: 'ML',
+    title: 'A second labelled duplicate set, scored on a test half fixed in advance',
+    brief:
+      'A new set of 120 queries tagged by kind of wording gap, split before any score and read once: character n-grams raised more alarms on nothing new, but neither model found a single reworded duplicate.',
+    summary:
+      'The duplicate finder’s first labelled set was written by the person who built the model and its test half had been read. The second set follows a written guide: 40 issues across 8 topics and 120 queries tagged as word form, synonym, lexical gap, hard negative or unrelated. A seeded split, stratified by kind and topic, was committed before the report was run, and a test lets only the report read the test half. On it, production (word TF-IDF at 0.40) had precision 0.67 and recall 0.34 with false alarms on 5 of 15 hard negatives; character n-grams (3 to 5) had 0.93 and 0.40 with 1 of 15, and found every word-form duplicate. Neither found any of the 10 lexical-gap duplicates, so under the rule fixed beforehand the candidate is not adopted; that gap is the case for embeddings. The set was written by the AI assistant that built the model, at the owner’s request, and says so; it is fresh but not independent, and the guide is there for a second author to replace it.',
+    checked:
+      'Seventeen Python tests: the loader refuses each kind of malformed entry, the split halves every stratum and never changes, the shipped set meets the guide and names its author, and only the report reads the test half. The report was run once, after the split was committed, with 95% Wilson intervals on every figure.',
+  },
+  {
+    date: '2026-11-24',
     area: 'Product',
     title: 'Robis in Spanish, and dates and numbers in your own locale',
     brief:

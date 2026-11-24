@@ -6,6 +6,11 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **A second labelled duplicate set, scored on a test half fixed in
+  advance** (2026-11-24). A new set of 120 queries tagged by kind of wording
+  gap, split before any score and read once: character n-grams raised more
+  alarms on nothing new, but neither model found a single reworded
+  duplicate.
 - **Robis in Spanish, and dates and numbers in your own locale**
   (2026-11-24). Choose Español under Account and the sidebar, calendar and
   Spaces read in Spanish; every date, time and number now follows your

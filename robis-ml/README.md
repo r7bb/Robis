@@ -232,6 +232,52 @@ That is two queries, with heavily overlapping intervals. The combined
 variants do not show it on dev. It was not the question asked, so it is an
 unconfirmed candidate to re-test on a set somebody else writes, not a change.
 
+### A second set, with the split fixed first
+
+```bash
+.venv/bin/python -m robis_ml.independent_eval check    # well formed? never scores
+.venv/bin/python -m robis_ml.independent_eval report   # the test half, once
+```
+
+[`datasets/independent/`](robis_ml/datasets/independent/) holds a second
+set written to [a guide](robis_ml/datasets/independent/GUIDE.md): 40 issues
+across 8 topics and 120 queries, each tagged by gap kind (25 word form, 25
+synonym, 20 lexical gap, 30 hard negative, 20 unrelated). The dev and test
+halves come from a seeded split stratified by kind and topic, committed in
+`split.json` before the report was first run; a test lets only the report
+read the test half.
+
+**Who wrote it.** The AI assistant that built the model wrote it on
+2026-11-24, at the owner's request. It is fresh, written to the guide
+before any score, with its test half unread until this report, but it is
+**not independent**: its author knows how TF-IDF fails. A second author
+following the guide, who never sees the model, would replace it and make
+this the independent check it is meant to be.
+
+The test half (60 queries, 35 pairs), production at its shipped threshold
+and the candidate at the threshold its dev half chose, with 95% Wilson
+intervals:
+
+| | production, word TF-IDF at 0.40 | candidate, `char_wb 3-5` at 0.60 |
+| --- | --- | --- |
+| Precision | 12/18 = 0.67 [0.44, 0.84] | 14/15 = 0.93 [0.70, 0.99] |
+| Recall | 12/35 = 0.34 [0.21, 0.51] | 14/35 = 0.40 [0.26, 0.56] |
+| Hard-negative false alarms | 5/15 = 0.33 [0.15, 0.58] | 1/15 = 0.07 [0.01, 0.30] |
+| Recall, word form | 8/12 = 0.67 [0.39, 0.86] | 12/12 = 1.00 [0.76, 1.00] |
+| Recall, synonym | 4/13 = 0.31 [0.13, 0.58] | 2/13 = 0.15 [0.04, 0.42] |
+| Recall, lexical gap | 0/10 = 0.00 [0.00, 0.28] | 0/10 = 0.00 [0.00, 0.28] |
+
+What it says:
+
+- **The side result held up.** Fewer hard-negative false alarms for
+  `char_wb 3-5` again, now 1 of 15 against 5 of 15, and every word-form
+  duplicate found. The intervals still overlap.
+- **It is not adopted.** The rule fixed in advance asks for lexical-gap
+  recall up with false alarms not up, and neither model finds any lexical
+  gap: 0 of 10 for both. Character n-grams help with spelling, not meaning.
+- **Synonyms and lexical gaps are what is left**, which is the case for
+  embeddings (D2), measured on this same set.
+
 ## Priority triage
 
 Multinomial logistic regression over the same features. Linear and

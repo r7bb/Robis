@@ -204,6 +204,10 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **A second labelled duplicate set, scored on a test half fixed in
+  advance.** A new set of 120 queries tagged by kind of wording gap, split
+  before any score and read once: character n-grams raised more alarms on
+  nothing new, but neither model found a single reworded duplicate.
 - **Robis in Spanish, and dates and numbers in your own locale.** Choose
   Español under Account and the sidebar, calendar and Spaces read in
   Spanish; every date, time and number now follows your locale, so an
@@ -214,10 +218,6 @@ no write lost and nothing done twice.
   who has been most helpful. Celebrations take reactions, the calendar marks
   today and now in colour, Mist and Meadow are light themes that are not all
   white, and the agent is now called RoRo.
-- **Every dialog by keyboard, and Robis that says when it cannot be
-  reached.** Each dialog now opens from the keyboard, keeps focus inside,
-  has a name, and closes on Escape with focus back where it was; and the
-  page shown when Robis is down says so instead of blaming the connection.
 
 <!-- latest:end -->
 
