@@ -164,6 +164,20 @@ class FakeTransport implements SyncTransport {
     return { story: { id: `story-${idempotencyKey}` } };
   }
 
+  /** Comments the server holds, by idempotency key: a replay posts nothing new. */
+  comments = new Map<string, { issueId: string; body: string }>();
+
+  async createComment(_workspaceId: string, issueId: string, body: string, idempotencyKey: string) {
+    this.calls.push({ method: 'comment', key: idempotencyKey });
+    if (this.failWith) throw this.failWith;
+    if (!this.comments.has(idempotencyKey)) this.comments.set(idempotencyKey, { issueId, body });
+    if (this.dropNextResponse) {
+      this.dropNextResponse = false;
+      throw new SyncError('network dropped after the server stored it');
+    }
+    return { comment: { id: `comment-${idempotencyKey}` } };
+  }
+
   async listIssues(_workspaceId: string, projectId: string) {
     return {
       issues: [...this.serverIssues.values()].filter((i) => i.projectId === projectId),
@@ -914,5 +928,65 @@ describe('reordering the board offline (C1)', () => {
     expect(transport.serverIssues.get(oldest.id)?.position).toBe(
       (await engine.localIssues(PROJECT))[0]!.position,
     );
+  });
+});
+
+describe('comments and pages kept for offline (C8)', () => {
+  test('a comment written offline waits, then lands once even when the first answer is lost', async () => {
+    const id = await engine.queueComment(WORKSPACE, 'issue-1', 'Written on the train');
+    expect(await engine.pendingComments('issue-1')).toEqual([
+      { id, body: 'Written on the train', queuedAt: expect.any(Number) },
+    ]);
+    expect(await engine.pendingComments('issue-2')).toEqual([]);
+
+    transport.dropNextResponse = true;
+    expect((await engine.flush()).failed).toBe(1);
+    expect(await engine.pendingComments('issue-1')).toHaveLength(1);
+    expect((await engine.flush()).flushed).toBe(1);
+
+    const tries = transport.calls.filter((c) => c.method === 'comment');
+    expect(tries).toHaveLength(2);
+    expect(new Set(tries.map((t) => t.key))).toEqual(new Set([id]));
+    expect(transport.comments.size).toBe(1);
+    expect(await engine.pendingComments('issue-1')).toEqual([]);
+  });
+
+  test('a refused comment is not retried for ever, nor lost: its words wait to be seen', async () => {
+    const id = await engine.queueComment(WORKSPACE, 'issue-1', 'Not allowed');
+    transport.failWith = new SyncError('You do not have permission to do that', 403);
+    const result = await engine.flush();
+    expect(result.discarded).toBe(1);
+    expect(await engine.pendingComments('issue-1')).toEqual([]);
+    expect(await engine.refusedComments('issue-1')).toEqual([
+      { id, body: 'Not allowed', reason: 'You do not have permission to do that' },
+    ]);
+    await engine.dismissRefused('issue-1', id);
+    expect(await engine.refusedComments('issue-1')).toEqual([]);
+  });
+
+  test('a page’s last answer is kept until sign-out, and only for whoever kept it', async () => {
+    await engine.claimFor('user-a');
+    await engine.remember('issue:issue-1', { issue: { id: 'issue-1', title: 'Kept' } });
+    expect(await engine.recall<unknown>('issue:issue-1')).toEqual({
+      issue: { id: 'issue-1', title: 'Kept' },
+    });
+    expect(await engine.recall('issue:nope')).toBeUndefined();
+    await engine.clearLocal();
+    expect(await engine.recall('issue:issue-1')).toBeUndefined();
+    // Nobody has claimed the device: an answer arriving now waits, unsaved...
+    await engine.remember('issue:issue-1', { early: true });
+    expect(await engine.recall('issue:issue-1')).toBeUndefined();
+    // ...and is kept for whoever claims it in this sign-in.
+    await engine.claimFor('user-b');
+    expect(await engine.recall<unknown>('issue:issue-1')).toEqual({ early: true });
+  });
+
+  test('an answer to a read begun before a sign-out is never kept after it', async () => {
+    await engine.claimFor('user-a');
+    const since = engine.currentEpoch();
+    await engine.clearLocal();
+    await engine.claimFor('user-b');
+    await engine.remember('me', { user: { id: 'user-a' } }, since);
+    expect(await engine.recall('me')).toBeUndefined();
   });
 });

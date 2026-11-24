@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-11-23): **1803 TypeScript tests, 106 Python tests, lint and
+Status (2026-11-23): **1808 TypeScript tests, 106 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -89,8 +89,9 @@ fresh workspace reproduces issues, comments and labels. Account deletion
 
 **Phone and installable app (C8), first part.** A manifest and icons so
 a phone installs Robis to its home screen, and every page checked at
-390 by 844 by a browser journey. Issues and comments offline and sharing
-to Robis from the phone are next.
+390 by 844 by a browser journey. An issue seen once opens with no network
+and a comment written then is sent once on reconnect, checked at phone
+size with the network off. Sharing to Robis from the phone is next.
 
 **Integrations (C7).** Outgoing webhooks per workspace:
 chosen events, HTTPS only, signed with HMAC over a timestamp and the body,

@@ -123,6 +123,18 @@ const transport: SyncTransport = {
     );
   },
 
+  async createComment(workspaceId, issueId, body, idempotencyKey, queuedForMs) {
+    try {
+      return await call(contracts['comments.create'], {
+        params: { workspaceId, issueId },
+        body: { body },
+        headers: { 'idempotency-key': idempotencyKey, ...waitedHeader(queuedForMs) },
+      });
+    } catch (error) {
+      throw toSyncError(error);
+    }
+  },
+
   async listIssues(workspaceId, projectId) {
     try {
       return await call(contracts['issues.list'], {

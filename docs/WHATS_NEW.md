@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Issues and comments offline** (2026-11-24). An issue seen once opens
+  again with no network, and a comment written then waits on the device and
+  is sent once when the connection is back.
 - **Install Robis on a phone** (2026-11-24). Robis can be added to a phone’s
   home screen and opened as an app of its own, and every page has been
   checked at phone width.

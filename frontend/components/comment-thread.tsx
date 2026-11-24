@@ -5,7 +5,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type ClipboardEvent, type FormEvent, useEffect, useState } from 'react';
 import { type Attachment, uploadable } from '../features/issues/attachments.tsx';
 import { BASE_URL, type CommentMention, call } from '../lib/api.ts';
+import { remembered } from '../lib/remembered.ts';
 import { useMemberAvatars } from '../lib/use-member-avatars.ts';
+import { usePendingComments } from '../lib/use-pending-comments.ts';
 import { DeleteButton } from './delete-button.tsx';
 import { EmptyView } from './empty-view.tsx';
 import { Avatar } from './ui/avatar.tsx';
@@ -46,20 +48,26 @@ export function CommentThread({
 
   const me = useQuery({
     queryKey: ['me'],
-    queryFn: () => call(contracts['auth.me']),
+    queryFn: remembered('me', () => call(contracts['auth.me'])),
     retry: false,
   });
 
+  // Kept on the device, so the thread reads with no network (C8).
   const comments = useQuery({
     queryKey: key,
-    queryFn: () => call(contracts['comments.list'], { params: { workspaceId, issueId } }),
+    queryFn: remembered(`comments:${issueId}`, () =>
+      call(contracts['comments.list'], { params: { workspaceId, issueId } }),
+    ),
   });
 
   const attachmentsKey = ['attachments', workspaceId, issueId] as const;
   const attachments = useQuery({
     queryKey: attachmentsKey,
-    queryFn: () => call(contracts['attachments.list'], { params: { workspaceId, issueId } }),
+    queryFn: remembered(`attachments:${issueId}`, () =>
+      call(contracts['attachments.list'], { params: { workspaceId, issueId } }),
+    ),
   });
+  const offline = usePendingComments(workspaceId, issueId);
 
   /*
    * A comment and its images are separate requests. If an image fails after
@@ -70,6 +78,14 @@ export function CommentThread({
 
   const post = useMutation({
     mutationFn: async (text: string) => {
+      // Words alone are queued like a board write, so they are kept with no
+      // network and sent once it is back (C8). Pictures need the comment's
+      // id to attach to, so a comment with pictures still goes straight.
+      if (drafts.length === 0 && !posted) {
+        await offline.queue(text);
+        setBody('');
+        return;
+      }
       let commentId = posted;
       if (!commentId) {
         const created = await call(contracts['comments.create'], {
@@ -195,7 +211,56 @@ export function CommentThread({
         ))}
       </ul>
 
-      {items.length === 0 && comments.isSuccess && (
+      {offline.pending.length > 0 ? (
+        <ul className="mt-3 space-y-3" aria-label="Comments not sent yet">
+          {offline.pending.map((waiting) => (
+            <li
+              key={waiting.id}
+              data-pending-comment
+              className="rounded-lg border border-dashed border-line bg-raised p-4"
+            >
+              <span className="text-xs text-faint">
+                Not sent yet; it goes when you are back online
+              </span>
+              <p className="mt-2 whitespace-pre-wrap text-sm text-muted">{waiting.body}</p>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {offline.refused.map((refused) => (
+        <div
+          key={refused.id}
+          role="alert"
+          className="mt-3 rounded-lg border border-danger/40 bg-raised p-4 text-sm"
+        >
+          <p className="text-danger-soft">Not sent: {refused.reason}</p>
+          <p className="mt-2 whitespace-pre-wrap text-muted">{refused.body}</p>
+          <div className="mt-3 flex gap-3">
+            {canComment ? (
+              <button
+                type="button"
+                className="text-xs text-accent-soft hover:underline"
+                onClick={() => {
+                  setBody(refused.body);
+                  void offline.dismiss(refused.id);
+                }}
+              >
+                Put it back in the box
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="text-xs text-muted hover:text-content"
+              onClick={() => void offline.dismiss(refused.id)}
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      ))}
+
+      {items.length === 0 && offline.pending.length === 0 && comments.isSuccess && (
         <div className="mt-3">
           <EmptyView view="comments" canFill={canComment} />
         </div>

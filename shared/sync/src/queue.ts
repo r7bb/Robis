@@ -75,6 +75,20 @@ export type QueuedMutation =
       queuedAt: number;
       attempts: number;
       lastError?: string;
+    }
+  | {
+      /**
+       * A comment written with no network (C8). The id is the
+       * Idempotency-Key, so a replay after a lost response posts it once.
+       */
+      kind: 'comment.create';
+      id: string;
+      workspaceId: string;
+      issueId: string;
+      body: string;
+      queuedAt: number;
+      attempts: number;
+      lastError?: string;
     };
 
 /** The kinds whose bytes wait in the `blobs` store under the mutation's id. */

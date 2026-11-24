@@ -60,8 +60,13 @@ export const STORE_QUEUE = 'queue';
 export const STORE_META = 'meta';
 /** Image bytes waiting to upload, keyed by their queued mutation's id. */
 export const STORE_BLOBS = 'blobs';
+/**
+ * The last answer seen for a page's reads (C8): an issue, its comments, the
+ * workspace around it, so the page opens with no network. Keyed by name.
+ */
+export const STORE_SNAPSHOTS = 'snapshots';
 
-const STORES = [STORE_ISSUES, STORE_QUEUE, STORE_META, STORE_BLOBS];
+const STORES = [STORE_ISSUES, STORE_QUEUE, STORE_META, STORE_BLOBS, STORE_SNAPSHOTS];
 
 /** IndexedDB-backed adapter for the browser. */
 export class IndexedDbAdapter implements StorageAdapter {
@@ -69,9 +74,10 @@ export class IndexedDbAdapter implements StorageAdapter {
 
   constructor(
     private readonly name = 'robis',
-    // 2 added the `blobs` store; bumping the version is what makes an existing
-    // database run `onupgradeneeded` and create it.
-    private readonly version = 2,
+    // 2 added the `blobs` store and 3 the `snapshots` store; bumping the
+    // version is what makes an existing database run `onupgradeneeded` and
+    // create it.
+    private readonly version = 3,
   ) {}
 
   private open(): Promise<IDBDatabase> {

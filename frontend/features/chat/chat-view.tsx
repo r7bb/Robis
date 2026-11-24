@@ -3,6 +3,7 @@
 import type { Avatar as AvatarRef } from '@robis/shared';
 import { can, type Role } from '@robis/shared';
 import { ApiError } from '../../lib/api.ts';
+import { useOnline } from '../../lib/use-online.ts';
 import type { ChatDraft } from '../workspace/chat-controls.tsx';
 import { Composer } from './composer.tsx';
 import { MessageList } from './message-list.tsx';
@@ -55,6 +56,8 @@ export function ChatView({
   const channelId = channel?.id ?? null;
 
   const history = useMessages(workspaceId, channelId);
+  // Chat is online only (C8): nothing typed here is kept for later.
+  const online = useOnline();
   const send = useSendMessage(workspaceId, channelId);
   const picture = useSendPicture(workspaceId, channelId);
   const remove = useDeleteMessage(workspaceId, channelId);
@@ -96,7 +99,8 @@ export function ChatView({
 
       <Composer
         channelName={channel?.name ?? ''}
-        disabled={!channel || !can(role, 'message:create')}
+        disabled={!channel || !can(role, 'message:create') || !online}
+        offline={!online}
         sending={send.isPending}
         error={messageFor(send.error ?? picture.error)}
         onSend={(body) => send.mutate(body)}

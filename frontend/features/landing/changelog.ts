@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Issues and comments offline',
+    brief:
+      'An issue seen once opens again with no network, and a comment written then waits on the device and is sent once when the connection is back.',
+    summary:
+      'Robis kept the board working offline; now an issue does too. Each issue page keeps its last answers on the device (the issue, its comments and images, the workspace and its members), so with no signal it opens from what was seen last, while a real refusal from the server is never covered over with an old copy. A comment written offline joins the same queue as board changes, shows straight away marked not sent yet, and is sent when the connection returns, with its own key so a retry after a lost answer posts it once. If the server refuses a waiting comment for good, its words and the reason stay on the issue with a way to put them back in the box. A comment with pictures still needs a connection, since the pictures attach to it. Chat works only online and now says so where messages are typed, rather than keeping words it cannot send. Everything kept is wiped on sign-out.',
+    checked:
+      'The test the track asked for: a browser at phone size opens an issue online, goes offline, reloads it from the service worker and IndexedDB, writes a comment that shows as not sent yet, and on reconnect the comment is sent and is on the server exactly once. Five sync engine tests: a queued comment kept until it lands once even when the first answer is lost; a refused one not retried for ever but kept, words and reason, until dismissed; kept answers wiped on sign-out, kept only for whoever claimed the device, and an answer to a read begun before a sign-out never kept after it. A code review, whose finding that a refused comment vanished in silence was fixed before this shipped. The offline board journey still passes. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Offline issues',
+      where: 'Any issue, with the network off',
+      layers: [
+        'Screen: the issue and its comments from the device; a comment marked not sent yet; chat saying it needs a connection',
+        'Sync engine: a snapshots store for read answers, and a comment kind in the write queue',
+        'API: comments.create takes the queued id as its Idempotency-Key, so a replay posts once',
+      ],
+    },
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Install Robis on a phone',
     brief:
       'Robis can be added to a phone’s home screen and opened as an app of its own, and every page has been checked at phone width.',

@@ -204,6 +204,9 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Issues and comments offline.** An issue seen once opens again with no
+  network, and a comment written then waits on the device and is sent once
+  when the connection is back.
 - **Install Robis on a phone.** Robis can be added to a phone’s home screen
   and opened as an app of its own, and every page has been checked at phone
   width.
@@ -211,9 +214,6 @@ no write lost and nothing done twice.
   reference sits beside the OpenAPI document, both written from the
   contracts the server validates against, and a running server serves its
   own document.
-- **GitHub pull requests on issues.** A pull request whose title or branch
-  names an issue key shows on that issue with its state, and merging it can
-  move the issue to done.
 
 <!-- latest:end -->
 

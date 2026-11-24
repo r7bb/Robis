@@ -9,6 +9,7 @@ import { IssueDetail } from '../../../../../features/issues/issue-detail.tsx';
 import { call } from '../../../../../lib/api.ts';
 import { useCoalesced, useRealtime } from '../../../../../lib/realtime.ts';
 import { concernsIssue } from '../../../../../lib/realtime-events.ts';
+import { remembered } from '../../../../../lib/remembered.ts';
 import { lastTheme, useApplyTheme } from '../../../../../lib/theme.ts';
 
 /**
@@ -37,14 +38,25 @@ export default function IssuePage() {
     { scopes: [{ kind: 'issue', issueId }] },
   );
 
+  // Read first, so this device is claimed for whoever is signed in and the
+  // page's answers can be kept for them to open offline (C8).
+  useQuery({
+    queryKey: ['me'],
+    queryFn: remembered('me', () => call(contracts['auth.me'])),
+    retry: false,
+  });
   const workspace = useQuery({
     queryKey: ['workspace', workspaceId],
-    queryFn: () => call(contracts['workspaces.get'], { params: { workspaceId } }),
+    queryFn: remembered(`workspace:${workspaceId}`, () =>
+      call(contracts['workspaces.get'], { params: { workspaceId } }),
+    ),
   });
   useApplyTheme(workspace.data?.workspace.theme ?? lastTheme());
   const issue = useQuery({
     queryKey: ['issue', workspaceId, issueId],
-    queryFn: () => call(contracts['issues.get'], { params: { workspaceId, issueId } }),
+    queryFn: remembered(`issue:${issueId}`, () =>
+      call(contracts['issues.get'], { params: { workspaceId, issueId } }),
+    ),
   });
   const data = issue.data?.issue;
 

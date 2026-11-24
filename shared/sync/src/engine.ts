@@ -5,6 +5,7 @@ import {
   STORE_ISSUES,
   STORE_META,
   STORE_QUEUE,
+  STORE_SNAPSHOTS,
   type StorageAdapter,
 } from './storage.ts';
 
@@ -50,6 +51,9 @@ export type LocalIssue = {
  */
 export type IssueAnswer = Omit<LocalIssue, 'assigneeName' | 'pending'>;
 
+/** A queued comment the server would not take, kept so its words are not lost (C8). */
+export type RefusedComment = { id: string; body: string; reason: string };
+
 /** The issue a queued edit is to, if it is one: images and stories are not. */
 function issueEditedBy(mutation: QueuedMutation): string[] {
   switch (mutation.kind) {
@@ -60,6 +64,7 @@ function issueEditedBy(mutation: QueuedMutation): string[] {
       return [mutation.issueId];
     case 'attachment.upload':
     case 'story.upload':
+    case 'comment.create':
       return [];
   }
 }
@@ -112,6 +117,15 @@ export interface SyncTransport {
     queuedForMs?: number,
   ): Promise<{ story: { id: string } }>;
 
+  /** A comment (C8), with a replay-safe key like every queued write. */
+  createComment(
+    workspaceId: string,
+    issueId: string,
+    body: string,
+    idempotencyKey: string,
+    queuedForMs?: number,
+  ): Promise<unknown>;
+
   /** The list joins in the assignee's name; `pending` is the client's own. */
   listIssues(
     workspaceId: string,
@@ -156,6 +170,11 @@ function isPermanent(error: unknown): boolean {
 }
 
 export class SyncEngine {
+  /** Bumped on every clear, so an answer from before a sign-out is not kept after it. */
+  private epoch = 0;
+  /** Answers that came before the device was claimed, kept in memory until it is. */
+  private readonly unclaimed = new Map<string, unknown>();
+
   readonly queue: MutationQueue;
 
   constructor(
@@ -182,11 +201,21 @@ export class SyncEngine {
     const owner = await this.storage.get<string>(STORE_META, OWNER_KEY);
     if (owner !== undefined && owner !== userId) await this.clearLocal();
     await this.storage.put(STORE_META, OWNER_KEY, userId);
+    // Answers that arrived before anyone had claimed the device, in this
+    // same sign-in, are theirs.
+    const waiting = [...this.unclaimed];
+    this.unclaimed.clear();
+    for (const [key, value] of waiting) {
+      await this.storage.put(STORE_SNAPSHOTS, key, { owner: userId, value });
+    }
   }
 
   /** Forget everything on this device. Used on sign-out. */
   async clearLocal(): Promise<void> {
-    for (const store of [STORE_ISSUES, STORE_QUEUE, STORE_BLOBS, STORE_META]) {
+    // Reads begun before this can no longer be kept, whenever they answer.
+    this.epoch++;
+    this.unclaimed.clear();
+    for (const store of [STORE_ISSUES, STORE_QUEUE, STORE_BLOBS, STORE_SNAPSHOTS, STORE_META]) {
       await this.storage.clear(store);
     }
   }
@@ -244,6 +273,91 @@ export class SyncEngine {
       attempts: 0,
     });
     return id;
+  }
+
+  /**
+   * Leave a comment, now or whenever the network returns (C8). Returns the
+   * queued id, which the thread shows as "not sent yet" until it lands.
+   */
+  async queueComment(workspaceId: string, issueId: string, body: string): Promise<string> {
+    const id = this.newId();
+    await this.queue.enqueue({
+      kind: 'comment.create',
+      id,
+      workspaceId,
+      issueId,
+      body,
+      queuedAt: this.now(),
+      attempts: 0,
+    });
+    return id;
+  }
+
+  /** Comments on one issue still waiting to send, oldest first. */
+  async pendingComments(
+    issueId: string,
+  ): Promise<{ id: string; body: string; queuedAt: number }[]> {
+    return (await this.queue.all()).flatMap((mutation) =>
+      mutation.kind === 'comment.create' && mutation.issueId === issueId
+        ? [{ id: mutation.id, body: mutation.body, queuedAt: mutation.queuedAt }]
+        : [],
+    );
+  }
+
+  /**
+   * Keep the latest answer for a read, to open the page again offline (C8).
+   * Stamped with whose device this is, so an answer that arrives after a
+   * sign-out has cleared everything is never shown to the next person.
+   */
+  async remember(key: string, value: unknown, since = this.epoch): Promise<void> {
+    if (since !== this.epoch) return;
+    const owner = await this.storage.get<string>(STORE_META, OWNER_KEY);
+    if (owner === undefined) {
+      this.unclaimed.set(key, value);
+      return;
+    }
+    await this.storage.put(STORE_SNAPSHOTS, key, { owner, value });
+  }
+
+  /** Which sign-in this is: a read keeps its answer only if this is unchanged when it lands. */
+  currentEpoch(): number {
+    return this.epoch;
+  }
+
+  /** The answer last kept for a read, if it was kept for whoever is here now. */
+  async recall<T>(key: string): Promise<T | undefined> {
+    const owner = await this.storage.get<string>(STORE_META, OWNER_KEY);
+    const kept = await this.storage.get<{ owner: string; value: T }>(STORE_SNAPSHOTS, key);
+    return kept && owner !== undefined && kept.owner === owner ? kept.value : undefined;
+  }
+
+  /**
+   * A comment the server refused for good (the issue gone, the right to
+   * comment lost) is not dropped in silence: its words and the reason are
+   * kept for that issue until the writer has seen them.
+   */
+  private async keepRefused(
+    mutation: Extract<QueuedMutation, { kind: 'comment.create' }>,
+    reason: string,
+  ): Promise<void> {
+    const key = `refused:${mutation.issueId}`;
+    const kept = (await this.storage.get<RefusedComment[]>(STORE_SNAPSHOTS, key)) ?? [];
+    await this.storage.put(STORE_SNAPSHOTS, key, [
+      ...kept,
+      { id: mutation.id, body: mutation.body, reason },
+    ]);
+  }
+
+  /** Comments on one issue the server refused, with why, until dismissed. */
+  async refusedComments(issueId: string): Promise<RefusedComment[]> {
+    return (await this.storage.get<RefusedComment[]>(STORE_SNAPSHOTS, `refused:${issueId}`)) ?? [];
+  }
+
+  async dismissRefused(issueId: string, id: string): Promise<void> {
+    const key = `refused:${issueId}`;
+    const left = (await this.refusedComments(issueId)).filter((comment) => comment.id !== id);
+    if (left.length === 0) await this.storage.delete(STORE_SNAPSHOTS, key);
+    else await this.storage.put(STORE_SNAPSHOTS, key, left);
   }
 
   /** Photo stories still waiting to post in a workspace, oldest first. */
@@ -423,6 +537,9 @@ export class SyncEngine {
         if (isPermanent(error)) {
           await this.queue.remove(mutation.id);
           await this.revert(mutation);
+          if (mutation.kind === 'comment.create') {
+            await this.keepRefused(mutation, (error as Error).message);
+          }
           result.discarded++;
           result.refused.push({ kind: mutation.kind, message: (error as Error).message });
           continue;
@@ -467,6 +584,17 @@ export class SyncEngine {
         waited,
       );
       await this.storage.delete(STORE_BLOBS, mutation.id);
+      return;
+    }
+
+    if (mutation.kind === 'comment.create') {
+      await this.transport.createComment(
+        mutation.workspaceId,
+        mutation.issueId,
+        mutation.body,
+        mutation.id,
+        waited,
+      );
       return;
     }
 

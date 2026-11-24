@@ -16,6 +16,7 @@ import { AgentBadge, ErrorState } from '../../components/ui/primitives.tsx';
 import { call } from '../../lib/api.ts';
 import { issueCommands } from '../../lib/page-commands.ts';
 import { may } from '../../lib/permissions.ts';
+import { remembered } from '../../lib/remembered.ts';
 import { useCommands } from '../command/command-provider.tsx';
 import { IssueAttachments } from './attachments.tsx';
 import { DueField } from './due-field.tsx';
@@ -61,17 +62,23 @@ export function IssueDetail({
 
   const workspace = useQuery({
     queryKey: ['workspace', workspaceId],
-    queryFn: () => call(contracts['workspaces.get'], { params: { workspaceId } }),
+    queryFn: remembered(`workspace:${workspaceId}`, () =>
+      call(contracts['workspaces.get'], { params: { workspaceId } }),
+    ),
   });
 
   const issue = useQuery({
     queryKey: issueKey,
-    queryFn: () => call(contracts['issues.get'], { params: { workspaceId, issueId } }),
+    queryFn: remembered(`issue:${issueId}`, () =>
+      call(contracts['issues.get'], { params: { workspaceId, issueId } }),
+    ),
   });
 
   const members = useQuery({
     queryKey: ['members', workspaceId],
-    queryFn: () => call(contracts['members.list'], { params: { workspaceId } }),
+    queryFn: remembered(`members:${workspaceId}`, () =>
+      call(contracts['members.list'], { params: { workspaceId } }),
+    ),
   });
 
   const update = useMutation({

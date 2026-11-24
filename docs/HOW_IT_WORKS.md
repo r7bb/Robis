@@ -65,6 +65,13 @@ same issue twice.
 
 ![After reconnecting](../frontend/public/shots/reconnected.webp)
 
+The same holds beyond the board. An issue seen once opens again with no
+network, its page from the service worker and its fields, comments and
+images from IndexedDB; a comment written then waits in the same queue,
+marked not sent yet, and goes once on reconnect under the same kind of
+key. Chat is online only and says so, rather than keeping words it cannot
+send. Robis installs to a phone's home screen from its manifest.
+
 ---
 
 ## Measured, not estimated

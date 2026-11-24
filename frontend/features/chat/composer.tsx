@@ -29,9 +29,12 @@ export function Composer({
   onDraftUsed,
   onPicture,
   sendingPicture = false,
+  offline = false,
 }: {
   channelName: string;
   disabled: boolean;
+  /** No network: chat is online only, and says so rather than losing words (C8). */
+  offline?: boolean;
   sending: boolean;
   error: string | null;
   onSend: (body: string) => void;
@@ -104,6 +107,12 @@ export function Composer({
 
   return (
     <form onSubmit={submit} className="border-t border-line bg-raised px-4 py-3">
+      {offline ? (
+        <p role="status" className="mb-2 text-xs text-faint">
+          Chat works only online, and nothing typed here is kept for later. Board changes and
+          comments are kept on this device and sent when you are back.
+        </p>
+      ) : null}
       <div className="flex items-end gap-2">
         <textarea
           ref={textarea}
@@ -126,7 +135,13 @@ export function Composer({
           disabled={disabled}
           rows={1}
           maxLength={MESSAGE_MAX_LENGTH}
-          placeholder={disabled ? 'Pick a channel to start talking' : `Message #${channelName}`}
+          placeholder={
+            offline
+              ? 'Chat needs a connection'
+              : disabled
+                ? 'Pick a channel to start talking'
+                : `Message #${channelName}`
+          }
           aria-label={`Message #${channelName}`}
           className="max-h-40 flex-1 resize-none rounded-md border border-line bg-surface px-3 py-2 text-sm text-content placeholder:text-faint focus:border-accent-soft focus:outline-none focus-visible:ring-1 focus-visible:ring-accent-soft disabled:opacity-50"
         />
