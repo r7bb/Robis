@@ -7,7 +7,6 @@
 import { mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { readZip } from '@robis/storage';
 import { WAIT_MS, waitUntil } from '../smoke/browser-input.ts';
 import { WEB } from '../smoke/browser-session.ts';
 import type { Checks } from './checks.ts';
@@ -53,12 +52,9 @@ export async function exportJourney(checks: Checks, port: number) {
     const file = await downloaded(dir);
     checks.check('the download lands as a zip', file !== null);
     if (file) {
-      const entries = readZip(new Uint8Array(await Bun.file(file).arrayBuffer()), 50_000_000);
-      const issues = entries.find((e) => e.name === 'issues.jsonl');
-      checks.check(
-        'holding the workspace’s issues',
-        !!issues && new TextDecoder().decode(issues.data).includes('Leaves in the zip'),
-      );
+      // Read with the system unzip: the CI job that runs journeys installs nothing.
+      const issues = Bun.spawnSync(['unzip', '-p', file, 'issues.jsonl']).stdout.toString();
+      checks.check('holding the workspace’s issues', issues.includes('Leaves in the zip'));
     }
     checks.check(
       'and is shown as downloaded, with no second download offered',
