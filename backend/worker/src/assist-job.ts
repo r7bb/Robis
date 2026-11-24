@@ -4,6 +4,7 @@ import {
   type AssistResult,
   assistRequests,
   type Database,
+  workspaces,
 } from '@robis/database';
 import { log } from '@robis/telemetry/log';
 import { and, eq } from 'drizzle-orm';
@@ -29,13 +30,27 @@ export function assistHandler(assistant: Assistant | undefined): JobHandler {
   };
 }
 
-/** What a pending ask asks; null when it is gone or already answered (a redelivery). */
+/**
+ * What a pending ask asks; null when it is gone or already answered (a
+ * redelivery). Asked again of the workspace now: one that turned assistance
+ * off while the ask waited sends nothing, and the ask fails with its words
+ * cleared.
+ */
 async function pendingAsk(db: Database, requestId: string): Promise<AssistInput | null> {
   const [row] = await db
-    .select({ input: assistRequests.input, status: assistRequests.status })
+    .select({
+      input: assistRequests.input,
+      status: assistRequests.status,
+      enabled: workspaces.assistEnabled,
+    })
     .from(assistRequests)
+    .innerJoin(workspaces, eq(workspaces.id, assistRequests.workspaceId))
     .where(eq(assistRequests.id, requestId));
   if (row?.status !== 'pending' || !row.input) return null;
+  if (!row.enabled) {
+    await settle(db, requestId, null);
+    return null;
+  }
   return (typeof row.input === 'string' ? JSON.parse(row.input) : row.input) as AssistInput;
 }
 

@@ -169,3 +169,40 @@ describe('repeats', () => {
     ).toBe(204);
   });
 });
+
+describe('repeats, as people come and go', () => {
+  test('a creator no longer allowed to file issues pauses the repeat', async () => {
+    const { owner, member, workspace, project, ws } = await board();
+    const repeat = (await make(member, ws, project.id, WEEKLY)).json().repeat;
+    await request(`/workspaces/${workspace.id}/members/${member.id}`, {
+      method: 'PATCH',
+      actor: owner,
+      payload: { role: 'GUEST' },
+    });
+    await dueNow(repeat.id);
+    const { db } = await getHarness();
+    await runDueRepeats(db);
+    expect(await filedOn(project.id)).toEqual([]);
+    const [after] = await db
+      .select()
+      .from(recurringIssues)
+      .where(eq(recurringIssues.id, repeat.id));
+    expect(after!.paused).toBe(true);
+  });
+
+  test('an assignee who has left is not given the new issue', async () => {
+    const { owner, member, workspace, project, ws } = await board();
+    const repeat = (await make(owner, ws, project.id, { ...WEEKLY, assigneeId: member.id })).json()
+      .repeat;
+    const { ownerDb, db } = await getHarness();
+    await ownerDb
+      .delete(workspaceMembers)
+      .where(
+        and(eq(workspaceMembers.workspaceId, workspace.id), eq(workspaceMembers.userId, member.id)),
+      );
+    await dueNow(repeat.id);
+    await runDueRepeats(db);
+    const [filed] = await filedOn(project.id);
+    expect(filed).toMatchObject({ title: 'Weekly release check', assigneeId: null });
+  });
+});

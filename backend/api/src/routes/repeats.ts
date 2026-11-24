@@ -93,6 +93,9 @@ function scheduleAfter(body: Changes, row: Row) {
   return schedule;
 }
 
+/** What, changed, means the next run is worked out again. */
+const SCHEDULE_KEYS = ['cadence', 'weekday', 'monthDay', 'hour', 'timeZone', 'paused'] as const;
+
 /** The settings a change names, and only those. */
 function changedSettings(body: Changes) {
   const keys = ['title', 'description', 'priority', 'assigneeId', 'paused'] as const;
@@ -202,14 +205,16 @@ export async function repeatRoutes(app: FastifyInstance, opts: { db: Database })
       const row = await mine(request, repeatId);
       if (body.assigneeId) await assertAssignable(db, workspaceId, body.assigneeId);
       const schedule = scheduleAfter(body, row);
+      // Worked out again from now when the schedule or the pause changes: a
+      // repeat resumed after a month is not a month of issues at once. A new
+      // title alone leaves a run that is already due where it is.
+      const retimed = SCHEDULE_KEYS.some((key) => body[key] !== undefined);
       const [updated] = await db
         .update(recurringIssues)
         .set({
           ...changedSettings(body),
           ...schedule,
-          // Worked out again from now: a repeat resumed after a month is not
-          // a month of issues at once.
-          nextRunAt: nextRunAfter(schedule, new Date()),
+          ...(retimed ? { nextRunAt: nextRunAfter(schedule, new Date()) } : {}),
         })
         .where(eq(recurringIssues.id, row.id))
         .returning();

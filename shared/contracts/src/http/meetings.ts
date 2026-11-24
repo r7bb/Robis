@@ -139,8 +139,11 @@ export const meetingContracts = {
     params: meetingParams,
     body: z.object({
       notes: z.string().max(MEETING_NOTES_MAX_LENGTH),
-      /** When the notes being replaced were saved, as read; null when they never were. */
-      basedOn: timestamp.nullable().optional(),
+      /**
+       * When the notes being replaced were saved, as read; null when they
+       * never were. Always sent, so no save can skip the check.
+       */
+      basedOn: timestamp.nullable(),
     }),
     response: meetingNotes,
   }),

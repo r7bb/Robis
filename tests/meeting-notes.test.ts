@@ -47,12 +47,8 @@ async function setUp() {
 }
 
 const read = async (actor: Actor, path: string) => (await request(path, { actor })).json() as Notes;
-const save = (actor: Actor, path: string, notes: string, basedOn?: string | null) =>
-  request(path, {
-    method: 'PUT',
-    actor,
-    payload: basedOn === undefined ? { notes } : { notes, basedOn },
-  });
+const save = (actor: Actor, path: string, notes: string, basedOn: string | null = null) =>
+  request(path, { method: 'PUT', actor, payload: { notes, basedOn } });
 
 describe('meeting notes', () => {
   test('empty at first; an attendee writes them, and everyone reads who did', async () => {

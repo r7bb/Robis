@@ -334,3 +334,25 @@ describe('Sapha, tier 1', () => {
     expect(keepParts({ kind: 'go' })).toBeNull();
   });
 });
+
+describe('turned off while an ask waits', () => {
+  test('nothing is sent, and the ask fails with its words cleared', async () => {
+    const { owner, ws } = await team();
+    await turnOn(owner, ws);
+    const asked = await request(`${ws}/assist/interpret`, {
+      method: 'POST',
+      actor: owner,
+      payload: { request: 'nudge me about REL-4 later' },
+    });
+    const { request: made } = asked.json<{ request: { id: string } }>();
+    await request(`${ws}/assist`, { method: 'PUT', actor: owner, payload: { enabled: false } });
+    await runAssist();
+    expect(assistCalls).toEqual([]);
+    const { workerDb } = await getHarness();
+    const [row] = await workerDb
+      .select()
+      .from(assistRequests)
+      .where(eq(assistRequests.id, made.id));
+    expect(row).toMatchObject({ status: 'failed', input: null });
+  });
+});

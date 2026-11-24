@@ -79,10 +79,7 @@ export async function meetingNotesRoutes(app: FastifyInstance, opts: { db: Datab
       const now = new Date();
       // The check and the save are one statement: of two saves made at once
       // from the same notes, the second finds them changed.
-      const unchanged =
-        body.basedOn === undefined
-          ? undefined
-          : sql`${meetings.notesUpdatedAt} is not distinct from ${body.basedOn}`;
+      const unchanged = sql`${meetings.notesUpdatedAt} is not distinct from ${body.basedOn}`;
       await db.transaction(async (tx) => {
         const saved = await tx
           .update(meetings)

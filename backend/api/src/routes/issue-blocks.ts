@@ -1,5 +1,6 @@
 import {
   type Database,
+  type Executor,
   issueBlocks,
   issues,
   projects,
@@ -67,8 +68,8 @@ export async function issueBlockRoutes(app: FastifyInstance, opts: { db: Databas
   }
 
   /** Whether `from` already waits, however far round, on `to`. */
-  async function waitsOn(from: string, to: string): Promise<boolean> {
-    const rows = await db.execute<{ found: boolean }>(sql`
+  async function waitsOn(tx: Executor, from: string, to: string): Promise<boolean> {
+    const rows = await tx.execute<{ found: boolean }>(sql`
       with recursive chain(id, depth) as (
         select blocker_id, 1 from issue_blocks where blocked_id = ${from}
         union
@@ -114,21 +115,24 @@ export async function issueBlockRoutes(app: FastifyInstance, opts: { db: Databas
       if (blocker.id === issue.id) {
         throw ApiError.badRequest('An issue cannot wait on itself', 'self');
       }
-      // The new link closes a loop if the blocker already waits on this issue.
-      if (await waitsOn(blocker.id, issue.id)) {
-        throw ApiError.conflict(
-          'That would make a loop: it already waits on this issue',
-          'blocks_loop',
-        );
-      }
-      const [{ n } = { n: 0 }] = await db
-        .select({ n: count() })
-        .from(issueBlocks)
-        .where(eq(issueBlocks.blockedId, issue.id));
-      if (n >= BLOCKERS_MAX) {
-        throw ApiError.conflict(`An issue waits on at most ${BLOCKERS_MAX} others`, 'too_many');
-      }
       await db.transaction(async (tx) => {
+        // One link at a time in a workspace: two made at once could each
+        // pass the loop check before the other is there, and close a loop.
+        await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`blocks:${workspaceId}`}))`);
+        // The new link closes a loop if the blocker already waits on this issue.
+        if (await waitsOn(tx, blocker.id, issue.id)) {
+          throw ApiError.conflict(
+            'That would make a loop: it already waits on this issue',
+            'blocks_loop',
+          );
+        }
+        const [{ n } = { n: 0 }] = await tx
+          .select({ n: count() })
+          .from(issueBlocks)
+          .where(eq(issueBlocks.blockedId, issue.id));
+        if (n >= BLOCKERS_MAX) {
+          throw ApiError.conflict(`An issue waits on at most ${BLOCKERS_MAX} others`, 'too_many');
+        }
         await tx
           .insert(issueBlocks)
           .values({

@@ -110,3 +110,15 @@ describe('blocked by', () => {
     );
   });
 });
+
+describe('blocked by, at the same moment', () => {
+  test('two opposite links made at once leave one, never a loop', async () => {
+    const { owner, ws, file } = await board();
+    const [a, b] = [await file('A'), await file('B')];
+    const [one, two] = await Promise.all([
+      link(owner, ws, a.id, b.id),
+      link(owner, ws, b.id, a.id),
+    ]);
+    expect([one.statusCode, two.statusCode].sort()).toEqual([201, 409]);
+  });
+});
