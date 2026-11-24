@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Ask Sapha in the command palette: plain requests, done once you say yes',
+    brief:
+      'Type “move REL-4 to done”, “give REL-4 to Ana”, “remind me about REL-12 tomorrow 9am”, “schedule Retro friday 3pm” or “what’s due today” into the palette; Sapha says what it will do, and changes nothing until Do it.',
+    summary:
+      'Sapha now reads requests in the command palette, understood in the browser with no language model and nothing sent anywhere. It knows a dozen kinds: moving an issue to a status, its priority, giving it to someone (or to you), clearing its assignee, its due day, a new issue (on a named board), a reminder about an issue, a meeting at a time, opening an issue by key, searching, and going to your day, the calendar, who is here, Spaces or meetings. Looking goes at once. Anything that changes something shows a card saying exactly what will happen, done as you with your own access, so the audit log names you and a guest is not offered what a guest may not do. A name that matches two people, or a board not named when there are several, is a question back, never a guess; a request it does not read is left to search as before.',
+    checked:
+      'Seven tests of reading requests (each kind, with greetings and politeness ignored, and what it cannot read left alone, a time it cannot read never guessed) and of the sentence it shows; four of finding a person and a board (full and first names, two of a name, an agent never given an issue, archived boards). In the browser, a request typed in the palette moved an issue to Done after Do it. The palette and keyboard journeys. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Sapha',
+      where: 'The command palette (⌘K or Ctrl K)',
+      layers: [
+        'Screen: a Sapha row first in the palette, and a card that waits for Do it',
+        'Reading: requests read into intents in shared code, tested on their own',
+        'Doing: through the same routes as the buttons, as the person',
+      ],
+    },
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Snooze anything in your inbox, and Remind me on issues, messages and threads',
     brief:
       'Put an inbox entry off until later today, tomorrow, next week or a time you type in plain words, and it comes back unread then; Remind me on an issue, a chat message or a space thread does the same for something nobody told you about.',

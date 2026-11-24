@@ -9,6 +9,8 @@ import {
   type Command,
   rankCommands,
 } from '../../lib/commands.ts';
+import { SaphaCard } from '../sapha/sapha-card.tsx';
+import { type Proposal, useSaphaCommand } from '../sapha/use-sapha-command.ts';
 import { usePaletteSources } from './use-palette-sources.ts';
 
 /**
@@ -38,7 +40,10 @@ export function CommandPalette({
   // The lists opened on the way here: Change status… then its statuses.
   const [stack, setStack] = useState<readonly Command[]>([]);
   const [active, setActive] = useState(0);
+  // A change Sapha read, waiting for a yes in place of the list.
+  const [proposal, setProposal] = useState<Proposal | null>(null);
   const parent = stack.at(-1);
+  const sapha = useSaphaCommand(workspaceId, parent ? '' : query, setProposal);
 
   const { local, found, searching } = usePaletteSources(
     workspaceId,
@@ -52,6 +57,7 @@ export function CommandPalette({
       })
     : arrangeCommands(
         [
+          ...allowedCommands(sapha, role),
           ...rankCommands(allowedCommands([...pageCommands, ...local], role), query),
           ...allowedCommands(found, role),
         ],
@@ -78,6 +84,7 @@ export function CommandPalette({
   function choose(command: Command | undefined) {
     if (!command) return;
     if (command.children) return show([...stack, command]);
+    if (command.keepOpen) return command.run?.();
     onClose();
     // Once the palette is gone and focus is back, so the command can move it.
     requestAnimationFrame(() => command.run?.());
@@ -110,7 +117,6 @@ export function CommandPalette({
     }
   }
 
-  let index = -1;
   return (
     <dialog
       ref={dialogRef}
@@ -154,51 +160,31 @@ export function CommandPalette({
           autoComplete="off"
           spellCheck={false}
           placeholder={
-            parent ? 'Choose…' : 'Search issues, docs, channels, people, or run a command…'
+            parent ? 'Choose…' : 'Search, run a command, or ask Sapha: move REL-4 to done…'
           }
           className="h-12 min-w-0 flex-1 text-ellipsis bg-transparent text-[15px] text-content outline-none placeholder:text-faint"
         />
       </div>
 
-      <div
-        ref={listRef}
-        id={listId}
-        role="listbox"
-        aria-label="Commands"
-        className="max-h-[min(24rem,58vh)] overflow-y-auto overscroll-contain p-2"
-      >
-        {sections.map((section) => (
-          // biome-ignore lint/a11y/useSemanticElements: options in a listbox are grouped by role="group"; a fieldset groups form controls.
-          <div key={section.group} role="group" aria-label={section.group} className="pb-1">
-            <p
-              aria-hidden="true"
-              className="px-2.5 pb-1 pt-2 text-[11px] font-medium uppercase tracking-wide text-faint"
-            >
-              {section.group}
-            </p>
-            {section.commands.map((command) => {
-              index += 1;
-              const at = index;
-              return (
-                <Option
-                  key={command.id}
-                  id={optionId(at)}
-                  index={at}
-                  command={command}
-                  selected={at === current}
-                  onPoint={() => setActive(at)}
-                  onChoose={() => choose(command)}
-                />
-              );
-            })}
-          </div>
-        ))}
-      </div>
-      {/* Outside the listbox, which holds options and nothing else. */}
-      {items.length === 0 && (
-        <p className="px-2.5 pb-8 pt-6 text-center text-sm text-faint">
-          {searching ? 'Searching…' : `Nothing matches “${query.trim()}”.`}
-        </p>
+      {proposal ? (
+        <SaphaCard
+          workspaceId={workspaceId}
+          intent={proposal}
+          onBack={() => setProposal(null)}
+          onClose={onClose}
+        />
+      ) : (
+        <PaletteList
+          listRef={listRef}
+          listId={listId}
+          sections={sections}
+          current={current}
+          optionId={optionId}
+          onPoint={setActive}
+          onChoose={choose}
+          searching={searching}
+          query={query}
+        />
       )}
 
       {/* Always mounted, so a change of count is announced. */}
@@ -302,5 +288,75 @@ function SearchGlyph() {
       <circle cx="7" cy="7" r="4.25" />
       <path d="m10.25 10.25 3.25 3.25" />
     </svg>
+  );
+}
+
+/** The list of commands by group, and what to say when there are none. */
+function PaletteList({
+  listRef,
+  listId,
+  sections,
+  current,
+  optionId,
+  onPoint,
+  onChoose,
+  searching,
+  query,
+}: {
+  listRef: RefObject<HTMLDivElement | null>;
+  listId: string;
+  sections: ReturnType<typeof arrangeCommands>;
+  current: number;
+  optionId: (index: number) => string;
+  onPoint: (index: number) => void;
+  onChoose: (command: Command) => void;
+  searching: boolean;
+  query: string;
+}) {
+  let index = -1;
+  const none = sections.length === 0;
+  return (
+    <>
+      <div
+        ref={listRef}
+        id={listId}
+        role="listbox"
+        aria-label="Commands"
+        className="max-h-[min(24rem,58vh)] overflow-y-auto overscroll-contain p-2"
+      >
+        {sections.map((section) => (
+          // biome-ignore lint/a11y/useSemanticElements: options in a listbox are grouped by role="group"; a fieldset groups form controls.
+          <div key={section.group} role="group" aria-label={section.group} className="pb-1">
+            <p
+              aria-hidden="true"
+              className="px-2.5 pb-1 pt-2 text-[11px] font-medium uppercase tracking-wide text-faint"
+            >
+              {section.group}
+            </p>
+            {section.commands.map((command) => {
+              index += 1;
+              const at = index;
+              return (
+                <Option
+                  key={command.id}
+                  id={optionId(at)}
+                  index={at}
+                  command={command}
+                  selected={at === current}
+                  onPoint={() => onPoint(at)}
+                  onChoose={() => onChoose(command)}
+                />
+              );
+            })}
+          </div>
+        ))}
+      </div>
+      {/* Outside the listbox, which holds options and nothing else. */}
+      {none ? (
+        <p className="px-2.5 pb-8 pt-6 text-center text-sm text-faint">
+          {searching ? 'Searching…' : `Nothing matches “${query.trim()}”.`}
+        </p>
+      ) : null}
+    </>
   );
 }

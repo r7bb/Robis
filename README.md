@@ -204,6 +204,11 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Ask Sapha in the command palette: plain requests, done once you say
+  yes.** Type “move REL-4 to done”, “give REL-4 to Ana”, “remind me about
+  REL-12 tomorrow 9am”, “schedule Retro friday 3pm” or “what’s due today”
+  into the palette; Sapha says what it will do, and changes nothing until Do
+  it.
 - **Snooze anything in your inbox, and Remind me on issues, messages and
   threads.** Put an inbox entry off until later today, tomorrow, next week
   or a time you type in plain words, and it comes back unread then; Remind
@@ -212,10 +217,6 @@ no write lost and nothing done twice.
 - **Search finds chat, spaces and meetings too.** The search box, the search
   page and the command palette now find chat messages, space threads and
   their replies, and meetings, each opening right where it is.
-- **Spaces tell you when someone replies, and when your answer is marked.**
-  Whoever asks hears of each reply, whoever is replied to hears too, and
-  whoever answered hears once their reply is marked as the answer; each can
-  be turned off like any other notification.
 
 <!-- latest:end -->
 

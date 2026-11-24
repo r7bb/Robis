@@ -204,6 +204,7 @@ JavaScript.
 | Stored generated `tsvector` columns | `backend/database/src/schema.ts` |
 | Notification inbox with dedupe | `backend/api/src/routes/notifications.ts` |
 | Snooze and Remind me: an entry put off waits under Later and comes back unread; a reminder of an issue, message or thread is a snoozed note to yourself, pushed at its time; times in plain words | `backend/api/src/routes/reminders.ts`, `shared/contracts/src/when.ts`, `frontend/components/inbox-entry.tsx` |
+| Sapha in the command palette: plain requests read in the browser into a dozen intents (status, priority, assignee, due day, new issue, reminder, meeting, open, search, go), changes shown on a card and done as the person only after Do it | `shared/contracts/src/sapha.ts`, `frontend/features/sapha/` |
 | Space notifications: a reply tells the thread's author and the reply it answers, a marked answer tells its author once; stale news tells no one | `backend/worker/src/notify-spaces.ts` |
 | Mention notifications | `backend/worker/src/handlers.ts` |
 | Stale-issue nudges | `backend/worker/src/nudges.ts` |

@@ -6,6 +6,11 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Ask Sapha in the command palette: plain requests, done once you say
+  yes** (2026-11-24). Type “move REL-4 to done”, “give REL-4 to Ana”,
+  “remind me about REL-12 tomorrow 9am”, “schedule Retro friday 3pm” or
+  “what’s due today” into the palette; Sapha says what it will do, and
+  changes nothing until Do it.
 - **Snooze anything in your inbox, and Remind me on issues, messages and
   threads** (2026-11-24). Put an inbox entry off until later today,
   tomorrow, next week or a time you type in plain words, and it comes back

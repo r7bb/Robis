@@ -8,6 +8,8 @@ import { type Action, may } from './permissions.ts';
  */
 
 const COMMAND_GROUPS = [
+  // A request Sapha read from what was typed, first when there is one.
+  'Sapha',
   'Actions',
   'Boards',
   'Issues',
@@ -29,6 +31,8 @@ export type Command = {
   /** Quiet text on the right: a shortcut, or where it leads. */
   hint?: string;
   run?: () => void;
+  /** Run with the palette left open: it shows what comes next (Sapha's card). */
+  keepOpen?: boolean;
   /** A second list to choose from, in place of running. */
   children?: readonly Command[];
   /** Let a search find the children on their own ("done" finds "Change status to Done"). */
