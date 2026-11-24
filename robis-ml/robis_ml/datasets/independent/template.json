@@ -1,0 +1,9 @@
+{
+  "author": "",
+  "written": "",
+  "corpus": [{ "id": "c01", "title": "", "topic": "", "description": "" }],
+  "queries": [
+    { "id": "q001", "title": "", "kind": "word_form", "topic": "", "duplicates": ["c01"] },
+    { "id": "q002", "title": "", "kind": "hard_negative", "topic": "", "duplicates": [] }
+  ]
+}

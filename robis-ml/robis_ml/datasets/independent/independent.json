@@ -1,0 +1,1188 @@
+{
+  "author": "the AI assistant that built the model, at the owner's request (not an independent author; see GUIDE.md for replacing it with one)",
+  "written": "2026-11-24",
+  "corpus": [
+    {
+      "id": "c01",
+      "title": "Password reset email never arrives",
+      "topic": "sign in"
+    },
+    {
+      "id": "c02",
+      "title": "Two-factor codes rejected after changing phones",
+      "topic": "sign in"
+    },
+    {
+      "id": "c03",
+      "title": "Session expires every few minutes on Safari",
+      "topic": "sign in"
+    },
+    {
+      "id": "c04",
+      "title": "SSO login loops back to the sign-in page",
+      "topic": "sign in"
+    },
+    {
+      "id": "c05",
+      "title": "Show which devices are signed in",
+      "topic": "sign in"
+    },
+    {
+      "id": "c06",
+      "title": "Invoice PDF shows the wrong VAT number",
+      "topic": "billing"
+    },
+    {
+      "id": "c07",
+      "title": "Card declined error gives no reason",
+      "topic": "billing"
+    },
+    {
+      "id": "c08",
+      "title": "Downgrading the plan does not remove extra seats",
+      "topic": "billing"
+    },
+    {
+      "id": "c09",
+      "title": "Annual plan renewal charged twice",
+      "topic": "billing"
+    },
+    {
+      "id": "c10",
+      "title": "Add a billing contact separate from the owner",
+      "topic": "billing"
+    },
+    {
+      "id": "c11",
+      "title": "Email digest sent at 3am local time",
+      "topic": "notifications"
+    },
+    {
+      "id": "c12",
+      "title": "Mentions in comments do not send a push notification",
+      "topic": "notifications"
+    },
+    {
+      "id": "c13",
+      "title": "Unsubscribe link in emails is broken",
+      "topic": "notifications"
+    },
+    {
+      "id": "c14",
+      "title": "Desktop notifications keep appearing after being read",
+      "topic": "notifications"
+    },
+    {
+      "id": "c15",
+      "title": "Let people mute a single project",
+      "topic": "notifications"
+    },
+    {
+      "id": "c16",
+      "title": "Search ignores text inside attachments",
+      "topic": "search"
+    },
+    {
+      "id": "c17",
+      "title": "Searching for an issue key returns nothing",
+      "topic": "search"
+    },
+    {
+      "id": "c18",
+      "title": "Search results do not show archived projects",
+      "topic": "search"
+    },
+    {
+      "id": "c19",
+      "title": "Typing in search freezes the page with many results",
+      "topic": "search"
+    },
+    {
+      "id": "c20",
+      "title": "Filter search results by assignee",
+      "topic": "search"
+    },
+    {
+      "id": "c21",
+      "title": "App crashes when opening a photo attachment on Android",
+      "topic": "mobile app"
+    },
+    {
+      "id": "c22",
+      "title": "Keyboard covers the comment box on iPhone",
+      "topic": "mobile app"
+    },
+    {
+      "id": "c23",
+      "title": "Pull to refresh does not load new issues",
+      "topic": "mobile app"
+    },
+    {
+      "id": "c24",
+      "title": "Dark mode text unreadable in the mobile app",
+      "topic": "mobile app"
+    },
+    {
+      "id": "c25",
+      "title": "Offline edits lost when the app is closed",
+      "topic": "mobile app"
+    },
+    {
+      "id": "c26",
+      "title": "Board takes ten seconds to load with 500 cards",
+      "topic": "performance"
+    },
+    {
+      "id": "c27",
+      "title": "Dragging cards is laggy on large boards",
+      "topic": "performance"
+    },
+    {
+      "id": "c28",
+      "title": "CSV import times out above 5,000 rows",
+      "topic": "performance"
+    },
+    {
+      "id": "c29",
+      "title": "Memory keeps growing when the tab is left open",
+      "topic": "performance"
+    },
+    {
+      "id": "c30",
+      "title": "Dashboard charts load slowly every morning",
+      "topic": "performance"
+    },
+    {
+      "id": "c31",
+      "title": "Guests can see private projects in the sidebar",
+      "topic": "permissions"
+    },
+    {
+      "id": "c32",
+      "title": "Admins cannot remove a member who left the company",
+      "topic": "permissions"
+    },
+    {
+      "id": "c33",
+      "title": "Read-only role can still delete comments",
+      "topic": "permissions"
+    },
+    {
+      "id": "c34",
+      "title": "Invite link works after it was revoked",
+      "topic": "permissions"
+    },
+    {
+      "id": "c35",
+      "title": "Let owners transfer a workspace to another admin",
+      "topic": "permissions"
+    },
+    {
+      "id": "c36",
+      "title": "Exported CSV breaks accented characters",
+      "topic": "exports"
+    },
+    {
+      "id": "c37",
+      "title": "Export to PDF cuts off long descriptions",
+      "topic": "exports"
+    },
+    {
+      "id": "c38",
+      "title": "Scheduled export emails arrive empty",
+      "topic": "exports"
+    },
+    {
+      "id": "c39",
+      "title": "JSON export misses custom fields",
+      "topic": "exports"
+    },
+    {
+      "id": "c40",
+      "title": "Export a single board instead of the whole workspace",
+      "topic": "exports"
+    }
+  ],
+  "queries": [
+    {
+      "id": "q001",
+      "title": "Password resets emails not arriving",
+      "kind": "word_form",
+      "topic": "sign in",
+      "duplicates": [
+        "c01"
+      ]
+    },
+    {
+      "id": "q002",
+      "title": "Two factor code rejected after changed phone",
+      "kind": "word_form",
+      "topic": "sign in",
+      "duplicates": [
+        "c02"
+      ]
+    },
+    {
+      "id": "q003",
+      "title": "Sessions expiring every few minutes in Safari",
+      "kind": "word_form",
+      "topic": "sign in",
+      "duplicates": [
+        "c03"
+      ]
+    },
+    {
+      "id": "q004",
+      "title": "Invoices PDF showing wrong VAT numbers",
+      "kind": "word_form",
+      "topic": "billing",
+      "duplicates": [
+        "c06"
+      ]
+    },
+    {
+      "id": "q005",
+      "title": "Card declines give no reasons",
+      "kind": "word_form",
+      "topic": "billing",
+      "duplicates": [
+        "c07"
+      ]
+    },
+    {
+      "id": "q006",
+      "title": "Annual renewals charging twice",
+      "kind": "word_form",
+      "topic": "billing",
+      "duplicates": [
+        "c09"
+      ]
+    },
+    {
+      "id": "q007",
+      "title": "Email digests sending at 3am",
+      "kind": "word_form",
+      "topic": "notifications",
+      "duplicates": [
+        "c11"
+      ]
+    },
+    {
+      "id": "q008",
+      "title": "Mention in a comment didn't send push notifications",
+      "kind": "word_form",
+      "topic": "notifications",
+      "duplicates": [
+        "c12"
+      ]
+    },
+    {
+      "id": "q009",
+      "title": "Unsubscribing link broken in email",
+      "kind": "word_form",
+      "topic": "notifications",
+      "duplicates": [
+        "c13"
+      ]
+    },
+    {
+      "id": "q010",
+      "title": "Search ignoring attachment text",
+      "kind": "word_form",
+      "topic": "search",
+      "duplicates": [
+        "c16"
+      ]
+    },
+    {
+      "id": "q011",
+      "title": "Searched for issue keys, got nothing",
+      "kind": "word_form",
+      "topic": "search",
+      "duplicates": [
+        "c17"
+      ]
+    },
+    {
+      "id": "q012",
+      "title": "Typing into search freezing page",
+      "kind": "word_form",
+      "topic": "search",
+      "duplicates": [
+        "c19"
+      ]
+    },
+    {
+      "id": "q013",
+      "title": "App crashing opening photo attachments on android",
+      "kind": "word_form",
+      "topic": "mobile app",
+      "duplicates": [
+        "c21"
+      ]
+    },
+    {
+      "id": "q014",
+      "title": "Pulling to refresh doesn't load new issues",
+      "kind": "word_form",
+      "topic": "mobile app",
+      "duplicates": [
+        "c23"
+      ]
+    },
+    {
+      "id": "q015",
+      "title": "Offline edit lost on closing the app",
+      "kind": "word_form",
+      "topic": "mobile app",
+      "duplicates": [
+        "c25"
+      ]
+    },
+    {
+      "id": "q016",
+      "title": "Boards taking 10 seconds to load with 500 cards",
+      "kind": "word_form",
+      "topic": "performance",
+      "duplicates": [
+        "c26"
+      ]
+    },
+    {
+      "id": "q017",
+      "title": "Dragged cards lagging on big boards",
+      "kind": "word_form",
+      "topic": "performance",
+      "duplicates": [
+        "c27"
+      ]
+    },
+    {
+      "id": "q018",
+      "title": "CSV imports timing out over 5000 rows",
+      "kind": "word_form",
+      "topic": "performance",
+      "duplicates": [
+        "c28"
+      ]
+    },
+    {
+      "id": "q019",
+      "title": "Guest seeing private project in sidebar",
+      "kind": "word_form",
+      "topic": "permissions",
+      "duplicates": [
+        "c31"
+      ]
+    },
+    {
+      "id": "q020",
+      "title": "Read only roles still deleting comments",
+      "kind": "word_form",
+      "topic": "permissions",
+      "duplicates": [
+        "c33"
+      ]
+    },
+    {
+      "id": "q021",
+      "title": "Revoked invite links still working",
+      "kind": "word_form",
+      "topic": "permissions",
+      "duplicates": [
+        "c34"
+      ]
+    },
+    {
+      "id": "q022",
+      "title": "Exported CSVs breaking accents",
+      "kind": "word_form",
+      "topic": "exports",
+      "duplicates": [
+        "c36"
+      ]
+    },
+    {
+      "id": "q023",
+      "title": "PDF exports cutting off long description",
+      "kind": "word_form",
+      "topic": "exports",
+      "duplicates": [
+        "c37"
+      ]
+    },
+    {
+      "id": "q024",
+      "title": "Scheduled exports emailed empty",
+      "kind": "word_form",
+      "topic": "exports",
+      "duplicates": [
+        "c38"
+      ]
+    },
+    {
+      "id": "q025",
+      "title": "Desktop notification keeps showing after reading it",
+      "kind": "word_form",
+      "topic": "notifications",
+      "duplicates": [
+        "c14"
+      ]
+    },
+    {
+      "id": "q026",
+      "title": "Forgot-password message never shows up in my inbox",
+      "kind": "synonym",
+      "topic": "sign in",
+      "duplicates": [
+        "c01"
+      ]
+    },
+    {
+      "id": "q027",
+      "title": "Single sign-on keeps redirecting back to login",
+      "kind": "synonym",
+      "topic": "sign in",
+      "duplicates": [
+        "c04"
+      ]
+    },
+    {
+      "id": "q028",
+      "title": "See a list of devices that are logged in",
+      "kind": "synonym",
+      "topic": "sign in",
+      "duplicates": [
+        "c05"
+      ]
+    },
+    {
+      "id": "q029",
+      "title": "Bill shows incorrect tax ID",
+      "kind": "synonym",
+      "topic": "billing",
+      "duplicates": [
+        "c06"
+      ]
+    },
+    {
+      "id": "q030",
+      "title": "Payment refused with no explanation",
+      "kind": "synonym",
+      "topic": "billing",
+      "duplicates": [
+        "c07"
+      ]
+    },
+    {
+      "id": "q031",
+      "title": "Lowering our subscription keeps the additional seats",
+      "kind": "synonym",
+      "topic": "billing",
+      "duplicates": [
+        "c08"
+      ]
+    },
+    {
+      "id": "q032",
+      "title": "Need a separate invoicing contact from the account owner",
+      "kind": "synonym",
+      "topic": "billing",
+      "duplicates": [
+        "c10"
+      ]
+    },
+    {
+      "id": "q033",
+      "title": "Daily summary email arrives in the middle of the night",
+      "kind": "synonym",
+      "topic": "notifications",
+      "duplicates": [
+        "c11"
+      ]
+    },
+    {
+      "id": "q034",
+      "title": "Opt-out link in the newsletter email does nothing",
+      "kind": "synonym",
+      "topic": "notifications",
+      "duplicates": [
+        "c13"
+      ]
+    },
+    {
+      "id": "q035",
+      "title": "Silence notifications for just one project",
+      "kind": "synonym",
+      "topic": "notifications",
+      "duplicates": [
+        "c15"
+      ]
+    },
+    {
+      "id": "q036",
+      "title": "Lookup by ticket ID finds no results",
+      "kind": "synonym",
+      "topic": "search",
+      "duplicates": [
+        "c17"
+      ]
+    },
+    {
+      "id": "q037",
+      "title": "Archived projects missing from search hits",
+      "kind": "synonym",
+      "topic": "search",
+      "duplicates": [
+        "c18"
+      ]
+    },
+    {
+      "id": "q038",
+      "title": "Narrow search results to one assignee",
+      "kind": "synonym",
+      "topic": "search",
+      "duplicates": [
+        "c20"
+      ]
+    },
+    {
+      "id": "q039",
+      "title": "On-screen keyboard hides the reply field on iOS",
+      "kind": "synonym",
+      "topic": "mobile app",
+      "duplicates": [
+        "c22"
+      ]
+    },
+    {
+      "id": "q040",
+      "title": "Night theme makes text illegible on phone",
+      "kind": "synonym",
+      "topic": "mobile app",
+      "duplicates": [
+        "c24"
+      ]
+    },
+    {
+      "id": "q041",
+      "title": "Large board is very slow to open",
+      "kind": "synonym",
+      "topic": "performance",
+      "duplicates": [
+        "c26"
+      ]
+    },
+    {
+      "id": "q042",
+      "title": "RAM usage climbs if the tab stays open",
+      "kind": "synonym",
+      "topic": "performance",
+      "duplicates": [
+        "c29"
+      ]
+    },
+    {
+      "id": "q043",
+      "title": "Analytics graphs are sluggish first thing each day",
+      "kind": "synonym",
+      "topic": "performance",
+      "duplicates": [
+        "c30"
+      ]
+    },
+    {
+      "id": "q044",
+      "title": "Administrators unable to remove someone who quit",
+      "kind": "synonym",
+      "topic": "permissions",
+      "duplicates": [
+        "c32"
+      ]
+    },
+    {
+      "id": "q045",
+      "title": "Viewer role can delete other people's comments",
+      "kind": "synonym",
+      "topic": "permissions",
+      "duplicates": [
+        "c33"
+      ]
+    },
+    {
+      "id": "q046",
+      "title": "Hand over workspace ownership to another admin",
+      "kind": "synonym",
+      "topic": "permissions",
+      "duplicates": [
+        "c35"
+      ]
+    },
+    {
+      "id": "q047",
+      "title": "Downloaded spreadsheet garbles letters like é and ü",
+      "kind": "synonym",
+      "topic": "exports",
+      "duplicates": [
+        "c36"
+      ]
+    },
+    {
+      "id": "q048",
+      "title": "JSON download leaves out our custom fields",
+      "kind": "synonym",
+      "topic": "exports",
+      "duplicates": [
+        "c39"
+      ]
+    },
+    {
+      "id": "q049",
+      "title": "Download just one board rather than everything",
+      "kind": "synonym",
+      "topic": "exports",
+      "duplicates": [
+        "c40"
+      ]
+    },
+    {
+      "id": "q050",
+      "title": "Phone app closes unexpectedly when viewing an image on Android",
+      "kind": "synonym",
+      "topic": "mobile app",
+      "duplicates": [
+        "c21"
+      ]
+    },
+    {
+      "id": "q051",
+      "title": "Locked out because the recovery message never came",
+      "kind": "lexical_gap",
+      "topic": "sign in",
+      "duplicates": [
+        "c01"
+      ]
+    },
+    {
+      "id": "q052",
+      "title": "New handset, authenticator numbers no longer accepted",
+      "kind": "lexical_gap",
+      "topic": "sign in",
+      "duplicates": [
+        "c02"
+      ]
+    },
+    {
+      "id": "q053",
+      "title": "Have to log in again constantly on my Mac browser",
+      "kind": "lexical_gap",
+      "topic": "sign in",
+      "duplicates": [
+        "c03"
+      ]
+    },
+    {
+      "id": "q054",
+      "title": "Company login goes round in circles",
+      "kind": "lexical_gap",
+      "topic": "sign in",
+      "duplicates": [
+        "c04"
+      ]
+    },
+    {
+      "id": "q055",
+      "title": "We got billed two times for the yearly subscription",
+      "kind": "lexical_gap",
+      "topic": "billing",
+      "duplicates": [
+        "c09"
+      ]
+    },
+    {
+      "id": "q056",
+      "title": "Paying for people we already took off",
+      "kind": "lexical_gap",
+      "topic": "billing",
+      "duplicates": [
+        "c08"
+      ]
+    },
+    {
+      "id": "q057",
+      "title": "I get pinged at night with the morning summary",
+      "kind": "lexical_gap",
+      "topic": "notifications",
+      "duplicates": [
+        "c11"
+      ]
+    },
+    {
+      "id": "q058",
+      "title": "Nobody hears about it when I tag them in a reply",
+      "kind": "lexical_gap",
+      "topic": "notifications",
+      "duplicates": [
+        "c12"
+      ]
+    },
+    {
+      "id": "q059",
+      "title": "Can't find the ticket by its number like ABC-12",
+      "kind": "lexical_gap",
+      "topic": "search",
+      "duplicates": [
+        "c17"
+      ]
+    },
+    {
+      "id": "q060",
+      "title": "Words in uploaded files aren't findable",
+      "kind": "lexical_gap",
+      "topic": "search",
+      "duplicates": [
+        "c16"
+      ]
+    },
+    {
+      "id": "q061",
+      "title": "Whole screen hangs while I type a query",
+      "kind": "lexical_gap",
+      "topic": "search",
+      "duplicates": [
+        "c19"
+      ]
+    },
+    {
+      "id": "q062",
+      "title": "Can't see what I'm writing because the iPhone keypad is in the way",
+      "kind": "lexical_gap",
+      "topic": "mobile app",
+      "duplicates": [
+        "c22"
+      ]
+    },
+    {
+      "id": "q063",
+      "title": "Changes I made on the train vanished",
+      "kind": "lexical_gap",
+      "topic": "mobile app",
+      "duplicates": [
+        "c25"
+      ]
+    },
+    {
+      "id": "q064",
+      "title": "Moving tickets around stutters once we have hundreds",
+      "kind": "lexical_gap",
+      "topic": "performance",
+      "duplicates": [
+        "c27"
+      ]
+    },
+    {
+      "id": "q065",
+      "title": "Spreadsheet upload gives up partway with big files",
+      "kind": "lexical_gap",
+      "topic": "performance",
+      "duplicates": [
+        "c28"
+      ]
+    },
+    {
+      "id": "q066",
+      "title": "Outside contractors can browse confidential work",
+      "kind": "lexical_gap",
+      "topic": "permissions",
+      "duplicates": [
+        "c31"
+      ]
+    },
+    {
+      "id": "q067",
+      "title": "Cancelled invitation still lets people join",
+      "kind": "lexical_gap",
+      "topic": "permissions",
+      "duplicates": [
+        "c34"
+      ]
+    },
+    {
+      "id": "q068",
+      "title": "French names come out as gibberish in the spreadsheet",
+      "kind": "lexical_gap",
+      "topic": "exports",
+      "duplicates": [
+        "c36"
+      ]
+    },
+    {
+      "id": "q069",
+      "title": "Long write-ups get chopped in the printable version",
+      "kind": "lexical_gap",
+      "topic": "exports",
+      "duplicates": [
+        "c37"
+      ]
+    },
+    {
+      "id": "q070",
+      "title": "The weekly backup attachment has nothing in it",
+      "kind": "lexical_gap",
+      "topic": "exports",
+      "duplicates": [
+        "c38"
+      ]
+    },
+    {
+      "id": "q071",
+      "title": "Password reset link expires too quickly",
+      "kind": "hard_negative",
+      "topic": "sign in",
+      "duplicates": []
+    },
+    {
+      "id": "q072",
+      "title": "Two-factor setup should support hardware keys",
+      "kind": "hard_negative",
+      "topic": "sign in",
+      "duplicates": []
+    },
+    {
+      "id": "q073",
+      "title": "Session timeout setting for admins",
+      "kind": "hard_negative",
+      "topic": "sign in",
+      "duplicates": []
+    },
+    {
+      "id": "q074",
+      "title": "SSO login should map groups to roles",
+      "kind": "hard_negative",
+      "topic": "sign in",
+      "duplicates": []
+    },
+    {
+      "id": "q075",
+      "title": "Sign out of all devices from settings",
+      "kind": "hard_negative",
+      "topic": "sign in",
+      "duplicates": []
+    },
+    {
+      "id": "q076",
+      "title": "Invoice PDF should include the purchase order number",
+      "kind": "hard_negative",
+      "topic": "billing",
+      "duplicates": []
+    },
+    {
+      "id": "q077",
+      "title": "Accept bank transfer instead of card",
+      "kind": "hard_negative",
+      "topic": "billing",
+      "duplicates": []
+    },
+    {
+      "id": "q078",
+      "title": "Upgrading the plan should prorate the price",
+      "kind": "hard_negative",
+      "topic": "billing",
+      "duplicates": []
+    },
+    {
+      "id": "q079",
+      "title": "Email a receipt after each renewal",
+      "kind": "hard_negative",
+      "topic": "billing",
+      "duplicates": []
+    },
+    {
+      "id": "q080",
+      "title": "Email digest should include closed issues",
+      "kind": "hard_negative",
+      "topic": "notifications",
+      "duplicates": []
+    },
+    {
+      "id": "q081",
+      "title": "Push notification sound is too loud",
+      "kind": "hard_negative",
+      "topic": "notifications",
+      "duplicates": []
+    },
+    {
+      "id": "q082",
+      "title": "Add an unsubscribe option for marketing emails only",
+      "kind": "hard_negative",
+      "topic": "notifications",
+      "duplicates": []
+    },
+    {
+      "id": "q083",
+      "title": "Desktop notifications should group by project",
+      "kind": "hard_negative",
+      "topic": "notifications",
+      "duplicates": []
+    },
+    {
+      "id": "q084",
+      "title": "Search should highlight matching words",
+      "kind": "hard_negative",
+      "topic": "search",
+      "duplicates": []
+    },
+    {
+      "id": "q085",
+      "title": "Save a search as a filter",
+      "kind": "hard_negative",
+      "topic": "search",
+      "duplicates": []
+    },
+    {
+      "id": "q086",
+      "title": "Sort search results by newest",
+      "kind": "hard_negative",
+      "topic": "search",
+      "duplicates": []
+    },
+    {
+      "id": "q087",
+      "title": "Compress photo attachments before upload on Android",
+      "kind": "hard_negative",
+      "topic": "mobile app",
+      "duplicates": []
+    },
+    {
+      "id": "q088",
+      "title": "Keyboard shortcut for adding a comment",
+      "kind": "hard_negative",
+      "topic": "mobile app",
+      "duplicates": []
+    },
+    {
+      "id": "q089",
+      "title": "Dark mode for the web app",
+      "kind": "hard_negative",
+      "topic": "mobile app",
+      "duplicates": []
+    },
+    {
+      "id": "q090",
+      "title": "Offline mode for documents on desktop",
+      "kind": "hard_negative",
+      "topic": "mobile app",
+      "duplicates": []
+    },
+    {
+      "id": "q091",
+      "title": "Board should remember the scroll position",
+      "kind": "hard_negative",
+      "topic": "performance",
+      "duplicates": []
+    },
+    {
+      "id": "q092",
+      "title": "Show card count on each board column",
+      "kind": "hard_negative",
+      "topic": "performance",
+      "duplicates": []
+    },
+    {
+      "id": "q093",
+      "title": "CSV import should map columns automatically",
+      "kind": "hard_negative",
+      "topic": "performance",
+      "duplicates": []
+    },
+    {
+      "id": "q094",
+      "title": "Dashboard charts should be exportable as images",
+      "kind": "hard_negative",
+      "topic": "performance",
+      "duplicates": []
+    },
+    {
+      "id": "q095",
+      "title": "Guests should be able to comment on public projects",
+      "kind": "hard_negative",
+      "topic": "permissions",
+      "duplicates": []
+    },
+    {
+      "id": "q096",
+      "title": "Admins want an audit log of member removals",
+      "kind": "hard_negative",
+      "topic": "permissions",
+      "duplicates": []
+    },
+    {
+      "id": "q097",
+      "title": "Read-only role for the finance team",
+      "kind": "hard_negative",
+      "topic": "permissions",
+      "duplicates": []
+    },
+    {
+      "id": "q098",
+      "title": "Invite link should expire after seven days",
+      "kind": "hard_negative",
+      "topic": "permissions",
+      "duplicates": []
+    },
+    {
+      "id": "q099",
+      "title": "Transfer an issue to another workspace",
+      "kind": "hard_negative",
+      "topic": "permissions",
+      "duplicates": []
+    },
+    {
+      "id": "q100",
+      "title": "Export CSV should include comment history",
+      "kind": "hard_negative",
+      "topic": "exports",
+      "duplicates": []
+    },
+    {
+      "id": "q101",
+      "title": "Add a pomodoro timer to issues",
+      "kind": "unrelated",
+      "topic": "performance",
+      "duplicates": []
+    },
+    {
+      "id": "q102",
+      "title": "Support Markdown tables in documents",
+      "kind": "unrelated",
+      "topic": "exports",
+      "duplicates": []
+    },
+    {
+      "id": "q103",
+      "title": "Emoji reactions on chat messages",
+      "kind": "unrelated",
+      "topic": "notifications",
+      "duplicates": []
+    },
+    {
+      "id": "q104",
+      "title": "Calendar view for due dates",
+      "kind": "unrelated",
+      "topic": "search",
+      "duplicates": []
+    },
+    {
+      "id": "q105",
+      "title": "Integrate with GitHub pull requests",
+      "kind": "unrelated",
+      "topic": "exports",
+      "duplicates": []
+    },
+    {
+      "id": "q106",
+      "title": "Let users pick a profile colour",
+      "kind": "unrelated",
+      "topic": "sign in",
+      "duplicates": []
+    },
+    {
+      "id": "q107",
+      "title": "Translate the interface into German",
+      "kind": "unrelated",
+      "topic": "mobile app",
+      "duplicates": []
+    },
+    {
+      "id": "q108",
+      "title": "Keyboard navigation for the settings page",
+      "kind": "unrelated",
+      "topic": "permissions",
+      "duplicates": []
+    },
+    {
+      "id": "q109",
+      "title": "Show the weather on the team dashboard",
+      "kind": "unrelated",
+      "topic": "performance",
+      "duplicates": []
+    },
+    {
+      "id": "q110",
+      "title": "Recurring issues every Monday",
+      "kind": "unrelated",
+      "topic": "notifications",
+      "duplicates": []
+    },
+    {
+      "id": "q111",
+      "title": "Templates for bug reports",
+      "kind": "unrelated",
+      "topic": "search",
+      "duplicates": []
+    },
+    {
+      "id": "q112",
+      "title": "Voice notes in comments",
+      "kind": "unrelated",
+      "topic": "mobile app",
+      "duplicates": []
+    },
+    {
+      "id": "q113",
+      "title": "Celebrate birthdays in the feed",
+      "kind": "unrelated",
+      "topic": "notifications",
+      "duplicates": []
+    },
+    {
+      "id": "q114",
+      "title": "Rename the default board columns",
+      "kind": "unrelated",
+      "topic": "permissions",
+      "duplicates": []
+    },
+    {
+      "id": "q115",
+      "title": "Add a public roadmap page",
+      "kind": "unrelated",
+      "topic": "exports",
+      "duplicates": []
+    },
+    {
+      "id": "q116",
+      "title": "Time tracking per issue",
+      "kind": "unrelated",
+      "topic": "billing",
+      "duplicates": []
+    },
+    {
+      "id": "q117",
+      "title": "Allow GIFs in chat",
+      "kind": "unrelated",
+      "topic": "mobile app",
+      "duplicates": []
+    },
+    {
+      "id": "q118",
+      "title": "Archive old channels automatically",
+      "kind": "unrelated",
+      "topic": "search",
+      "duplicates": []
+    },
+    {
+      "id": "q119",
+      "title": "Show a welcome tour for new members",
+      "kind": "unrelated",
+      "topic": "sign in",
+      "duplicates": []
+    },
+    {
+      "id": "q120",
+      "title": "Link issues to customer support tickets",
+      "kind": "unrelated",
+      "topic": "billing",
+      "duplicates": []
+    }
+  ]
+}
