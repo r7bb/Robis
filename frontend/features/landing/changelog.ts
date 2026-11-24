@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Ask Sapha how the release is going',
+    brief:
+      'Type “how is the release going” or “what’s left for the release Version 2” in the command palette, and Sapha answers there with done of planned, its day and what is still open.',
+    summary:
+      'Sapha now reads questions about releases: how is the release going, what is left in the next release, release progress, each optionally naming one, as in how is release Relaunch 1.0 going. The answer comes in the palette for the release named (by its name, or one whose name holds the words, shipped ones too), or else the next still to ship: how many of its planned issues are done, the day it is aimed at or shipped, and the first five still open with work under way first, each a link, with Open releases beneath. With assistance on, the assistant can read such a question too, the release’s name coming back as its title.',
+    checked:
+      'Three tests of the ways the question is read, said back and taken from the assistant’s parts (release notes and a bare word left alone), and two of which release a question names. In the browser, the question answered Relaunch 1.0, 1 of 3 done with two still open, the one under way first. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'The demo arrives with a template and a release',
     brief:
       'A new demo workspace now keeps a Bug report template to file from, and a release three weeks out carrying four of the board’s issues.',

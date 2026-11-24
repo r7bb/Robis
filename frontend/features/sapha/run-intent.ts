@@ -15,7 +15,7 @@ export type Done = { said: string; href: string | null };
 
 type Change = Exclude<
   SaphaIntent,
-  { kind: 'open' | 'search' | 'go' | 'blockers' | 'about' | 'cycle' }
+  { kind: 'open' | 'search' | 'go' | 'blockers' | 'about' | 'cycle' | 'release' }
 >;
 
 async function issueByKey(workspaceId: string, key: string) {

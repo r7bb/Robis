@@ -12,17 +12,20 @@ import { placeOf } from './run-intent.ts';
 const ASK_FROM = 8;
 
 /** A question answered in the palette: about an issue, or how the cycle is going. */
-export type Question = Extract<SaphaIntent, { kind: 'blockers' | 'about' | 'cycle' }>;
+export type Question = Extract<SaphaIntent, { kind: 'blockers' | 'about' | 'cycle' | 'release' }>;
 
 /** A change Sapha read, shown in the palette to be confirmed. */
 export type Proposal = Exclude<
   SaphaIntent,
-  { kind: 'open' | 'search' | 'go' | 'blockers' | 'about' | 'cycle' }
+  { kind: 'open' | 'search' | 'go' | 'blockers' | 'about' | 'cycle' | 'release' }
 >;
 
 /** The intent as a question to answer here, or null when it is not one. */
 export function questionOf(intent: SaphaIntent): Question | null {
-  return intent.kind === 'blockers' || intent.kind === 'about' || intent.kind === 'cycle'
+  return intent.kind === 'blockers' ||
+    intent.kind === 'about' ||
+    intent.kind === 'cycle' ||
+    intent.kind === 'release'
     ? intent
     : null;
 }

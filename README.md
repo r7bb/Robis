@@ -204,15 +204,15 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Ask Sapha how the release is going.** Type “how is the release going” or
+  “what’s left for the release Version 2” in the command palette, and Sapha
+  answers there with done of planned, its day and what is still open.
 - **The demo arrives with a template and a release.** A new demo workspace
   now keeps a Bug report template to file from, and a release three weeks
   out carrying four of the board’s issues.
 - **Releases, with notes written when they ship.** Plan a release, put
   issues from any board in it, watch how much is done, and Ship it to stamp
   it and get its notes, written from what was done, ready to copy.
-- **Issue templates.** Save any issue as a template, then file from it on
-  any board: its title to finish, its description to fill in, its priority
-  and labels come along.
 
 <!-- latest:end -->
 

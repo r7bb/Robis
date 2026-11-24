@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Ask Sapha how the release is going** (2026-11-24). Type “how is the
+  release going” or “what’s left for the release Version 2” in the command
+  palette, and Sapha answers there with done of planned, its day and what is
+  still open.
 - **The demo arrives with a template and a release** (2026-11-24). A new
   demo workspace now keeps a Bug report template to file from, and a release
   three weeks out carrying four of the board’s issues.

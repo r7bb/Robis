@@ -160,6 +160,62 @@ describe('saying what it will do', () => {
   });
 });
 
+describe('asking how a release is going', () => {
+  test('the next release, or one by name, as typed', () => {
+    for (const text of [
+      'how is the release going?',
+      "how's the next release",
+      'what is left in the release',
+      'release progress',
+    ]) {
+      expect(read(text)).toEqual({ kind: 'release', name: null });
+    }
+    expect(read('how is release Relaunch 1.0 going')).toEqual({
+      kind: 'release',
+      name: 'Relaunch 1.0',
+    });
+    expect(read("what's left for the release Version 2")).toEqual({
+      kind: 'release',
+      name: 'Version 2',
+    });
+    expect(read('release status for Relaunch 1.0')).toEqual({
+      kind: 'release',
+      name: 'Relaunch 1.0',
+    });
+  });
+
+  test('said back plainly; release notes and a bare word are not it', () => {
+    expect(describeIntent(read('how is the release going')!, NOW)).toBe(
+      'How the next release is going',
+    );
+    expect(describeIntent(read('release progress for Relaunch 1.0')!, NOW)).toBe(
+      'How Relaunch 1.0 is going',
+    );
+    expect(read('release')).toBeNull();
+    expect(read('find release notes')).toEqual({ kind: 'search', query: 'release notes' });
+  });
+
+  test('from the provider’s parts, the name as its title', () => {
+    const parts = {
+      kind: 'release' as const,
+      issueKey: null,
+      status: null,
+      priority: null,
+      person: null,
+      title: '  Relaunch 1.0 ',
+      board: null,
+      when: null,
+      query: null,
+      place: null,
+    };
+    expect(intentFromParts(parts, NOW)).toEqual({ kind: 'release', name: 'Relaunch 1.0' });
+    expect(intentFromParts({ ...parts, title: null }, NOW)).toEqual({
+      kind: 'release',
+      name: null,
+    });
+  });
+});
+
 describe('asking how the cycle is going', () => {
   test('in the ways people ask, on one board when named, as typed', () => {
     for (const text of [

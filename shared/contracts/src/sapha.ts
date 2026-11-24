@@ -29,6 +29,8 @@ export type SaphaIntent =
   | { kind: 'about'; issueKey: string }
   /** How the cycle running now is going, on one board when named. */
   | { kind: 'cycle'; board: string | null }
+  /** How a release is going: the one named, else the next to ship. */
+  | { kind: 'release'; name: string | null }
   | { kind: 'search'; query: string }
   | { kind: 'go'; place: SaphaPlace };
 
@@ -40,6 +42,7 @@ export const LOOKING_INTENTS: ReadonlySet<SaphaIntent['kind']> = new Set([
   'blockers',
   'about',
   'cycle',
+  'release',
 ]);
 
 const KEY = '([a-z][a-z0-9]{0,9}-\\d{1,9})';
@@ -181,15 +184,28 @@ const CYCLE_QUESTION = new RegExp(
   `^(?:how(?:'s| is) (?:the |this |our |my )?(?:current )?${CYCLE}(?: going| doing| looking)?|(?:what(?:'s| is) )?left in (?:the |this |our )?${CYCLE}|(?:the )?${CYCLE} (?:progress|status))(?: (?:on|for|in) (?:the )?(.+?))?(?: board)?$`,
 );
 
+const RELEASE_QUESTION =
+  /^(?:how(?:'s| is) (?:the |our )?(?:next )?release(?: (.+?))??(?: going| doing| looking)?|(?:what(?:'s| is) )?left (?:in|for) (?:the |our )?(?:next )?release(?: (.+))?|(?:the )?release (?:progress|status)(?: (?:for|of) (.+))?)$/;
+
 /** Words after "for" that mean the asker's own boards, not one named. */
 const EVERY_BOARD = /^(?:me|us|my team|our team|the team|everyone)$/;
 
-function looking(text: string, request: string): SaphaIntent | null {
-  const cycle = CYCLE_QUESTION.exec(text);
-  if (cycle) {
-    const board = cycle[1] && !EVERY_BOARD.test(cycle[1]) ? asTyped(request, cycle[1]) : null;
-    return { kind: 'cycle', board };
+/** A question about how a release or the cycle is going, or null. */
+function planQuestion(text: string, request: string): SaphaIntent | null {
+  const release = RELEASE_QUESTION.exec(text);
+  if (release) {
+    const named = release[1] ?? release[2] ?? release[3];
+    return { kind: 'release', name: named ? asTyped(request, named) : null };
   }
+  const cycle = CYCLE_QUESTION.exec(text);
+  if (!cycle) return null;
+  const board = cycle[1] && !EVERY_BOARD.test(cycle[1]) ? asTyped(request, cycle[1]) : null;
+  return { kind: 'cycle', board };
+}
+
+function looking(text: string, request: string): SaphaIntent | null {
+  const plan = planQuestion(text, request);
+  if (plan) return plan;
   let m = new RegExp(
     `^(?:what(?:'s| is| are)|who(?:'s| is)) (?:blocking|holding up|in the way of) ${KEY}$`,
   ).exec(text);
@@ -276,6 +292,8 @@ export function describeIntent(intent: SaphaIntent, _now: Date = new Date()): st
       return intent.board
         ? `How the cycle on ${intent.board} is going`
         : 'How the cycles are going';
+    case 'release':
+      return intent.name ? `How ${intent.name} is going` : 'How the next release is going';
     case 'search':
       return `Search for “${intent.query}”`;
     case 'go':
@@ -297,6 +315,7 @@ export const SAPHA_KINDS = [
   'blockers',
   'about',
   'cycle',
+  'release',
   'search',
   'go',
   'none',
@@ -396,6 +415,8 @@ export function intentFromParts(parts: SaphaParts, now: Date = new Date()): Saph
       return parts.place ? { kind: 'go', place: parts.place } : null;
     case 'cycle':
       return { kind: 'cycle', board: words(parts.board, 80) };
+    case 'release':
+      return { kind: 'release', name: words(parts.title, 80) };
     default:
       return null;
   }

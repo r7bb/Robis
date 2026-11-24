@@ -9,7 +9,7 @@ import { runIntent } from './run-intent.ts';
 
 type Change = Exclude<
   SaphaIntent,
-  { kind: 'open' | 'search' | 'go' | 'blockers' | 'about' | 'cycle' }
+  { kind: 'open' | 'search' | 'go' | 'blockers' | 'about' | 'cycle' | 'release' }
 >;
 
 /**

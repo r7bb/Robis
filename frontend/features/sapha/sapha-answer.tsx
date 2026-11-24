@@ -7,6 +7,7 @@ import { call } from '../../lib/api.ts';
 import { dateFormat } from '../../lib/i18n/format.ts';
 import { issueHref } from '../../lib/links.ts';
 import { CycleAnswer } from './sapha-cycle-answer.tsx';
+import { ReleaseAnswer } from './sapha-release-answer.tsx';
 import type { Question } from './use-sapha-command.ts';
 
 const FINISHED = new Set(['DONE', 'CANCELED']);
@@ -80,6 +81,8 @@ export function SaphaAnswer({
       <p className="text-[11px] font-medium uppercase tracking-wide text-faint">Sapha</p>
       {question.kind === 'cycle' ? (
         <CycleAnswer workspaceId={workspaceId} board={question.board} onClose={onClose} />
+      ) : question.kind === 'release' ? (
+        <ReleaseAnswer workspaceId={workspaceId} name={question.name} onClose={onClose} />
       ) : (
         <IssueAnswer workspaceId={workspaceId} question={question} onClose={onClose} />
       )}
@@ -97,7 +100,7 @@ function IssueAnswer({
   onClose,
 }: {
   workspaceId: string;
-  question: Exclude<Question, { kind: 'cycle' }>;
+  question: Exclude<Question, { kind: 'cycle' | 'release' }>;
   onClose: () => void;
 }) {
   const { issueKey } = question;
