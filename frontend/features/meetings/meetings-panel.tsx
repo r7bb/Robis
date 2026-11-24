@@ -6,6 +6,7 @@ import { EmptyView } from '../../components/empty-view.tsx';
 import { Button, InlineError, Pill } from '../../components/ui/primitives.tsx';
 import { ApiError, type Member } from '../../lib/api.ts';
 import { formatDay, formatTime, formatUntil } from '../../lib/time.ts';
+import { useScrollToHash } from '../../lib/use-scroll-to-hash.ts';
 import { DraftAgenda } from '../assist/draft-agenda.tsx';
 import { ImportCalendar } from './import-calendar.tsx';
 import { ScheduleDialog } from './schedule-dialog.tsx';
@@ -150,6 +151,8 @@ export function MeetingsPanel({
   const cancel = useCancelMeeting(workspaceId);
 
   const meetings = upcoming.data?.meetings ?? [];
+  // A link to one meeting (from search) opens at it.
+  useScrollToHash(meetings.length > 0);
 
   return (
     <div className="space-y-3">
@@ -171,7 +174,7 @@ export function MeetingsPanel({
       ) : (
         <ul className="space-y-2">
           {meetings.map((meeting) => (
-            <li key={meeting.id}>
+            <li key={meeting.id} id={`meeting-${meeting.id}`} className="scroll-mt-24">
               <MeetingCard
                 workspaceId={workspaceId}
                 meeting={meeting}

@@ -31,7 +31,15 @@ const auditEvent = z.object({
 });
 
 /** What search finds. */
-export const SEARCH_KINDS = ['issue', 'document', 'comment'] as const;
+export const SEARCH_KINDS = [
+  'issue',
+  'document',
+  'comment',
+  'message',
+  'thread',
+  'reply',
+  'meeting',
+] as const;
 
 /** The most results one search returns: the box shows 20, the results page asks for more. */
 export const SEARCH_LIMIT_MAX = 50;
@@ -98,7 +106,7 @@ export const auditContracts = {
     method: 'GET',
     path: '/workspaces/:workspaceId/search',
     summary:
-      'Issues, documents and comments matching a query, best first; one kind with type, more with limit.',
+      'Issues, documents, comments, chat, space threads and replies, and meetings matching a query, best first; one kind with type (thread includes replies), more with limit.',
     params: workspaceParams,
     query: z.object({
       q: z.string().optional(),
@@ -120,6 +128,10 @@ export const auditContracts = {
           rank: z.number(),
           issueId: uuid.nullable(),
           projectId: uuid.nullable(),
+          /** The room a message is in. */
+          channelId: uuid.nullable(),
+          /** The thread a thread hit is, or a reply is in. */
+          threadId: uuid.nullable(),
         }),
       ),
     }),

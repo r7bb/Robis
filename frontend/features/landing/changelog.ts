@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Search finds chat, spaces and meetings too',
+    brief:
+      'The search box, the search page and the command palette now find chat messages, space threads and their replies, and meetings, each opening right where it is.',
+    summary:
+      'Search used to stop at issues, documents and comments. It now also reads chat messages (titled by their room), space threads and the replies in them, and meetings by their title and agenda, in the same single query, so ranking stays comparable: talk about a thing ranks below the thing. The results page has Chat, Spaces and Meetings tabs. A message opens its room at the message, a reply its thread at the reply, and a meeting the meetings page at the meeting; links from the inbox to a reply now land on it too, rather than at the top of the page. A reply taken down and a meeting called off are not found. As before, everything is scoped to the workspace being searched.',
+    checked:
+      'Five tests through the API: a message with its room and link, a thread and a reply narrowed to Spaces with their links, a reply taken down no longer found, a meeting found by its agenda until called off, and nothing found from another workspace. The existing search suite unchanged. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Search',
+      where: 'The search box, the search page and the command palette',
+      layers: [
+        'Screen: Chat, Spaces and Meetings tabs, and links that open at the message, reply or meeting',
+        'API: search.workspace returns messages, threads, replies and meetings, with where each is',
+        'Database: full-text columns on threads, replies and meetings, kept by Postgres',
+      ],
+    },
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Spaces tell you when someone replies, and when your answer is marked',
     brief:
       'Whoever asks hears of each reply, whoever is replied to hears too, and whoever answered hears once their reply is marked as the answer; each can be turned off like any other notification.',

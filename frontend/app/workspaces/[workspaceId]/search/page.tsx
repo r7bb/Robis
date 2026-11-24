@@ -24,12 +24,20 @@ const TABS: { kind: Kind | null; label: string }[] = [
   { kind: 'issue', label: 'Issues' },
   { kind: 'document', label: 'Documents' },
   { kind: 'comment', label: 'Comments' },
+  { kind: 'message', label: 'Chat' },
+  // Spaces: threads and the replies in them.
+  { kind: 'thread', label: 'Spaces' },
+  { kind: 'meeting', label: 'Meetings' },
 ];
 
 const KIND_LABELS: Record<Kind, string> = {
   issue: 'Issue',
   document: 'Document',
   comment: 'Comment on',
+  message: 'Chat in',
+  thread: 'Thread',
+  reply: 'Reply in',
+  meeting: 'Meeting',
 };
 
 function SearchResults() {
@@ -92,7 +100,7 @@ function SearchResults() {
           autoComplete="off"
           enterKeyHint="search"
           maxLength={200}
-          placeholder="Search issues, docs and comments…"
+          placeholder="Search issues, docs, chat, spaces and meetings…"
           aria-label="Search this workspace"
           className="min-w-0 flex-1 rounded-md border border-line bg-surface px-3 py-2 text-sm text-content outline-none transition placeholder:text-faint focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
         />
@@ -158,8 +166,9 @@ function ResultList({
       </p>
       {!q && (
         <p className="mt-2 text-sm text-muted">
-          Search finds words in issues, documents and comments, in any of their forms: “token” finds
-          “tokens”. Use quotes for a phrase and a minus to leave a word out.
+          Search finds words in issues, documents, comments, chat, spaces and meetings, in any of
+          their forms: “token” finds “tokens”. Use quotes for a phrase and a minus to leave a word
+          out.
         </p>
       )}
       {q && state.isPending && <ResultSkeleton />}

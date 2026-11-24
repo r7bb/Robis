@@ -8,6 +8,7 @@ import { Avatar } from '../../components/ui/avatar.tsx';
 import { BASE_URL } from '../../lib/api.ts';
 import { personHref } from '../../lib/links.ts';
 import { formatDaySeparator, formatExact, formatTime, isSameDay } from '../../lib/time.ts';
+import { useScrollToHash } from '../../lib/use-scroll-to-hash.ts';
 import { IssueFromMessage } from '../assist/issue-from-message.tsx';
 import { StoryRing } from '../stories/story-ring.tsx';
 import { MessageBody } from './message-body.tsx';
@@ -81,6 +82,9 @@ export function MessageList({
 
     bottomAnchor.current?.scrollIntoView({ block: 'end' });
   }, [lastId]);
+
+  // A link to one message (from search) opens at it.
+  useScrollToHash(messages.length > 0);
 
   return (
     // `justify-end` on a `min-h-full` inner column is what anchors a short

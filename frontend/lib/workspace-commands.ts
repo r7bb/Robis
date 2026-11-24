@@ -1,3 +1,4 @@
+import type { SEARCH_KINDS } from '@robis/shared';
 import type { Command } from './commands.ts';
 import { boardHref, channelHref } from './links.ts';
 import { hitHref, searchHref } from './search-links.ts';
@@ -12,7 +13,7 @@ type Project = { id: string; key: string; name: string; archived: boolean };
 type Channel = { id: string; name: string };
 type Person = { userId: string; name: string; kind: 'human' | 'agent' };
 type Hit = {
-  kind: 'issue' | 'document' | 'comment';
+  kind: (typeof SEARCH_KINDS)[number];
   id: string;
   title: string;
   issueId: string | null;

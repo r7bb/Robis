@@ -1348,7 +1348,7 @@ The server's public push key, or null when web push is not set up.
 
 ### `GET /workspaces/{workspaceId}/search`
 
-Issues, documents and comments matching a query, best first; one kind with type, more with limit.
+Issues, documents, comments, chat, space threads and replies, and meetings matching a query, best first; one kind with type (thread includes replies), more with limit.
 
 - Query: `q`, `type`, `limit`
 - Answers: 200

@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Search finds chat, spaces and meetings too** (2026-11-24). The search
+  box, the search page and the command palette now find chat messages, space
+  threads and their replies, and meetings, each opening right where it is.
 - **Spaces tell you when someone replies, and when your answer is marked**
   (2026-11-24). Whoever asks hears of each reply, whoever is replied to
   hears too, and whoever answered hears once their reply is marked as the

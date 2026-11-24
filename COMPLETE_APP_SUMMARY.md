@@ -200,7 +200,7 @@ JavaScript.
 
 | Feature | Where |
 | --- | --- |
-| Full-text search over issues, documents, comments | `backend/database/src/search.ts` |
+| Full-text search over issues, documents, comments, chat messages, space threads and replies, and meetings | `backend/database/src/search.ts` |
 | Stored generated `tsvector` columns | `backend/database/src/schema.ts` |
 | Notification inbox with dedupe | `backend/api/src/routes/notifications.ts` |
 | Space notifications: a reply tells the thread's author and the reply it answers, a marked answer tells its author once; stale news tells no one | `backend/worker/src/notify-spaces.ts` |

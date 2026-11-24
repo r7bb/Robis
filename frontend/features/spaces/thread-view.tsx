@@ -10,6 +10,7 @@ import { Avatar } from '../../components/ui/avatar.tsx';
 import { call, type Member } from '../../lib/api.ts';
 import { spaceHref, spacesHref } from '../../lib/links.ts';
 import { useMyId, usePeople } from '../../lib/use-people.ts';
+import { useScrollToHash } from '../../lib/use-scroll-to-hash.ts';
 import type { Reaction } from '../feed/feed-model.ts';
 import { ReactionBar } from '../feed/reaction-bar.tsx';
 import { useWorkspaceRole } from '../workspace/page-frame.tsx';
@@ -212,6 +213,8 @@ export function ThreadView({ workspaceId, threadId }: { workspaceId: string; thr
     queryKey: threadKey(workspaceId, threadId),
     queryFn: () => call(contracts['spaces.thread'], { params: { workspaceId, threadId } }),
   });
+  // A link to one reply (from the inbox, search or the leaders) opens at it.
+  useScrollToHash(Boolean(page.data));
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6">

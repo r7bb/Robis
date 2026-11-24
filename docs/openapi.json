@@ -9664,7 +9664,7 @@
     "/workspaces/{workspaceId}/search": {
       "get": {
         "operationId": "search.workspace",
-        "summary": "Issues, documents and comments matching a query, best first; one kind with type, more with limit.",
+        "summary": "Issues, documents, comments, chat, space threads and replies, and meetings matching a query, best first; one kind with type (thread includes replies), more with limit.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -9693,7 +9693,11 @@
               "enum": [
                 "issue",
                 "document",
-                "comment"
+                "comment",
+                "message",
+                "thread",
+                "reply",
+                "meeting"
               ]
             }
           },
@@ -9730,7 +9734,11 @@
                             "enum": [
                               "issue",
                               "document",
-                              "comment"
+                              "comment",
+                              "message",
+                              "thread",
+                              "reply",
+                              "meeting"
                             ]
                           },
                           "id": {
@@ -9786,6 +9794,30 @@
                                 "type": "null"
                               }
                             ]
+                          },
+                          "channelId": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "threadId": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           }
                         },
                         "required": [
@@ -9795,7 +9827,9 @@
                           "parts",
                           "rank",
                           "issueId",
-                          "projectId"
+                          "projectId",
+                          "channelId",
+                          "threadId"
                         ],
                         "additionalProperties": false
                       }

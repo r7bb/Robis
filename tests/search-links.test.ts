@@ -28,7 +28,7 @@ describe('search links', () => {
 
   test('an unknown kind in the address means every kind', () => {
     expect(kindFromParam('issue')).toBe('issue');
-    expect(kindFromParam('meeting')).toBeNull();
+    expect(kindFromParam('planet')).toBeNull();
     expect(kindFromParam(null)).toBeNull();
   });
 });

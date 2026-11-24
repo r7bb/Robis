@@ -16,6 +16,10 @@ const KIND_LABELS: Record<SearchHit['kind'], string> = {
   issue: 'Issue',
   document: 'Document',
   comment: 'Comment',
+  message: 'Chat',
+  thread: 'Thread',
+  reply: 'Reply in',
+  meeting: 'Meeting',
 };
 
 /** `trailing` sits inside the field's right edge: the shell puts the palette's shortcut there. */

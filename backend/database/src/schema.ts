@@ -1107,9 +1107,14 @@ export const spaceThreads = pgTable(
     solvedAt: timestamp('solved_at', { withTimezone: true }),
     lastActivityAt: timestamp('last_activity_at', { withTimezone: true }).notNull().defaultNow(),
     createdAt: createdAt(),
+    /** For search: the title weighs more than the body. */
+    searchVector: tsvector('search_vector').generatedAlwaysAs(
+      sql`setweight(to_tsvector('english', coalesce(title, '')), 'A') || setweight(to_tsvector('english', coalesce(body, '')), 'B')`,
+    ),
   },
   (t) => [
     index('space_threads_space_activity_idx').on(t.spaceId, t.lastActivityAt.desc()),
+    index('space_threads_search_idx').using('gin', t.searchVector),
     index('space_threads_workspace_created_idx').on(t.workspaceId, t.createdAt.desc()),
   ],
 );
@@ -1136,9 +1141,14 @@ export const spaceReplies = pgTable(
     depth: integer('depth').notNull().default(0),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
     createdAt: createdAt(),
+    /** For search; empty once taken down, as the body is. */
+    searchVector: tsvector('search_vector').generatedAlwaysAs(
+      sql`to_tsvector('english', coalesce(body, ''))`,
+    ),
   },
   (t) => [
     index('space_replies_thread_created_idx').on(t.threadId, t.createdAt),
+    index('space_replies_search_idx').using('gin', t.searchVector),
     index('space_replies_author_idx').on(t.authorId),
   ],
 );
@@ -1837,9 +1847,14 @@ export const meetings = pgTable(
     lastStartsAt: timestamp('last_starts_at', { withTimezone: true }).notNull(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
+    /** For search: the title weighs more than the agenda. */
+    searchVector: tsvector('search_vector').generatedAlwaysAs(
+      sql`setweight(to_tsvector('english', coalesce(title, '')), 'A') || setweight(to_tsvector('english', coalesce(agenda, '')), 'B')`,
+    ),
   },
   (t) => [
     index('meetings_workspace_starts_idx').on(t.workspaceId, t.startsAt),
+    index('meetings_search_idx').using('gin', t.searchVector),
     // Upcoming and recent meetings, repeats included (B8).
     index('meetings_workspace_last_starts_idx').on(t.workspaceId, t.lastStartsAt),
     check(

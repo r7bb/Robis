@@ -17,7 +17,14 @@ import type { Executor } from './index.ts';
 
 export type HighlightPart = { text: string; match: boolean };
 
-export type SearchKind = 'issue' | 'document' | 'comment';
+export type SearchKind =
+  | 'issue'
+  | 'document'
+  | 'comment'
+  | 'message'
+  | 'thread'
+  | 'reply'
+  | 'meeting';
 
 /*
  * The headline marks matches with two control characters, and the same two
@@ -53,6 +60,10 @@ export type SearchHit = {
   /** Where to navigate. Comments point at the issue that holds them. */
   issueId: string | null;
   projectId: string | null;
+  /** The room a message is in. */
+  channelId: string | null;
+  /** The thread a thread hit is, or a reply is in. */
+  threadId: string | null;
 };
 
 /** The last word, plain letters and digits, right at the end of what was typed. */
@@ -117,6 +128,8 @@ export async function searchWorkspace(
     rank: number;
     issue_id: string | null;
     project_id: string | null;
+    channel_id: string | null;
+    thread_id: string | null;
   }>(sql`
     with q as (select (case
                          when ${prefix}::text is null then websearch_to_tsquery('english', ${trimmed})
@@ -137,7 +150,9 @@ export async function searchWorkspace(
            coalesce(i.description, i.title) as source,
            ts_rank(i.search_vector, q.query) as rank,
            i.id::text as issue_id,
-           i.project_id::text as project_id
+           i.project_id::text as project_id,
+           null::text as channel_id,
+           null::text as thread_id
       from issues i, q
      where i.workspace_id = ${workspaceId} and i.search_vector @@ q.query
        and (q.only is null or q.only = 'issue')
@@ -147,7 +162,7 @@ export async function searchWorkspace(
     select 'document', d.id::text, d.title,
            coalesce(d.search_text, d.title),
            ts_rank(d.search_vector, q.query),
-           null, d.project_id::text
+           null, d.project_id::text, null, null
       from documents d, q
      where d.workspace_id = ${workspaceId} and d.search_vector @@ q.query
        and (q.only is null or q.only = 'document')
@@ -159,11 +174,61 @@ export async function searchWorkspace(
            -- Comments rank below the things they are attached to: a match in
            -- a thread is usually a weaker answer than a match in the issue.
            ts_rank(c.search_vector, q.query) * 0.6,
-           c.issue_id::text, i2.project_id::text
+           c.issue_id::text, i2.project_id::text, null, null
       from comments c
       join issues i2 on i2.id = c.issue_id and i2.workspace_id = ${workspaceId}, q
      where c.workspace_id = ${workspaceId} and c.search_vector @@ q.query
        and (q.only is null or q.only = 'comment')
+
+    union all
+
+    -- Chat, threads, replies and meetings rank below issues and documents
+    -- for the same reason comments do: talk about a thing is a weaker
+    -- answer than the thing.
+    select 'message', m.id::text, '#' || ch.name,
+           m.body,
+           ts_rank(m.search_vector, q.query) * 0.5,
+           null, null, m.channel_id::text, null
+      from messages m
+      join channels ch on ch.id = m.channel_id and ch.workspace_id = ${workspaceId}, q
+     where m.workspace_id = ${workspaceId} and m.search_vector @@ q.query
+       and (q.only is null or q.only = 'message')
+
+    union all
+
+    select 'thread', t.id::text, t.title,
+           coalesce(nullif(t.body, ''), t.title),
+           ts_rank(t.search_vector, q.query) * 0.8,
+           null, null, null, t.id::text
+      from space_threads t, q
+     where t.workspace_id = ${workspaceId} and t.search_vector @@ q.query
+       and (q.only is null or q.only = 'thread')
+
+    union all
+
+    -- Replies answer to Spaces with their threads; one taken down has an
+    -- empty body, so it never matches.
+    select 'reply', r.id::text, t2.title,
+           r.body,
+           ts_rank(r.search_vector, q.query) * 0.6,
+           null, null, null, r.thread_id::text
+      from space_replies r
+      join space_threads t2 on t2.id = r.thread_id and t2.workspace_id = ${workspaceId}, q
+     where r.workspace_id = ${workspaceId} and r.deleted_at is null
+       and r.search_vector @@ q.query
+       and (q.only is null or q.only in ('thread', 'reply'))
+
+    union all
+
+    -- A meeting called off is not an answer to anything.
+    select 'meeting', mt.id::text, mt.title,
+           coalesce(nullif(mt.agenda, ''), mt.title),
+           ts_rank(mt.search_vector, q.query) * 0.7,
+           null, null, null, null
+      from meetings mt, q
+     where mt.workspace_id = ${workspaceId} and mt.canceled_at is null
+       and mt.search_vector @@ q.query
+       and (q.only is null or q.only = 'meeting')
 
      order by rank desc
      limit ${limit}
@@ -171,7 +236,7 @@ export async function searchWorkspace(
 
     select h.kind, h.id, h.title,
            ts_headline('english', translate(h.source, q.marks, ''), q.query, q.options) as snippet,
-           h.rank, h.issue_id, h.project_id
+           h.rank, h.issue_id, h.project_id, h.channel_id, h.thread_id
       from hits h, q
      order by h.rank desc
   `);
@@ -184,5 +249,7 @@ export async function searchWorkspace(
     rank: Number(row.rank),
     issueId: row.issue_id,
     projectId: row.project_id,
+    channelId: row.channel_id,
+    threadId: row.thread_id,
   }));
 }

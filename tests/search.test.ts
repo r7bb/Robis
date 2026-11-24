@@ -213,7 +213,7 @@ describe('finding things', () => {
     ).json();
     expect(onlyComments.results.map((r: { kind: string }) => r.kind)).toEqual(['comment']);
 
-    const bad = await request(`/workspaces/${workspace.id}/search?q=gamma&type=meeting`, {
+    const bad = await request(`/workspaces/${workspace.id}/search?q=gamma&type=planet`, {
       actor: owner,
     });
     expect(bad.statusCode).toBe(400);

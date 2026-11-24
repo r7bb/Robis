@@ -204,6 +204,9 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Search finds chat, spaces and meetings too.** The search box, the search
+  page and the command palette now find chat messages, space threads and
+  their replies, and meetings, each opening right where it is.
 - **Spaces tell you when someone replies, and when your answer is marked.**
   Whoever asks hears of each reply, whoever is replied to hears too, and
   whoever answered hears once their reply is marked as the answer; each can
@@ -213,10 +216,6 @@ no write lost and nothing done twice.
   long thread or busy channel gets a Summarise button, a meeting a Draft
   agenda, and a chat message Make an issue; all marked as generated and
   saved nowhere until someone uses them.
-- **Today, faces on every board and document, and agents writing beside
-  you.** A Today page gathers what is yours to do; the sidebar shows who has
-  each board and document open; and an agent can now edit a document live
-  with its own caret, as the demo’s Saphi does.
 
 <!-- latest:end -->
 

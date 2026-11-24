@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-11-24): **1912 TypeScript tests, 132 Python tests, lint and
+Status (2026-11-24): **1918 TypeScript tests, 132 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -69,8 +69,9 @@ as they work.
 reschedule-clears-answers, cancel-not-delete.
 
 **Search, notifications, background work.** Postgres full-text search over
-issues, documents and comments; a notification inbox with dedupe; mention
-notifications and stale-issue nudges on a `SKIP LOCKED` job queue.
+issues, documents, comments, chat, space threads and replies, and meetings; a
+notification inbox with dedupe; mention, space reply and answer notifications
+and stale-issue nudges on a `SKIP LOCKED` job queue.
 
 **First run and empty views (C5).** A new account goes from sign-up to a
 board with work on it in nine clicks: a workspace, its look and a teammate,
@@ -230,12 +231,14 @@ runs here. The images still run
 the upgrade removes and the image scan would otherwise fail on. Drop the
 step once a digest Dependabot proposes scans clean (stage 4, item 38).
 
-**Product.** Drag-and-drop on the board. A dedicated search results page.
-Issue filtering by label. Bulk actions.
+**Product.** Reminders and snooze on the inbox; a fuller Sapha that answers
+and acts on request. (Drag and drop on the board, the search results page,
+filtering by label and bulk actions, once listed here, are built: see
+`frontend/features/board/` and the search page.)
 
-**ML.** A sentence-embedding baseline to compare against TF-IDF, once weights
-can be downloaded. The gap is already visible: "auth" scores 0.64 where
-"authentication" scores 0.26 for the same intent.
+**ML.** Sentence embeddings are served for duplicates, with TF-IDF as the
+fallback (`robis-ml/README.md`); the next step is a labelled set large enough
+to tune the threshold per workspace rather than once.
 
 ---
 
