@@ -6,6 +6,7 @@ import {
   enqueue,
   hasPendingJob,
   listenForJobs,
+  REPEATS_JOB,
   STORAGE_PURGE_JOB,
   STORY_EXPIRY_INTERVAL_MS,
   STORY_EXPIRY_JOB,
@@ -61,8 +62,9 @@ const runner = new Runner({
   onPoll: heartbeat(process.env.WORKER_HEARTBEAT_FILE ?? DEFAULT_HEARTBEAT_FILE),
   observe: metrics.observe,
   // Automation rules run in the API, which signs the trail (B9), and so do
-  // exports (C6), which read tables this role is not given.
-  exceptKinds: [AUTOMATION_JOB, WORKSPACE_EXPORT_JOB],
+  // exports (C6), which read tables this role is not given, and repeating
+  // issues, which the API files.
+  exceptKinds: [AUTOMATION_JOB, WORKSPACE_EXPORT_JOB, REPEATS_JOB],
 });
 
 /**

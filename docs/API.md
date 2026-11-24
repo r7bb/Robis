@@ -19,7 +19,7 @@ way.
 `{ "error": "<code>", "message": "<words for people>" }`. A stranger to a
 workspace gets 404, never 403, so its existence is not given away.
 
-226 routes.
+230 routes.
 
 ## activity
 
@@ -1446,6 +1446,21 @@ File an issue; it takes the next number in its project.
 - Answers: 201
 - Name: `issues.create`
 
+### `GET /workspaces/{workspaceId}/projects/{projectId}/repeats`
+
+A board’s repeating issues, soonest first, with when each is next filed.
+
+- Answers: 200
+- Name: `repeats.list`
+
+### `POST /workspaces/{workspaceId}/projects/{projectId}/repeats`
+
+File an issue on this board on a schedule: daily, on weekdays, weekly on a day or monthly on a date, at an hour on your clock.
+
+- Body: `title` (required), `description` (required), `priority` (required), `assigneeId` (required), `cadence` (required), `weekday` (required), `monthDay` (required), `hour` (required), `timeZone` (required)
+- Answers: 201
+- Name: `repeats.create`
+
 ### `GET /workspaces/{workspaceId}/projects/{projectId}/views`
 
 A project's saved board views, by name.
@@ -1479,6 +1494,23 @@ Be reminded of an issue, a chat message or a space thread at a time up to 90 day
 - Body: `about` (required), `id` (required), `at` (required)
 - Answers: 201
 - Name: `reminders.create`
+
+## repeats
+
+### `DELETE /workspaces/{workspaceId}/repeats/{repeatId}`
+
+Stop a repeat for good; the issues it filed stay.
+
+- Answers: 204
+- Name: `repeats.remove`
+
+### `PATCH /workspaces/{workspaceId}/repeats/{repeatId}`
+
+Pause, resume or change a repeat; its next run is worked out again.
+
+- Body: `title`, `description`, `priority`, `assigneeId`, `cadence`, `weekday`, `monthDay`, `hour`, `timeZone`, `paused`
+- Answers: 200
+- Name: `repeats.update`
 
 ## search
 

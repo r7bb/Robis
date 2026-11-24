@@ -204,6 +204,10 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Repeats: issues filed on a schedule.** A board can file an issue on a
+  schedule (every day, every weekday, every week on a day or every month on
+  a date) at an hour on the clock of whoever set it up, such as a weekly
+  release check.
 - **Workload: who is carrying what.** Insights now shows each person’s open
   issues as a bar, with what is in progress, overdue, due this week or
   urgent, and says when someone is carrying well above the team’s typical
@@ -211,9 +215,6 @@ no write lost and nothing done twice.
 - **Sapha answers: what is blocking an issue?.** Ask the palette “what’s
   blocking REL-4?” or “what is REL-4 waiting on?” and Sapha answers there,
   each blocker a link and finished ones struck through.
-- **Blocked by: issues that wait on others.** An issue can say what it waits
-  on, by key; the board marks a waiting card Blocked until what it waits on
-  is done, and the other issue shows what it is holding up.
 
 <!-- latest:end -->
 

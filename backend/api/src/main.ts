@@ -2,6 +2,7 @@ import {
   auditKeyringFromEnv,
   configureAuditKeys,
   createDatabase,
+  REPEATS_JOB,
   settleAgentSteps,
   settleDeferredAccountEvents,
   WORKSPACE_EXPORT_JOB,
@@ -15,6 +16,7 @@ import { startApiRunner, startAutomationRunner } from './automation/runner.ts';
 import { loadEnv } from './env.ts';
 import { runExportJob } from './exports/job.ts';
 import { serveMetrics } from './metrics.ts';
+import { repeatsHandler, scheduleRepeats } from './repeats/run.ts';
 
 const env = loadEnv();
 // Spans to a collector when OTEL_EXPORTER_OTLP_ENDPOINT names one (A5).
@@ -61,6 +63,12 @@ const stopExports = startApiRunner(
   1,
 );
 
+// Repeating issues are filed here too, as the API files every issue.
+await scheduleRepeats(db);
+const stopRepeats = startApiRunner(db, app.log, 'repeats', {
+  [REPEATS_JOB]: repeatsHandler(db, app.log),
+});
+
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.once(signal, async () => {
     // Stop accepting connections and let in-flight requests finish before the
@@ -69,6 +77,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     metricsServer.stop();
     await stopAutomation();
     await stopExports();
+    await stopRepeats();
     // A failed sign-in is recorded just after its reply; let those land.
     await settleDeferredAccountEvents();
     await settleAgentSteps();

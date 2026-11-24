@@ -20,6 +20,7 @@ export * from './origin.ts';
 export * from './project-templates.ts';
 export * from './push.ts';
 export * from './rbac.ts';
+export * from './repeats.ts';
 export * from './sapha.ts';
 export * from './schemas.ts';
 export * from './scopes.ts';

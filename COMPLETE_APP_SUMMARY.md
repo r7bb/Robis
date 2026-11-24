@@ -14,7 +14,7 @@ Written to be checkable. Every row names a file you can open.
 | --- | --- |
 | Services | 5 (web, API, realtime gateway, worker, MCP server for agents) plus an optional ML service |
 | Database tables | 18 |
-| HTTP endpoints | 237 |
+| HTTP endpoints | 241 |
 | Tests | Counted in [docs/ROADMAP.md](docs/ROADMAP.md), the one place they are kept |
 | Screenshots | 35, all captured from the running app |
 | Measured throughput | ~3,600 req/s, zero errors |
@@ -213,6 +213,7 @@ JavaScript.
 | The team's week on the feed: the last seven days counted across the workspace, with who finished most | `backend/api/src/feed/team-week.ts`, `frontend/features/feed/team-week.tsx` |
 | Blocked by: an issue waits on others by key, loops refused, the board marking cards Blocked until their blockers are done | `backend/api/src/routes/issue-blocks.ts`, `frontend/features/issues/blocked-by.tsx` |
 | Workload on Insights: each person's open issues by state, the team's median, and a word where someone is well above it | `backend/api/src/routes/workload.ts`, `frontend/features/insights/workload-view.tsx` |
+| Repeats: issues filed on a board on a schedule at an hour on the creator's clock, by the API's runner, once each time due | `shared/contracts/src/repeats.ts`, `backend/api/src/repeats/run.ts`, `backend/api/src/routes/repeats.ts`, `frontend/features/board/repeats-panel.tsx` |
 | Space notifications: a reply tells the thread's author and the reply it answers, a marked answer tells its author once; stale news tells no one | `backend/worker/src/notify-spaces.ts` |
 | Mention notifications | `backend/worker/src/handlers.ts` |
 | Stale-issue nudges | `backend/worker/src/nudges.ts` |

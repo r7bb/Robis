@@ -42,6 +42,7 @@ import { useBoardDrag } from './board-drag.ts';
 import { BoardFilters } from './board-filters.tsx';
 import { BulkBar } from './bulk-bar.tsx';
 import { DeleteBoard } from './delete-board.tsx';
+import { RepeatsPanel } from './repeats-panel.tsx';
 import { ShortcutHelp } from './shortcut-help.tsx';
 import { useBlocked } from './use-blocked.ts';
 import { useBoardKeyboard } from './use-board-keyboard.ts';
@@ -295,6 +296,7 @@ export function ProjectBoard({
           )}
         </span>
       </div>
+      <RepeatsPanel workspaceId={workspaceId} projectId={projectId} allowed={canCreate} />
       {helpOpen && <ShortcutHelp role={role} onClose={() => setHelpOpen(false)} />}
 
       {selection.on && (

@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Repeats: issues filed on a schedule',
+    brief:
+      'A board can file an issue on a schedule (every day, every weekday, every week on a day or every month on a date) at an hour on the clock of whoever set it up, such as a weekly release check.',
+    summary:
+      'Repeats, on each board, file an issue with its title and priority at the hour chosen, on the days its cadence names, keeping that hour on its creator’s own clock across changes of the clocks. Each is filed once when it is due, as its creator would file it, with the repeat named in the audit log, and the next run is worked out at once. Paused, it waits; resumed, it is due at its next time, not all its missed times at once. One whose creator has left the workspace, or whose board was archived, pauses itself rather than filing. The board lists them with when each is next filed, read on its own clock and naming its zone when that differs from yours; its creator or an admin pauses, changes or removes one, and a board has at most twenty-five. They are filed by the API, which files every issue and signs the trail, on one chain of looks however often it restarts.',
+    checked:
+      'Five tests of the schedule (daily, weekdays past the weekend, weekly, monthly, and nine o’clock kept across a change of the clocks and in another zone) and five through the API (set up and listed, filed once as its creator and moved on, paused and resumed without a burst, paused when its creator left, and only its creator or an admin changing it, with a weekly one needing its day). In the browser, two repeats listed with their next runs, one on London’s clock, and exactly one chain of looks was queued. The offline, keyboard, phone and guest journeys, and the stack smoke test. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Repeats',
+      where: 'A board, Repeats',
+      layers: [
+        'Screen: a board’s repeats with their next runs, and a form to add one',
+        'API: repeats.list, create, update and remove, and a runner that files them',
+        'Shared: the next run worked out on the creator’s clock',
+      ],
+    },
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Workload: who is carrying what',
     brief:
       'Insights now shows each person’s open issues as a bar, with what is in progress, overdue, due this week or urgent, and says when someone is carrying well above the team’s typical load.',

@@ -325,3 +325,9 @@ export async function queueStats(
     dead: Number(row?.dead ?? 0),
   };
 }
+
+/**
+ * Repeating issues (Repeats): the job that files those due. It runs in the
+ * API, which files issues and signs the trail, never in the worker.
+ */
+export const REPEATS_JOB = 'repeats.run';

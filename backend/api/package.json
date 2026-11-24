@@ -22,6 +22,7 @@
     "./feed-health": "./src/feed/health.ts",
     "./feed-week": "./src/feed/week.ts",
     "./workload": "./src/routes/workload.ts",
+    "./repeats-run": "./src/repeats/run.ts",
     "./space-replies": "./src/spaces/reply-routes.ts",
     "./hardening": "./src/hardening.ts",
     "./images": "./src/media/images.ts",

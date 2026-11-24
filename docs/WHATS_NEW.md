@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Repeats: issues filed on a schedule** (2026-11-24). A board can file an
+  issue on a schedule (every day, every weekday, every week on a day or
+  every month on a date) at an hour on the clock of whoever set it up, such
+  as a weekly release check.
 - **Workload: who is carrying what** (2026-11-24). Insights now shows each
   person’s open issues as a bar, with what is in progress, overdue, due this
   week or urgent, and says when someone is carrying well above the team’s

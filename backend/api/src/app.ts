@@ -71,6 +71,7 @@ import { profileRoutes } from './routes/profiles.ts';
 import { projectRoutes } from './routes/projects.ts';
 import { pushKey, pushRoutes } from './routes/push.ts';
 import { reminderRoutes } from './routes/reminders.ts';
+import { repeatRoutes } from './routes/repeats.ts';
 import { savedViewRoutes } from './routes/saved-views.ts';
 import { searchRoutes } from './routes/search.ts';
 import { signupRoutes } from './routes/signup.ts';
@@ -349,6 +350,7 @@ export function buildApp({
   app.register(meetingNotesRoutes, { db });
   app.register(notificationRoutes, { db });
   app.register(chatReadRoutes, { db });
+  app.register(repeatRoutes, { db });
   app.register(workloadRoutes, { db });
   app.register(issueBlockRoutes, { db });
   app.register(reminderRoutes, { db });

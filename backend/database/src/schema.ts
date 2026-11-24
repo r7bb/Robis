@@ -4,6 +4,7 @@ import {
   LABEL_COLOURS,
   MESSAGE_REACTIONS,
   POST_REACTIONS,
+  REPEAT_CADENCES,
   ROLES,
   SPACE_THREAD_KINDS,
   SUGGESTION_ACTIONS,
@@ -731,6 +732,51 @@ export const issues = pgTable(
       .where(sql`${t.status} = 'DONE'`),
     check('issues_parent_not_self', sql`${t.parentId} <> ${t.id}`),
     index('issues_search_idx').using('gin', t.searchVector),
+  ],
+);
+
+/**
+ * An issue filed on a schedule (Repeats): a title and its settings, a
+ * cadence and an hour on the clock of whoever set it up, and when it is
+ * next due. The API files it then, as that person would, and works out the
+ * next; a paused one waits, and one whose board or person has gone pauses.
+ */
+export const recurringIssues = pgTable(
+  'recurring_issues',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    description: text('description'),
+    priority: text('priority', { enum: ISSUE_PRIORITIES }).notNull().default('NONE'),
+    assigneeId: uuid('assignee_id').references(() => users.id, { onDelete: 'set null' }),
+    cadence: text('cadence', { enum: REPEAT_CADENCES }).notNull(),
+    weekday: integer('weekday'),
+    monthDay: integer('month_day'),
+    hour: integer('hour').notNull(),
+    timeZone: text('time_zone').notNull(),
+    nextRunAt: timestamp('next_run_at', { withTimezone: true }).notNull(),
+    lastRunAt: timestamp('last_run_at', { withTimezone: true }),
+    paused: boolean('paused').notNull().default(false),
+    createdBy: uuid('created_by')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('recurring_issues_due_idx').on(t.nextRunAt).where(sql`${t.paused} = false`),
+    index('recurring_issues_project_idx').on(t.projectId),
+    check('recurring_issues_hour', sql`${t.hour} between 0 and 23`),
+    check('recurring_issues_weekday', sql`${t.weekday} is null or ${t.weekday} between 0 and 6`),
+    check(
+      'recurring_issues_month_day',
+      sql`${t.monthDay} is null or ${t.monthDay} between 1 and 28`,
+    ),
   ],
 );
 

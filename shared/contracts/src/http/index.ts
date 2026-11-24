@@ -35,6 +35,7 @@ import { projectContracts } from './projects.ts';
 import { pushContracts } from './push.ts';
 import { apiReference } from './reference.ts';
 import { reminderContracts } from './reminders.ts';
+import { repeatContracts } from './repeats.ts';
 import { savedViewContracts } from './saved-views.ts';
 import { spaceContracts } from './spaces.ts';
 import { storyContracts } from './stories.ts';
@@ -141,6 +142,7 @@ export const contracts = {
   ...meetingContracts,
   ...notificationContracts,
   ...reminderContracts,
+  ...repeatContracts,
   ...notificationSettingContracts,
   ...unsubscribeContracts,
   ...pushContracts,
