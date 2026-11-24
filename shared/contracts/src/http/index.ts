@@ -30,6 +30,7 @@ import { personalTokenContracts } from './personal-tokens.ts';
 import { profileContracts } from './profiles.ts';
 import { projectContracts } from './projects.ts';
 import { pushContracts } from './push.ts';
+import { apiReference } from './reference.ts';
 import { savedViewContracts } from './saved-views.ts';
 import { storyContracts } from './stories.ts';
 import { twoFactorContracts } from './two-factor.ts';
@@ -190,6 +191,10 @@ function parameters(schema: z.ZodType | undefined, where: 'path' | 'query') {
  * hand. `bun run openapi` writes it to docs/openapi.json, and a test fails
  * when that file is not what this returns.
  */
+/** The API reference as Markdown, from the same contracts (C7). */
+export const apiReferenceMarkdown = (table: Record<string, Contract> = contracts) =>
+  apiReference(table);
+
 export function openApiDocument(table: Record<string, Contract> = contracts) {
   const paths: Record<string, Record<string, unknown>> = {};
   for (const [name, route] of Object.entries(table)) {

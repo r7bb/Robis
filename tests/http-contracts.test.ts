@@ -2,7 +2,7 @@ import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { serve } from '@robis/api/contract';
-import { contract, contracts, openApiDocument, pathFor } from '@robis/shared';
+import { apiReferenceMarkdown, contract, contracts, openApiDocument, pathFor } from '@robis/shared';
 import Fastify from 'fastify';
 import { z } from 'zod';
 import {
@@ -29,6 +29,8 @@ const ROOT = resolve(import.meta.dir, '..');
 /** Served outside the API's contract: health and the like. */
 const OUTSIDE: readonly string[] = [
   'GET /health',
+  // The OpenAPI document itself (C7), for tools to import.
+  'GET /openapi.json',
   // A calendar feed (B8): iCalendar text for calendar apps, not JSON.
   'GET /calendar/:file',
   // These answer with image bytes, streamed from storage, not JSON.
@@ -167,5 +169,18 @@ describe('route contracts', () => {
   test('the OpenAPI document is generated from the contracts, and current', () => {
     const written = readFileSync(join(ROOT, 'docs/openapi.json'), 'utf8');
     expect(written).toBe(`${JSON.stringify(openApiDocument(), null, 2)}\n`);
+  });
+
+  test('the API reference people read is generated from them too, and current (C7)', () => {
+    const page = readFileSync(join(ROOT, 'docs/API.md'), 'utf8');
+    expect(page).toBe(apiReferenceMarkdown());
+    expect(page).toContain('### `POST /workspaces/{workspaceId}/projects/{projectId}/issues`');
+    expect(page).toContain(`${Object.keys(contracts).length} routes.`);
+  });
+
+  test('a running server serves its own OpenAPI document', async () => {
+    const served = await request('/openapi.json');
+    expect(served.statusCode).toBe(200);
+    expect(served.json()).toEqual(JSON.parse(JSON.stringify(openApiDocument())));
   });
 });

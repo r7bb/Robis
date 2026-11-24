@@ -45,6 +45,17 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
+    area: 'Site',
+    title: 'An API reference, generated from the contracts',
+    brief:
+      'A readable API reference sits beside the OpenAPI document, both written from the contracts the server validates against, and a running server serves its own document.',
+    summary:
+      'docs/API.md lists every route the API serves through a contract, grouped by what it is for, each with its method, path, what it does, the fields its body takes and the statuses it answers, after a page on signing in with a session or a personal token and on how refusals look. It is written by the same command as docs/openapi.json, from the same Zod contracts the server validates every request and answer against, so the two cannot disagree, and a running server serves the OpenAPI document at /api/openapi.json for tools to import. The README links the reference from its first line.',
+    checked:
+      'Two tests: the reference is exactly what the contracts write, names a known route and counts them all, and the server answers /openapi.json with the same document. The existing test that the OpenAPI file is current still runs. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-24',
     area: 'Product',
     title: 'GitHub pull requests on issues',
     brief:

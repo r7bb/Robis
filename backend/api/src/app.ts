@@ -1,6 +1,7 @@
 import cookie from '@fastify/cookie';
 import { sessionCookieName } from '@robis/auth';
 import type { Database } from '@robis/database';
+import { openApiDocument } from '@robis/shared';
 import { type MediaStorage, storageFromEnv } from '@robis/storage';
 import { API_LOG_FORMAT, apiLogMixin } from '@robis/telemetry/log';
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
@@ -292,6 +293,11 @@ export function buildApp({
   app.decorate('registeredRoutes', registeredRoutes);
 
   app.get('/health', async () => ({ status: 'ok' }));
+  // The OpenAPI document (C7), built once from the contracts, for tools to import.
+  const openApi = openApiDocument();
+  app.get('/openapi.json', async (_request, reply) =>
+    reply.header('cache-control', 'public, max-age=300').send(openApi),
+  );
 
   app.register(authRoutes, { db, env, limits });
   app.register(twoFactorRoutes, { db, env, limits });

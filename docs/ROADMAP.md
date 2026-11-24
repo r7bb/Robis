@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-11-23): **1799 TypeScript tests, 106 Python tests, lint and
+Status (2026-11-23): **1802 TypeScript tests, 106 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -87,7 +87,7 @@ and labels mapped, and a rerun adds nothing; an export imported into a
 fresh workspace reproduces issues, comments and labels. Account deletion
 (transfer or delete each owned workspace) came with B3.
 
-**Integrations (C7), first part.** Outgoing webhooks per workspace:
+**Integrations (C7).** Outgoing webhooks per workspace:
 chosen events, HTTPS only, signed with HMAC over a timestamp and the body,
 a delivery id that stays the same across retries, five tries over two and
 a half hours and a delivery log for admins; payloads hold ids and only what the
@@ -95,7 +95,9 @@ webhook's maker may still read. Personal access tokens for the API:
 read only unless allowed to write, shown once, stored as a hash, honoured
 on workspace routes only, revoked at once, with their last use. GitHub
 pull requests show on the issues their title or branch names, and a
-merge can move the issue to done. A published API reference is next.
+merge can move the issue to done. An API reference, docs/API.md, is
+written with the OpenAPI document from the same contracts, and a running
+server serves that document at /api/openapi.json.
 
 **Load, soak and failure drills (E2).** The worker, gateway, Postgres and
 ML service each broken on purpose in CI, recovering with no lost write

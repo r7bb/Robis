@@ -17,6 +17,8 @@
   &nbsp;&nbsp;|&nbsp;&nbsp;
   <a href="docs/ARCHITECTURE.md">Architecture</a>
   &nbsp;&nbsp;|&nbsp;&nbsp;
+  <a href="docs/API.md">API</a>
+  &nbsp;&nbsp;|&nbsp;&nbsp;
   <a href="docs/WHATS_NEW.md">What's new</a>
   &nbsp;&nbsp;|&nbsp;&nbsp;
   <a href="docs/GETTING_STARTED.md">Run it yourself</a>
@@ -202,6 +204,10 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **An API reference, generated from the contracts.** A readable API
+  reference sits beside the OpenAPI document, both written from the
+  contracts the server validates against, and a running server serves its
+  own document.
 - **GitHub pull requests on issues.** A pull request whose title or branch
   names an issue key shows on that issue with its state, and merging it can
   move the issue to done.
@@ -209,10 +215,6 @@ no write lost and nothing done twice.
   A person can make tokens for scripts that use the API as them: read only
   unless allowed to write, shown once, stored as a hash, revoked at once,
   with the last time each was used.
-- **Outgoing webhooks, signed, retried and logged.** Admins can send chosen
-  events to another system: each delivery signed with HMAC, carrying an id a
-  receiver can drop repeats by, retried over two and a half hours and shown
-  in a delivery log.
 
 <!-- latest:end -->
 

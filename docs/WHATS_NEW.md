@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **An API reference, generated from the contracts** (2026-11-24). A
+  readable API reference sits beside the OpenAPI document, both written from
+  the contracts the server validates against, and a running server serves
+  its own document.
 - **GitHub pull requests on issues** (2026-11-24). A pull request whose
   title or branch names an issue key shows on that issue with its state, and
   merging it can move the issue to done.
