@@ -19,10 +19,14 @@ export const workloadContracts = {
     method: 'GET',
     path: '/workspaces/:workspaceId/insights/workload',
     summary:
-      'Each person’s open issues here: in progress, overdue, due in the next seven days and urgent, most open first, with the team’s median.',
+      'Each person’s open issues here, or only those in cycles running today: in progress, overdue, due in the next seven days and urgent, most open first, with the team’s median.',
     params: workspaceParams,
     /** Your calendar's today, so overdue means what the board says it means. */
-    query: z.object({ today: z.iso.date().optional() }),
+    query: z.object({
+      today: z.iso.date().optional(),
+      /** `cycles`: only issues in a cycle running today, what is planned now. */
+      scope: z.enum(['all', 'cycles']).optional(),
+    }),
     response: z.object({
       medianOpen: z.number().nonnegative(),
       people: z.array(

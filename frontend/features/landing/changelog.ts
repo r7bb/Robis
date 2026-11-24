@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Workload for the cycles running now',
+    brief:
+      'While a cycle runs, Workload on Insights can count only what each person has planned in the cycles running now, rather than everything open.',
+    summary:
+      'Workload gains a switch, Every open issue or In running cycles, shown while any board has a cycle running. In running cycles counts only the open issues in a cycle running on the person’s own today, so the backlog and cycles already over are left out, and the team’s median and the word for someone well above it are worked out from that count. Workload and the cycles running now also refresh as soon as an issue changes.',
+    checked:
+      'A test through the API: with issues in a running cycle, an ended one and none, everything counts three for one person and the running cycle one, and the order follows. The realtime test now expects the workload and running-cycle keys. In the browser, the switch moved one person from 5 open to 2. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'A burn-up chart for the cycle',
     brief:
       'Chart on the cycle bar draws how much of the cycle was done by the end of each day so far, against a dashed line of an even pace to all of it by the last day.',

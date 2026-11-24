@@ -841,9 +841,9 @@ This workspace's hint acceptance and, for the server's operators, its job queue 
 
 ### `GET /workspaces/{workspaceId}/insights/workload`
 
-Each person’s open issues here: in progress, overdue, due in the next seven days and urgent, most open first, with the team’s median.
+Each person’s open issues here, or only those in cycles running today: in progress, overdue, due in the next seven days and urgent, most open first, with the team’s median.
 
-- Query: `today`
+- Query: `today`, `scope`
 - Answers: 200
 - Name: `insights.workload`
 

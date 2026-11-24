@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Workload for the cycles running now** (2026-11-24). While a cycle runs,
+  Workload on Insights can count only what each person has planned in the
+  cycles running now, rather than everything open.
 - **A burn-up chart for the cycle** (2026-11-24). Chart on the cycle bar
   draws how much of the cycle was done by the end of each day so far,
   against a dashed line of an even pace to all of it by the last day.

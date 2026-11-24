@@ -3,6 +3,7 @@
 import { contracts } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
+import { useState } from 'react';
 import { call } from '../../lib/api.ts';
 import { localToday } from '../../lib/due-date.ts';
 import { personHref } from '../../lib/links.ts';
@@ -14,27 +15,40 @@ import { personHref } from '../../lib/links.ts';
  * for ranking people.
  */
 export function WorkloadSection({ workspaceId }: { workspaceId: string }) {
+  const today = localToday();
+  const [scope, setScope] = useState<Scope>('all');
+  const running = useQuery({
+    queryKey: ['cycles-current', workspaceId, today],
+    queryFn: () => call(contracts['cycles.current'], { params: { workspaceId }, query: { today } }),
+  });
+  const anyRunning = (running.data?.cycles.length ?? 0) > 0;
+  const shown = anyRunning ? scope : 'all';
   const load = useQuery({
-    queryKey: ['workload', workspaceId],
+    queryKey: ['workload', workspaceId, today, shown],
     queryFn: () =>
       call(contracts['insights.workload'], {
         params: { workspaceId },
-        query: { today: localToday() },
+        query: { today, scope: shown },
       }),
   });
   if (!load.data) return null;
   const { people, medianOpen } = load.data;
-  if (people.every((person) => person.open === 0)) return null;
+  if (shown === 'all' && people.every((person) => person.open === 0)) return null;
   const most = Math.max(...people.map((person) => person.open), 1);
 
   return (
     <section aria-labelledby="workload-heading" className="mt-10">
-      <h2 id="workload-heading" className="text-sm font-semibold text-content">
-        Workload
-      </h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 id="workload-heading" className="text-sm font-semibold text-content">
+          Workload
+        </h2>
+        {anyRunning ? <ScopeSwitch scope={shown} onChange={setScope} /> : null}
+      </div>
       <p className="mt-1 text-xs text-faint">
-        Open issues each person has here; typically {formatCount(medianOpen)}. For sharing work out,
-        not for ranking anyone.
+        {shown === 'cycles'
+          ? 'What each person has open in the cycles running now'
+          : 'Open issues each person has here'}
+        ; typically {formatCount(medianOpen)}. For sharing work out, not for ranking anyone.
       </p>
       <ul className="mt-3 space-y-2">
         {people.map((person) => (
@@ -62,6 +76,36 @@ export function WorkloadSection({ workspaceId }: { workspaceId: string }) {
         ))}
       </ul>
     </section>
+  );
+}
+
+type Scope = 'all' | 'cycles';
+const SCOPES: { value: Scope; label: string }[] = [
+  { value: 'all', label: 'Every open issue' },
+  { value: 'cycles', label: 'In running cycles' },
+];
+
+/** Every open issue, or only what is planned in the cycles running now. */
+function ScopeSwitch({ scope, onChange }: { scope: Scope; onChange: (scope: Scope) => void }) {
+  return (
+    <fieldset className="flex rounded-md border border-line p-0.5 text-[11px]">
+      <legend className="sr-only">Count</legend>
+      {SCOPES.map(({ value, label }) => (
+        <button
+          key={value}
+          type="button"
+          aria-pressed={scope === value}
+          onClick={() => onChange(value)}
+          className={`rounded px-2 py-0.5 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-soft ${
+            scope === value
+              ? 'bg-surface font-medium text-content'
+              : 'text-muted hover:text-content'
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </fieldset>
   );
 }
 

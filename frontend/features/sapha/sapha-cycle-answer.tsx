@@ -27,7 +27,7 @@ export function CycleAnswer({
 }) {
   const today = localToday();
   const answer = useQuery({
-    queryKey: ['sapha-cycles', workspaceId, today],
+    queryKey: ['cycles-current', workspaceId, today],
     queryFn: () => call(contracts['cycles.current'], { params: { workspaceId }, query: { today } }),
     retry: false,
   });

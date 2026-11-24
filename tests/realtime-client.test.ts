@@ -78,6 +78,8 @@ describe('what an event makes stale', () => {
       ['calendar-week', W],
       ['cycles', W, 'p1'],
       ['cycle-burnup', W],
+      ['cycles-current', W],
+      ['workload', W],
     ]);
   });
 

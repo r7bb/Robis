@@ -204,15 +204,15 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Workload for the cycles running now.** While a cycle runs, Workload on
+  Insights can count only what each person has planned in the cycles running
+  now, rather than everything open.
 - **A burn-up chart for the cycle.** Chart on the cycle bar draws how much
   of the cycle was done by the end of each day so far, against a dashed line
   of an even pace to all of it by the last day.
 - **Ask Sapha how the cycle is going.** Type “how is the cycle going” or
   “what’s left in the sprint on Web” in the command palette, and Sapha
   answers there: done of planned, days left and what is still open.
-- **Move a cycle’s unfinished issues on.** When a cycle ends with issues
-  still open, the board says how many, and one press moves them into the
-  cycle running now or the next one planned.
 
 <!-- latest:end -->
 

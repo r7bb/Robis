@@ -29,9 +29,9 @@ export function isHeavy(open: number, median: number): boolean {
 }
 
 /**
- * Workload: each member's open issues here, people only. Everyone in the
- * workspace is listed, those with nothing open too, so the median is the
- * team's and not only of the busy.
+ * Workload: each member's open issues here, people only, or only those in
+ * a cycle running today. Everyone in the workspace is listed, those with
+ * nothing open too, so the median is the team's and not only of the busy.
  */
 export async function workloadRoutes(app: FastifyInstance, opts: { db: Database }) {
   const { db } = opts;
@@ -43,6 +43,13 @@ export async function workloadRoutes(app: FastifyInstance, opts: { db: Database 
     async (request, { query }) => {
       const { workspaceId } = currentMembership(request);
       const today = todayFor(query.today, new Date());
+      // Only work planned now: in a cycle that is running on the asker's today.
+      const inRunningCycle =
+        query.scope === 'cycles'
+          ? sql`and i.cycle_id in (select c.id from cycles c
+                 where c.workspace_id = m.workspace_id
+                   and c.starts_on <= ${today}::date and c.ends_on >= ${today}::date)`
+          : sql``;
       const rows = await db.execute<{
         user_id: string;
         name: string;
@@ -63,6 +70,7 @@ export async function workloadRoutes(app: FastifyInstance, opts: { db: Database 
           join users u on u.id = m.user_id and u.kind = 'human'
           left join issues i on i.assignee_id = u.id and i.workspace_id = m.workspace_id
                and i.status not in ('DONE', 'CANCELED')
+               ${inRunningCycle}
          where m.workspace_id = ${workspaceId}
          group by u.id, u.name
          order by open desc, u.name

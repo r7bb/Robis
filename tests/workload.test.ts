@@ -101,6 +101,61 @@ describe('the workload', () => {
     ]);
   });
 
+  test('in running cycles only: what is planned now, not the backlog or an ended cycle', async () => {
+    const ana = await createActor('Ana');
+    const bo = await createActor('Bo');
+    const workspace = await createWorkspace(ana);
+    await addMember(ana, workspace.id, bo, 'MEMBER');
+    const ws = `/workspaces/${workspace.id}`;
+    const project = await createProject(ana, workspace.id);
+    const plan = async (name: string, startsOn: string, endsOn: string) =>
+      (
+        await request(`${ws}/projects/${project.id}/cycles`, {
+          method: 'POST',
+          actor: ana,
+          payload: { name, startsOn, endsOn },
+        })
+      ).json().cycle as { id: string };
+    const now = await plan('Now', '2026-11-16', '2026-11-29');
+    const ended = await plan('Ended', '2026-11-02', '2026-11-15');
+    const file = async (assigneeId: string, cycleId: string | null) => {
+      const { issue } = (
+        await request(`${ws}/projects/${project.id}/issues`, {
+          method: 'POST',
+          actor: ana,
+          payload: { title: 'Work', assigneeId },
+        })
+      ).json();
+      if (cycleId) {
+        await request(`${ws}/issues/${issue.id}`, {
+          method: 'PATCH',
+          actor: ana,
+          payload: { cycleId },
+        });
+      }
+    };
+    await file(bo.id, now.id);
+    await file(bo.id, null);
+    await file(bo.id, ended.id);
+    await file(ana.id, now.id);
+    await file(ana.id, now.id);
+
+    const everything = (
+      await request(`${ws}/insights/workload?today=2026-11-24`, { actor: ana })
+    ).json();
+    expect(everything.people.map((p: { name: string; open: number }) => [p.name, p.open])).toEqual([
+      ['Bo', 3],
+      ['Ana', 2],
+    ]);
+    const planned = (
+      await request(`${ws}/insights/workload?today=2026-11-24&scope=cycles`, { actor: ana })
+    ).json();
+    expect(planned.people.map((p: { name: string; open: number }) => [p.name, p.open])).toEqual([
+      ['Ana', 2],
+      ['Bo', 1],
+    ]);
+  });
+
   test('another workspace’s is not found', async () => {
     const ana = await createActor('Ana');
     const workspace = await createWorkspace(ana);
