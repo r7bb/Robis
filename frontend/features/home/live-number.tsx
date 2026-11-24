@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { formatNumber } from '../../lib/i18n/format.ts';
 import { useReducedMotion } from '../landing/use-scroll.ts';
 
 /** How long a "+2" stays up after a number rises. */
@@ -57,7 +58,7 @@ export function LiveNumber({ value, durationMs = 700 }: { value: number; duratio
 
   return (
     <span className="relative inline-block">
-      {shown.toLocaleString()}
+      {formatNumber(shown)}
       {delta && (
         <span
           key={delta.key}

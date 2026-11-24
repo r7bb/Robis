@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { type ReactNode, useState } from 'react';
 import { ApiError } from '../lib/api.ts';
+import { LocaleProvider } from '../lib/i18n/locale-context.tsx';
 
 export function Providers({ children }: { children: ReactNode }) {
   // Created in state so each browser session gets exactly one client; a
@@ -21,5 +22,9 @@ export function Providers({ children }: { children: ReactNode }) {
       }),
   );
 
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={client}>
+      <LocaleProvider>{children}</LocaleProvider>
+    </QueryClientProvider>
+  );
 }

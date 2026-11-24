@@ -9,11 +9,13 @@ import { ACCOUNT_EVENTS_KEY, AccountActivity } from '../../features/account/acco
 import { ApiTokens } from '../../features/account/api-tokens.tsx';
 import { CalendarFeed } from '../../features/account/calendar-feed.tsx';
 import { DeleteAccount } from '../../features/account/delete-account.tsx';
+import { LanguagePicker } from '../../features/account/language-picker.tsx';
 import { NotificationSettings } from '../../features/account/notification-settings.tsx';
 import { PasskeySettings } from '../../features/account/passkeys.tsx';
 import { TwoFactorSettings } from '../../features/account/two-factor.tsx';
 import { UsernameField } from '../../features/account/username-field.tsx';
 import { ApiError, call, type Me } from '../../lib/api.ts';
+import { formatDateTime } from '../../lib/i18n/format.ts';
 import { lastTheme, useApplyTheme } from '../../lib/theme.ts';
 
 /**
@@ -73,6 +75,9 @@ export default function AccountPage() {
       </Section>
       <Section title="API tokens" id="tokens">
         <ApiTokens />
+      </Section>
+      <Section title="Language" id="language">
+        <LanguagePicker />
       </Section>
       <Section title="Notifications">
         <NotificationSettings />
@@ -341,7 +346,7 @@ function SessionsSection() {
                 {describeAgent(session.userAgent)}
               </span>
               <span className="text-xs text-faint">
-                Last used {new Date(session.lastUsedAt).toLocaleString()}
+                Last used {formatDateTime(session.lastUsedAt)}
               </span>
             </span>
 

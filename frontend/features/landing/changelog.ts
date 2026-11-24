@@ -46,6 +46,25 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Robis in Spanish, and dates and numbers in your own locale',
+    brief:
+      'Choose Español under Account and the sidebar, calendar and Spaces read in Spanish; every date, time and number now follows your locale, so an American reader sees the month first.',
+    summary:
+      'Strings now live in message files: English, and Spanish with every key, each placeholder kept and plural forms chosen by the language’s own rules. The viewer gets the language chosen under Account, Language (kept in this browser), else the first of their browser’s languages Robis has, else English, and the page’s lang follows it so a screen reader speaks in the right voice. Every date, time and number in the app goes through one formatter in that locale, using the browser’s own region within the language; the hard-coded British formats and scattered toLocaleString calls are gone. The app shell, the calendar, Spaces and the picker are translated so far; other screens keep their English until moved, a key at a time, and a missing translation falls back to English. The Spanish was written during the build and has not been read by a native speaker. docs/LANGUAGES.md says how to add a language.',
+    checked:
+      'Tests that Spanish has every English key with the same placeholders and whole plural pairs, that the language and region are chosen as described, and that a date, a number and the calendar title change with the locale. A browser journey picks Español on the account page, finds the calendar, its dates and the sidebar in Spanish with lang set after a reload, then follows the browser back to English. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Language',
+      where: 'Account, Language',
+      layers: [
+        'Screen: a language picker, and the sidebar, calendar and Spaces in the chosen language',
+        'Browser: the choice kept in this browser, with every date, time and number formatted in its locale',
+      ],
+    },
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title:
       'Spaces for questions and answers, reactions on celebrations, a livelier calendar and two tinted light themes',
     brief:

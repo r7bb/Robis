@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
+import { formatNumber } from '../../lib/i18n/format.ts';
 import { useInView, useReducedMotion } from './use-scroll.ts';
 
 /**
@@ -91,7 +92,7 @@ export function Counter({
 
   return (
     <span ref={ref}>
-      {current.toLocaleString(undefined, {
+      {formatNumber(current, {
         minimumFractionDigits: decimals,
         maximumFractionDigits: decimals,
       })}

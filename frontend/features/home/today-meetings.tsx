@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { call } from '../../lib/api.ts';
+import { formatClock } from '../../lib/i18n/format.ts';
 import { meetingState, todayWindow } from '../../lib/today.ts';
 import { CardLoading, HomeCard } from './home-card.tsx';
 
@@ -72,7 +73,7 @@ function MeetingRow({ meeting, now }: { meeting: Meeting; now: Date }) {
         dateTime={startsAt.toISOString()}
         className={`w-12 shrink-0 font-mono text-xs ${state === 'now' ? 'text-accent-soft' : 'text-faint'}`}
       >
-        {startsAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        {formatClock(startsAt)}
       </time>
       <Link
         href={`/workspaces/${meeting.workspaceId}/meetings`}

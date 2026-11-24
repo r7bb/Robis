@@ -4,6 +4,7 @@ import { contracts, type ResponseOf } from '@robis/shared';
 import { useInfiniteQuery, useMutation } from '@tanstack/react-query';
 import { ago } from '../../components/activity-feed.tsx';
 import { call } from '../../lib/api.ts';
+import { formatDateTime } from '../../lib/i18n/format.ts';
 
 type AccountChain = ResponseOf<(typeof contracts)['auth.verifyEvents']>;
 
@@ -124,7 +125,7 @@ export function AccountActivity() {
                 </span>
                 <time
                   dateTime={event.occurredAt}
-                  title={new Date(event.occurredAt).toLocaleString()}
+                  title={formatDateTime(event.occurredAt)}
                   className="shrink-0 text-xs text-faint"
                 >
                   {ago(event.occurredAt)}

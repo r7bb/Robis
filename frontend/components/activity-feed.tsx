@@ -4,6 +4,7 @@ import { contracts } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import { call } from '../lib/api.ts';
 import { describeEvent } from '../lib/audit-events.ts';
+import { formatDateTime, formatRelativeTime } from '../lib/i18n/format.ts';
 import { AgentBadge, RuleBadge } from './ui/primitives.tsx';
 
 /**
@@ -42,10 +43,7 @@ export function ago(iso: string): string {
     unit = next;
   }
 
-  return new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' }).format(
-    -Math.floor(value),
-    unit,
-  );
+  return formatRelativeTime(-Math.floor(value), unit);
 }
 
 export function ActivityFeed({ workspaceId }: { workspaceId: string }) {
@@ -88,7 +86,7 @@ export function ActivityFeed({ workspaceId }: { workspaceId: string }) {
               </span>
               <time
                 dateTime={event.createdAt}
-                title={new Date(event.createdAt).toLocaleString()}
+                title={formatDateTime(event.createdAt)}
                 className="shrink-0 text-xs text-faint"
               >
                 {ago(event.createdAt)}

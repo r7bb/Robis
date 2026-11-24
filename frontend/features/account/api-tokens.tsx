@@ -4,6 +4,7 @@ import { contracts, TOKEN_LIFETIMES } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { ApiError, call } from '../../lib/api.ts';
+import { formatDate } from '../../lib/i18n/format.ts';
 import { ACCOUNT_EVENTS_KEY } from './account-activity.tsx';
 
 /**
@@ -22,8 +23,7 @@ const QUIET_BUTTON =
 const KEY = ['api-tokens'] as const;
 type Lifetime = (typeof TOKEN_LIFETIMES)[number] | null;
 
-const dateOf = (iso: string) =>
-  new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+const dateOf = (iso: string) => formatDate(iso);
 
 const messageOf = (error: unknown) =>
   error instanceof ApiError ? error.message : 'That did not work. Try again.';

@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Robis in Spanish, and dates and numbers in your own locale**
+  (2026-11-24). Choose Español under Account and the sidebar, calendar and
+  Spaces read in Spanish; every date, time and number now follows your
+  locale, so an American reader sees the month first.
 - **Spaces for questions and answers, reactions on celebrations, a livelier
   calendar and two tinted light themes** (2026-11-24). Spaces bring
   forum-style topics into the workspace: ask, reply in nested threads, mark

@@ -1,3 +1,5 @@
+import { dateFormat } from './i18n/format.ts';
+
 /**
  * How a due day reads (C1): relative while it is near, a date once it is
  * not, and marked when it has passed. Days are calendar days, compared as
@@ -23,11 +25,9 @@ function daysBetween(from: string, to: string): number {
 }
 
 function shortDate(day: string): string {
-  return new Date(`${day}T00:00:00Z`).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    timeZone: 'UTC',
-  });
+  return dateFormat({ day: 'numeric', month: 'short', timeZone: 'UTC' }).format(
+    new Date(`${day}T00:00:00Z`),
+  );
 }
 
 /**

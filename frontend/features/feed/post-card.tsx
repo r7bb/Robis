@@ -7,6 +7,7 @@ import { type FormEvent, useState } from 'react';
 import { ago } from '../../components/activity-feed.tsx';
 import { Avatar } from '../../components/ui/avatar.tsx';
 import { ApiError, BASE_URL, call, type Member } from '../../lib/api.ts';
+import { formatDateTime } from '../../lib/i18n/format.ts';
 import { personHref } from '../../lib/links.ts';
 import { StoryRing } from '../stories/story-ring.tsx';
 import { feedKey, type Post, type Reaction } from './feed-model.ts';
@@ -52,7 +53,7 @@ export function PostCard({
             {name}
           </Link>
           <p className="text-xs text-faint">
-            <time dateTime={post.createdAt} title={new Date(post.createdAt).toLocaleString()}>
+            <time dateTime={post.createdAt} title={formatDateTime(post.createdAt)}>
               {ago(post.createdAt)}
             </time>
             {post.editedAt ? ' · edited' : ''}

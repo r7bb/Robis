@@ -9,6 +9,7 @@ import { EmptyView } from '../../components/empty-view.tsx';
 import { ThemePicker } from '../../components/theme-picker.tsx';
 import { SectionLabel } from '../../components/ui/primitives.tsx';
 import { ApiError, call } from '../../lib/api.ts';
+import { useT } from '../../lib/i18n/locale-context.tsx';
 import { boardHref } from '../../lib/links.ts';
 import { useOverlay } from '../../lib/use-overlay.ts';
 
@@ -142,10 +143,11 @@ function Boards({
     },
   });
   const rows = (projects.data?.projects ?? []).filter((project) => !project.archived);
+  const { t } = useT();
 
   return (
     <AddableSection
-      title="Boards"
+      title={t('nav.boards')}
       addLabel="New board"
       canAdd={role !== undefined && can(role, 'project:create')}
       pending={create.isPending}
@@ -169,7 +171,7 @@ function Boards({
         ))}
       </ul>
       {projects.isSuccess && rows.length === 0 ? (
-        <p className="px-2 text-xs text-faint">No boards yet.</p>
+        <p className="px-2 text-xs text-faint">{t('nav.noBoards')}</p>
       ) : null}
     </AddableSection>
   );
@@ -192,10 +194,11 @@ function Docs({ workspaceId, role }: { workspaceId: string; role: Role | undefin
     },
   });
   const rows = documents.data?.documents ?? [];
+  const { t } = useT();
 
   return (
     <AddableSection
-      title="Docs"
+      title={t('nav.docs')}
       addLabel="New doc"
       // Documents follow the project permission, as the API does.
       canAdd={role !== undefined && can(role, 'project:create')}
@@ -233,15 +236,16 @@ function Docs({ workspaceId, role }: { workspaceId: string; role: Role | undefin
 /** The quiet ways to the rest, each a page in the middle. */
 function MoreLinks({ workspaceId }: { workspaceId: string }) {
   const pathname = usePathname();
+  const { t } = useT();
   const links = [
-    { href: `/workspaces/${workspaceId}/feed`, label: 'Feed' },
-    { href: `/workspaces/${workspaceId}/spaces`, label: 'Spaces' },
-    { href: `/workspaces/${workspaceId}/meetings`, label: 'Meetings' },
-    { href: `/workspaces/${workspaceId}/calendar`, label: 'Calendar' },
-    { href: `/workspaces/${workspaceId}/activity`, label: 'Activity' },
-    { href: `/workspaces/${workspaceId}/insights`, label: 'Insights' },
-    { href: `/workspaces/${workspaceId}/automations`, label: 'Automations' },
-    { href: `/workspaces/${workspaceId}/people`, label: 'People' },
+    { href: `/workspaces/${workspaceId}/feed`, label: t('nav.feed') },
+    { href: `/workspaces/${workspaceId}/spaces`, label: t('nav.spaces') },
+    { href: `/workspaces/${workspaceId}/meetings`, label: t('nav.meetings') },
+    { href: `/workspaces/${workspaceId}/calendar`, label: t('nav.calendar') },
+    { href: `/workspaces/${workspaceId}/activity`, label: t('nav.activity') },
+    { href: `/workspaces/${workspaceId}/insights`, label: t('nav.insights') },
+    { href: `/workspaces/${workspaceId}/automations`, label: t('nav.automations') },
+    { href: `/workspaces/${workspaceId}/people`, label: t('nav.people') },
   ];
   return (
     <ul className="space-y-px">

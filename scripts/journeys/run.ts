@@ -26,6 +26,7 @@ import { demoWorkspaceJourney, emptyViewsJourney } from './empty-views.ts';
 import { exportJourney } from './export.ts';
 import { importJourney } from './import.ts';
 import { keyboardDialogsJourney } from './keyboard-dialogs.ts';
+import { languagesJourney } from './languages.ts';
 import { guestJourney, meetingJourney, strangerJourney } from './meetings-access.ts';
 import { offlineBoardJourney } from './offline-board.ts';
 import { offlineIssueJourney } from './offline-issue.ts';
@@ -57,6 +58,7 @@ const JOURNEYS: Record<string, (checks: Checks) => Promise<void>> = {
   a11y: (checks) => a11yJourney(checks, [FIRST_PORT + 19, FIRST_PORT + 20, FIRST_PORT + 21]),
   keyboard: (checks) => keyboardDialogsJourney(checks, FIRST_PORT + 22),
   spaces: (checks) => spacesJourney(checks, [FIRST_PORT + 23, FIRST_PORT + 24]),
+  languages: (checks) => languagesJourney(checks, FIRST_PORT + 25),
 };
 
 async function main() {

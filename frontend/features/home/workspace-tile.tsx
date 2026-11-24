@@ -7,6 +7,7 @@ import { DeleteButton } from '../../components/delete-button.tsx';
 import { Avatar } from '../../components/ui/avatar.tsx';
 import { DemoBadge, RoleBadge } from '../../components/ui/primitives.tsx';
 import type { WorkspaceSummary } from '../../lib/api.ts';
+import { formatNumber } from '../../lib/i18n/format.ts';
 import { type ConnectionState, useRealtime } from '../../lib/realtime.ts';
 import { formatRelative } from '../../lib/time.ts';
 import { ActivitySpark } from './activity-spark.tsx';
@@ -200,7 +201,7 @@ function TileLatest({ overview }: { overview: WorkspaceOverview | undefined }) {
   );
 }
 
-const sizeFormat = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 });
+const sizeFormat = { format: (n: number) => formatNumber(n, { maximumFractionDigits: 1 }) };
 
 /** Bytes as the unit a person would say: KB, MB or GB. */
 function size(bytes: number): string {

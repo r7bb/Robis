@@ -1,4 +1,5 @@
 import type { contracts, ResponseOf } from '@robis/shared';
+import { dateFormat } from '../../lib/i18n/format.ts';
 
 /**
  * Cycle time and throughput as the Insights page words them (Phase 6):
@@ -76,12 +77,10 @@ export function untimedNote(project: ProjectFlow): string | null {
   return `${plural(untimed, 'issue')} never moved into work, so ${untimed === 1 ? 'it is' : 'they are'} counted but not timed.`;
 }
 
-const dayMonth = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' });
-
 /** The last day of the `index`-th seven-day step after `since`. */
 export function weekEnding(since: string | Date, index: number): string {
   const end = new Date(new Date(since).getTime() + (index + 1) * WEEK_MS - 1);
-  return dayMonth.format(end);
+  return dateFormat({ day: 'numeric', month: 'short' }).format(end);
 }
 
 /** The bars' accessible summary: the total, and the last seven days. */

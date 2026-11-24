@@ -2,6 +2,8 @@
 
 import type { contracts, ResponseOf } from '@robis/shared';
 import Link from 'next/link';
+import { formatClock } from '../../lib/i18n/format.ts';
+import { useT } from '../../lib/i18n/locale-context.tsx';
 import { type Day, hourAt, isWeekend, lanes, nowOn, placeOn, toneIndex } from './week-model.ts';
 
 /**
@@ -20,7 +22,8 @@ const HOUR_PX = 48;
 export const DAY_PX = 24 * HOUR_PX;
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 
-export const time = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
+/** A time of day in the viewer's locale. */
+export const time = { format: formatClock };
 
 /** Meeting colours: a bar on the left and a wash behind, readable on every theme. */
 const TONES = [
@@ -49,12 +52,13 @@ function MeetingBlock({
   at: { top: number; height: number };
   lane: { lane: number; lanes: number };
 }) {
+  const { t } = useT();
   const tone = toneOf(meeting);
   const short = at.height * 24 < 0.75;
   const ends = new Date(new Date(meeting.startsAt).getTime() + meeting.durationMinutes * 60_000);
   return (
     <div
-      title={`${meeting.title}, ${time.format(new Date(meeting.startsAt))} to ${time.format(ends)}`}
+      title={`${meeting.title}, ${t('calendar.span', { start: time.format(new Date(meeting.startsAt)), end: time.format(ends) })}`}
       className={`absolute overflow-hidden rounded-md pl-2.5 pr-1.5 py-1 text-[11px] leading-tight text-content shadow-sm ring-1 ring-line/60 transition hover:z-10 hover:shadow-md ${tone.wash} ${standing(meeting)}`}
       style={{
         top: `calc(${at.top * 100}% + 1px)`,
@@ -70,7 +74,10 @@ function MeetingBlock({
       <p className="truncate font-medium">{meeting.title}</p>
       {short ? null : (
         <p className="truncate tabular-nums text-muted">
-          {time.format(new Date(meeting.startsAt))} to {time.format(ends)}
+          {t('calendar.span', {
+            start: time.format(new Date(meeting.startsAt)),
+            end: time.format(ends),
+          })}
         </p>
       )}
     </div>

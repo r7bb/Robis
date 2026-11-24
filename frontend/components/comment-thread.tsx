@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type ClipboardEvent, type FormEvent, useEffect, useState } from 'react';
 import { type Attachment, uploadable } from '../features/issues/attachments.tsx';
 import { BASE_URL, type CommentMention, call } from '../lib/api.ts';
+import { formatDateTime } from '../lib/i18n/format.ts';
 import { remembered } from '../lib/remembered.ts';
 import { useMemberAvatars } from '../lib/use-member-avatars.ts';
 import { usePendingComments } from '../lib/use-pending-comments.ts';
@@ -179,7 +180,7 @@ export function CommentThread({
 
               <span className="flex shrink-0 items-center gap-3">
                 <time className="text-xs text-faint" dateTime={comment.createdAt}>
-                  {new Date(comment.createdAt).toLocaleString()}
+                  {formatDateTime(comment.createdAt)}
                 </time>
 
                 {/* Own comments only; the API also refuses others unless you

@@ -1,4 +1,5 @@
 import { addDays, instantOf, type Wall, wallOf } from '@robis/shared';
+import { dateFormat } from '../../lib/i18n/format.ts';
 
 /**
  * The week view's arithmetic (B8): pure, and in an explicit zone, so it is
@@ -86,35 +87,39 @@ export function shiftWeeks(anchor: Date, weeks: number): Date {
   return new Date(anchor.getTime() + weeks * 7 * 24 * 60 * 60 * 1000);
 }
 
-const dayName = new Intl.DateTimeFormat('en-GB', {
-  weekday: 'short',
-  day: 'numeric',
-  month: 'short',
-  timeZone: 'UTC',
-});
-
-/** "Mon 26 Oct", for a column's heading. */
+/** "Mon 26 Oct", in the viewer's locale, for a column's heading. */
 export function dayLabel(day: Day): string {
-  return dayName.format(new Date(Date.UTC(day.year, day.month - 1, day.day)));
+  return dateFormat({ weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).format(
+    new Date(Date.UTC(day.year, day.month - 1, day.day)),
+  );
 }
 
-const monthYear = new Intl.DateTimeFormat('en-GB', {
-  month: 'long',
-  year: 'numeric',
-  timeZone: 'UTC',
-});
-const monthShort = new Intl.DateTimeFormat('en-GB', { month: 'short', timeZone: 'UTC' });
-const utc = (day: Day) => new Date(Date.UTC(day.year, day.month - 1, day.day));
+/** "Mon", in the viewer's locale. */
+export function weekdayLabel(day: Day): string {
+  return dateFormat({ weekday: 'short', timeZone: 'UTC' }).format(
+    new Date(Date.UTC(day.year, day.month - 1, day.day)),
+  );
+}
 
-/** "November 2026", or "Nov to Dec 2026" for a week across two months. */
-export function weekTitle(days: readonly Day[]): string {
+const utc = (day: Day) => new Date(Date.UTC(day.year, day.month - 1, day.day));
+const englishSpan = (start: string, end: string) => `${start} to ${end}`;
+
+/**
+ * "November 2026", or "Nov to Dec 2026" for a week across two months, in
+ * the viewer's locale; `span` joins the two ends in the viewer's words.
+ */
+export function weekTitle(days: readonly Day[], span = englishSpan): string {
   const first = days[0]!;
   const last = days[days.length - 1]!;
-  if (first.month === last.month && first.year === last.year) return monthYear.format(utc(first));
-  if (first.year === last.year) {
-    return `${monthShort.format(utc(first))} to ${monthShort.format(utc(last))} ${last.year}`;
+  if (first.month === last.month && first.year === last.year) {
+    return dateFormat({ month: 'long', year: 'numeric', timeZone: 'UTC' }).format(utc(first));
   }
-  return `${monthShort.format(utc(first))} ${first.year} to ${monthShort.format(utc(last))} ${last.year}`;
+  const month = dateFormat({ month: 'short', timeZone: 'UTC' });
+  const monthYear = dateFormat({ month: 'short', year: 'numeric', timeZone: 'UTC' });
+  if (first.year === last.year) {
+    return span(month.format(utc(first)), monthYear.format(utc(last)));
+  }
+  return span(monthYear.format(utc(first)), monthYear.format(utc(last)));
 }
 
 /** The ISO week number of a day: weeks start on Monday, week 1 holds 4 January. */

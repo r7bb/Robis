@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { dateFormat } from '../../lib/i18n/format.ts';
 
 const BAR_WIDTH = 6;
 const GAP = 3;
@@ -9,11 +10,9 @@ const HEIGHT = 28;
 const MIN_BAR = 2;
 
 // In UTC, as the server counts the days, so a bar and its label agree.
-const dayLabel = new Intl.DateTimeFormat(undefined, {
-  month: 'short',
-  day: 'numeric',
-  timeZone: 'UTC',
-});
+const dayLabel = {
+  format: (d: Date) => dateFormat({ month: 'short', day: 'numeric', timeZone: 'UTC' }).format(d),
+};
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function dayOf(index: number, count: number): string {

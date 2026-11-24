@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 import { ago } from '../../components/activity-feed.tsx';
 import { ApiError, call } from '../../lib/api.ts';
+import { useT } from '../../lib/i18n/locale-context.tsx';
 import { spaceHref } from '../../lib/links.ts';
 import { usePeople } from '../../lib/use-people.ts';
 import { useWorkspaceRole } from '../workspace/page-frame.tsx';
@@ -23,6 +24,7 @@ const FIELD =
   'w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-content outline-none placeholder:text-faint focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60';
 
 function SpaceCard({ workspaceId, space }: { workspaceId: string; space: Space }) {
+  const { t, plural } = useT();
   return (
     <Link
       href={spaceHref(workspaceId, space.id)}
@@ -40,8 +42,10 @@ function SpaceCard({ workspaceId, space }: { workspaceId: string; space: Space }
             {space.name}
           </h3>
           <p className="text-xs text-faint">
-            {space.threadCount} {space.threadCount === 1 ? 'thread' : 'threads'}
-            {space.lastActivityAt ? ` · active ${ago(space.lastActivityAt)}` : ''}
+            {plural('spaces.threads', space.threadCount)}
+            {space.lastActivityAt
+              ? ` · ${t('spaces.active', { when: ago(space.lastActivityAt) })}`
+              : ''}
           </p>
         </div>
       </div>
@@ -55,6 +59,7 @@ function SpaceCard({ workspaceId, space }: { workspaceId: string; space: Space }
 function StartSpace({ workspaceId, onDone }: { workspaceId: string; onDone: () => void }) {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const { t } = useT();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const start = useMutation({
@@ -76,28 +81,28 @@ function StartSpace({ workspaceId, onDone }: { workspaceId: string; onDone: () =
   return (
     <form
       onSubmit={submit}
-      aria-label="Start a space"
+      aria-label={t('spaces.start')}
       className="rounded-xl border border-line bg-raised p-4 shadow-sm"
     >
       <label className="block text-xs font-medium text-muted">
-        Name
+        {t('spaces.name')}
         <input
           className={`${FIELD} mt-1`}
           value={name}
           onChange={(e) => setName(e.target.value)}
           maxLength={SPACE_NAME_MAX_LENGTH}
-          placeholder="IT help, Design crits, Onboarding…"
+          placeholder={t('spaces.namePlaceholder')}
           required
         />
       </label>
       <label className="mt-3 block text-xs font-medium text-muted">
-        What it is for
+        {t('spaces.purpose')}
         <input
           className={`${FIELD} mt-1`}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           maxLength={SPACE_DESCRIPTION_MAX_LENGTH}
-          placeholder="One line, so people know what to ask here"
+          placeholder={t('spaces.purposePlaceholder')}
         />
       </label>
       <div className="mt-3 flex items-center gap-3">
@@ -106,15 +111,15 @@ function StartSpace({ workspaceId, onDone }: { workspaceId: string; onDone: () =
           disabled={start.isPending || !name.trim()}
           className="rounded-lg bg-accent px-3.5 py-2 text-sm font-medium text-accent-contrast transition-[background-color,transform] hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50"
         >
-          {start.isPending ? 'Starting…' : 'Start the space'}
+          {start.isPending ? t('spaces.starting') : t('spaces.startIt')}
         </button>
         <button type="button" onClick={onDone} className="text-sm text-muted hover:text-content">
-          Cancel
+          {t('spaces.cancel')}
         </button>
       </div>
       {start.error ? (
         <p role="alert" className="mt-2 text-sm text-danger-soft">
-          {start.error instanceof ApiError ? start.error.message : 'That did not work. Try again.'}
+          {start.error instanceof ApiError ? start.error.message : t('spaces.failed')}
         </p>
       ) : null}
     </form>
@@ -125,6 +130,7 @@ export function SpacesHome({ workspaceId }: { workspaceId: string }) {
   const { role } = useWorkspaceRole();
   const { people } = usePeople(workspaceId);
   const [starting, setStarting] = useState(false);
+  const { t } = useT();
   const list = useQuery({
     queryKey: spacesKey(workspaceId),
     queryFn: () => call(contracts['spaces.list'], { params: { workspaceId } }),
@@ -138,12 +144,9 @@ export function SpacesHome({ workspaceId }: { workspaceId: string }) {
         <div className="flex flex-wrap items-end gap-3">
           <div className="mr-auto">
             <h1 className="text-balance text-lg font-semibold tracking-tight text-content">
-              Spaces
+              {t('spaces.title')}
             </h1>
-            <p className="mt-1 max-w-[60ch] text-sm text-muted">
-              Topics where the team asks, answers and shares what worked. Mark what helped; the best
-              answers rise.
-            </p>
+            <p className="mt-1 max-w-[60ch] text-sm text-muted">{t('spaces.lead')}</p>
           </div>
           {mayStart && !starting ? (
             <button
@@ -151,7 +154,7 @@ export function SpacesHome({ workspaceId }: { workspaceId: string }) {
               onClick={() => setStarting(true)}
               className="rounded-lg bg-accent px-3.5 py-2 text-sm font-medium text-accent-contrast transition-[background-color,transform] hover:bg-accent-hover active:scale-[0.98]"
             >
-              Start a space
+              {t('spaces.start')}
             </button>
           ) : null}
         </div>
@@ -169,11 +172,8 @@ export function SpacesHome({ workspaceId }: { workspaceId: string }) {
           </ul>
         ) : spaces.length === 0 ? (
           <div className="mt-5 rounded-xl border border-dashed border-line p-8 text-center">
-            <p className="text-sm font-medium text-content">No spaces yet</p>
-            <p className="mx-auto mt-1 max-w-[42ch] text-sm text-muted">
-              Start one for a topic people keep asking about: IT help, design reviews, how things
-              work here.
-            </p>
+            <p className="text-sm font-medium text-content">{t('spaces.none')}</p>
+            <p className="mx-auto mt-1 max-w-[42ch] text-sm text-muted">{t('spaces.noneLead')}</p>
           </div>
         ) : (
           <ul className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -186,7 +186,7 @@ export function SpacesHome({ workspaceId }: { workspaceId: string }) {
         )}
         {list.isError ? (
           <p role="alert" className="mt-3 text-sm text-muted">
-            Spaces could not be loaded. Try again in a moment.
+            {t('spaces.unloaded')}
           </p>
         ) : null}
       </div>

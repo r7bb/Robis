@@ -9,6 +9,7 @@ import { Avatar, orbStyle } from '../../components/ui/avatar.tsx';
 import { AgentBadge, ErrorState, RoleBadge } from '../../components/ui/primitives.tsx';
 import { BASE_URL, call } from '../../lib/api.ts';
 import { describeEvent } from '../../lib/audit-events.ts';
+import { formatDateTime } from '../../lib/i18n/format.ts';
 import { channelHref, issueHref } from '../../lib/links.ts';
 import { StoryRing } from '../stories/story-ring.tsx';
 import { ProfileEditor } from './profile-editor.tsx';
@@ -143,7 +144,7 @@ function Activity({ events, mine }: { events: ProfileData['activity']; mine: boo
               </span>
               <time
                 dateTime={event.createdAt}
-                title={new Date(event.createdAt).toLocaleString()}
+                title={formatDateTime(event.createdAt)}
                 className="shrink-0 text-xs text-faint"
               >
                 {ago(event.createdAt)}

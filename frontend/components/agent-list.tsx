@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { type FormEvent, useState } from 'react';
 import { call } from '../lib/api.ts';
+import { formatDate } from '../lib/i18n/format.ts';
 import { DeleteButton } from './delete-button.tsx';
 import { EmptyView } from './empty-view.tsx';
 import { Avatar } from './ui/avatar.tsx';
@@ -352,7 +353,7 @@ export function AgentList({ workspaceId }: { workspaceId: string }) {
                     <span>
                       {token.label}
                       {token.lastUsedAt
-                        ? ` · last used ${new Date(token.lastUsedAt).toLocaleDateString()}`
+                        ? ` · last used ${formatDate(token.lastUsedAt)}`
                         : ' · not used yet'}
                     </span>
                     {confirming === token.id ? (

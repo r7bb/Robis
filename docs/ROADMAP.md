@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-11-23): **1827 TypeScript tests, 106 Python tests, lint and
+Status (2026-11-24): **1873 TypeScript tests, 106 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -87,13 +87,17 @@ and labels mapped, and a rerun adds nothing; an export imported into a
 fresh workspace reproduces issues, comments and labels. Account deletion
 (transfer or delete each owned workspace) came with B3.
 
-**Accessibility and languages (C9), first part.** axe-core checks every
+**Accessibility and languages (C9).** axe-core checks every
 page the screenshot script captures, on three themes, in CI, and fails on
 serious or critical findings; the contrast, naming and keyboard problems
 it found are fixed. The landing field stills when reduced motion is turned
 on, even with the page open. Every dialog works by keyboard and is named
-for screen readers, checked by a journey. Message files for a second
-language are next.
+for screen readers, checked by a journey. Strings live in typed message
+files, English and Spanish (written during the build, not yet read by a
+native speaker), chosen on the account page or from the browser; every
+date, time and number follows the viewer's locale through one module. The
+shell, calendar and Spaces are translated; other screens move a key at a
+time ([Languages](LANGUAGES.md)).
 
 **Phone and installable app (C8).** A manifest and icons so
 a phone installs Robis to its home screen, and every page checked at

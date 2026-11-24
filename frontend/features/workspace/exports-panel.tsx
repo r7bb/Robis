@@ -4,6 +4,7 @@ import { contracts, EXPORT_KEEP_DAYS, EXPORT_LINK_MINUTES } from '@robis/shared'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, InlineError } from '../../components/ui/primitives.tsx';
 import { ApiError, call } from '../../lib/api.ts';
+import { formatDateTime } from '../../lib/i18n/format.ts';
 
 /**
  * Export the workspace (C6), for admins: ask, wait while a job builds the
@@ -28,8 +29,7 @@ function size(bytes: number | null) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-const when = (iso: string) =>
-  new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+const when = (iso: string) => formatDateTime(iso);
 
 export function ExportsPanel({ workspaceId }: { workspaceId: string }) {
   const client = useQueryClient();

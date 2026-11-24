@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { AgentBadge } from '../../components/ui/primitives.tsx';
 import { call } from '../../lib/api.ts';
+import { formatDateTime } from '../../lib/i18n/format.ts';
 import { ChangeTrail } from './change-trail.tsx';
 
 type Activity = ResponseOf<(typeof contracts)['agents.activity']>;
@@ -17,7 +18,7 @@ type Stats = ResponseOf<(typeof contracts)['suggestions.stats']>;
  * 100% from one change never reads like a record.
  */
 
-const time = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+const time = { format: (d: Date) => formatDateTime(d) };
 
 function share(part: number, whole: number) {
   return whole === 0 ? '' : ` (${Math.round((part / whole) * 100)}%)`;

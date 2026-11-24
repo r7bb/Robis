@@ -8,17 +8,22 @@
  * "14:05" is a mismatch React will complain about, loudly and rightly.
  */
 
+import { dateFormat } from './i18n/format.ts';
+
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 
-const timeFormat = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
-const dayFormat = new Intl.DateTimeFormat(undefined, {
-  weekday: 'short',
-  day: 'numeric',
-  month: 'short',
-});
-const fullFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+// In the viewer's locale (C9), read on each call so a change of language applies.
+const timeFormat = {
+  format: (d: Date) => dateFormat({ hour: 'numeric', minute: '2-digit' }).format(d),
+};
+const dayFormat = {
+  format: (d: Date) => dateFormat({ weekday: 'short', day: 'numeric', month: 'short' }).format(d),
+};
+const fullFormat = {
+  format: (d: Date) => dateFormat({ dateStyle: 'medium', timeStyle: 'short' }).format(d),
+};
 
 export function formatTime(value: string | Date): string {
   return timeFormat.format(new Date(value));

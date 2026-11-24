@@ -7,6 +7,7 @@ import { ago } from '../../components/activity-feed.tsx';
 import { Button, InlineError } from '../../components/ui/primitives.tsx';
 import { type AuditEvent, call } from '../../lib/api.ts';
 import { describeEvent } from '../../lib/audit-events.ts';
+import { formatDateTime } from '../../lib/i18n/format.ts';
 import { ChainStatus } from './chain-status.tsx';
 
 /**
@@ -115,7 +116,7 @@ function EventRow({ event }: { event: AuditEvent }) {
 
       <time
         dateTime={event.occurredAt}
-        title={new Date(event.occurredAt).toLocaleString()}
+        title={formatDateTime(event.occurredAt)}
         className="col-start-2 text-xs text-faint sm:col-start-auto"
       >
         {ago(event.occurredAt)}

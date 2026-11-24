@@ -204,6 +204,10 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Robis in Spanish, and dates and numbers in your own locale.** Choose
+  Español under Account and the sidebar, calendar and Spaces read in
+  Spanish; every date, time and number now follows your locale, so an
+  American reader sees the month first.
 - **Spaces for questions and answers, reactions on celebrations, a livelier
   calendar and two tinted light themes.** Spaces bring forum-style topics
   into the workspace: ask, reply in nested threads, mark the answer and see
@@ -214,9 +218,6 @@ no write lost and nothing done twice.
   reached.** Each dialog now opens from the keyboard, keeps focus inside,
   has a name, and closes on Escape with focus back where it was; and the
   page shown when Robis is down says so instead of blaming the connection.
-- **Fourteen common attacks, each tried against Robis.** The usual attacks
-  on a new web app, from typing /admin to guessing the login code, are each
-  tried in a test, and the one that found a gap is fixed.
 
 <!-- latest:end -->
 
@@ -246,5 +247,6 @@ repository (<code>bun run screenshots</code> and <code>bun run capture:motion</c
 none is a mockup. Robis is a portfolio project: it runs locally and in CI and
 has not been deployed. Where it stands, and what needs a legal review before
 real users, is in <a href="docs/HOW_IT_WORKS.md">How it works</a>; what comes next is in
-<a href="docs/ROADMAP.md">the roadmap</a>.
+<a href="docs/ROADMAP.md">the roadmap</a>; adding a language is in
+<a href="docs/LANGUAGES.md">Languages</a>.
 </sub>

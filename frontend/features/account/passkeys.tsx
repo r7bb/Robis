@@ -5,6 +5,7 @@ import { browserSupportsWebAuthn, startRegistration } from '@simplewebauthn/brow
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useEffect, useState } from 'react';
 import { ApiError, call } from '../../lib/api.ts';
+import { formatDate } from '../../lib/i18n/format.ts';
 import { ACCOUNT_EVENTS_KEY } from './account-activity.tsx';
 
 /**
@@ -22,8 +23,7 @@ const BUTTON =
 const QUIET_BUTTON =
   'rounded-md border border-line px-3 py-1.5 text-sm text-muted transition-colors hover:bg-surface hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft';
 
-const dateOf = (iso: string) =>
-  new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+const dateOf = (iso: string) => formatDate(iso);
 
 function messageOf(error: unknown): string {
   // The browser's own prompt, closed or timed out: nothing went wrong here.

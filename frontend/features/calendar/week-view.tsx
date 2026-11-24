@@ -4,6 +4,7 @@ import { contracts } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { call } from '../../lib/api.ts';
+import { useT } from '../../lib/i18n/locale-context.tsx';
 import {
   type Day,
   dateKey,
@@ -14,6 +15,7 @@ import {
   sameDay,
   shiftWeeks,
   wallToday,
+  weekdayLabel,
   weekOf,
   weekTitle,
 } from './week-model.ts';
@@ -37,8 +39,7 @@ import {
 /** The working day starts here, so the grid opens scrolled to it. */
 const FIRST_HOUR_SHOWN = 7;
 const MINUTE_MS = 60_000;
-const weekday = new Intl.DateTimeFormat('en-GB', { weekday: 'short', timeZone: 'UTC' });
-const shortDay = (day: Day) => weekday.format(new Date(Date.UTC(day.year, day.month - 1, day.day)));
+const shortDay = weekdayLabel;
 
 /** The time now, ticking once a minute so the line for now moves. */
 function useNow() {
@@ -62,11 +63,8 @@ const Chevron = ({ back }: { back?: boolean }) => (
   </svg>
 );
 
-function plural(count: number, one: string, many: string) {
-  return `${count} ${count === 1 ? one : many}`;
-}
-
 function DayHeading({ day, today }: { day: Day; today: boolean }) {
+  const { t } = useT();
   return (
     <p className="flex items-baseline gap-1.5 px-2 pb-1 pt-2">
       <span
@@ -79,7 +77,7 @@ function DayHeading({ day, today }: { day: Day; today: boolean }) {
       >
         {day.day}
       </span>
-      {today ? <span className="sr-only">(today)</span> : null}
+      {today ? <span className="sr-only">{t('calendar.today')}</span> : null}
     </p>
   );
 }
@@ -95,6 +93,7 @@ function PhoneList({
   meetingsOn: (day: Day) => Occurrence[];
   dueOn: (day: Day) => { id: string; key: string; title: string }[];
 }) {
+  const { t } = useT();
   return (
     <ol className="space-y-2.5 sm:hidden">
       {days.map((day) => {
@@ -132,11 +131,12 @@ function PhoneList({
               ))}
               {due.map((issue) => (
                 <li key={issue.id} className="truncate text-muted">
-                  Due: <span className="font-mono text-faint">{issue.key}</span> {issue.title}
+                  {t('calendar.dueItem')} <span className="font-mono text-faint">{issue.key}</span>{' '}
+                  {issue.title}
                 </li>
               ))}
               {meetings.length + due.length === 0 ? (
-                <li className="text-faint">Nothing planned</li>
+                <li className="text-faint">{t('calendar.nothing')}</li>
               ) : null}
             </ul>
           </li>
@@ -147,6 +147,7 @@ function PhoneList({
 }
 
 export function WeekView({ workspaceId }: { workspaceId: string }) {
+  const { t, plural } = useT();
   const zone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone, []);
   const now = useNow();
   const today = wallToday(now, zone);
@@ -179,22 +180,26 @@ export function WeekView({ workspaceId }: { workspaceId: string }) {
     'grid h-8 place-items-center rounded-md px-2.5 text-xs font-medium text-muted transition hover:bg-surface hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft';
 
   return (
-    <section aria-label={`Week of ${dayLabel(week.days[0]!)}`}>
+    <section aria-label={t('calendar.weekOf', { date: dayLabel(week.days[0]!) })}>
       <div className="mb-4 flex flex-wrap items-end gap-3">
         <div className="mr-auto">
           <h2 className="text-2xl font-semibold tracking-tight text-content">
-            {weekTitle(week.days)}
+            {weekTitle(week.days, (start, end) => t('calendar.span', { start, end }))}
           </h2>
           <p className="mt-0.5 text-xs text-faint">
-            Week {isoWeek(week.days[0]!)} · {plural(meetings.length, 'meeting', 'meetings')} ·{' '}
-            {plural(issues.length, 'issue due', 'issues due')} · times in {zone.replace(/_/g, ' ')}
+            {[
+              t('calendar.week', { number: isoWeek(week.days[0]!) }),
+              plural('calendar.meetings', meetings.length),
+              plural('calendar.due', issues.length),
+              t('calendar.zone', { zone: zone.replace(/_/g, ' ') }),
+            ].join(' · ')}
           </p>
         </div>
         <div className="inline-flex items-center gap-0.5 rounded-lg border border-line bg-raised p-0.5 shadow-sm">
           <button
             type="button"
             className={step}
-            aria-label="Previous week"
+            aria-label={t('calendar.previous')}
             onClick={() => setAnchor(shiftWeeks(anchor, -1))}
           >
             <Chevron back />
@@ -205,12 +210,12 @@ export function WeekView({ workspaceId }: { workspaceId: string }) {
             aria-pressed={onThisWeek}
             onClick={() => setAnchor(new Date())}
           >
-            This week
+            {t('calendar.thisWeek')}
           </button>
           <button
             type="button"
             className={step}
-            aria-label="Next week"
+            aria-label={t('calendar.next')}
             onClick={() => setAnchor(shiftWeeks(anchor, 1))}
           >
             <Chevron />
@@ -219,7 +224,7 @@ export function WeekView({ workspaceId }: { workspaceId: string }) {
       </div>
       {data.isError ? (
         <p role="alert" className="mb-3 text-sm text-muted">
-          The week could not be loaded. Try again in a moment.
+          {t('calendar.unloaded')}
         </p>
       ) : null}
 
@@ -244,7 +249,7 @@ export function WeekView({ workspaceId }: { workspaceId: string }) {
           ref={grid}
           // biome-ignore lint/a11y/noNoninteractiveTabindex: a scrollable area must take focus to be scrolled without a mouse (WCAG 2.1.1)
           tabIndex={0}
-          aria-label="The week, hour by hour"
+          aria-label={t('calendar.hours')}
           className="max-h-[36rem] overflow-y-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-soft"
         >
           <div className="grid grid-cols-[3.5rem_repeat(7,minmax(0,1fr))]">
@@ -263,7 +268,7 @@ export function WeekView({ workspaceId }: { workspaceId: string }) {
         </section>
         {meetings.length === 0 && data.isSuccess ? (
           <p className="border-t border-line px-4 py-2.5 text-xs text-faint">
-            No meetings this week. Schedule one from Meetings and it appears here.
+            {t('calendar.noMeetings')}
           </p>
         ) : null}
       </div>

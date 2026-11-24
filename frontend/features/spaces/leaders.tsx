@@ -6,8 +6,9 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Avatar } from '../../components/ui/avatar.tsx';
 import { call, type Member } from '../../lib/api.ts';
+import { useT } from '../../lib/i18n/locale-context.tsx';
 import { threadHref } from '../../lib/links.ts';
-import { type LeaderPeriod, leaderLine, leadersKey, PERIODS } from './spaces-model.ts';
+import { type LeaderPeriod, leadersKey, PERIODS } from './spaces-model.ts';
 
 /**
  * The most helpful, this week, this month or of all time: people by the
@@ -42,6 +43,14 @@ export function MostHelpful({
   compact?: boolean;
 }) {
   const [period, setPeriod] = useState<LeaderPeriod>('month');
+  const { t, plural } = useT();
+  const line = (helpful: number, answers: number) =>
+    [
+      helpful > 0 ? t('spaces.helpfulCount', { count: helpful }) : '',
+      answers > 0 ? plural('spaces.answers', answers) : '',
+    ]
+      .filter(Boolean)
+      .join(' · ');
   const leaders = useQuery({
     queryKey: leadersKey(workspaceId, period),
     queryFn: () =>
@@ -57,10 +66,10 @@ export function MostHelpful({
     >
       <div className="space-y-2">
         <h2 id="most-helpful-heading" className="text-sm font-semibold text-content">
-          Most helpful
+          {t('spaces.helpful')}
         </h2>
         <fieldset className="grid grid-cols-3 rounded-lg bg-surface p-0.5 text-[11px]">
-          <legend className="sr-only">Over</legend>
+          <legend className="sr-only">{t('spaces.over')}</legend>
           {(Object.keys(PERIODS) as LeaderPeriod[]).map((id) => (
             <button
               key={id}
@@ -69,7 +78,7 @@ export function MostHelpful({
               onClick={() => setPeriod(id)}
               className={`whitespace-nowrap rounded-md px-2 py-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft ${period === id ? 'bg-raised font-medium text-content shadow-sm' : 'text-muted hover:text-content'}`}
             >
-              {PERIODS[id]}
+              {t(`spaces.period.${id}`)}
             </button>
           ))}
         </fieldset>
@@ -82,9 +91,7 @@ export function MostHelpful({
           ))}
         </ul>
       ) : ranked.length === 0 ? (
-        <p className="mt-3 text-xs text-faint">
-          Nobody yet. Mark a reply Helpful and the person who wrote it shows here.
-        </p>
+        <p className="mt-3 text-xs text-faint">{t('spaces.nobody')}</p>
       ) : (
         <ol className="mt-3 space-y-1.5">
           {ranked.map((leader, place) => {
@@ -93,16 +100,16 @@ export function MostHelpful({
               <li key={leader.userId} className="flex items-center gap-2.5">
                 <Rank place={place} />
                 <Avatar
-                  name={person?.name ?? 'Someone'}
+                  name={person?.name ?? t('spaces.someone')}
                   seed={leader.userId}
                   avatar={person?.avatar ?? null}
                   size="sm"
                 />
                 <span className="min-w-0 flex-1 truncate text-sm text-content">
-                  {person?.name ?? 'Someone'}
+                  {person?.name ?? t('spaces.someone')}
                 </span>
                 <span className="shrink-0 text-xs tabular-nums text-muted">
-                  {leaderLine(leader.helpful, leader.answers)}
+                  {line(leader.helpful, leader.answers)}
                 </span>
               </li>
             );
@@ -113,7 +120,7 @@ export function MostHelpful({
       {replies.length > 0 ? (
         <>
           <h3 className="mt-5 text-xs font-semibold uppercase tracking-wide text-faint">
-            Replies that helped most
+            {t('spaces.topReplies')}
           </h3>
           <ul className="mt-2 space-y-2">
             {replies.map((top) => (
@@ -124,8 +131,16 @@ export function MostHelpful({
                 >
                   <p className="line-clamp-2 text-xs text-content">{top.excerpt}</p>
                   <p className="mt-1 truncate text-[11px] text-faint">
-                    {people.get(top.authorId)?.name ?? 'Someone'} in {top.spaceName} · {top.helpful}{' '}
-                    helpful{top.answer ? ' · the answer' : ''}
+                    {[
+                      t('spaces.inSpace', {
+                        name: people.get(top.authorId)?.name ?? t('spaces.someone'),
+                        space: top.spaceName,
+                      }),
+                      t('spaces.helpfulCount', { count: top.helpful }),
+                      top.answer ? t('spaces.theAnswer') : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
                   </p>
                 </Link>
               </li>
