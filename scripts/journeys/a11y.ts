@@ -183,6 +183,7 @@ export async function a11yJourney(checks: Checks, ports: readonly [number, numbe
     await check(checks, page, 'spaces', `${ws}/spaces`);
     await check(checks, page, 'the calendar', `${ws}/calendar`);
     await check(checks, page, 'insights', `${ws}/insights`);
+    await check(checks, page, 'releases', `${ws}/releases`);
     await check(checks, page, 'automations', `${ws}/automations`);
     await check(checks, page, 'account', '/account');
     await check(checks, page, 'the first run', '/first-run');

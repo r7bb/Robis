@@ -58,6 +58,7 @@ export async function phoneJourney(checks: Checks, port: number) {
       ['calendar', `${ws}/calendar`],
       ['activity', `${ws}/activity`],
       ['insights', `${ws}/insights`],
+      ['releases', `${ws}/releases`],
       ['automations', `${ws}/automations`],
       ['people', `${ws}/people`],
       ['import', `${ws}/projects/${projectId}/import`],
