@@ -1,7 +1,7 @@
 'use client';
 
 import { can, contracts } from '@robis/shared';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useState } from 'react';
 import { ago } from '../../components/activity-feed.tsx';
@@ -15,6 +15,7 @@ import {
   KINDS,
   repliesLine,
   SORTS,
+  type Space,
   spacesKey,
   type ThreadSort,
   type ThreadSummary,
@@ -111,11 +112,37 @@ function ThreadRow({
   );
 }
 
-function SpaceHeading({
-  space,
-}: {
-  space: { id: string; name: string; description: string } | undefined;
-}) {
+function FollowSpace({ workspaceId, space }: { workspaceId: string; space: Space }) {
+  const queryClient = useQueryClient();
+  const toggle = useMutation({
+    mutationFn: (on: boolean) =>
+      call(contracts[on ? 'spaces.follow' : 'spaces.unfollow'], {
+        params: { workspaceId, spaceId: space.id },
+      }),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: spacesKey(workspaceId) });
+      void queryClient.invalidateQueries({ queryKey: ['feed', workspaceId] });
+    },
+  });
+  return (
+    <button
+      type="button"
+      aria-pressed={space.following}
+      disabled={toggle.isPending}
+      onClick={() => toggle.mutate(!space.following)}
+      title="New threads here come to your Following feed"
+      className={`ml-auto shrink-0 rounded-full border px-3 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft disabled:opacity-50 ${
+        space.following
+          ? 'border-line text-muted hover:text-content'
+          : 'border-accent/40 bg-accent/10 font-medium text-accent-soft hover:bg-accent/20'
+      }`}
+    >
+      {space.following ? 'Following' : 'Follow'}
+    </button>
+  );
+}
+
+function SpaceHeading({ workspaceId, space }: { workspaceId: string; space: Space | undefined }) {
   return (
     <div className="mt-2 flex items-center gap-3">
       {space ? (
@@ -132,6 +159,7 @@ function SpaceHeading({
         </h1>
         {space?.description ? <p className="text-sm text-muted">{space.description}</p> : null}
       </div>
+      {space ? <FollowSpace workspaceId={workspaceId} space={space} /> : null}
     </div>
   );
 }
@@ -156,7 +184,7 @@ export function SpaceView({ workspaceId, spaceId }: { workspaceId: string; space
           Spaces
         </Link>
       </nav>
-      <SpaceHeading space={space} />
+      <SpaceHeading workspaceId={workspaceId} space={space} />
 
       {mayAsk && space ? (
         <div className="mt-5">

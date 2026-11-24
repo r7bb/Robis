@@ -66,10 +66,9 @@ def load_issues(workspace_id: str, url: str | None = None) -> list[Issue]:
         order by created_at
     """
 
-    with _connect(url) as connection:
-        with connection.cursor() as cursor:
-            cursor.execute(query, (workspace_id,))
-            rows = cursor.fetchall()
+    with _connect(url) as connection, connection.cursor() as cursor:
+        cursor.execute(query, (workspace_id,))
+        rows = cursor.fetchall()
 
     return [Issue(id=row[0], title=row[1], description=row[2], priority=row[3]) for row in rows]
 
@@ -94,17 +93,15 @@ def corpus_fingerprint(workspace_id: str, url: str | None = None) -> tuple[int, 
         where workspace_id = %s::uuid
     """
 
-    with _connect(url) as connection:
-        with connection.cursor() as cursor:
-            cursor.execute(query, (workspace_id,))
-            row = cursor.fetchone()
+    with _connect(url) as connection, connection.cursor() as cursor:
+        cursor.execute(query, (workspace_id,))
+        row = cursor.fetchone()
 
     return (int(row[0]), str(row[1])) if row else (0, "")
 
 
 def workspace_ids(url: str | None = None) -> list[str]:
     """Every workspace that has at least one issue, for warming caches."""
-    with _connect(url) as connection:
-        with connection.cursor() as cursor:
-            cursor.execute("select distinct workspace_id::text from ml_issues")
-            return [row[0] for row in cursor.fetchall()]
+    with _connect(url) as connection, connection.cursor() as cursor:
+        cursor.execute("select distinct workspace_id::text from ml_issues")
+        return [row[0] for row in cursor.fetchall()]

@@ -31,16 +31,22 @@ export const REACTION_MARKS: Record<Reaction, string> = {
 
 /** When an item happened, whichever kind it is. */
 function itemTime(item: FeedItem): string {
-  return item.kind === 'post' ? item.post.createdAt : item.picture.createdAt;
+  if (item.kind === 'post') return item.post.createdAt;
+  if (item.kind === 'thread') return item.thread.createdAt;
+  return item.picture.createdAt;
 }
 
 export function itemKey(item: FeedItem): string {
-  return item.kind === 'post' ? `post:${item.post.id}` : `picture:${item.picture.messageId}`;
+  if (item.kind === 'post') return `post:${item.post.id}`;
+  if (item.kind === 'thread') return `thread:${item.thread.id}`;
+  return `picture:${item.picture.messageId}`;
 }
 
 /** Who an item is by, whichever kind it is. */
-function itemAuthor(item: FeedItem): string {
-  return item.kind === 'post' ? item.post.authorId : item.picture.authorId;
+export function itemAuthor(item: FeedItem): string {
+  if (item.kind === 'post') return item.post.authorId;
+  if (item.kind === 'thread') return item.thread.authorId;
+  return item.picture.authorId;
 }
 
 /**

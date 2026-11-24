@@ -9,19 +9,27 @@ SHA-256 recorded here before it is used; a file that does not match is
 refused. Evaluation only: production does not import this module.
 
 A text's vector is the mean of its token vectors, normalised, as the model
-was trained to be used, so cosine similarity is a dot product. Vectors are
-cached per text for the life of a vectorizer, which is one workspace's
-corpus in the evaluation.
+was trained to be used, so cosine similarity is a dot product.
+
+**Served since D2.** The duplicate finder uses it when its files are here and
+verify (the ML image fetches them at build time), at the threshold its
+measurement chose; otherwise, or with ``ROBIS_ML_EMBEDDINGS=off``, it stays
+on word TF-IDF. One model serves every workspace, with a bounded cache of
+vectors by text: a vector is only ever compared inside the request that
+asked, so sharing the cache shares no workspace's issues with another.
 """
 
 from __future__ import annotations
 
 import hashlib
+import logging
 import os
 import sys
 import urllib.request
+from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
+from threading import Lock
 from typing import Any
 
 import numpy as np
@@ -55,6 +63,16 @@ MODEL_DIR = Path(
 )
 MAX_TOKENS = 128
 BATCH = 32
+#: Vectors kept by text: about 1.5 KB each, so some 30 MB at the cap.
+CACHE_SIZE = 20_000
+
+#: Chosen on the second labelled set's dev half and confirmed on its test half
+#: (recall 0.66, precision 0.88, 1 of 15 hard negatives raised): see the ML README.
+EMBEDDING_DUPLICATE_THRESHOLD = 0.55
+
+OFF_ENV = "ROBIS_ML_EMBEDDINGS"
+
+logger = logging.getLogger(__name__)
 
 
 def _sha256(path: Path) -> str:
@@ -101,8 +119,13 @@ class MiniLMVectorizer:
             raise FileNotFoundError(
                 "the MiniLM files are missing or do not match: run `python -m robis_ml.embeddings fetch`"
             )
+        # ONNX Runtime has telemetry of its own, read at import: it is switched
+        # off before the import and again once loaded, so nothing leaves.
+        os.environ.setdefault("ORT_DISABLE_TELEMETRY", "1")
         import onnxruntime
         from tokenizers import Tokenizer
+
+        onnxruntime.disable_telemetry_events()
 
         self._tokenizer = Tokenizer.from_file(str(local_path(FILES[1], folder)))
         self._tokenizer.enable_truncation(MAX_TOKENS)
@@ -111,7 +134,8 @@ class MiniLMVectorizer:
             str(local_path(FILES[0], folder)), providers=["CPUExecutionProvider"]
         )
         self._inputs = {i.name for i in self._session.get_inputs()}
-        self._cache: dict[str, np.ndarray] = {}
+        self._cache: OrderedDict[str, np.ndarray] = OrderedDict()
+        self._lock = Lock()
 
     def _encode(self, texts: list[str]) -> np.ndarray:
         encodings = self._tokenizer.encode_batch(texts)
@@ -126,12 +150,20 @@ class MiniLMVectorizer:
         return normalize(pooled)
 
     def transform(self, raw_documents: list[str]) -> np.ndarray:
-        missing = [t for t in dict.fromkeys(raw_documents) if t not in self._cache]
+        with self._lock:
+            known = {t: self._cache[t] for t in raw_documents if t in self._cache}
+            for text in known:
+                self._cache.move_to_end(text)
+        missing = [t for t in dict.fromkeys(raw_documents) if t not in known]
         for start in range(0, len(missing), BATCH):
             batch = missing[start : start + BATCH]
-            for text, vector in zip(batch, self._encode(batch), strict=True):
-                self._cache[text] = vector
-        return np.vstack([self._cache[t] for t in raw_documents])
+            known.update(zip(batch, self._encode(batch), strict=True))
+        with self._lock:
+            for text in missing:
+                self._cache[text] = known[text]
+            while len(self._cache) > CACHE_SIZE:
+                self._cache.popitem(last=False)
+        return np.vstack([known[t] for t in raw_documents])
 
     def fit_transform(self, raw_documents: list[str]) -> np.ndarray:
         return self.transform(raw_documents)
@@ -165,6 +197,27 @@ class Blend:
         return self._join(
             self._words.transform(raw_documents), self._sentences.transform(raw_documents)
         )
+
+
+_shared: MiniLMVectorizer | None = None
+_shared_lock = Lock()
+
+
+def serving() -> bool:
+    """Whether the service should use embeddings: switched on, and the files verify."""
+    if os.environ.get(OFF_ENV, "").lower() in ("off", "0", "false"):
+        return False
+    return verified()
+
+
+def shared_vectorizer() -> MiniLMVectorizer:
+    """The one model the service loads, built on first use."""
+    global _shared
+    with _shared_lock:
+        if _shared is None:
+            _shared = MiniLMVectorizer()
+            logger.info("duplicates: MiniLM sentence embeddings loaded from %s", MODEL_DIR)
+        return _shared
 
 
 def main(argv: list[str] | None = None) -> int:

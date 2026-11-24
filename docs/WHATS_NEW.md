@@ -6,6 +6,14 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Follow a space, and its new threads come to Following** (2026-11-24).
+  Follow a space from its page and every new question, idea or tip there
+  shows in your Following tab as one line that opens the thread.
+- **Duplicate hints now come from a sentence model, served from the ML
+  image** (2026-11-24). The composer’s duplicate hints and the triage agent
+  now use the small sentence model that doubled recall in the measurement,
+  fetched and hash-checked when the image is built, with word TF-IDF as the
+  fallback.
 - **Follow people, and a feed in three tidy tabs** (2026-11-24). Follow
   teammates and the Following tab shows only them; mute someone to quiet
   Everyone; the check-in, celebrations and project health move to

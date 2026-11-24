@@ -17,6 +17,12 @@ RUN python -m venv /venv
 COPY robis-ml/requirements.lock /tmp/requirements.lock
 RUN /venv/bin/pip install --require-hashes --only-binary=:all: -r /tmp/requirements.lock
 
+# The sentence model for duplicates (all-MiniLM-L6-v2, Apache-2.0), fetched at
+# a pinned revision and refused unless every file matches the SHA-256 recorded
+# in robis_ml/embeddings.py, so a changed file fails the build, not a request.
+COPY robis-ml/robis_ml /src/robis_ml
+RUN cd /src && ROBIS_ML_MODEL_DIR=/models /venv/bin/python -m robis_ml.embeddings fetch
+
 # ---------------------------------------------------------------------------
 # The service is run from its source directory rather than built as a
 # package, so no build backend is ever downloaded: everything installed is
@@ -28,6 +34,9 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 ENV PATH=/venv/bin:$PATH PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
 COPY --from=build /venv /venv
+COPY --from=build /models /models
+# ONNX Runtime's own telemetry, off from the first import.
+ENV ROBIS_ML_MODEL_DIR=/models ORT_DISABLE_TELEMETRY=1
 WORKDIR /app
 COPY robis-ml/robis_ml ./robis_ml
 RUN useradd --system --uid 10001 --no-create-home robis

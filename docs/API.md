@@ -19,7 +19,7 @@ way.
 `{ "error": "<code>", "message": "<words for people>" }`. A stranger to a
 workspace gets 404, never 403, so its existence is not given away.
 
-198 routes.
+200 routes.
 
 ## activity
 
@@ -1379,6 +1379,20 @@ Start a space: a topic for threads, named once per workspace.
 - Body: `name` (required), `description`
 - Answers: 201
 - Name: `spaces.create`
+
+### `DELETE /workspaces/{workspaceId}/spaces/{spaceId}/follow`
+
+Stop following a space.
+
+- Answers: 204
+- Name: `spaces.unfollow`
+
+### `PUT /workspaces/{workspaceId}/spaces/{spaceId}/follow`
+
+Follow a space, so its new threads come to your Following feed.
+
+- Answers: 204
+- Name: `spaces.follow`
 
 ### `GET /workspaces/{workspaceId}/spaces/{spaceId}/threads`
 

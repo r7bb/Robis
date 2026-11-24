@@ -90,8 +90,9 @@ export const noSuggestions: SuggestionClient = {
  * A floor under the service's own threshold, in case it is ever run with a
  * looser one.
  *
- * The service's default (0.40, chosen by `robis-ml`'s duplicate evaluation)
- * already sits above this, so at the default it filters nothing. A test in
+ * The service's defaults (0.55 with sentence embeddings, 0.40 on its word
+ * TF-IDF fallback, each chosen by `robis-ml`'s evaluation) already sit above
+ * this, so at either it filters nothing. A test in
  * `robis-ml` reads this constant and fails if it ever rises above that
  * default, because then this would be quietly dropping hints the
  * evaluation counts as shown.

@@ -30,6 +30,7 @@ from pydantic import BaseModel, Field
 
 from .auth import check_configuration, require_service_token
 from .data import corpus_fingerprint, load_issues
+from .embeddings import EMBEDDING_DUPLICATE_THRESHOLD, serving, shared_vectorizer
 from .model import (
     DEFAULT_DUPLICATE_THRESHOLD,
     DEFAULT_SIMILAR_LIMIT,
@@ -107,6 +108,18 @@ _cache_lock = Lock()
 _fit_locks: defaultdict[str, Lock] = defaultdict(Lock)
 
 
+def _finder(issues: list) -> DuplicateFinder:
+    """Sentence embeddings where the model is here and verifies; word TF-IDF otherwise."""
+    if serving():
+        return DuplicateFinder(issues, vectorizer=shared_vectorizer)
+    return DuplicateFinder(issues)
+
+
+def duplicate_threshold() -> float:
+    """The measured threshold of whichever representation is serving."""
+    return EMBEDDING_DUPLICATE_THRESHOLD if serving() else DEFAULT_DUPLICATE_THRESHOLD
+
+
 def _fit(workspace_id: str, fingerprint: tuple[int, str]) -> Fitted:
     issues = load_issues(workspace_id)
 
@@ -114,14 +127,15 @@ def _fit(workspace_id: str, fingerprint: tuple[int, str]) -> Fitted:
     trained = triage.fit(issues)
 
     logger.info(
-        "fitted workspace=%s issues=%d triage=%s",
+        "fitted workspace=%s issues=%d triage=%s duplicates=%s",
         workspace_id,
         len(issues),
         "ready" if trained else "declined",
+        "minilm" if serving() else "tfidf",
     )
 
     return Fitted(
-        duplicates=DuplicateFinder(issues),
+        duplicates=_finder(issues),
         triage=triage,
         issue_count=len(issues),
         fitted_at=monotonic(),
@@ -270,7 +284,7 @@ def similar(
     workspace_id: str,
     request: TextRequest,
     limit: int = DEFAULT_SIMILAR_LIMIT,
-    threshold: float = DEFAULT_DUPLICATE_THRESHOLD,
+    threshold: float | None = None,
 ) -> SimilarResponse:
     """Issues that look like this one.
 
@@ -278,10 +292,11 @@ def similar(
     empty list is a real answer, not a failure: most issues are not
     duplicates of anything.
     """
-    if not 0.0 <= threshold <= 1.0:
+    chosen = duplicate_threshold() if threshold is None else threshold
+    if not 0.0 <= chosen <= 1.0:
         raise HTTPException(status_code=400, detail="threshold must be between 0 and 1")
 
-    return _similar(_models_for(_valid_workspace(workspace_id)), request, limit, threshold)
+    return _similar(_models_for(_valid_workspace(workspace_id)), request, limit, chosen)
 
 
 def _similar(models: Fitted, request: TextRequest, limit: int, threshold: float) -> SimilarResponse:
@@ -371,7 +386,7 @@ def suggestions(workspace_id: str, request: TextRequest) -> SuggestionsResponse:
     fetches from cache) the workspace's models once, rather than twice.
     """
     models = _models_for(_valid_workspace(workspace_id))
-    found = _similar(models, request, DEFAULT_SIMILAR_LIMIT, DEFAULT_DUPLICATE_THRESHOLD)
+    found = _similar(models, request, DEFAULT_SIMILAR_LIMIT, duplicate_threshold())
     return SuggestionsResponse(
         similar=found.similar,
         corpus_size=found.corpus_size,

@@ -314,10 +314,20 @@ on the test half, its threshold fixed on dev:
 | Recall, lexical gap | 0/10 = 0.00 [0.00, 0.28] | 1/10 = 0.10 [0.02, 0.40] |
 
 It holds on the test half too, with the same caveat as the set: its author
-is not independent. **Production still runs word TF-IDF** for now: moving
-it means carrying the model (90 MB) in the ML image, fetched and
-hash-checked at build time, and timing it per request. That is the next ML
-step, not done here.
+is not independent.
+
+**Served since 2026-11-24.** The ML image fetches the model at build time and
+refuses it unless every file matches its recorded SHA-256; the service uses
+it at 0.55 wherever the files verify, and falls back to word TF-IDF at 0.40
+where they do not (CI, a laptop that never fetched them) or with
+`ROBIS_ML_EMBEDDINGS=off`. The fit log says which (`duplicates=minilm`).
+ONNX Runtime's own telemetry is switched off (`ORT_DISABLE_TELEMETRY=1`, and
+again in code). Measured in the container on the largest demo workspace
+(200 issues): a query takes 3.8 ms at the median and 15.5 ms at the 95th
+percentile against 0.4 ms and 0.6 ms for TF-IDF; a first fit embeds the
+corpus in 0.86 s, then vectors are cached by text (up to 20,000, about
+30 MB), so a refit is free. The service grew from about 110 MB to 266 MB
+resident and the image to 1.03 GB.
 
 ## Priority triage
 
@@ -352,19 +362,19 @@ Two things that field is *not*:
   counted every untriaged issue as a labelled example and then scored the model
   on a class it can never output.
 
-## Why TF-IDF and not embeddings
+## Why TF-IDF first, and embeddings now
+
+This was written when TF-IDF was all there was; embeddings now serve (D2,
+above), and TF-IDF is the fallback. The reasons below were the case for
+starting with it:
 
 1. **The corpus suits it.** One workspace's issues are short, few, and full of
    shared project vocabulary. That favours lexical matching and disadvantages a
    general-purpose embedding model that has seen none of it.
 2. **It costs nothing.** Fits in milliseconds. No GPU, no warm-up, no weights
    to ship or version.
-3. **Weights could not be downloaded here.** `cdn-lfs.huggingface.co` is
-   unreachable in the environment this was built in, so a transformer baseline
-   could not have been measured even for comparison.
-
-The third is a constraint, not a justification, and it is written down so
-nobody mistakes this for a considered rejection of embeddings.
+3. **Weights could not be downloaded then.** They can now, and the
+   comparison above is what that made possible.
 
 ## Measuring it
 

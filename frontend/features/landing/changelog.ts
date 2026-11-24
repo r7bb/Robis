@@ -46,6 +46,28 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Follow a space, and its new threads come to Following',
+    brief:
+      'Follow a space from its page and every new question, idea or tip there shows in your Following tab as one line that opens the thread.',
+    summary:
+      'Spaces can be followed like people. A Follow button on each space’s page puts its new threads in your Following tab, each as a single line (who started it, where, and its kind) that opens the thread, so Following stays short. Whoever starts a space follows it from the start. Threads never appear on Everyone, which stays posts and pictures. Following a space is yours alone, like following a person.',
+    checked:
+      'API tests that a followed space’s threads come to Following and never to Everyone, that unfollowing stops them, that the starter follows from the start, and that another workspace’s space cannot be followed. The browser journey follows a space from its page and finds a new thread in Following.',
+  },
+  {
+    date: '2026-11-24',
+    area: 'ML',
+    title: 'Duplicate hints now come from a sentence model, served from the ML image',
+    brief:
+      'The composer’s duplicate hints and the triage agent now use the small sentence model that doubled recall in the measurement, fetched and hash-checked when the image is built, with word TF-IDF as the fallback.',
+    summary:
+      'The ML service now finds duplicates with MiniLM sentence embeddings, run on the CPU through ONNX Runtime, at the 0.55 threshold its measurement chose. The image fetches the model at a pinned revision during the build and refuses it unless every file matches its recorded SHA-256, so a changed file fails the build rather than a request. Where the files are absent (CI, a laptop that never fetched them) or ROBIS_ML_EMBEDDINGS is off, the service stays on word TF-IDF at 0.40, and its fit log says which is serving. One model serves every workspace with a bounded cache of vectors by text. ONNX Runtime ships telemetry of its own; it is switched off from the first import. In the container, on the largest demo workspace, a query takes 3.8 ms at the median against 0.4 ms for TF-IDF, a first fit 0.86 s, and the service uses about 266 MB against 110 MB; the image is 1.03 GB.',
+    checked:
+      'Python tests that the service serves embeddings at their threshold where the model verifies and TF-IDF where it is switched off, that a reworded title finds its original, and that the cache and blend behave; 132 Python tests pass. The image builds with the hash check, and the stack smoke test passes, including the triage agent commenting suggestions through the new model. Timings were measured in the running container.',
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Follow people, and a feed in three tidy tabs',
     brief:
       'Follow teammates and the Following tab shows only them; mute someone to quiet Everyone; the check-in, celebrations and project health move to Highlights, so posts are no longer buried under cards.',

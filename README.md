@@ -204,19 +204,17 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Follow a space, and its new threads come to Following.** Follow a space
+  from its page and every new question, idea or tip there shows in your
+  Following tab as one line that opens the thread.
+- **Duplicate hints now come from a sentence model, served from the ML
+  image.** The composer’s duplicate hints and the triage agent now use the
+  small sentence model that doubled recall in the measurement, fetched and
+  hash-checked when the image is built, with word TF-IDF as the fallback.
 - **Follow people, and a feed in three tidy tabs.** Follow teammates and the
   Following tab shows only them; mute someone to quiet Everyone; the
   check-in, celebrations and project health move to Highlights, so posts are
   no longer buried under cards.
-- **Sentence embeddings double duplicate recall on the new set; stemming
-  does not help.** Stemming, a small sentence model and a blend were
-  compared on the new set’s dev half under a rule fixed in advance; only the
-  sentence model met it, and on the test half it found 66% of duplicates
-  against 34%, with fewer false alarms.
-- **A second labelled duplicate set, scored on a test half fixed in
-  advance.** A new set of 120 queries tagged by kind of wording gap, split
-  before any score and read once: character n-grams raised more alarms on
-  nothing new, but neither model found a single reworded duplicate.
 
 <!-- latest:end -->
 

@@ -1026,6 +1026,27 @@ export const spaces = pgTable(
   (t) => [uniqueIndex('spaces_workspace_name_key').on(t.workspaceId, sql`lower(${t.name})`)],
 );
 
+/** Who follows a space: its new threads come to their Following feed. */
+export const spaceFollows = pgTable(
+  'space_follows',
+  {
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    spaceId: uuid('space_id')
+      .notNull()
+      .references(() => spaces.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.spaceId, t.userId] }),
+    index('space_follows_user_idx').on(t.workspaceId, t.userId),
+  ],
+);
+
 /** A thread in a space: a question, an idea, a discussion or a tip. */
 export const spaceThreads = pgTable(
   'space_threads',

@@ -14,7 +14,7 @@ import { StoriesStrip } from '../stories/stories-strip.tsx';
 import { useWorkspaceRole } from '../workspace/page-frame.tsx';
 import { Celebrations } from './celebrations.tsx';
 import { CheckIn } from './check-in.tsx';
-import { type FeedItem, feedKey, itemKey, splitAtSeen } from './feed-model.ts';
+import { type FeedItem, feedKey, itemAuthor, itemKey, splitAtSeen } from './feed-model.ts';
 import { type FeedTab, FeedTabs, panelId, tabId, useFeedTab } from './feed-tabs.tsx';
 import { useFollows } from './follow-button.tsx';
 import { FollowingEmpty } from './following-empty.tsx';
@@ -22,6 +22,7 @@ import { PostCard } from './post-card.tsx';
 import { PostComposer } from './post-composer.tsx';
 import { ProjectHealthCards } from './project-health.tsx';
 import { ShotsStack } from './shots-stack.tsx';
+import { ThreadCard } from './thread-card.tsx';
 
 /**
  * The feed (Phase 2c): the team's stories along the top, then what has
@@ -106,14 +107,14 @@ function FeedList({
     <li key={itemKey(item)}>
       {item.kind === 'post' ? (
         <PostCard workspaceId={workspaceId} post={item.post} people={people} me={me} role={role} />
+      ) : item.kind === 'thread' ? (
+        <ThreadCard workspaceId={workspaceId} thread={item.thread} people={people} />
       ) : (
         <PictureCard workspaceId={workspaceId} picture={item.picture} people={people} />
       )}
     </li>
   );
-  const othersHere = items.some((item) =>
-    item.kind === 'post' ? item.post.authorId !== me : item.picture.authorId !== me,
-  );
+  const othersHere = items.some((item) => itemAuthor(item) !== me);
 
   if (feed.isPending) return <FeedSkeleton />;
   return (

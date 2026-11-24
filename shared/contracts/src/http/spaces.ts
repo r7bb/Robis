@@ -35,6 +35,8 @@ const space = z.object({
   threadCount: z.number().int().nonnegative(),
   /** When anything in it last happened; null for an empty space. */
   lastActivityAt: timestamp.nullable(),
+  /** Whether you follow it: its new threads come to your Following feed. */
+  following: z.boolean(),
 });
 
 const threadSummary = z.object({
@@ -189,6 +191,22 @@ export const spaceContracts = {
     path: '/workspaces/:workspaceId/space-reactions/:targetId/:reaction',
     summary: 'Take back a reaction in a space.',
     params: workspaceParams.extend({ targetId: z.string(), reaction }),
+    status: 204,
+    response: null,
+  }),
+  'spaces.follow': contract({
+    method: 'PUT',
+    path: '/workspaces/:workspaceId/spaces/:spaceId/follow',
+    summary: 'Follow a space, so its new threads come to your Following feed.',
+    params: spaceParams,
+    status: 204,
+    response: null,
+  }),
+  'spaces.unfollow': contract({
+    method: 'DELETE',
+    path: '/workspaces/:workspaceId/spaces/:spaceId/follow',
+    summary: 'Stop following a space.',
+    params: spaceParams,
     status: 204,
     response: null,
   }),

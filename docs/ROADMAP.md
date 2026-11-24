@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-11-24): **1880 TypeScript tests, 130 Python tests, lint and
+Status (2026-11-24): **1884 TypeScript tests, 132 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -195,8 +195,9 @@ so it is not independent. What remains is a second author following
 words-plus-embeddings blend failed the rule; MiniLM sentence embeddings met
 it (lexical gap 3 of 10 against 1, hard-negative alarms 9 of 15 against
 14), and on the test half had recall 0.66 against 0.34 and 1 of 15 alarms
-against 5. Next: serve it, with the model in the ML image, fetched and
-hash-checked at build time, and its latency measured.
+against 5. **Served** from the ML image since 2026-11-24 (fetched and
+hash-checked at build; 3.8 ms a query at the median), with word TF-IDF as
+the fallback where the model is absent.
 
 ### 3. Mail beyond the first driver
 

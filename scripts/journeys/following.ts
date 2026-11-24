@@ -57,6 +57,33 @@ export async function followingJourney(checks: Checks, ports: readonly [number, 
         `${tab('Highlights')}.getAttribute('aria-selected') === 'true' && document.activeElement === ${tab('Highlights')} && document.querySelector('[role="tabpanel"]').textContent.includes('What are you working on')`,
       ),
     );
+
+    // A space: follow it from its page, and its new threads come to Following.
+    const { space } = await api<{ space: { id: string } }>(writer.page, `${ws}/spaces`, 'POST', {
+      name: 'IT help',
+    });
+    await page.goto(`${WEB}${ws}/spaces/${space.id}`);
+    const follow = `[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Follow')`;
+    await page.waitFor(`!!${follow}`, WAIT_MS);
+    await page.eval(`${follow}.click()`);
+    await page.waitFor(
+      `[...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Following')`,
+      WAIT_MS,
+    );
+    await api(writer.page, `${ws}/spaces/${space.id}/threads`, 'POST', {
+      kind: 'question',
+      title: 'Why does the VPN drop at noon',
+    });
+    await page.goto(`${WEB}${ws}/feed`);
+    await page.waitFor(`!!${tab('Following')}`, WAIT_MS);
+    await page.eval(`${tab('Following')}.click()`);
+    checks.check(
+      'following a space brings its new threads to the Following tab',
+      await waitUntil(
+        page,
+        `document.querySelector('[role="tabpanel"]').textContent.includes('Why does the VPN drop at noon')`,
+      ),
+    );
   } finally {
     leave([reader, writer]);
   }

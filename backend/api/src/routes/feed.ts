@@ -1,4 +1,12 @@
-import { type Database, messages, posts, workspaceMembers } from '@robis/database';
+import {
+  type Database,
+  messages,
+  posts,
+  spaceFollows,
+  spaces,
+  spaceThreads,
+  workspaceMembers,
+} from '@robis/database';
 import { can, contracts, isUuid } from '@robis/shared';
 import {
   type AnyColumn,
@@ -122,6 +130,35 @@ export async function feedRoutes(app: FastifyInstance, opts: { db: Database }) {
       .limit(FEED_PAGE + 1);
   }
 
+  /** New threads in the spaces this person follows, for the Following feed. */
+  async function threadsBefore(workspaceId: string, userId: string, cursor: Cursor | null) {
+    return db
+      .select({
+        id: spaceThreads.id,
+        spaceId: spaceThreads.spaceId,
+        spaceName: spaces.name,
+        kind: spaceThreads.kind,
+        title: spaceThreads.title,
+        authorId: spaceThreads.authorId,
+        createdAt: spaceThreads.createdAt,
+        at: micros(spaceThreads.createdAt),
+      })
+      .from(spaceThreads)
+      .innerJoin(spaces, eq(spaces.id, spaceThreads.spaceId))
+      .innerJoin(
+        spaceFollows,
+        and(eq(spaceFollows.spaceId, spaceThreads.spaceId), eq(spaceFollows.userId, userId)),
+      )
+      .where(
+        and(
+          eq(spaceThreads.workspaceId, workspaceId),
+          before(spaceThreads.createdAt, spaceThreads.id, cursor),
+        ),
+      )
+      .orderBy(desc(spaceThreads.createdAt), desc(spaceThreads.id))
+      .limit(FEED_PAGE + 1);
+  }
+
   serve(
     app,
     contracts['feed.list'],
@@ -136,9 +173,10 @@ export async function feedRoutes(app: FastifyInstance, opts: { db: Database }) {
           ? { only: [user.id, ...choices.following] }
           : { except: choices.muted };
       // Pictures come from rooms: shown to those who may read the rooms.
-      const [postRows, pictureRows, [membership], [checkedIn]] = await Promise.all([
+      const [postRows, pictureRows, threadRows, [membership], [checkedIn]] = await Promise.all([
         postsBefore(workspaceId, cursor, authors),
         can(role, 'channel:read') ? picturesBefore(workspaceId, cursor, authors) : [],
+        scope === 'following' ? threadsBefore(workspaceId, user.id, cursor) : [],
         db
           .select({ seenAt: workspaceMembers.feedSeenAt })
           .from(workspaceMembers)
@@ -187,6 +225,11 @@ export async function feedRoutes(app: FastifyInstance, opts: { db: Database }) {
               url: `/workspaces/${workspaceId}/messages/${row.messageId}/image`,
             },
           },
+        })),
+        ...threadRows.map(({ at, ...thread }) => ({
+          at,
+          id: thread.id,
+          item: { kind: 'thread' as const, thread },
         })),
       ].sort(newestFirst);
       const page = merged.slice(0, FEED_PAGE);

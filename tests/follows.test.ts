@@ -111,3 +111,62 @@ describe('who can be chosen', () => {
     expect((await request(`${ws}/feed?scope=nearby`, { actor: me })).statusCode).toBe(400);
   });
 });
+
+describe('following a space', () => {
+  test('new threads in a followed space come to Following, and only there', async () => {
+    const { me, friend, ws } = await team();
+    const created = await request(`${ws}/spaces`, {
+      method: 'POST',
+      actor: friend,
+      payload: { name: 'IT help' },
+    });
+    const space = created.json().space;
+    expect(space.following).toBe(true);
+    const ask = (title: string) =>
+      request(`${ws}/spaces/${space.id}/threads`, {
+        method: 'POST',
+        actor: friend,
+        payload: { kind: 'question', title },
+      });
+    await ask('Before I followed');
+
+    const threads = async (scope: string) =>
+      (await request(`${ws}/feed?scope=${scope}`, { actor: me }))
+        .json<{ items: { kind: string; thread?: { title: string; spaceName: string } }[] }>()
+        .items.filter((item) => item.kind === 'thread')
+        .map((item) => item.thread);
+
+    expect(await threads('following')).toEqual([]);
+    expect(
+      (await request(`${ws}/spaces/${space.id}/follow`, { method: 'PUT', actor: me })).statusCode,
+    ).toBe(204);
+    const listed = (await request(`${ws}/spaces`, { actor: me })).json().spaces[0];
+    expect(listed.following).toBe(true);
+    await ask('VPN drops at noon');
+    expect((await threads('following')).map((t) => t?.title).sort()).toEqual([
+      'Before I followed',
+      'VPN drops at noon',
+    ]);
+    expect((await threads('following'))[0]?.spaceName).toBe('IT help');
+    expect(await threads('everyone')).toEqual([]);
+
+    await request(`${ws}/spaces/${space.id}/follow`, { method: 'DELETE', actor: me });
+    expect(await threads('following')).toEqual([]);
+  });
+
+  test('a space of another workspace cannot be followed', async () => {
+    const { me, ws } = await team();
+    const stranger = await createActor('Stranger');
+    const theirs = await createWorkspace(stranger, 'Elsewhere');
+    const space = (
+      await request(`/workspaces/${theirs.id}/spaces`, {
+        method: 'POST',
+        actor: stranger,
+        payload: { name: 'Private' },
+      })
+    ).json().space;
+    expect(
+      (await request(`${ws}/spaces/${space.id}/follow`, { method: 'PUT', actor: me })).statusCode,
+    ).toBe(404);
+  });
+});

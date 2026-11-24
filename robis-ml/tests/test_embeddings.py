@@ -13,7 +13,7 @@ import numpy as np
 import pytest
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-from robis_ml import embeddings
+from robis_ml import auth, embeddings
 from robis_ml.embeddings import FILES, Blend, MiniLMVectorizer, verified
 
 
@@ -85,3 +85,32 @@ def test_the_model_puts_a_reworded_title_closer_than_an_unrelated_one() -> None:
         ]
     )
     assert vectors[0] @ vectors[1] > vectors[0] @ vectors[2]
+
+
+def test_switched_off_the_service_stays_on_word_tfidf(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv(auth.TOKEN_ENV, "a-test-token")
+    from robis_ml import service
+    from robis_ml.model import DEFAULT_DUPLICATE_THRESHOLD
+
+    assert not embeddings.serving()
+    assert service.duplicate_threshold() == DEFAULT_DUPLICATE_THRESHOLD
+
+
+@pytest.mark.skipif(not verified(), reason="MiniLM files not fetched here")
+def test_with_the_model_here_the_service_serves_it_at_its_measured_threshold(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from robis_ml import service
+    from robis_ml.model import Issue
+
+    monkeypatch.setenv(auth.TOKEN_ENV, "a-test-token")
+    monkeypatch.delenv(embeddings.OFF_ENV)
+    assert service.duplicate_threshold() == embeddings.EMBEDDING_DUPLICATE_THRESHOLD
+    finder = service._finder(
+        [
+            Issue(id="a", title="App crashes when opening a photo", description=None),
+            Issue(id="b", title="Add dark mode", description=None),
+        ]
+    )
+    found = finder.query("Application closes when viewing an image", threshold=0.5)
+    assert [match.id for match in found] == ["a"]

@@ -4,6 +4,7 @@ import {
   POST_COMMENT_MAX_LENGTH,
   POST_MAX_LENGTH,
   POST_REACTIONS,
+  SPACE_THREAD_KINDS,
 } from '../limits.ts';
 import { uuid } from '../schemas.ts';
 import { workspaceParams } from './common.ts';
@@ -54,9 +55,21 @@ const picture = z.object({
   createdAt: timestamp,
 });
 
+/** A new thread in a space you follow, on the Following feed only. */
+const thread = z.object({
+  id: uuid,
+  spaceId: uuid,
+  spaceName: z.string(),
+  kind: z.enum(SPACE_THREAD_KINDS),
+  title: z.string(),
+  authorId: uuid,
+  createdAt: timestamp,
+});
+
 const feedItem = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('post'), post }),
   z.object({ kind: z.literal('picture'), picture }),
+  z.object({ kind: z.literal('thread'), thread }),
 ]);
 
 const comment = z.object({

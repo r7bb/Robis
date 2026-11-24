@@ -3,6 +3,7 @@ import {
   pgErrorCode,
   publishEvent,
   recordAudit,
+  spaceFollows,
   spaceReplies,
   spaces,
   spaceThreads,
@@ -67,8 +68,16 @@ export async function spaceRoutes(app: FastifyInstance, opts: { db: Database }) 
   }
 
   /** Each space with how many threads it has and when it last moved. */
-  async function spaceList(workspaceId: string, only?: string) {
+  async function spaceList(workspaceId: string, userId: string, only?: string) {
     const lastActivity = max(spaceThreads.lastActivityAt);
+    const followed = new Set(
+      (
+        await db
+          .select({ id: spaceFollows.spaceId })
+          .from(spaceFollows)
+          .where(and(eq(spaceFollows.workspaceId, workspaceId), eq(spaceFollows.userId, userId)))
+      ).map((row) => row.id),
+    );
     const rows = await db
       .select({ space: spaces, threadCount: count(spaceThreads.id), lastActivityAt: lastActivity })
       .from(spaces)
@@ -80,6 +89,7 @@ export async function spaceRoutes(app: FastifyInstance, opts: { db: Database }) 
       ...wireSpace(space),
       threadCount,
       lastActivityAt: lastActivityAt ? new Date(lastActivityAt) : null,
+      following: followed.has(space.id),
     }));
   }
 
@@ -95,7 +105,9 @@ export async function spaceRoutes(app: FastifyInstance, opts: { db: Database }) 
     app,
     contracts['spaces.list'],
     { preHandler: [requireAuth, requireMembership(db, 'workspace:read')] },
-    async (request) => ({ spaces: await spaceList(currentMembership(request).workspaceId) }),
+    async (request) => ({
+      spaces: await spaceList(currentMembership(request).workspaceId, currentUser(request).id),
+    }),
   );
 
   serve(
@@ -127,6 +139,8 @@ export async function spaceRoutes(app: FastifyInstance, opts: { db: Database }) 
               createdBy: user.id,
             })
             .returning();
+          // Whoever starts a space hears about its threads.
+          await tx.insert(spaceFollows).values({ workspaceId, spaceId: row!.id, userId: user.id });
           await recordAudit(tx, auditActor(request), {
             workspaceId,
             entityType: 'space',
@@ -143,7 +157,9 @@ export async function spaceRoutes(app: FastifyInstance, opts: { db: Database }) 
         throw error;
       }
       await notify(request, created.id, null);
-      return { space: { ...wireSpace(created), threadCount: 0, lastActivityAt: null } };
+      return {
+        space: { ...wireSpace(created), threadCount: 0, lastActivityAt: null, following: true },
+      };
     },
   );
 
@@ -183,7 +199,7 @@ export async function spaceRoutes(app: FastifyInstance, opts: { db: Database }) 
           .sort((a, b) => reactionTotal(b.reactions) - reactionTotal(a.reactions))
           .slice(0, THREADS_SHOWN);
       }
-      const [listed] = await spaceList(workspaceId, space.id);
+      const [listed] = await spaceList(workspaceId, currentUser(request).id, space.id);
       return { space: listed!, threads };
     },
   );
@@ -269,6 +285,37 @@ export async function spaceRoutes(app: FastifyInstance, opts: { db: Database }) 
         leadingReplies(db, workspaceId, since),
       ]);
       return { people, replies };
+    },
+  );
+
+  serve(
+    app,
+    contracts['spaces.follow'],
+    { preHandler: [requireAuth, requireMembership(db, 'workspace:read'), writeLimit] },
+    async (request, { params: { spaceId } }) => {
+      const { workspaceId } = currentMembership(request);
+      const space = await spaceIn(db, workspaceId, spaceId);
+      await db
+        .insert(spaceFollows)
+        .values({ workspaceId, spaceId: space.id, userId: currentUser(request).id })
+        .onConflictDoNothing();
+      return undefined;
+    },
+  );
+
+  serve(
+    app,
+    contracts['spaces.unfollow'],
+    { preHandler: [requireAuth, requireMembership(db, 'workspace:read'), writeLimit] },
+    async (request, { params: { spaceId } }) => {
+      const { workspaceId } = currentMembership(request);
+      const space = await spaceIn(db, workspaceId, spaceId);
+      await db
+        .delete(spaceFollows)
+        .where(
+          and(eq(spaceFollows.spaceId, space.id), eq(spaceFollows.userId, currentUser(request).id)),
+        );
+      return undefined;
     },
   );
 
