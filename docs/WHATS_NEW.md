@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Blocked by: issues that wait on others** (2026-11-24). An issue can say
+  what it waits on, by key; the board marks a waiting card Blocked until
+  what it waits on is done, and the other issue shows what it is holding up.
 - **Ask Sapha: requests in your own words, read by the assistant**
   (2026-11-24). Where assistance is on, a request Sapha does not read by
   itself gets an Ask Sapha row; only the words typed are sent, and what

@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Blocked by: issues that wait on others',
+    brief:
+      'An issue can say what it waits on, by key; the board marks a waiting card Blocked until what it waits on is done, and the other issue shows what it is holding up.',
+    summary:
+      'Each issue now has Blocked by: add an issue it waits on by its key (like REL-12), anywhere in the workspace, and remove it again. The issue it waits on shows what it is holding up. On the board, a card that still waits on an issue not yet done or canceled carries a Blocked chip, which goes as soon as what it waits on is finished, on any board. An issue cannot wait on itself, a link that would make a loop (however far round) is refused with the reason, and an issue waits on at most twenty others. Members change links; guests see them. Each link added or removed is in the audit log.',
+    checked:
+      'Three tests through the API: both sides list a link and the board knows what still waits until the blocker is done, never itself and never round a three-issue loop (and a link made twice is one), another workspace’s issue not found and a guest able to look but not link. In the browser, the board showed Blocked and the issue listed what it waits on. The offline, guest, keyboard and phone journeys. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Blocked by',
+      where: 'An issue, Blocked by; the board, a Blocked chip',
+      layers: [
+        'Screen: Blocked by on an issue, added by key, and a Blocked chip on the board',
+        'API: issues.blocks, addBlocker, removeBlocker and projects.blocked; loops refused',
+        'Database: which issue waits on which, gone with either',
+      ],
+    },
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Ask Sapha: requests in your own words, read by the assistant',
     brief:
       'Where assistance is on, a request Sapha does not read by itself gets an Ask Sapha row; only the words typed are sent, and what comes back goes to the same card that waits for Do it.',

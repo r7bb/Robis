@@ -734,6 +734,33 @@ export const issues = pgTable(
   ],
 );
 
+/**
+ * One issue holding up another: `blockedId` waits on `blockerId`. Both in
+ * one workspace, never itself, and never round in a loop (the API refuses a
+ * link that would close one). Gone with either issue.
+ */
+export const issueBlocks = pgTable(
+  'issue_blocks',
+  {
+    blockerId: uuid('blocker_id')
+      .notNull()
+      .references(() => issues.id, { onDelete: 'cascade' }),
+    blockedId: uuid('blocked_id')
+      .notNull()
+      .references(() => issues.id, { onDelete: 'cascade' }),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.blockerId, t.blockedId] }),
+    index('issue_blocks_blocked_idx').on(t.blockedId),
+    check('issue_blocks_not_self', sql`${t.blockerId} <> ${t.blockedId}`),
+  ],
+);
+
 export const comments = pgTable(
   'comments',
   {

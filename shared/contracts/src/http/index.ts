@@ -19,6 +19,7 @@ import { feedbackContracts } from './feedback.ts';
 import { githubContracts } from './github.ts';
 import { importContracts } from './imports.ts';
 import { insightContracts } from './insights.ts';
+import { issueBlockContracts } from './issue-blocks.ts';
 import { issueContracts } from './issues.ts';
 import { bulkIssueContracts } from './issues-bulk.ts';
 import { labelContracts } from './labels.ts';
@@ -97,6 +98,7 @@ export {
   QUEUED_FOR_HEADER,
   SUGGESTION_DAYS,
 } from './insights.ts';
+export { BLOCKERS_MAX } from './issue-blocks.ts';
 export {
   BULK_ISSUES_MAX,
   BULK_SKIP_REASONS,
@@ -129,6 +131,7 @@ export const contracts = {
   ...issueContracts,
   ...discussionContracts,
   ...bulkIssueContracts,
+  ...issueBlockContracts,
   ...documentContracts,
   ...channelContracts,
   ...chatReadContracts,

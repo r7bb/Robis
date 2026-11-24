@@ -19,7 +19,7 @@ way.
 `{ "error": "<code>", "message": "<words for people>" }`. A stranger to a
 workspace gets 404, never 403, so its existence is not given away.
 
-221 routes.
+225 routes.
 
 ## activity
 
@@ -884,6 +884,28 @@ Add an image to an issue, or to one of its comments; it is re-encoded and stripp
 - Answers: 201
 - Name: `attachments.upload`
 
+### `POST /workspaces/{workspaceId}/issues/{issueId}/blocked-by`
+
+Say an issue waits on another in this workspace; refused if it is itself, or would make a loop.
+
+- Body: `blockerId` (required)
+- Answers: 201
+- Name: `issues.addBlocker`
+
+### `DELETE /workspaces/{workspaceId}/issues/{issueId}/blocked-by/{blockerId}`
+
+Say an issue no longer waits on another.
+
+- Answers: 200
+- Name: `issues.removeBlocker`
+
+### `GET /workspaces/{workspaceId}/issues/{issueId}/blocks`
+
+What an issue waits on, and what waits on it.
+
+- Answers: 200
+- Name: `issues.blocks`
+
 ### `GET /workspaces/{workspaceId}/issues/{issueId}/comments`
 
 An issue's comments, oldest first.
@@ -1368,6 +1390,13 @@ Rename a project, change its description, or archive it.
 - Body: `name`, `description`, `archived`
 - Answers: 200
 - Name: `projects.update`
+
+### `GET /workspaces/{workspaceId}/projects/{projectId}/blocked`
+
+The issues on a board that still wait on an issue not yet done or canceled.
+
+- Answers: 200
+- Name: `projects.blocked`
 
 ### `POST /workspaces/{workspaceId}/projects/{projectId}/import/csv`
 

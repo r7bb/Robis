@@ -43,6 +43,7 @@ import { BoardFilters } from './board-filters.tsx';
 import { BulkBar } from './bulk-bar.tsx';
 import { DeleteBoard } from './delete-board.tsx';
 import { ShortcutHelp } from './shortcut-help.tsx';
+import { useBlocked } from './use-blocked.ts';
 import { useBoardKeyboard } from './use-board-keyboard.ts';
 import { useSelection } from './use-selection.ts';
 
@@ -68,6 +69,8 @@ export function ProjectBoard({
   // The board reads from IndexedDB rather than the network, so it renders with
   // no connection and survives a reload mid-edit.
   const board = useOfflineBoard(workspaceId, projectId);
+  // Which cards still wait on an issue not yet done (Blocked by).
+  const blocked = useBlocked(workspaceId, projectId);
 
   // The filter lives in the URL (C1), so a filtered board is a link. Every
   // issue is already on the device, so narrowing it needs no request.
@@ -408,7 +411,12 @@ export function ProjectBoard({
                       </Link>
                     )}
 
-                    <CardFooter issue={issue} labels={labelById} avatars={avatars} />
+                    <CardFooter
+                      issue={issue}
+                      labels={labelById}
+                      avatars={avatars}
+                      blocked={blocked.has(issue.id)}
+                    />
                   </li>
                 ))}
               </ul>
@@ -543,6 +551,7 @@ function CardFooter({
   issue,
   labels,
   avatars,
+  blocked,
 }: {
   issue: {
     labelIds?: readonly string[];
@@ -553,12 +562,14 @@ function CardFooter({
   };
   labels: ReadonlyMap<string, { name: string; colour: string }>;
   avatars: ReadonlyMap<string, AvatarRef>;
+  /** Still waiting on an issue not yet done. */
+  blocked: boolean;
 }) {
   const shown = (issue.labelIds ?? []).flatMap((id) => {
     const label = labels.get(id);
     return label ? [{ id, ...label }] : [];
   });
-  if (shown.length === 0 && !issue.dueOn && !issue.assigneeName) return null;
+  if (shown.length === 0 && !issue.dueOn && !issue.assigneeName && !blocked) return null;
   const finished = issue.status === 'DONE' || issue.status === 'CANCELED';
 
   return (
@@ -572,6 +583,11 @@ function CardFooter({
           </span>
         ) : null}
         {issue.dueOn ? <DueChip dueOn={issue.dueOn} finished={finished} /> : null}
+        {blocked && !finished ? (
+          <span className="rounded-full border border-rose-400/40 bg-rose-400/10 px-1.5 py-0.5 text-[10px] font-medium text-rose-300">
+            Blocked
+          </span>
+        ) : null}
       </span>
       {issue.assigneeName ? (
         <span title={issue.assigneeName} className="shrink-0">

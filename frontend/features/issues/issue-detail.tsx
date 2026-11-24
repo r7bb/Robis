@@ -20,6 +20,7 @@ import { remembered } from '../../lib/remembered.ts';
 import { useCommands } from '../command/command-provider.tsx';
 import { RemindMe } from '../reminders/remind-me.tsx';
 import { IssueAttachments } from './attachments.tsx';
+import { BlockedBy } from './blocked-by.tsx';
 import { DueField } from './due-field.tsx';
 import { IssueInChat } from './issue-in-chat.tsx';
 import { ParentPicker, SubIssues } from './issue-tree.tsx';
@@ -198,6 +199,10 @@ export function IssueDetail({
                 canEdit={canEdit}
                 onChange={(dueOn) => update.mutate({ dueOn })}
               />
+            </Field>
+
+            <Field label="Blocked by">
+              <BlockedBy workspaceId={workspaceId} issueId={issueId} canEdit={canEdit} />
             </Field>
 
             <Field label="Reminder">

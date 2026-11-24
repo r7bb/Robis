@@ -53,6 +53,7 @@ import { githubRoutes } from './routes/github.ts';
 import { importRoutes } from './routes/imports.ts';
 import { insightRoutes } from './routes/insights.ts';
 import { invitationRoutes } from './routes/invitations.ts';
+import { issueBlockRoutes } from './routes/issue-blocks.ts';
 import { issueRoutes } from './routes/issues.ts';
 import { bulkIssueRoutes } from './routes/issues-bulk.ts';
 import { labelRoutes } from './routes/labels.ts';
@@ -347,6 +348,7 @@ export function buildApp({
   app.register(meetingNotesRoutes, { db });
   app.register(notificationRoutes, { db });
   app.register(chatReadRoutes, { db });
+  app.register(issueBlockRoutes, { db });
   app.register(reminderRoutes, { db });
   app.register(notificationSettingRoutes, { db, limits });
   app.register(pushRoutes, { db, limits, publicKey: pushKey(env.VAPID_PUBLIC_KEY) });

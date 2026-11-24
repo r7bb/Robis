@@ -21,6 +21,9 @@ export function staleKeys(event: ServerEvent): unknown[][] {
       return [
         ['issues', event.workspaceId, event.projectId],
         ['projects', event.workspaceId],
+        // A blocker done frees the issues waiting on it, on any board.
+        ['project-blocked', event.workspaceId],
+        ['issue-blocks', event.workspaceId],
         // The Feed's project health and celebrations come from the issues (Phase 2c).
         ['feed-projects', event.workspaceId],
         ['feed-celebrations', event.workspaceId],

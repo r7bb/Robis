@@ -204,6 +204,9 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Blocked by: issues that wait on others.** An issue can say what it waits
+  on, by key; the board marks a waiting card Blocked until what it waits on
+  is done, and the other issue shows what it is holding up.
 - **Ask Sapha: requests in your own words, read by the assistant.** Where
   assistance is on, a request Sapha does not read by itself gets an Ask
   Sapha row; only the words typed are sent, and what comes back goes to the
@@ -211,10 +214,6 @@ no write lost and nothing done twice.
 - **The team’s week, on the feed.** A card on the feed counts the last seven
   days across the workspace (issues finished, questions answered, meetings
   held, documents changed, messages) and names who finished most.
-- **A shared picture no longer goes missing from the issue made of it.**
-  Sharing a picture to Robis made the issue and the link but, about half the
-  time, dropped the picture; changes waiting to be sent now always go in the
-  order they were made.
 
 <!-- latest:end -->
 
