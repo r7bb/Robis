@@ -209,630 +209,490 @@
       "title": "Password resets emails not arriving",
       "kind": "word_form",
       "topic": "sign in",
-      "duplicates": [
-        "c01"
-      ]
+      "duplicates": ["c01"]
     },
     {
       "id": "q002",
       "title": "Two factor code rejected after changed phone",
       "kind": "word_form",
       "topic": "sign in",
-      "duplicates": [
-        "c02"
-      ]
+      "duplicates": ["c02"]
     },
     {
       "id": "q003",
       "title": "Sessions expiring every few minutes in Safari",
       "kind": "word_form",
       "topic": "sign in",
-      "duplicates": [
-        "c03"
-      ]
+      "duplicates": ["c03"]
     },
     {
       "id": "q004",
       "title": "Invoices PDF showing wrong VAT numbers",
       "kind": "word_form",
       "topic": "billing",
-      "duplicates": [
-        "c06"
-      ]
+      "duplicates": ["c06"]
     },
     {
       "id": "q005",
       "title": "Card declines give no reasons",
       "kind": "word_form",
       "topic": "billing",
-      "duplicates": [
-        "c07"
-      ]
+      "duplicates": ["c07"]
     },
     {
       "id": "q006",
       "title": "Annual renewals charging twice",
       "kind": "word_form",
       "topic": "billing",
-      "duplicates": [
-        "c09"
-      ]
+      "duplicates": ["c09"]
     },
     {
       "id": "q007",
       "title": "Email digests sending at 3am",
       "kind": "word_form",
       "topic": "notifications",
-      "duplicates": [
-        "c11"
-      ]
+      "duplicates": ["c11"]
     },
     {
       "id": "q008",
       "title": "Mention in a comment didn't send push notifications",
       "kind": "word_form",
       "topic": "notifications",
-      "duplicates": [
-        "c12"
-      ]
+      "duplicates": ["c12"]
     },
     {
       "id": "q009",
       "title": "Unsubscribing link broken in email",
       "kind": "word_form",
       "topic": "notifications",
-      "duplicates": [
-        "c13"
-      ]
+      "duplicates": ["c13"]
     },
     {
       "id": "q010",
       "title": "Search ignoring attachment text",
       "kind": "word_form",
       "topic": "search",
-      "duplicates": [
-        "c16"
-      ]
+      "duplicates": ["c16"]
     },
     {
       "id": "q011",
       "title": "Searched for issue keys, got nothing",
       "kind": "word_form",
       "topic": "search",
-      "duplicates": [
-        "c17"
-      ]
+      "duplicates": ["c17"]
     },
     {
       "id": "q012",
       "title": "Typing into search freezing page",
       "kind": "word_form",
       "topic": "search",
-      "duplicates": [
-        "c19"
-      ]
+      "duplicates": ["c19"]
     },
     {
       "id": "q013",
       "title": "App crashing opening photo attachments on android",
       "kind": "word_form",
       "topic": "mobile app",
-      "duplicates": [
-        "c21"
-      ]
+      "duplicates": ["c21"]
     },
     {
       "id": "q014",
       "title": "Pulling to refresh doesn't load new issues",
       "kind": "word_form",
       "topic": "mobile app",
-      "duplicates": [
-        "c23"
-      ]
+      "duplicates": ["c23"]
     },
     {
       "id": "q015",
       "title": "Offline edit lost on closing the app",
       "kind": "word_form",
       "topic": "mobile app",
-      "duplicates": [
-        "c25"
-      ]
+      "duplicates": ["c25"]
     },
     {
       "id": "q016",
       "title": "Boards taking 10 seconds to load with 500 cards",
       "kind": "word_form",
       "topic": "performance",
-      "duplicates": [
-        "c26"
-      ]
+      "duplicates": ["c26"]
     },
     {
       "id": "q017",
       "title": "Dragged cards lagging on big boards",
       "kind": "word_form",
       "topic": "performance",
-      "duplicates": [
-        "c27"
-      ]
+      "duplicates": ["c27"]
     },
     {
       "id": "q018",
       "title": "CSV imports timing out over 5000 rows",
       "kind": "word_form",
       "topic": "performance",
-      "duplicates": [
-        "c28"
-      ]
+      "duplicates": ["c28"]
     },
     {
       "id": "q019",
       "title": "Guest seeing private project in sidebar",
       "kind": "word_form",
       "topic": "permissions",
-      "duplicates": [
-        "c31"
-      ]
+      "duplicates": ["c31"]
     },
     {
       "id": "q020",
       "title": "Read only roles still deleting comments",
       "kind": "word_form",
       "topic": "permissions",
-      "duplicates": [
-        "c33"
-      ]
+      "duplicates": ["c33"]
     },
     {
       "id": "q021",
       "title": "Revoked invite links still working",
       "kind": "word_form",
       "topic": "permissions",
-      "duplicates": [
-        "c34"
-      ]
+      "duplicates": ["c34"]
     },
     {
       "id": "q022",
       "title": "Exported CSVs breaking accents",
       "kind": "word_form",
       "topic": "exports",
-      "duplicates": [
-        "c36"
-      ]
+      "duplicates": ["c36"]
     },
     {
       "id": "q023",
       "title": "PDF exports cutting off long description",
       "kind": "word_form",
       "topic": "exports",
-      "duplicates": [
-        "c37"
-      ]
+      "duplicates": ["c37"]
     },
     {
       "id": "q024",
       "title": "Scheduled exports emailed empty",
       "kind": "word_form",
       "topic": "exports",
-      "duplicates": [
-        "c38"
-      ]
+      "duplicates": ["c38"]
     },
     {
       "id": "q025",
       "title": "Desktop notification keeps showing after reading it",
       "kind": "word_form",
       "topic": "notifications",
-      "duplicates": [
-        "c14"
-      ]
+      "duplicates": ["c14"]
     },
     {
       "id": "q026",
       "title": "Forgot-password message never shows up in my inbox",
       "kind": "synonym",
       "topic": "sign in",
-      "duplicates": [
-        "c01"
-      ]
+      "duplicates": ["c01"]
     },
     {
       "id": "q027",
       "title": "Single sign-on keeps redirecting back to login",
       "kind": "synonym",
       "topic": "sign in",
-      "duplicates": [
-        "c04"
-      ]
+      "duplicates": ["c04"]
     },
     {
       "id": "q028",
       "title": "See a list of devices that are logged in",
       "kind": "synonym",
       "topic": "sign in",
-      "duplicates": [
-        "c05"
-      ]
+      "duplicates": ["c05"]
     },
     {
       "id": "q029",
       "title": "Bill shows incorrect tax ID",
       "kind": "synonym",
       "topic": "billing",
-      "duplicates": [
-        "c06"
-      ]
+      "duplicates": ["c06"]
     },
     {
       "id": "q030",
       "title": "Payment refused with no explanation",
       "kind": "synonym",
       "topic": "billing",
-      "duplicates": [
-        "c07"
-      ]
+      "duplicates": ["c07"]
     },
     {
       "id": "q031",
       "title": "Lowering our subscription keeps the additional seats",
       "kind": "synonym",
       "topic": "billing",
-      "duplicates": [
-        "c08"
-      ]
+      "duplicates": ["c08"]
     },
     {
       "id": "q032",
       "title": "Need a separate invoicing contact from the account owner",
       "kind": "synonym",
       "topic": "billing",
-      "duplicates": [
-        "c10"
-      ]
+      "duplicates": ["c10"]
     },
     {
       "id": "q033",
       "title": "Daily summary email arrives in the middle of the night",
       "kind": "synonym",
       "topic": "notifications",
-      "duplicates": [
-        "c11"
-      ]
+      "duplicates": ["c11"]
     },
     {
       "id": "q034",
       "title": "Opt-out link in the newsletter email does nothing",
       "kind": "synonym",
       "topic": "notifications",
-      "duplicates": [
-        "c13"
-      ]
+      "duplicates": ["c13"]
     },
     {
       "id": "q035",
       "title": "Silence notifications for just one project",
       "kind": "synonym",
       "topic": "notifications",
-      "duplicates": [
-        "c15"
-      ]
+      "duplicates": ["c15"]
     },
     {
       "id": "q036",
       "title": "Lookup by ticket ID finds no results",
       "kind": "synonym",
       "topic": "search",
-      "duplicates": [
-        "c17"
-      ]
+      "duplicates": ["c17"]
     },
     {
       "id": "q037",
       "title": "Archived projects missing from search hits",
       "kind": "synonym",
       "topic": "search",
-      "duplicates": [
-        "c18"
-      ]
+      "duplicates": ["c18"]
     },
     {
       "id": "q038",
       "title": "Narrow search results to one assignee",
       "kind": "synonym",
       "topic": "search",
-      "duplicates": [
-        "c20"
-      ]
+      "duplicates": ["c20"]
     },
     {
       "id": "q039",
       "title": "On-screen keyboard hides the reply field on iOS",
       "kind": "synonym",
       "topic": "mobile app",
-      "duplicates": [
-        "c22"
-      ]
+      "duplicates": ["c22"]
     },
     {
       "id": "q040",
       "title": "Night theme makes text illegible on phone",
       "kind": "synonym",
       "topic": "mobile app",
-      "duplicates": [
-        "c24"
-      ]
+      "duplicates": ["c24"]
     },
     {
       "id": "q041",
       "title": "Large board is very slow to open",
       "kind": "synonym",
       "topic": "performance",
-      "duplicates": [
-        "c26"
-      ]
+      "duplicates": ["c26"]
     },
     {
       "id": "q042",
       "title": "RAM usage climbs if the tab stays open",
       "kind": "synonym",
       "topic": "performance",
-      "duplicates": [
-        "c29"
-      ]
+      "duplicates": ["c29"]
     },
     {
       "id": "q043",
       "title": "Analytics graphs are sluggish first thing each day",
       "kind": "synonym",
       "topic": "performance",
-      "duplicates": [
-        "c30"
-      ]
+      "duplicates": ["c30"]
     },
     {
       "id": "q044",
       "title": "Administrators unable to remove someone who quit",
       "kind": "synonym",
       "topic": "permissions",
-      "duplicates": [
-        "c32"
-      ]
+      "duplicates": ["c32"]
     },
     {
       "id": "q045",
       "title": "Viewer role can delete other people's comments",
       "kind": "synonym",
       "topic": "permissions",
-      "duplicates": [
-        "c33"
-      ]
+      "duplicates": ["c33"]
     },
     {
       "id": "q046",
       "title": "Hand over workspace ownership to another admin",
       "kind": "synonym",
       "topic": "permissions",
-      "duplicates": [
-        "c35"
-      ]
+      "duplicates": ["c35"]
     },
     {
       "id": "q047",
       "title": "Downloaded spreadsheet garbles letters like é and ü",
       "kind": "synonym",
       "topic": "exports",
-      "duplicates": [
-        "c36"
-      ]
+      "duplicates": ["c36"]
     },
     {
       "id": "q048",
       "title": "JSON download leaves out our custom fields",
       "kind": "synonym",
       "topic": "exports",
-      "duplicates": [
-        "c39"
-      ]
+      "duplicates": ["c39"]
     },
     {
       "id": "q049",
       "title": "Download just one board rather than everything",
       "kind": "synonym",
       "topic": "exports",
-      "duplicates": [
-        "c40"
-      ]
+      "duplicates": ["c40"]
     },
     {
       "id": "q050",
       "title": "Phone app closes unexpectedly when viewing an image on Android",
       "kind": "synonym",
       "topic": "mobile app",
-      "duplicates": [
-        "c21"
-      ]
+      "duplicates": ["c21"]
     },
     {
       "id": "q051",
       "title": "Locked out because the recovery message never came",
       "kind": "lexical_gap",
       "topic": "sign in",
-      "duplicates": [
-        "c01"
-      ]
+      "duplicates": ["c01"]
     },
     {
       "id": "q052",
       "title": "New handset, authenticator numbers no longer accepted",
       "kind": "lexical_gap",
       "topic": "sign in",
-      "duplicates": [
-        "c02"
-      ]
+      "duplicates": ["c02"]
     },
     {
       "id": "q053",
       "title": "Have to log in again constantly on my Mac browser",
       "kind": "lexical_gap",
       "topic": "sign in",
-      "duplicates": [
-        "c03"
-      ]
+      "duplicates": ["c03"]
     },
     {
       "id": "q054",
       "title": "Company login goes round in circles",
       "kind": "lexical_gap",
       "topic": "sign in",
-      "duplicates": [
-        "c04"
-      ]
+      "duplicates": ["c04"]
     },
     {
       "id": "q055",
       "title": "We got billed two times for the yearly subscription",
       "kind": "lexical_gap",
       "topic": "billing",
-      "duplicates": [
-        "c09"
-      ]
+      "duplicates": ["c09"]
     },
     {
       "id": "q056",
       "title": "Paying for people we already took off",
       "kind": "lexical_gap",
       "topic": "billing",
-      "duplicates": [
-        "c08"
-      ]
+      "duplicates": ["c08"]
     },
     {
       "id": "q057",
       "title": "I get pinged at night with the morning summary",
       "kind": "lexical_gap",
       "topic": "notifications",
-      "duplicates": [
-        "c11"
-      ]
+      "duplicates": ["c11"]
     },
     {
       "id": "q058",
       "title": "Nobody hears about it when I tag them in a reply",
       "kind": "lexical_gap",
       "topic": "notifications",
-      "duplicates": [
-        "c12"
-      ]
+      "duplicates": ["c12"]
     },
     {
       "id": "q059",
       "title": "Can't find the ticket by its number like ABC-12",
       "kind": "lexical_gap",
       "topic": "search",
-      "duplicates": [
-        "c17"
-      ]
+      "duplicates": ["c17"]
     },
     {
       "id": "q060",
       "title": "Words in uploaded files aren't findable",
       "kind": "lexical_gap",
       "topic": "search",
-      "duplicates": [
-        "c16"
-      ]
+      "duplicates": ["c16"]
     },
     {
       "id": "q061",
       "title": "Whole screen hangs while I type a query",
       "kind": "lexical_gap",
       "topic": "search",
-      "duplicates": [
-        "c19"
-      ]
+      "duplicates": ["c19"]
     },
     {
       "id": "q062",
       "title": "Can't see what I'm writing because the iPhone keypad is in the way",
       "kind": "lexical_gap",
       "topic": "mobile app",
-      "duplicates": [
-        "c22"
-      ]
+      "duplicates": ["c22"]
     },
     {
       "id": "q063",
       "title": "Changes I made on the train vanished",
       "kind": "lexical_gap",
       "topic": "mobile app",
-      "duplicates": [
-        "c25"
-      ]
+      "duplicates": ["c25"]
     },
     {
       "id": "q064",
       "title": "Moving tickets around stutters once we have hundreds",
       "kind": "lexical_gap",
       "topic": "performance",
-      "duplicates": [
-        "c27"
-      ]
+      "duplicates": ["c27"]
     },
     {
       "id": "q065",
       "title": "Spreadsheet upload gives up partway with big files",
       "kind": "lexical_gap",
       "topic": "performance",
-      "duplicates": [
-        "c28"
-      ]
+      "duplicates": ["c28"]
     },
     {
       "id": "q066",
       "title": "Outside contractors can browse confidential work",
       "kind": "lexical_gap",
       "topic": "permissions",
-      "duplicates": [
-        "c31"
-      ]
+      "duplicates": ["c31"]
     },
     {
       "id": "q067",
       "title": "Cancelled invitation still lets people join",
       "kind": "lexical_gap",
       "topic": "permissions",
-      "duplicates": [
-        "c34"
-      ]
+      "duplicates": ["c34"]
     },
     {
       "id": "q068",
       "title": "French names come out as gibberish in the spreadsheet",
       "kind": "lexical_gap",
       "topic": "exports",
-      "duplicates": [
-        "c36"
-      ]
+      "duplicates": ["c36"]
     },
     {
       "id": "q069",
       "title": "Long write-ups get chopped in the printable version",
       "kind": "lexical_gap",
       "topic": "exports",
-      "duplicates": [
-        "c37"
-      ]
+      "duplicates": ["c37"]
     },
     {
       "id": "q070",
       "title": "The weekly backup attachment has nothing in it",
       "kind": "lexical_gap",
       "topic": "exports",
-      "duplicates": [
-        "c38"
-      ]
+      "duplicates": ["c38"]
     },
     {
       "id": "q071",
