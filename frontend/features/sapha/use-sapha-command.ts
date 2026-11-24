@@ -12,7 +12,7 @@ import { placeOf } from './run-intent.ts';
 const ASK_FROM = 8;
 
 /** A change Sapha read, shown in the palette to be confirmed. */
-export type Proposal = Exclude<SaphaIntent, { kind: 'open' | 'search' | 'go' }>;
+export type Proposal = Exclude<SaphaIntent, { kind: 'open' | 'search' | 'go' | 'blockers' }>;
 
 /** What a role must be allowed to do for Sapha to offer the change. */
 function actionFor(intent: SaphaIntent): Action | undefined {
@@ -42,6 +42,8 @@ export function useSaphaCommand(
   query: string,
   propose: (intent: Proposal) => void,
   ask: (request: string) => void,
+  /** A question to answer in the palette: what an issue waits on. */
+  answer: (issueKey: string) => void,
 ): Command[] {
   const router = useRouter();
   const { available } = useAssist(workspaceId);
@@ -57,6 +59,18 @@ export function useSaphaCommand(
         hint: 'Uses the assistant',
         keepOpen: true,
         run: () => ask(typed),
+      },
+    ];
+  }
+  if (intent.kind === 'blockers') {
+    return [
+      {
+        id: 'sapha',
+        title: describeIntent(intent),
+        group: 'Sapha',
+        hint: 'Answers here',
+        keepOpen: true,
+        run: () => answer(intent.issueKey),
       },
     ];
   }

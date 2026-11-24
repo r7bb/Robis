@@ -204,6 +204,9 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Sapha answers: what is blocking an issue?.** Ask the palette “what’s
+  blocking REL-4?” or “what is REL-4 waiting on?” and Sapha answers there,
+  each blocker a link and finished ones struck through.
 - **Blocked by: issues that wait on others.** An issue can say what it waits
   on, by key; the board marks a waiting card Blocked until what it waits on
   is done, and the other issue shows what it is holding up.
@@ -211,9 +214,6 @@ no write lost and nothing done twice.
   assistance is on, a request Sapha does not read by itself gets an Ask
   Sapha row; only the words typed are sent, and what comes back goes to the
   same card that waits for Do it.
-- **The team’s week, on the feed.** A card on the feed counts the last seven
-  days across the workspace (issues finished, questions answered, meetings
-  held, documents changed, messages) and names who finished most.
 
 <!-- latest:end -->
 

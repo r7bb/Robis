@@ -13,7 +13,7 @@ import { findBoard, findPerson } from './resolve.ts';
 
 export type Done = { said: string; href: string | null };
 
-type Change = Exclude<SaphaIntent, { kind: 'open' | 'search' | 'go' }>;
+type Change = Exclude<SaphaIntent, { kind: 'open' | 'search' | 'go' | 'blockers' }>;
 
 async function issueByKey(workspaceId: string, key: string) {
   try {
@@ -111,10 +111,11 @@ export function runIntent(workspaceId: string, intent: Change, myId: string | nu
 /** Where a looking intent goes; an issue key is looked up first. */
 export async function placeOf(
   workspaceId: string,
-  intent: Extract<SaphaIntent, { kind: 'open' | 'search' | 'go' }>,
+  intent: Extract<SaphaIntent, { kind: 'open' | 'search' | 'go' | 'blockers' }>,
 ): Promise<string> {
   const base = `/workspaces/${workspaceId}`;
-  if (intent.kind === 'open')
+  // A question about an issue opens it, where its Blocked by answers it.
+  if (intent.kind === 'open' || intent.kind === 'blockers')
     return issueHref(workspaceId, (await issueByKey(workspaceId, intent.issueKey)).id);
   if (intent.kind === 'search') return searchHref(workspaceId, intent.query);
   const places = {

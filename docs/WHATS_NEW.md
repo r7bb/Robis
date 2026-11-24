@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Sapha answers: what is blocking an issue?** (2026-11-24). Ask the
+  palette “what’s blocking REL-4?” or “what is REL-4 waiting on?” and Sapha
+  answers there, each blocker a link and finished ones struck through.
 - **Blocked by: issues that wait on others** (2026-11-24). An issue can say
   what it waits on, by key; the board marks a waiting card Blocked until
   what it waits on is done, and the other issue shows what it is holding up.

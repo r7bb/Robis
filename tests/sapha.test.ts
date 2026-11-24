@@ -95,6 +95,9 @@ describe('reading a request', () => {
     expect(read('show my calendar')).toEqual({ kind: 'go', place: 'calendar' });
     expect(read("who's here")).toEqual({ kind: 'go', place: 'feed' });
     expect(read('go to spaces')).toEqual({ kind: 'go', place: 'spaces' });
+    expect(read("what's blocking REL-4?")).toEqual({ kind: 'blockers', issueKey: 'REL-4' });
+    expect(read('what is REL-4 waiting on')).toEqual({ kind: 'blockers', issueKey: 'REL-4' });
+    expect(read('rel-4 blocked by')).toEqual({ kind: 'blockers', issueKey: 'REL-4' });
   });
 
   test('a greeting, a polite word and her name change nothing', () => {
@@ -136,6 +139,7 @@ describe('saying what it will do', () => {
     expect(at('open REL-4')).toBe('Open REL-4');
     expect(at('find vpn')).toBe('Search for “vpn”');
     expect(at('my day')).toBe('Show your day');
+    expect(at('what is blocking REL-4')).toBe('What REL-4 waits on');
   });
 
   test('which intents change something, and so need a yes', () => {

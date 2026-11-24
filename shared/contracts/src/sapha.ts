@@ -23,11 +23,18 @@ export type SaphaIntent =
   | { kind: 'remind'; issueKey: string; at: Date }
   | { kind: 'schedule'; title: string; at: Date }
   | { kind: 'open'; issueKey: string }
+  /** A question: what an issue waits on, answered in the palette. */
+  | { kind: 'blockers'; issueKey: string }
   | { kind: 'search'; query: string }
   | { kind: 'go'; place: SaphaPlace };
 
 /** Intents that only look or go somewhere; every other kind needs a yes. */
-export const LOOKING_INTENTS: ReadonlySet<SaphaIntent['kind']> = new Set(['open', 'search', 'go']);
+export const LOOKING_INTENTS: ReadonlySet<SaphaIntent['kind']> = new Set([
+  'open',
+  'search',
+  'go',
+  'blockers',
+]);
 
 const KEY = '([a-z][a-z0-9]{0,9}-\\d{1,9})';
 const STATUS_WORDS: [RegExp, IssueStatus][] = [
@@ -164,7 +171,13 @@ function making(text: string, original: string, now: Date): SaphaIntent | null {
 }
 
 function looking(text: string, request: string): SaphaIntent | null {
-  let m = new RegExp(`^(?:open |show |go to )?${KEY}$`).exec(text);
+  let m = new RegExp(
+    `^(?:what(?:'s| is| are)|who(?:'s| is)) (?:blocking|holding up|in the way of) ${KEY}$`,
+  ).exec(text);
+  if (m) return { kind: 'blockers', issueKey: key(m[1]!) };
+  m = new RegExp(`^(?:what (?:does|is) )?${KEY} (?:wait(?:ing)? on|blocked by)$`).exec(text);
+  if (m) return { kind: 'blockers', issueKey: key(m[1]!) };
+  m = new RegExp(`^(?:open |show |go to )?${KEY}$`).exec(text);
   if (m) return { kind: 'open', issueKey: key(m[1]!) };
   m = /^(?:find|search(?: for)?|look for|look up) (.+)$/.exec(text);
   if (m) return { kind: 'search', query: asTyped(request, m[1]!) };
@@ -232,6 +245,8 @@ export function describeIntent(intent: SaphaIntent, _now: Date = new Date()): st
       return `Schedule “${intent.title}”, ${dateLine(intent.at, true)}`;
     case 'open':
       return `Open ${intent.issueKey}`;
+    case 'blockers':
+      return `What ${intent.issueKey} waits on`;
     case 'search':
       return `Search for “${intent.query}”`;
     case 'go':
@@ -250,6 +265,7 @@ export const SAPHA_KINDS = [
   'remind',
   'schedule',
   'open',
+  'blockers',
   'search',
   'go',
   'none',
@@ -315,6 +331,8 @@ function issueIntent(parts: SaphaParts, issueKey: string, now: Date): SaphaInten
     }
     case 'open':
       return { kind: 'open', issueKey };
+    case 'blockers':
+      return { kind: 'blockers', issueKey };
     default:
       return null;
   }

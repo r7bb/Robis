@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Sapha answers: what is blocking an issue?',
+    brief:
+      'Ask the palette “what’s blocking REL-4?” or “what is REL-4 waiting on?” and Sapha answers there, each blocker a link and finished ones struck through.',
+    summary:
+      'Sapha now answers a question as well as doing things. Asked what is blocking an issue, or what it waits on, it reads the issue’s Blocked by with your own access and answers in the palette: how many it still waits on, each blocker a link, the finished ones struck through, and a way to open the issue. Asked through the assistant (where assistance is on), the same question opens the issue, where Blocked by answers it.',
+    checked:
+      'Reading tests for the question in three phrasings and the sentence shown. In the browser, “what’s blocking WEB-2?” answered that WEB-2 waits on WEB-1. The keyboard and phone journeys. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Blocked by: issues that wait on others',
     brief:
       'An issue can say what it waits on, by key; the board marks a waiting card Blocked until what it waits on is done, and the other issue shows what it is holding up.',

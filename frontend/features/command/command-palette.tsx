@@ -17,6 +17,7 @@ import {
   type Command,
   rankCommands,
 } from '../../lib/commands.ts';
+import { SaphaAnswer } from '../sapha/sapha-answer.tsx';
 import { SaphaAsk } from '../sapha/sapha-ask.tsx';
 import { SaphaCard } from '../sapha/sapha-card.tsx';
 import { type Proposal, useSaphaCommand } from '../sapha/use-sapha-command.ts';
@@ -53,8 +54,16 @@ export function CommandPalette({
   const [proposal, setProposal] = useState<Proposal | null>(null);
   // A request Sapha is asking the assistant to read (tier 1).
   const [asking, setAsking] = useState<string | null>(null);
+  // An issue Sapha is answering about, in place of the list.
+  const [answering, setAnswering] = useState<string | null>(null);
   const parent = stack.at(-1);
-  const sapha = useSaphaCommand(workspaceId, parent ? '' : query, setProposal, setAsking);
+  const sapha = useSaphaCommand(
+    workspaceId,
+    parent ? '' : query,
+    setProposal,
+    setAsking,
+    setAnswering,
+  );
 
   const { local, found, searching } = usePaletteSources(
     workspaceId,
@@ -180,6 +189,7 @@ export function CommandPalette({
       <SaphaPane
         workspaceId={workspaceId}
         asking={asking}
+        answering={answering}
         proposal={proposal}
         onAsked={(intent) => {
           setAsking(null);
@@ -187,6 +197,7 @@ export function CommandPalette({
         }}
         onBack={() => {
           setAsking(null);
+          setAnswering(null);
           setProposal(null);
         }}
         onClose={onClose}
@@ -382,6 +393,7 @@ function PaletteList({
 function SaphaPane({
   workspaceId,
   asking,
+  answering,
   proposal,
   onAsked,
   onBack,
@@ -390,6 +402,7 @@ function SaphaPane({
 }: {
   workspaceId: string;
   asking: string | null;
+  answering: string | null;
   proposal: Proposal | null;
   onAsked: (intent: Proposal) => void;
   onBack: () => void;
@@ -399,6 +412,16 @@ function SaphaPane({
   if (proposal) {
     return (
       <SaphaCard workspaceId={workspaceId} intent={proposal} onBack={onBack} onClose={onClose} />
+    );
+  }
+  if (answering) {
+    return (
+      <SaphaAnswer
+        workspaceId={workspaceId}
+        issueKey={answering}
+        onBack={onBack}
+        onClose={onClose}
+      />
     );
   }
   if (asking) {
