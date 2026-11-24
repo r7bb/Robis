@@ -6,6 +6,11 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Sentence embeddings double duplicate recall on the new set; stemming
+  does not help** (2026-11-24). Stemming, a small sentence model and a blend
+  were compared on the new set’s dev half under a rule fixed in advance;
+  only the sentence model met it, and on the test half it found 66% of
+  duplicates against 34%, with fewer false alarms.
 - **A second labelled duplicate set, scored on a test half fixed in
   advance** (2026-11-24). A new set of 120 queries tagged by kind of wording
   gap, split before any score and read once: character n-grams raised more

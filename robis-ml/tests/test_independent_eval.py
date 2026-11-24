@@ -181,3 +181,20 @@ class TestFreeze:
         monkeypatch.setattr(independent_eval, "SPLIT_PATH", tmp_path / "split.json")
         with pytest.raises(ValueError, match="does not exist yet"):
             independent_eval.report(load_independent_set())
+
+
+class TestCandidates:
+    def test_stemming_closes_a_word_form_gap_and_nothing_more(self) -> None:
+        from robis_ml.duplicate_eval import REPRESENTATIONS
+
+        vectorizer = REPRESENTATIONS["word 1-2, stemmed"]()
+        vectorizer.fit(["App crashes on start", "Payment declined"])
+        analyse = vectorizer.build_analyzer()
+        assert set(analyse("App crashing")) & set(analyse("App crashes"))
+        assert not set(analyse("Payment declined")) & set(analyse("Card refused"))
+
+    def test_compare_reads_the_dev_half_only(self, capsys: pytest.CaptureFixture[str]) -> None:
+        assert main(["compare"]) == 0
+        printed = capsys.readouterr().out
+        assert printed.startswith("dev half only")
+        assert "word 1-2, stemmed" in printed

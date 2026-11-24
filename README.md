@@ -204,6 +204,11 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Sentence embeddings double duplicate recall on the new set; stemming
+  does not help.** Stemming, a small sentence model and a blend were
+  compared on the new set’s dev half under a rule fixed in advance; only the
+  sentence model met it, and on the test half it found 66% of duplicates
+  against 34%, with fewer false alarms.
 - **A second labelled duplicate set, scored on a test half fixed in
   advance.** A new set of 120 queries tagged by kind of wording gap, split
   before any score and read once: character n-grams raised more alarms on
@@ -212,12 +217,6 @@ no write lost and nothing done twice.
   Español under Account and the sidebar, calendar and Spaces read in
   Spanish; every date, time and number now follows your locale, so an
   American reader sees the month first.
-- **Spaces for questions and answers, reactions on celebrations, a livelier
-  calendar and two tinted light themes.** Spaces bring forum-style topics
-  into the workspace: ask, reply in nested threads, mark the answer and see
-  who has been most helpful. Celebrations take reactions, the calendar marks
-  today and now in colour, Mist and Meadow are light themes that are not all
-  white, and the agent is now called RoRo.
 
 <!-- latest:end -->
 

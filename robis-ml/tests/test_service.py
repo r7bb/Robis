@@ -64,9 +64,7 @@ class TestAuthentication:
         assert client.get("/health").status_code == 200
 
     @pytest.mark.parametrize("path", ["similar", "triage", "suggestions"])
-    def test_tenant_endpoints_refuse_without_a_token(
-        self, client: TestClient, path: str
-    ) -> None:
+    def test_tenant_endpoints_refuse_without_a_token(self, client: TestClient, path: str) -> None:
         response = client.post(f"/workspaces/{ALPHA}/{path}", json={"title": "anything"})
 
         assert response.status_code == 401
@@ -122,9 +120,7 @@ class TestAuthentication:
 
 
 class TestTenantIsolation:
-    def test_a_query_only_ever_returns_its_own_workspaces_issues(
-        self, client: TestClient
-    ) -> None:
+    def test_a_query_only_ever_returns_its_own_workspaces_issues(self, client: TestClient) -> None:
         """The property the whole design rests on.
 
         Alpha's corpus contains a near-duplicate of the query; Beta's does
@@ -148,9 +144,7 @@ class TestTenantIsolation:
         assert {m["id"] for m in beta["similar"]} <= {"b1"}
         assert beta["corpus_size"] == 1
 
-    def test_the_cache_does_not_serve_one_workspace_from_another(
-        self, client: TestClient
-    ) -> None:
+    def test_the_cache_does_not_serve_one_workspace_from_another(self, client: TestClient) -> None:
         # Warming Alpha first is the interesting order: a cache keyed wrongly
         # would hand Alpha's fitted model back for Beta.
         client.post(f"/workspaces/{ALPHA}/similar", json={"title": "warm"}, headers=auth_header())
@@ -255,9 +249,7 @@ class TestCacheInvalidation:
 
         client = TestClient(service.app)
         for _ in range(3):
-            client.post(
-                f"/workspaces/{ALPHA}/similar", json={"title": "x"}, headers=auth_header()
-            )
+            client.post(f"/workspaces/{ALPHA}/similar", json={"title": "x"}, headers=auth_header())
 
         # A fingerprint check per request, but only one load and fit.
         assert fits["count"] == 1
@@ -293,9 +285,7 @@ class TestSuggestions:
     """One call for both hints (stage 3, item 27): the duplicates and the
     priority for a draft, from one fit of the workspace's models."""
 
-    def test_answers_with_both_the_same_as_the_separate_endpoints(
-        self, client: TestClient
-    ) -> None:
+    def test_answers_with_both_the_same_as_the_separate_endpoints(self, client: TestClient) -> None:
         body = {"title": "Offline queue drops writes"}
         both = client.post(f"/workspaces/{ALPHA}/suggestions", json=body, headers=auth_header())
         similar = client.post(f"/workspaces/{ALPHA}/similar", json=body, headers=auth_header())
@@ -334,4 +324,3 @@ class TestSuggestions:
         )
 
         assert all(row["id"].startswith("b") for row in response.json()["similar"])
-

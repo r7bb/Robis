@@ -2,6 +2,7 @@
 
     python -m robis_ml.independent_eval check    # is the file well formed? no scores
     python -m robis_ml.independent_eval split    # fix dev and test, once, before any score
+    python -m robis_ml.independent_eval compare  # every candidate on the dev half
     python -m robis_ml.independent_eval report   # score the test half, once
 
 The first set (`datasets/duplicates.json`) was written by the model's author
@@ -68,6 +69,10 @@ SPLIT_SEED = "robis-d1-2026-11-24"
 
 #: The open candidate the report runs beside production.
 CANDIDATE = "char_wb 3-5"
+
+#: The D2 candidate that met the rule on the dev half (lexical-gap recall up,
+#: hard-negative alarms not up), added to the report after that comparison.
+EMBEDDING_CANDIDATE = "MiniLM embeddings"
 
 
 @dataclass(frozen=True)
@@ -221,9 +226,14 @@ def _read_split(independent: IndependentSet) -> dict[str, str]:
     return split
 
 
-def _read_dev_half(independent: IndependentSet) -> list[Scored]:
+def _read_dev_half(
+    independent: IndependentSet,
+    vectorizer: Callable[[], TextVectorizer] | None = None,
+) -> list[Scored]:
     split = _read_split(independent)
-    results = score_queries(_as_labelled(independent, split), vectorizer=REPRESENTATIONS[CANDIDATE])
+    results = score_queries(
+        _as_labelled(independent, split), vectorizer=vectorizer or REPRESENTATIONS[CANDIDATE]
+    )
     return [r for r in results if r.query.split == "dev"]
 
 
@@ -282,10 +292,25 @@ def report(independent: IndependentSet) -> int:
     candidate_threshold = choose_threshold(
         _read_dev_half(independent), COMPARISON_THRESHOLDS
     ).threshold
-    for name, vectorizer, threshold in (
+    runs: list[tuple[str, Callable[[], TextVectorizer], float]] = [
         ("production (word TF-IDF)", word_vectorizer, DEFAULT_DUPLICATE_THRESHOLD),
         (f"candidate ({CANDIDATE})", REPRESENTATIONS[CANDIDATE], candidate_threshold),
-    ):
+    ]
+    # D2: the one candidate that met the rule on the dev half, at its dev threshold.
+    embedded = _embedding_candidates()[EMBEDDING_CANDIDATE]
+    try:
+        runs.append(
+            (
+                f"D2 candidate ({EMBEDDING_CANDIDATE})",
+                embedded,
+                choose_threshold(
+                    _read_dev_half(independent, embedded), COMPARISON_THRESHOLDS
+                ).threshold,
+            )
+        )
+    except FileNotFoundError as missing:
+        print(f"{EMBEDDING_CANDIDATE}: left out, {missing}")
+    for name, vectorizer, threshold in runs:
         results = _read_test_half(independent, vectorizer)
         measured = metrics_at(results, threshold)
         sections.append(
@@ -333,8 +358,48 @@ def write_split(independent: IndependentSet) -> int:
     return 0
 
 
-COMMANDS = {"check": check, "split": write_split, "report": report}
-USAGE = "usage: python -m robis_ml.independent_eval {check|split|report}"
+def _embedding_candidates() -> dict[str, Callable[[], TextVectorizer]]:
+    """The sentence-model candidates (D2), fixed before either was scored."""
+    from .embeddings import Blend, MiniLMVectorizer
+
+    shared: dict[str, MiniLMVectorizer] = {}
+
+    def sentences() -> MiniLMVectorizer:
+        # One model for the run; its per-text cache is shared too.
+        if "model" not in shared:
+            shared["model"] = MiniLMVectorizer()
+        return shared["model"]
+
+    return {
+        "MiniLM embeddings": sentences,
+        "word + MiniLM, 50/50": lambda: Blend(word_vectorizer(), sentences(), 0.5),
+    }
+
+
+def compare(independent: IndependentSet) -> int:
+    """Every representation on the dev half alone, each at its own best threshold (D2).
+
+    Candidates are chosen here, where choosing costs nothing; the test half
+    is read only by `report`, once a choice is made.
+    """
+    split = _read_split(independent)
+    labelled = _as_labelled(independent, split)
+    print("dev half only; each at the threshold its own dev scores choose\n")
+    for name, factory in {**REPRESENTATIONS, **_embedding_candidates()}.items():
+        try:
+            scored = score_queries(labelled, vectorizer=factory)
+        except FileNotFoundError as missing:
+            print(f"{name}: skipped, {missing}\n")
+            continue
+        dev = [r for r in scored if r.query.split == "dev"]
+        chosen = choose_threshold(dev, COMPARISON_THRESHOLDS)
+        lines = _report_lines(name, chosen, _kind_recall(independent, dev, chosen.threshold))
+        print("\n".join(lines) + "\n")
+    return 0
+
+
+COMMANDS = {"check": check, "split": write_split, "compare": compare, "report": report}
+USAGE = "usage: python -m robis_ml.independent_eval {check|split|compare|report}"
 
 
 def main(argv: Sequence[str] | None = None) -> int:

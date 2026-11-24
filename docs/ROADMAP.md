@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-11-24): **1873 TypeScript tests, 123 Python tests, lint and
+Status (2026-11-24): **1873 TypeScript tests, 130 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -191,18 +191,12 @@ so it is not independent. What remains is a second author following
 
 ### 2. Stemming, then embeddings, for the lexical gap
 
-Character n-grams were tried, through `python -m robis_ml.duplicate_eval
---compare`. None met the rule fixed in advance: lexical-gap recall up, with
-hard-negative false alarms not up. Production stays on word TF-IDF. The
-write-up is in [robis-ml/README.md](../robis-ml/README.md).
-
-What is left:
-
-- **Stemming** may help the word-form kind ("paging" against "pagination").
-  It needs a new dependency, so record its licence before adding it.
-- **Embeddings** are the experiment for the synonym kind ("throttle" against
-  "rate limit"), which shares no characters. They stay blocked until weights
-  can be downloaded.
+**Measured (D2, 2026-11-24).** On the second set's dev half, stemming and a
+words-plus-embeddings blend failed the rule; MiniLM sentence embeddings met
+it (lexical gap 3 of 10 against 1, hard-negative alarms 9 of 15 against
+14), and on the test half had recall 0.66 against 0.34 and 1 of 15 alarms
+against 5. Next: serve it, with the model in the ML image, fetched and
+hash-checked at build time, and its latency measured.
 
 ### 3. Mail beyond the first driver
 

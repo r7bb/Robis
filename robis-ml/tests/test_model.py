@@ -160,9 +160,8 @@ class TestIssueText:
             ("Sync protocol", None),
             ("  padded  ", "  body  "),
         ]:
-            assert (
-                Issue(id="1", title=title, description=description).text
-                == compose_text(title, description)
+            assert Issue(id="1", title=title, description=description).text == compose_text(
+                title, description
             )
 
 

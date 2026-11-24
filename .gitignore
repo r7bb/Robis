@@ -38,3 +38,4 @@ __pycache__/
 # The production-mode CI stack's throwaway certificate (scripts/smoke/throwaway-tls.ts).
 deploy/.tls/
 
+robis-ml/.models/

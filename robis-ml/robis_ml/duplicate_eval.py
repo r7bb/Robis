@@ -108,6 +108,28 @@ def _char_vectorizer(low: int, high: int) -> TfidfVectorizer:
     )
 
 
+def _stemmed_vectorizer() -> TfidfVectorizer:
+    """Word TF-IDF as production, with each word cut to its Snowball stem (D2).
+
+    "Crashing", "crashes" and "crashed" all become "crash", so a word-form
+    gap closes; a synonym or a lexical gap does not. The stemmer
+    (snowballstemmer, BSD-3-Clause) is imported here, not at the top, since
+    only evaluation needs it.
+    """
+    import snowballstemmer
+
+    stem = snowballstemmer.stemmer("english").stemWord
+    base = word_vectorizer()
+    words = base.build_analyzer()
+    # The production analyser lowercases, drops stop words and makes word
+    # pairs; stemming each word of a pair keeps its meaning.
+    return TfidfVectorizer(
+        analyzer=lambda text: [" ".join(stem(w) for w in term.split(" ")) for term in words(text)],
+        min_df=1,
+        sublinear_tf=True,
+    )
+
+
 #: The representations ``--compare`` measures, fixed before any of them was
 #: scored so the list cannot grow until one of them wins. The first is what
 #: production uses.
@@ -121,6 +143,8 @@ REPRESENTATIONS: dict[str, Callable[[], TextVectorizer]] = {
     "word + char_wb 2-4": lambda: FeatureUnion(
         [("word", word_vectorizer()), ("char", _char_vectorizer(2, 4))]
     ),
+    # Added for D2, before it was scored on either set.
+    "word 1-2, stemmed": _stemmed_vectorizer,
 }
 
 #: Wider than `THRESHOLDS`, because character n-grams score systematically

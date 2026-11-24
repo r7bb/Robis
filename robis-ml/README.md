@@ -278,6 +278,47 @@ What it says:
 - **Synonyms and lexical gaps are what is left**, which is the case for
   embeddings (D2), measured on this same set.
 
+### Stemming, then embeddings (D2)
+
+```bash
+.venv/bin/python -m robis_ml.embeddings fetch           # once: MiniLM, hash-checked
+.venv/bin/python -m robis_ml.independent_eval compare   # every candidate, dev half only
+```
+
+Three candidates were added before any was scored: Snowball stemming over
+the production words, the small MiniLM sentence model (all-MiniLM-L6-v2,
+Apache 2.0) on the CPU through ONNX Runtime, and a 50/50 blend of the two
+scores. The model's files are fetched once at a pinned revision and each is
+checked against a recorded SHA-256 (the model's matches the hash its host
+publishes). Candidates were compared on the second set's **dev half**, each
+at its own best threshold, under the rule fixed in advance: lexical-gap
+recall up, hard-negative false alarms not up.
+
+| dev half | lexical gap | hard-negative alarms | recall | precision |
+| --- | --- | --- | --- | --- |
+| word TF-IDF (production, its dev best 0.25) | 1/10 | 14/15 | 21/35 | 21/43 |
+| stemmed words (0.60) | 0/10 | 3/15 | 14/35 | 14/18 |
+| MiniLM embeddings (0.55) | **3/10** | **9/15** | 27/35 | 27/36 |
+| words + MiniLM, 50/50 (0.35) | 2/10 | 13/15 | 26/35 | 26/40 |
+
+Stemming closes word-form gaps only; the blend inherits the words' alarms.
+**MiniLM alone met the rule**, so it was added to the report and scored
+on the test half, its threshold fixed on dev:
+
+| test half | production at 0.40 | MiniLM at 0.55 |
+| --- | --- | --- |
+| Precision | 12/18 = 0.67 [0.44, 0.84] | 23/26 = 0.88 [0.71, 0.96] |
+| Recall | 12/35 = 0.34 [0.21, 0.51] | 23/35 = 0.66 [0.49, 0.79] |
+| Hard-negative alarms | 5/15 = 0.33 [0.15, 0.58] | 1/15 = 0.07 [0.01, 0.30] |
+| Recall, synonym | 4/13 = 0.31 [0.13, 0.58] | 10/13 = 0.77 [0.50, 0.92] |
+| Recall, lexical gap | 0/10 = 0.00 [0.00, 0.28] | 1/10 = 0.10 [0.02, 0.40] |
+
+It holds on the test half too, with the same caveat as the set: its author
+is not independent. **Production still runs word TF-IDF** for now: moving
+it means carrying the model (90 MB) in the ML image, fetched and
+hash-checked at build time, and timing it per request. That is the next ML
+step, not done here.
+
 ## Priority triage
 
 Multinomial logistic regression over the same features. Linear and

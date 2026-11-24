@@ -105,9 +105,7 @@ def _fit_and_score(train: list[Issue], test: list[Issue]) -> tuple[float, float]
 def _cross_validated(labelled: list[Issue]) -> tuple[list[float], list[float]]:
     labels = [issue.priority for issue in labelled]
 
-    splitter = RepeatedStratifiedKFold(
-        n_splits=FOLDS, n_repeats=REPEATS, random_state=RANDOM_STATE
-    )
+    splitter = RepeatedStratifiedKFold(n_splits=FOLDS, n_repeats=REPEATS, random_state=RANDOM_STATE)
 
     model_scores: list[float] = []
     baseline_scores: list[float] = []

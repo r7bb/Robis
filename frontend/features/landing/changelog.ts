@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'ML',
+    title: 'Sentence embeddings double duplicate recall on the new set; stemming does not help',
+    brief:
+      'Stemming, a small sentence model and a blend were compared on the new set’s dev half under a rule fixed in advance; only the sentence model met it, and on the test half it found 66% of duplicates against 34%, with fewer false alarms.',
+    summary:
+      'Three candidates were added before any was scored: Snowball stemming of the production words, the small MiniLM sentence model on the CPU through ONNX Runtime (its files fetched once at a pinned revision and checked against recorded hashes), and a 50/50 blend. On the dev half, under the rule that lexical-gap recall must rise without more hard-negative false alarms, stemming found no lexical gaps and the blend kept the words’ alarms; MiniLM found 3 of 10 lexical gaps against 1 and raised 9 of 15 alarms against 14. On the test half, its threshold fixed on dev, it had precision 0.88 and recall 0.66 against production’s 0.67 and 0.34, with 1 of 15 alarms against 5, and found 10 of 13 synonym duplicates against 4. Production still runs word TF-IDF: serving the model means carrying it in the ML image, hash-checked at build time, and timing it, which is the next step. The set’s author is the assistant that built the model, so these figures still await an independent set.',
+    checked:
+      'Python tests for the blend’s arithmetic, for refusing model files with the wrong hash, for the stemmer closing word forms only, for the comparison reading the dev half alone, and for the model ranking a reworded title above an unrelated one where its files are present. 130 Python tests pass.',
+  },
+  {
+    date: '2026-11-24',
+    area: 'ML',
     title: 'A second labelled duplicate set, scored on a test half fixed in advance',
     brief:
       'A new set of 120 queries tagged by kind of wording gap, split before any score and read once: character n-grams raised more alarms on nothing new, but neither model found a single reworded duplicate.',

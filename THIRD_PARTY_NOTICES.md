@@ -132,6 +132,17 @@ through FastAPI. Its spans are sent by a small exporter of its own
 (`robis_ml/telemetry.py`), not the SDK's OTLP exporters, which would add
 protobuf and gRPC.
 
+For evaluation only, not in the image, locked in
+`robis-ml/requirements-dev.lock` for the D2 candidates: `snowballstemmer`
+3.1.1 (BSD-3-Clause), `onnxruntime` 1.32.0 (MIT) and `tokenizers` 0.23.3
+(Apache-2.0), with what they pull in: `huggingface-hub`, `hf-xet` and
+`flatbuffers` (Apache-2.0), `protobuf`, `fsspec`, `httpx2` and `httpcore2`
+(BSD-3-Clause), `filelock`, `pyyaml` and `truststore` (MIT), and `tqdm`
+(MPL-2.0 and MIT; the MPL is file-level copyleft, flagged for review).
+`httpx2-jsfetch` installs only on another platform and its licence was not
+read here. The model, `sentence-transformers/all-MiniLM-L6-v2`, is Apache-2.0,
+fetched by `python -m robis_ml.embeddings fetch` and not committed.
+
 ## Container base images
 
 The images in `deploy/docker` start from `oven/bun` 1.4.2 (Bun, MIT, on
