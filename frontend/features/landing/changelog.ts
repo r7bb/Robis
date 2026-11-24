@@ -45,6 +45,26 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
+    area: 'Product',
+    title: 'GitHub pull requests on issues',
+    brief:
+      'A pull request whose title or branch names an issue key shows on that issue with its state, and merging it can move the issue to done.',
+    summary:
+      'An admin connects the workspace to GitHub from the Automations page and adds the address and secret it gives to a repository’s webhooks. From then on a pull request whose title or branch names an issue key, such as WEB-12 or a branch called web-12-fix, appears on that issue with its state: open, draft, merged or closed. If the admin chose it, the first merge moves the issue to done, recorded in the trail as Robis’s change; a delivery older than the last one seen, or a replay, changes nothing, so a merge cannot close again an issue someone reopened. Links are https only. GitHub signs every delivery with the workspace’s secret, and anything unsigned or wrongly signed is refused the same way as a workspace that is not connected.',
+    checked:
+      'Seven tests: keys read from a title and a branch in either case, once each; a pull request linked to two issues, one by title and one by branch, with its state, then merged with moving to done left off and the issue unchanged; a merge moving an issue to done when chosen, recorded as a system change; an unsigned delivery, a wrong signature and an unconnected workspace all refused with nothing changed; a replayed merge and a late delivery changing nothing after the issue was reopened; a javascript: link refused; another workspace with the same project key untouched; members refused. A security review, whose findings (a link that was not checked to be https, and replays) were fixed before this shipped. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'GitHub pull requests',
+      where: 'Automations, GitHub (admins); an issue, Pull requests',
+      layers: [
+        'Screen: connect with the address and a one-time secret, the choice to move to done, and each issue’s pull requests',
+        'API: github.* for admins, issues.pullRequests for readers, and a signed webhook from GitHub',
+        'Database: github_links with the secret and the choice; issue_pull_requests with each one’s state',
+      ],
+    },
+  },
+  {
+    date: '2026-11-24',
     area: 'Security',
     title: 'Personal access tokens for the API, read only unless allowed to write',
     brief:

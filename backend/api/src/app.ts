@@ -42,6 +42,7 @@ import { exportRoutes } from './routes/exports.ts';
 import { feedRoutes } from './routes/feed.ts';
 import { feedHighlightRoutes } from './routes/feed-highlights.ts';
 import { feedbackRoutes } from './routes/feedback.ts';
+import { githubRoutes } from './routes/github.ts';
 import { importRoutes } from './routes/imports.ts';
 import { insightRoutes } from './routes/insights.ts';
 import { invitationRoutes } from './routes/invitations.ts';
@@ -349,6 +350,7 @@ export function buildApp({
   app.register(importRoutes, { db });
   app.register(webhookRoutes, { db });
   app.register(personalTokenRoutes, { db });
+  app.register(githubRoutes, { db });
   app.register(searchRoutes, { db, limits });
 
   return app;

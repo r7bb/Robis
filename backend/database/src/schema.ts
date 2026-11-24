@@ -2099,3 +2099,46 @@ export const personalAccessTokens = pgTable(
     index('personal_access_tokens_user_idx').on(t.userId),
   ],
 );
+
+/**
+ * A workspace's GitHub link (C7): the secret GitHub signs its webhook with,
+ * and whether merging a linked pull request moves the issue to done. One
+ * per workspace; connecting again replaces the secret.
+ */
+export const githubLinks = pgTable('github_links', {
+  workspaceId: uuid('workspace_id')
+    .primaryKey()
+    .references(() => workspaces.id, { onDelete: 'cascade' }),
+  secret: text('secret').notNull(),
+  moveToDone: boolean('move_to_done').notNull().default(false),
+  createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: createdAt(),
+});
+
+/**
+ * A pull request that names an issue's key in its title or branch (C7), as
+ * GitHub last described it: open, draft, merged or closed.
+ */
+export const issuePullRequests = pgTable(
+  'issue_pull_requests',
+  {
+    issueId: uuid('issue_id')
+      .notNull()
+      .references(() => issues.id, { onDelete: 'cascade' }),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    repo: text('repo').notNull(),
+    number: integer('number').notNull(),
+    title: text('title').notNull(),
+    url: text('url').notNull(),
+    state: text('state').notNull(),
+    /**
+     * When GitHub last changed the pull request, from the event: an event
+     * no newer than this is a replay or arrived late, and changes nothing.
+     */
+    githubUpdatedAt: timestamp('github_updated_at', { withTimezone: true }).notNull(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [primaryKey({ columns: [t.issueId, t.repo, t.number] })],
+);

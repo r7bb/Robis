@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **GitHub pull requests on issues** (2026-11-24). A pull request whose
+  title or branch names an issue key shows on that issue with its state, and
+  merging it can move the issue to done.
 - **Personal access tokens for the API, read only unless allowed to write**
   (2026-11-24). A person can make tokens for scripts that use the API as
   them: read only unless allowed to write, shown once, stored as a hash,

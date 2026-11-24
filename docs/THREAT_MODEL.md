@@ -97,8 +97,17 @@ members see them, and may carry a passcode.
 
 ## Outbound calls
 
-Robis has no inbound webhooks: nothing outside calls in except people's
-browsers and agents with tokens. It does call out, and each call could be
+Robis takes one inbound webhook: GitHub's, for pull requests on issues
+(C7), at a public address per workspace, believed only when signed with
+that workspace's secret (HMAC-SHA256 over the exact bytes, compared in
+constant time); an unsigned delivery, a wrong signature and a workspace
+not connected all get the same 401, the body is capped at 1 MB, and it
+can only link pull requests (with https links only) and, if an admin
+chose it, move an issue to done on its first merge. GitHub's signature
+carries no time, so each pull request keeps GitHub's own last-changed
+time and an older or replayed delivery changes nothing. Left open: any
+repository given the secret may name any issue key in the workspace. Otherwise nothing outside calls in except people's browsers, agents
+and personal tokens. It does call out, and each call could be
 turned against the server's own network if its address came from a user.
 
 | Call | Who chooses the address | In the way today | Where |

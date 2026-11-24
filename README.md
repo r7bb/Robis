@@ -202,6 +202,9 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **GitHub pull requests on issues.** A pull request whose title or branch
+  names an issue key shows on that issue with its state, and merging it can
+  move the issue to done.
 - **Personal access tokens for the API, read only unless allowed to write.**
   A person can make tokens for scripts that use the API as them: read only
   unless allowed to write, shown once, stored as a hash, revoked at once,
@@ -210,10 +213,6 @@ no write lost and nothing done twice.
   events to another system: each delivery signed with HMAC, carrying an id a
   receiver can drop repeats by, retried over two and a half hours and shown
   in a delivery log.
-- **Import issues from CSV, a Robis export or GitHub.** A board can take
-  issues from a CSV file, a Robis workspace export or a GitHub repository,
-  with statuses and labels mapped, and running the same import again adds
-  nothing.
 
 <!-- latest:end -->
 

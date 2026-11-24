@@ -22,6 +22,7 @@ import { DueField } from './due-field.tsx';
 import { IssueInChat } from './issue-in-chat.tsx';
 import { ParentPicker, SubIssues } from './issue-tree.tsx';
 import { LabelPicker } from './label-picker.tsx';
+import { PullRequests } from './pull-requests.tsx';
 
 const STATUS_LABELS: Record<IssueStatus, string> = {
   TODO: 'Todo',
@@ -243,6 +244,8 @@ export function IssueDetail({
           />
 
           <IssueAttachments workspaceId={workspaceId} issueId={issueId} role={role} />
+
+          <PullRequests workspaceId={workspaceId} issueId={issueId} />
 
           <CommentThread
             workspaceId={workspaceId}

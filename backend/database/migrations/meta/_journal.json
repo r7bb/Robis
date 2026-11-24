@@ -512,6 +512,13 @@
       "when": 1795480709141,
       "tag": "0072_personal_access_tokens",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1795485446927,
+      "tag": "0073_github_links",
+      "breakpoints": true
     }
   ]
 }

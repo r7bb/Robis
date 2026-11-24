@@ -14,7 +14,7 @@ Written to be checkable. Every row names a file you can open.
 | --- | --- |
 | Services | 5 (web, API, realtime gateway, worker, MCP server for agents) plus an optional ML service |
 | Database tables | 18 |
-| HTTP endpoints | 182 |
+| HTTP endpoints | 188 |
 | Tests | Counted in [docs/ROADMAP.md](docs/ROADMAP.md), the one place they are kept |
 | Screenshots | 35, all captured from the running app |
 | Measured throughput | ~3,600 req/s, zero errors |
@@ -152,6 +152,7 @@ authorisation path.
 | Issue import into a board from a CSV file, a Robis export or a GitHub repository, statuses and labels mapped, a rerun adding nothing | `backend/api/src/imports/`, `backend/api/src/routes/imports.ts`, `frontend/features/imports/` |
 | Outgoing webhooks per workspace: chosen events, HMAC-signed deliveries with an idempotency id, retries with backoff, a delivery log for admins | `backend/api/src/routes/webhooks.ts`, `backend/worker/src/workspace-webhook.ts` |
 | Personal access tokens for the REST API: read or read and write, shown once, stored hashed, revocable, last use shown, workspace routes only | `backend/auth/src/personal-tokens.ts`, `backend/api/src/routes/personal-tokens.ts`, `frontend/features/account/api-tokens.tsx` |
+| GitHub pull requests on issues: a signed webhook links pull requests by the issue key in their title or branch, shows their state, and can move the issue to done on merge | `backend/api/src/github/pull-requests.ts`, `backend/api/src/routes/github.ts` |
 | Automation rules (Automations, for admins): a trigger from the audit trail, conditions that must all hold, one action (status, priority, assign, comment, notify, post in a channel, an outgoing webhook signed per rule to public https addresses only); run once per change on the API's own job runner, never on a rule's own change, chains stopped three deep with a note; the trail names the rule | `backend/api/src/automation/`, `backend/api/src/routes/automations.ts`, `backend/worker/src/webhook.ts`, `frontend/features/automations/` |
 | A week view (Calendar): the workspace's meetings and repeats laid out in the viewer's zone, overlaps side by side, issues due each day along the top, a list of days on a phone | `frontend/features/calendar/`, `backend/api/src/routes/week.ts` |
 | Meetings imported from an .ics file: timed events in UTC, a named zone or floating time, weekly repeats with a count or end, invitees matched to the roster by address for admins only; anything else left out with a reason | `backend/api/src/calendar/parse.ts`, `backend/api/src/routes/calendar-import.ts`, `frontend/features/meetings/import-calendar.tsx` |

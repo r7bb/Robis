@@ -71,6 +71,8 @@ const TABLES = [
   'webhook_deliveries',
   'workspace_webhooks',
   'personal_access_tokens',
+  'issue_pull_requests',
+  'github_links',
   'notifications',
   'document_updates',
   'documents',

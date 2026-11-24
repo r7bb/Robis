@@ -40,6 +40,8 @@ const OUTSIDE: readonly string[] = [
   'GET /workspaces/:workspaceId/posts/:postId/photo',
   // A workspace export (C6): a zip, streamed from storage, once.
   'GET /workspaces/:workspaceId/exports/:exportId/download/:token',
+  // GitHub's webhook (C7): signed bytes from GitHub, not a client call.
+  'POST /github/webhook/:workspaceId',
 ];
 
 describe('route contracts', () => {

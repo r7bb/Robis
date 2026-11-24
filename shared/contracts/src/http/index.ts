@@ -14,6 +14,7 @@ import { exportContracts } from './exports.ts';
 import { feedContracts } from './feed.ts';
 import { feedHighlightContracts } from './feed-highlights.ts';
 import { feedbackContracts } from './feedback.ts';
+import { githubContracts } from './github.ts';
 import { importContracts } from './imports.ts';
 import { insightContracts } from './insights.ts';
 import { issueContracts } from './issues.ts';
@@ -73,6 +74,7 @@ export {
   SUGGESTION_ACTIONS,
   SUGGESTION_KINDS,
 } from './feedback.ts';
+export { PULL_REQUEST_STATES } from './github.ts';
 export {
   IMPORT_CSV_MAX_BYTES,
   IMPORT_PROBLEMS_SHOWN,
@@ -145,6 +147,7 @@ export const contracts = {
   ...importContracts,
   ...webhookContracts,
   ...personalTokenContracts,
+  ...githubContracts,
 } as const satisfies Record<string, Contract>;
 
 export type ContractName = keyof typeof contracts;

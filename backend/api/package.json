@@ -13,6 +13,7 @@
     "./export-job": "./src/exports/job.ts",
     "./imports-csv": "./src/imports/csv.ts",
     "./imports-model": "./src/imports/model.ts",
+    "./github-pull-requests": "./src/github/pull-requests.ts",
     "./avatars": "./src/routes/avatars.ts",
     "./client-network": "./src/plugins/client-network.ts",
     "./contract": "./src/contract.ts",
