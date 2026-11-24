@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
+import { afterAll, afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test';
 import { runApiJobs } from '@robis/api/automation-runner';
 import { runExportJob } from '@robis/api/export-job';
 import { parseCsv } from '@robis/api/imports-csv';
@@ -257,5 +257,93 @@ describe('a Robis export', () => {
     expect(
       (await upload(owner, path, 'application/zip', new Uint8Array([1, 2, 3]))).statusCode,
     ).toBe(400);
+  });
+});
+
+describe('a GitHub repository', () => {
+  const realFetch = globalThis.fetch;
+  let asked: { url: string; auth: string | null }[] = [];
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+    asked = [];
+  });
+
+  /** GitHub, answering from fixtures; anything else goes to the real fetch. */
+  function fakeGitHub(status = 200) {
+    spyOn(globalThis, 'fetch').mockImplementation((async (input: string, init?: RequestInit) => {
+      const url = String(input);
+      if (!url.startsWith('https://api.github.com/')) return realFetch(input, init);
+      const headers = new Headers(init?.headers);
+      asked.push({ url, auth: headers.get('authorization') });
+      if (status !== 200) return new Response('{}', { status });
+      const body = url.includes('/issues/comments')
+        ? [{ issue_url: 'https://api.github.com/repos/acme/site/issues/1', body: 'Seen on Safari' }]
+        : [
+            {
+              number: 1,
+              title: 'Menu breaks',
+              body: 'On small screens',
+              state: 'open',
+              labels: [{ name: 'bug' }],
+            },
+            {
+              number: 2,
+              title: 'Old idea',
+              state: 'closed',
+              state_reason: 'not_planned',
+              labels: [],
+            },
+            { number: 3, title: 'A pull request', state: 'open', pull_request: {} },
+          ];
+      return Response.json(body);
+    }) as typeof fetch);
+  }
+
+  test('imports issues, not pull requests, with labels, comments and states; once', async () => {
+    fakeGitHub();
+    const owner = await createActor('Owner');
+    const workspace = await createWorkspace(owner);
+    const project = await createProject(owner, workspace.id);
+    const path = `/workspaces/${workspace.id}/projects/${project.id}/import/github`;
+    const payload = { repo: 'acme/site', token: 'ghp_example_token' };
+    const first = await request(path, { method: 'POST', actor: owner, payload });
+    expect(first.statusCode).toBe(200);
+    expect(first.json()).toMatchObject({ found: 2, created: 2, comments: 1, labelsCreated: 1 });
+    expect(asked.every((a) => a.auth === 'Bearer ghp_example_token')).toBe(true);
+
+    const board = await boardOf(owner, workspace.id, project.id);
+    expect(board).toEqual([
+      {
+        title: 'Menu breaks',
+        status: 'TODO',
+        priority: 'NONE',
+        labels: ['bug'],
+        comments: ['Seen on Safari'],
+      },
+      { title: 'Old idea', status: 'CANCELED', priority: 'NONE', labels: [], comments: [] },
+    ]);
+    const again = await request(path, { method: 'POST', actor: owner, payload });
+    expect(again.json()).toMatchObject({ created: 0, skipped: 2 });
+  });
+
+  test('a repository GitHub cannot find, or a name that climbs, is refused plainly', async () => {
+    fakeGitHub(404);
+    const owner = await createActor('Owner');
+    const workspace = await createWorkspace(owner);
+    const project = await createProject(owner, workspace.id);
+    const path = `/workspaces/${workspace.id}/projects/${project.id}/import/github`;
+    const missing = await request(path, {
+      method: 'POST',
+      actor: owner,
+      payload: { repo: 'acme/gone' },
+    });
+    expect(missing.statusCode).toBe(400);
+    expect(missing.json().message).toContain('no such repository');
+    const climbing = await request(path, {
+      method: 'POST',
+      actor: owner,
+      payload: { repo: 'acme/..' },
+    });
+    expect(climbing.statusCode).toBe(400);
   });
 });

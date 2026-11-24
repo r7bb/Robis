@@ -10,6 +10,7 @@ import { serve } from '../contract.ts';
 import { ApiError } from '../errors.ts';
 import { applyImport } from '../imports/apply.ts';
 import { csvIssues } from '../imports/csv.ts';
+import { GitHubRefused, githubIssues } from '../imports/github.ts';
 import type { ImportedIssue, ImportProblem } from '../imports/model.ts';
 import { NotAnExport, robisIssues } from '../imports/robis.ts';
 import {
@@ -87,6 +88,23 @@ export async function importRoutes(app: FastifyInstance, opts: { db: Database })
         throw ApiError.badRequest('Send the CSV file as text/csv', 'not_csv');
       }
       return land(request, params.projectId, 'csv', csvIssues(request.body));
+    },
+  );
+
+  serve(
+    app,
+    contracts['imports.github'],
+    { preHandler: guards },
+    async (request, { params, body }) => {
+      let read: Awaited<ReturnType<typeof githubIssues>>;
+      try {
+        read = await githubIssues(body.repo, body.token);
+      } catch (error) {
+        if (!(error instanceof GitHubRefused)) throw error;
+        const status = error.status === 429 || error.status === 502 ? error.status : 400;
+        throw new ApiError(status, 'github_refused', error.message);
+      }
+      return land(request, params.projectId, 'github', read);
     },
   );
 

@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-11-23): **1777 TypeScript tests, 106 Python tests, lint and
+Status (2026-11-23): **1779 TypeScript tests, 106 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -82,11 +82,10 @@ document, a channel and a meeting can be opened from the first run.
 **Data in and out (C6).** An admin exports a whole workspace as JSON
 lines with its images in one zip, built by a job and downloaded once
 through a five-minute single-use link, each step audited. A board imports
-issues from a CSV file or a Robis export, statuses and labels mapped, and
-a rerun adds nothing; an export imported into a fresh workspace
-reproduces issues, comments and labels. Account deletion (transfer or
-delete each owned workspace) came with B3. Import from GitHub Issues is
-next.
+issues from a CSV file, a Robis export or a GitHub repository, statuses
+and labels mapped, and a rerun adds nothing; an export imported into a
+fresh workspace reproduces issues, comments and labels. Account deletion
+(transfer or delete each owned workspace) came with B3.
 
 **Load, soak and failure drills (E2).** The worker, gateway, Postgres and
 ML service each broken on purpose in CI, recovering with no lost write

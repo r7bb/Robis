@@ -4,9 +4,9 @@ import { contract } from './contract.ts';
 
 /**
  * Importing issues into a board (C6): from a CSV file or a Robis workspace
- * export, each sent as the file itself. Statuses and labels are mapped;
- * an issue the project has imported before is skipped, so running the same
- * import twice creates nothing new.
+ * export, each sent as the file itself, or from a GitHub repository.
+ * Statuses and labels are mapped; an issue the project has imported before
+ * is skipped, so running the same import twice creates nothing new.
  */
 
 /** The largest CSV file taken. */
@@ -36,6 +36,23 @@ export const importContracts = {
       'Import issues from a CSV file whose first row names its columns (title, description, status, priority, labels, id).',
     params: projectParams,
     rawBody: 'text/csv',
+    response: importResult,
+  }),
+  'imports.github': contract({
+    method: 'POST',
+    path: '/workspaces/:workspaceId/projects/:projectId/import/github',
+    summary:
+      "Import a GitHub repository's issues (not its pull requests), with labels and comments. The token, for a private repository or a higher rate limit, is used for this import alone and never kept.",
+    params: projectParams,
+    body: z.object({
+      repo: z
+        .string()
+        .trim()
+        .regex(/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})\/[A-Za-z0-9._-]{1,100}$/, 'As owner/name')
+        // Never "." or "..", which a URL would read as a step up GitHub's paths.
+        .refine((repo) => !/\/\.{1,2}$/.test(repo), 'As owner/name'),
+      token: z.string().trim().min(1).max(255).optional(),
+    }),
     response: importResult,
   }),
   'imports.robis': contract({

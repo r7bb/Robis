@@ -202,9 +202,10 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
-- **Import issues from CSV or a Robis export.** A board can take issues from
-  a CSV file or a Robis workspace export, with statuses and labels mapped,
-  and running the same import again adds nothing.
+- **Import issues from CSV, a Robis export or GitHub.** A board can take
+  issues from a CSV file, a Robis workspace export or a GitHub repository,
+  with statuses and labels mapped, and running the same import again adds
+  nothing.
 - **Export a whole workspace.** An admin can export everything a workspace
   holds, as JSON lines with its images in one zip, built in the background
   and downloaded once.

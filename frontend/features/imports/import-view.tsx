@@ -1,17 +1,17 @@
 'use client';
 
-import { IMPORT_CSV_MAX_BYTES, IMPORT_ZIP_MAX_BYTES } from '@robis/shared';
+import { contracts, IMPORT_CSV_MAX_BYTES, IMPORT_ZIP_MAX_BYTES } from '@robis/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import { useState } from 'react';
+import { type FormEvent, useState } from 'react';
 import { Button, InlineError } from '../../components/ui/primitives.tsx';
-import { BASE_URL } from '../../lib/api.ts';
+import { ApiError, BASE_URL, call } from '../../lib/api.ts';
 import { boardHref } from '../../lib/links.ts';
 
 /**
- * Import issues into a board (C6), from a CSV file or a Robis workspace
- * export. Each file is sent as it is; statuses and labels are mapped, and
- * running the same import again adds nothing.
+ * Import issues into a board (C6), from a CSV file, a Robis workspace
+ * export or a GitHub repository. Each file is sent as it is; statuses and
+ * labels are mapped, and running the same import again adds nothing.
  */
 
 type Result = {
@@ -143,11 +143,97 @@ function SourceForm({
   );
 }
 
+const FIELD =
+  'min-w-0 flex-1 rounded-md border border-line bg-raised px-3 py-1.5 text-sm text-content outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60';
+
+/** Issues from a GitHub repository; the token is sent for this import and kept nowhere. */
+function GitHubForm({ workspaceId, projectId }: { workspaceId: string; projectId: string }) {
+  const client = useQueryClient();
+  const [repo, setRepo] = useState('');
+  const [token, setToken] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<Result | null>(null);
+
+  async function send(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+    setResult(null);
+    try {
+      const done = await call(contracts['imports.github'], {
+        params: { workspaceId, projectId },
+        body: { repo: repo.trim(), ...(token.trim() ? { token: token.trim() } : {}) },
+      });
+      setResult(done);
+      setToken('');
+      await client.invalidateQueries();
+    } catch (cause) {
+      setError(cause instanceof ApiError ? cause.message : 'The import did not work.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section aria-labelledby="import-github-title" className="rounded-xl border border-line p-4">
+      <h2 id="import-github-title" className="text-sm font-semibold text-content">
+        From GitHub
+      </h2>
+      <p id="import-github-hint" className="mt-1 max-w-[65ch] text-xs leading-relaxed text-muted">
+        A repository&rsquo;s issues, not its pull requests, with their labels and comments. Open
+        issues arrive to do, closed ones done. A token is needed only for a private repository or a
+        higher rate limit; it is used for this import alone and never kept. A read-only token is
+        enough.
+      </p>
+      <form onSubmit={send} className="mt-3 flex flex-wrap items-center gap-2">
+        <label htmlFor="import-github-repo" className="sr-only">
+          Repository, as owner/name
+        </label>
+        <input
+          id="import-github-repo"
+          className={FIELD}
+          placeholder="owner/name"
+          aria-describedby="import-github-hint"
+          autoCapitalize="none"
+          spellCheck={false}
+          value={repo}
+          onChange={(event) => setRepo(event.target.value)}
+        />
+        <label htmlFor="import-github-token" className="sr-only">
+          Token (optional)
+        </label>
+        <input
+          id="import-github-token"
+          className={FIELD}
+          type="password"
+          autoComplete="off"
+          placeholder="Token (optional)"
+          value={token}
+          onChange={(event) => setToken(event.target.value)}
+        />
+        <Button type="submit" variant="primary" disabled={!repo.trim() || busy}>
+          {busy ? 'Importing…' : 'Import'}
+        </Button>
+      </form>
+      {error ? (
+        <div className="mt-2">
+          <InlineError>{error}</InlineError>
+        </div>
+      ) : null}
+      <p role="status" className={result ? 'mt-2 text-sm text-content' : 'sr-only'}>
+        {result ? summary(result) : ''}
+      </p>
+    </section>
+  );
+}
+
 export function ImportView({ workspaceId, projectId }: { workspaceId: string; projectId: string }) {
   return (
     <div className="space-y-4">
       <SourceForm workspaceId={workspaceId} projectId={projectId} source="csv" />
       <SourceForm workspaceId={workspaceId} projectId={projectId} source="robis" />
+      <GitHubForm workspaceId={workspaceId} projectId={projectId} />
       <Link
         href={boardHref(workspaceId, projectId)}
         className="inline-block text-sm text-accent-soft hover:underline"
