@@ -202,6 +202,10 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Personal access tokens for the API, read only unless allowed to write.**
+  A person can make tokens for scripts that use the API as them: read only
+  unless allowed to write, shown once, stored as a hash, revoked at once,
+  with the last time each was used.
 - **Outgoing webhooks, signed, retried and logged.** Admins can send chosen
   events to another system: each delivery signed with HMAC, carrying an id a
   receiver can drop repeats by, retried over two and a half hours and shown
@@ -210,9 +214,6 @@ no write lost and nothing done twice.
   issues from a CSV file, a Robis workspace export or a GitHub repository,
   with statuses and labels mapped, and running the same import again adds
   nothing.
-- **Export a whole workspace.** An admin can export everything a workspace
-  holds, as JSON lines with its images in one zip, built in the background
-  and downloaded once.
 
 <!-- latest:end -->
 

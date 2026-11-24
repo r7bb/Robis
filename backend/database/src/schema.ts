@@ -2072,3 +2072,30 @@ export const webhookDeliveries = pgTable(
     index('webhook_deliveries_log_idx').on(t.webhookId, t.createdAt),
   ],
 );
+
+/**
+ * A personal access token (C7): a person's key for the REST API, shown
+ * once and stored as its SHA-256, with scopes (read, or read and write), an
+ * optional expiry and the last time it was used. It acts as its owner, in
+ * any workspace they belong to, on workspace routes only.
+ */
+export const personalAccessTokens = pgTable(
+  'personal_access_tokens',
+  {
+    id: id(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    tokenHash: text('token_hash').notNull(),
+    scopes: text('scopes').array().notNull(),
+    createdAt: createdAt(),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex('personal_access_tokens_hash_key').on(t.tokenHash),
+    index('personal_access_tokens_user_idx').on(t.userId),
+  ],
+);

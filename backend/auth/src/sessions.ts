@@ -1,5 +1,6 @@
 import {
   type Executor,
+  personalAccessTokens,
   sessions,
   twoFactor,
   users,
@@ -7,7 +8,7 @@ import {
   workspaces,
 } from '@robis/database';
 import { isUuid, type Role, TERMS_VERSION, type UserKind } from '@robis/shared';
-import { and, desc, eq, gt, lt, ne, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, isNull, lt, ne, sql } from 'drizzle-orm';
 import {
   generateSessionToken,
   hashSessionToken,
@@ -166,6 +167,12 @@ export async function revokeSession(db: Executor, token: string): Promise<void> 
  */
 export async function revokeAllSessions(db: Executor, userId: string): Promise<void> {
   await db.delete(sessions).where(eq(sessions.userId, userId));
+  // And every API token (C7): a password change or a sign-out everywhere is
+  // how someone shuts out a key they no longer trust, and a token is one.
+  await db
+    .update(personalAccessTokens)
+    .set({ revokedAt: new Date() })
+    .where(and(eq(personalAccessTokens.userId, userId), isNull(personalAccessTokens.revokedAt)));
 }
 
 /**

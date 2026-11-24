@@ -64,10 +64,14 @@ server.
 | The MCP server as a way round the API | It holds no authority of its own: every tool calls the API with the agent's own token, so the same permissions, rate limits and audit apply | `backend/mcp/` |
 | The worker's own agents (triage, shots) kept in power | Each run mints a token that lasts five minutes and is revoked when the run ends | `backend/worker/src/triage.ts`, `shots.ts` |
 | An agent's change going unnoticed | Every write is audited as an agent's; each change is recorded with the value before, can be undone in one click while nobody has changed it since, and is judged kept, edited or reverted after a week | `backend/database/src/agent-changes.ts` |
+| A leaked personal access token (C7) | It acts only as its owner, with their role, on workspace routes; never on account routes, so it cannot make another, change a password or keep itself alive; read only unless its owner chose write; made only with the password; stored as a hash, shown once, revoked at once and by any password change or sign-out everywhere, optionally expiring, and its last use is shown | `backend/auth/src/personal-tokens.ts`, `backend/api/src/plugins/authz.ts` |
 | An agent skewing the hint figures | Hint feedback refuses agents | `backend/api/src/routes/feedback.ts` |
 | A prompt-injected agent | Robis runs no model on agents' behalf by default; an agent outside Robis is as trustworthy as whoever runs it, and is bounded by its role above | |
 
-**Left open.** A member-role agent can do anything a member can,
+**Left open.** The audit trail names the person behind a personal token, not
+the token, so a change made through one reads as theirs. A write token held
+by an admin can do anything that admin can, including make webhooks and
+agent tokens that outlive it; there is no narrower scope yet. A member-role agent can do anything a member can,
 including deleting issues; there is no narrower agent role yet. Revoking a
 token is immediate, but a request already in flight finishes.
 

@@ -45,6 +45,26 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
+    area: 'Security',
+    title: 'Personal access tokens for the API, read only unless allowed to write',
+    brief:
+      'A person can make tokens for scripts that use the API as them: read only unless allowed to write, shown once, stored as a hash, revoked at once, with the last time each was used.',
+    summary:
+      'On the account page a person makes a token, with their password, says what it is for, whether it may write and how long it lasts (30, 90 or 365 days, or until revoked). It is shown once and kept only as its SHA-256. Sent as a bearer token it acts as its owner, with their role, in any workspace they belong to, on workspace routes only: account routes answer it as they answer nobody, so a leaked token cannot make another, change a password or keep itself alive. A token without the write scope gets 403 on anything but reading. The list shows when each was last used, revoking one refuses its next request, a password change or a sign-out everywhere revokes them all, and making and revoking each go in the account’s own trail.',
+    checked:
+      'The test the track asked for: a read-only token reads issues and gets 403 filing one, while a write token files one, recorded as its owner. A token refused on account routes and the workspace list, given 404 on a workspace its owner is not in, and refused at once once revoked or expired; its last use recorded; making and revoking both in the account trail; a wrong password refused, and every token revoked with all sessions. A security review of the tokens, whose finding that tokens outlived a password change was fixed before this shipped. The full suite, lint, typecheck, knip and docs:links, and the stack smoke test.',
+    feature: {
+      name: 'API tokens',
+      where: 'Account, API tokens',
+      layers: [
+        'Screen: make a token with its scope and lifetime, shown once; the list with last use; revoke',
+        'API: tokens.* for the signed-in owner; a bearer token honoured on workspace routes, its scope checked with the role',
+        'Database: personal_access_tokens with only the hash, scopes, expiry and last use',
+      ],
+    },
+  },
+  {
+    date: '2026-11-24',
     area: 'Product',
     title: 'Outgoing webhooks, signed, retried and logged',
     brief:

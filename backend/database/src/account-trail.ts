@@ -42,6 +42,9 @@ export const ACCOUNT_EVENT_TYPES = [
   // Passkeys (C4).
   'auth.passkey_added',
   'auth.passkey_removed',
+  // Personal access tokens for the API (C7).
+  'auth.token_created',
+  'auth.token_revoked',
 ] as const;
 
 export type AccountEventType = (typeof ACCOUNT_EVENT_TYPES)[number];

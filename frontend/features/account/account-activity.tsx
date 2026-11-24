@@ -41,6 +41,14 @@ const LABELS: Record<string, Label> = {
       typeof payload.name === 'string' ? `Passkey added: ${payload.name}` : 'Passkey added',
   },
   'auth.passkey_removed': { text: () => 'Passkey removed' },
+  'auth.token_created': {
+    text: (payload) =>
+      `API token made${typeof payload.name === 'string' ? `: ${payload.name}` : ''}${payload.write ? ', able to write' : ', read only'}`,
+  },
+  'auth.token_revoked': {
+    text: (payload) =>
+      `API token revoked${typeof payload.name === 'string' ? `: ${payload.name}` : ''}`,
+  },
   'auth.not_me': {
     text: () => 'Not me: signed out everywhere and passkeys removed, from the new-browser email',
     flag: true,

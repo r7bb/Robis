@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Personal access tokens for the API, read only unless allowed to write**
+  (2026-11-24). A person can make tokens for scripts that use the API as
+  them: read only unless allowed to write, shown once, stored as a hash,
+  revoked at once, with the last time each was used.
 - **Outgoing webhooks, signed, retried and logged** (2026-11-24). Admins can
   send chosen events to another system: each delivery signed with HMAC,
   carrying an id a receiver can drop repeats by, retried over two and a half

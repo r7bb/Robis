@@ -1,6 +1,7 @@
 import {
   type AuthenticatedUser,
   resolveAgentToken,
+  resolvePersonalToken,
   resolveSession,
   resolveSessionIn,
 } from '@robis/auth';
@@ -25,6 +26,8 @@ declare module 'fastify' {
     membership?: { workspaceId: string; role: Role };
     /** Set for a request made with an agent token (B6): which token. */
     agentToken?: { id: string; perRun: boolean };
+    /** Set for a request made with a personal access token (C7): which, and its scopes. */
+    personalToken?: { id: string; scopes: string[] };
   }
 }
 
@@ -175,7 +178,8 @@ export function attachUser(db: Database): preHandlerHookHandler {
 }
 
 /**
- * An agent's token (B5), honoured on workspace routes only: everything an
+ * An agent's token (B5), or a person's own (C7), honoured on workspace
+ * routes only: everything an
  * agent may do is inside the one workspace its token names. Account routes,
  * the workspace list and the rest answer an agent as they answer nobody.
  * A session cookie wins when both are sent, so a browser is never an agent.
@@ -185,11 +189,35 @@ export async function attachAgent(db: Database, request: FastifyRequest) {
   const { workspaceId } = (request.params ?? {}) as { workspaceId?: string };
   if (!secret || !workspaceId) return;
 
+  // A person's own token (C7): the same reach, as that person.
+  const personal = await resolvePersonalToken(db, secret, workspaceId);
+  if (personal) {
+    request.user = personal.user;
+    request.resolvedRole = {
+      workspaceId,
+      role: personal.role,
+      requireTwoFactor: personal.requireTwoFactor,
+    };
+    request.personalToken = personal.token;
+    return;
+  }
+
   const resolved = await resolveAgentToken(db, secret, workspaceId);
   if (!resolved) return;
   request.user = resolved.user;
   request.resolvedRole = { workspaceId, role: resolved.role, requireTwoFactor: false };
   request.agentToken = resolved.token;
+}
+
+/** Methods that only read, which a token without the write scope may use. */
+const READS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+/** A personal token without the write scope reads and nothing more (C7). */
+function assertTokenMayDo(request: FastifyRequest) {
+  const token = request.personalToken;
+  if (token && !READS.has(request.method) && !token.scopes.includes('write')) {
+    throw ApiError.forbidden('This token can only read');
+  }
 }
 
 export const requireAuth: preHandlerHookHandler = async (request: FastifyRequest) => {
@@ -238,6 +266,7 @@ export function requireMembership(
     // member is told why they cannot go in yet.
     if (!allowUnsettled) await assertSettledIn(db, request, user, workspaceId);
     if (!can(member.role, permission)) throw ApiError.forbidden();
+    assertTokenMayDo(request);
 
     request.membership = { workspaceId, role: member.role };
   };

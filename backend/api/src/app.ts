@@ -56,6 +56,7 @@ import { notificationSettingRoutes } from './routes/notification-settings.ts';
 import { notificationRoutes } from './routes/notifications.ts';
 import { overviewRoutes } from './routes/overview.ts';
 import { passkeyRoutes } from './routes/passkeys.ts';
+import { personalTokenRoutes } from './routes/personal-tokens.ts';
 import { postRoutes } from './routes/posts.ts';
 import { profileRoutes } from './routes/profiles.ts';
 import { projectRoutes } from './routes/projects.ts';
@@ -347,6 +348,7 @@ export function buildApp({
   app.register(exportRoutes, { db, storage });
   app.register(importRoutes, { db });
   app.register(webhookRoutes, { db });
+  app.register(personalTokenRoutes, { db });
   app.register(searchRoutes, { db, limits });
 
   return app;

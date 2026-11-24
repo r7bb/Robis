@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useId, useState } from 'react';
 import { ACCOUNT_EVENTS_KEY, AccountActivity } from '../../features/account/account-activity.tsx';
+import { ApiTokens } from '../../features/account/api-tokens.tsx';
 import { CalendarFeed } from '../../features/account/calendar-feed.tsx';
 import { DeleteAccount } from '../../features/account/delete-account.tsx';
 import { NotificationSettings } from '../../features/account/notification-settings.tsx';
@@ -69,6 +70,9 @@ export default function AccountPage() {
       <SessionsSection />
       <Section title="Calendar feed" id="calendar">
         <CalendarFeed />
+      </Section>
+      <Section title="API tokens" id="tokens">
+        <ApiTokens />
       </Section>
       <Section title="Notifications">
         <NotificationSettings />

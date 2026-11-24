@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-11-23): **1786 TypeScript tests, 106 Python tests, lint and
+Status (2026-11-23): **1791 TypeScript tests, 106 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -91,8 +91,10 @@ fresh workspace reproduces issues, comments and labels. Account deletion
 chosen events, HTTPS only, signed with HMAC over a timestamp and the body,
 a delivery id that stays the same across retries, five tries over two and
 a half hours and a delivery log for admins; payloads hold ids and only what the
-webhook's maker may still read. Personal access tokens, GitHub pull
-request links and a published API reference are next.
+webhook's maker may still read. Personal access tokens for the API:
+read only unless allowed to write, shown once, stored as a hash, honoured
+on workspace routes only, revoked at once, with their last use. GitHub
+pull request links and a published API reference are next.
 
 **Load, soak and failure drills (E2).** The worker, gateway, Postgres and
 ML service each broken on purpose in CI, recovering with no lost write

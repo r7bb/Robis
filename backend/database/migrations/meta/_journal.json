@@ -505,6 +505,13 @@
       "when": 1795479933481,
       "tag": "0071_workspace_webhooks",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1795480709141,
+      "tag": "0072_personal_access_tokens",
+      "breakpoints": true
     }
   ]
 }

@@ -70,6 +70,7 @@ const TABLES = [
   'issue_imports',
   'webhook_deliveries',
   'workspace_webhooks',
+  'personal_access_tokens',
   'notifications',
   'document_updates',
   'documents',

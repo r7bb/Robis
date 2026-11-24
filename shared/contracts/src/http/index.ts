@@ -25,6 +25,7 @@ import { notificationSettingContracts, unsubscribeContracts } from './notificati
 import { notificationContracts } from './notifications.ts';
 import { overviewContracts } from './overview.ts';
 import { passkeyContracts } from './passkeys.ts';
+import { personalTokenContracts } from './personal-tokens.ts';
 import { profileContracts } from './profiles.ts';
 import { projectContracts } from './projects.ts';
 import { pushContracts } from './push.ts';
@@ -94,6 +95,7 @@ export {
 } from './issues-bulk.ts';
 export { ISSUE_LABELS_MAX } from './labels.ts';
 export { MY_MEETINGS_LIMIT, MY_MEETINGS_MAX_HOURS } from './meetings.ts';
+export { TOKEN_LIFETIMES, TOKEN_SCOPES, TOKENS_MAX } from './personal-tokens.ts';
 export { SAVED_VIEWS_PER_PROJECT } from './saved-views.ts';
 export {
   WEBHOOK_ATTEMPTS,
@@ -142,6 +144,7 @@ export const contracts = {
   ...exportContracts,
   ...importContracts,
   ...webhookContracts,
+  ...personalTokenContracts,
 } as const satisfies Record<string, Contract>;
 
 export type ContractName = keyof typeof contracts;
