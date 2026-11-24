@@ -6,6 +6,12 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Spaces for questions and answers, reactions on celebrations, a livelier
+  calendar and two tinted light themes** (2026-11-24). Spaces bring
+  forum-style topics into the workspace: ask, reply in nested threads, mark
+  the answer and see who has been most helpful. Celebrations take reactions,
+  the calendar marks today and now in colour, Mist and Meadow are light
+  themes that are not all white, and the agent is now called RoRo.
 - **Every dialog by keyboard, and Robis that says when it cannot be
   reached** (2026-11-24). Each dialog now opens from the keyboard, keeps
   focus inside, has a name, and closes on Escape with focus back where it

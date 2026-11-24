@@ -10,7 +10,16 @@
  * shifts per workspace is a red nobody learns to read.
  */
 
-export const THEME_IDS = ['midnight', 'graphite', 'forest', 'ember', 'orchid', 'daylight'] as const;
+export const THEME_IDS = [
+  'midnight',
+  'graphite',
+  'forest',
+  'ember',
+  'orchid',
+  'daylight',
+  'mist',
+  'meadow',
+] as const;
 export type ThemeId = (typeof THEME_IDS)[number];
 
 export const DEFAULT_THEME: ThemeId = 'midnight';
@@ -163,6 +172,46 @@ export const THEMES: Record<ThemeId, Theme> = {
       // supplies its own so the direction is a property of the palette.
       accentHover: '67 56 202',
       accentSoft: '67 56 202',
+      accentContrast: '255 255 255',
+    },
+  },
+
+  // Light, but not white: the page is tinted and cards sit a shade lighter
+  // on it, so the eye has somewhere softer to rest than paper.
+  mist: {
+    id: 'mist',
+    label: 'Mist',
+    colorScheme: 'light',
+    swatch: '#5458d6',
+    tokens: {
+      surface: '236 239 247',
+      raised: '246 247 252',
+      border: '212 218 233',
+      content: '22 27 45',
+      muted: '70 78 102',
+      faint: '84 92 116',
+      accent: '84 88 214',
+      accentHover: '67 66 190',
+      accentSoft: '67 66 190',
+      accentContrast: '255 255 255',
+    },
+  },
+
+  meadow: {
+    id: 'meadow',
+    label: 'Meadow',
+    colorScheme: 'light',
+    swatch: '#15803d',
+    tokens: {
+      surface: '235 243 237',
+      raised: '246 250 246',
+      border: '207 223 212',
+      content: '19 36 27',
+      muted: '62 87 73',
+      faint: '76 99 86',
+      accent: '21 128 61',
+      accentHover: '22 101 52',
+      accentSoft: '22 101 52',
       accentContrast: '255 255 255',
     },
   },

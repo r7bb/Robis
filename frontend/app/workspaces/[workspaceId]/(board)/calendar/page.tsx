@@ -9,6 +9,7 @@ export default function CalendarPage() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   return (
     <PageFrame
+      wide
       title="Calendar"
       lead="This workspace's meetings and due dates, week by week, in your own time zone."
     >

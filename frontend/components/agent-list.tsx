@@ -90,6 +90,20 @@ export function AgentList({ workspaceId }: { workspaceId: string }) {
     onSuccess: refresh,
   });
 
+  // Renaming in place: the agent keeps its username, tokens and history.
+  const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null);
+  const rename = useMutation({
+    mutationFn: ({ id, name }: { id: string; name: string }) =>
+      call(contracts['agents.rename'], {
+        params: { workspaceId, agentId: id },
+        body: { name: name.trim() },
+      }),
+    onSuccess: () => {
+      setRenaming(null);
+      refresh();
+    },
+  });
+
   async function copy() {
     if (!issued) return;
     try {
@@ -260,7 +274,35 @@ export function AgentList({ workspaceId }: { workspaceId: string }) {
                   <Avatar name={agent.name} seed={agent.id} avatar={agent.avatar} size="md" />
                   <span className="min-w-0">
                     <span className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm text-content">{agent.name}</span>
+                      {renaming?.id === agent.id ? (
+                        <form
+                          className="flex items-center gap-1.5"
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            if (renaming.name.trim()) rename.mutate(renaming);
+                          }}
+                        >
+                          <input
+                            aria-label={`New name for ${agent.name}`}
+                            value={renaming.name}
+                            maxLength={60}
+                            onChange={(event) =>
+                              setRenaming({ id: agent.id, name: event.target.value })
+                            }
+                            onKeyDown={(event) => event.key === 'Escape' && setRenaming(null)}
+                            className="w-36 rounded-md border border-line bg-surface px-2 py-0.5 text-sm text-content outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
+                          />
+                          <button
+                            type="submit"
+                            disabled={rename.isPending}
+                            className="text-xs text-accent-soft hover:underline"
+                          >
+                            Save
+                          </button>
+                        </form>
+                      ) : (
+                        <span className="text-sm text-content">{agent.name}</span>
+                      )}
                       <AgentBadge />
                       <RoleBadge role={agent.role} />
                     </span>
@@ -278,6 +320,14 @@ export function AgentList({ workspaceId }: { workspaceId: string }) {
                   </span>
                 </span>
                 <span className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setRenaming({ id: agent.id, name: agent.name })}
+                    aria-label={`Rename ${agent.name}`}
+                    className="rounded-md px-2 py-1 text-xs text-muted transition hover:text-content"
+                  >
+                    Rename
+                  </button>
                   <button
                     type="button"
                     onClick={() => issue.mutate(agent)}

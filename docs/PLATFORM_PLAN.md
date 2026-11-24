@@ -283,6 +283,34 @@ issues and memberships. It shows a person's join date and issue count to
 their team, which members could already see; flagged with the rest of
 Phase 2b for legal review. Phase 2c is complete.
 
+**Spaces, 2026-11-24 (asked for by the owner):** forum-style topics inside
+the workspace. A thread is a question, idea, discussion or tip; replies
+nest six deep; whoever asked, or an admin, marks the answer; reactions
+(now five: Celebrate, Helpful, Support, Thanks, Insightful) go on threads,
+replies, posts and celebrations. Most helpful ranks people by Helpful
+marks received and answers given, this week, month or of all time, and
+counts nothing anyone does for themselves. It ranks colleagues by how
+their replies were received; workspace members can see it, and it is
+flagged with the rest of Phase 2b for legal and HR review before a
+company relies on it for anything beyond a thank you.
+
+Ideas for the next slices of Spaces, none built yet:
+
+- Tell the asker when their question gets a reply, and the answerer
+  when theirs is marked the answer, through the existing inbox.
+- Follow a space, with new threads in the inbox, and a weekly digest of
+  unanswered questions.
+- Similar threads shown while a question is typed, from the duplicate
+  finder issues already use, so the same question is not asked twice.
+- Turn a thread into an issue, or link one, when an answer needs work.
+- Pin a thread to the top of a space, and admins able to rename or
+  archive a space.
+- @mentions in replies, and search across threads and replies.
+- A space shown on the Feed when it is busy, and the week’s best answer
+  as a celebration.
+- Badges earned slowly (first answer, ten Helpful marks) that live on a
+  profile, never a streak.
+
 ## Phase 3. Agents as teammates, over MCP (M)
 
 - Users gain a `kind` (human or agent). Agents are workspace members with

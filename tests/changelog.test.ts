@@ -13,8 +13,11 @@ import { CHANGELOG, type Entry } from '@robis/web/features/landing/changelog.ts'
  */
 
 const ROOT = join(import.meta.dir, '..');
-const README = readFileSync(join(ROOT, 'README.md'), 'utf8');
-const WHATS_NEW = readFileSync(join(ROOT, 'docs', 'WHATS_NEW.md'), 'utf8');
+// The lists wrap at 76 columns, so a long title can span lines: compare
+// with every run of whitespace read as one space.
+const flat = (text: string) => text.replace(/\s+/g, ' ');
+const README = flat(readFileSync(join(ROOT, 'README.md'), 'utf8'));
+const WHATS_NEW = flat(readFileSync(join(ROOT, 'docs', 'WHATS_NEW.md'), 'utf8'));
 
 describe('the changelog', () => {
   test.each(CHANGELOG.map((entry) => [entry.title]))('What\'s new lists "%s"', (title) => {

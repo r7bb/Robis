@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { uuid } from '../schemas.ts';
 import { workspaceParams } from './common.ts';
 import { contract, timestamp } from './contract.ts';
+import { reaction, reactions } from './feed.ts';
 
 /**
  * What the Feed shows beside the posts (Phase 2c): how each project is
@@ -61,6 +62,13 @@ const celebration = z.object({
   projectName: z.string().nullable(),
   /** Issues done, or years with the team; null where there is no number. */
   count: z.number().int().positive().nullable(),
+  /** Who reacted, by id, for each reaction. */
+  reactions,
+});
+
+const celebrationParams = workspaceParams.extend({
+  celebrationId: z.string().max(120),
+  reaction,
 });
 
 export const feedHighlightContracts = {
@@ -81,5 +89,21 @@ export const feedHighlightContracts = {
       'Milestones from the last seven days worth a well done: a project finished, an issue milestone, an anniversary, a new teammate. Never for anyone who turned celebrations off, nor for agents.',
     params: workspaceParams,
     response: z.object({ celebrations: z.array(celebration) }),
+  }),
+  'feed.reactToCelebration': contract({
+    method: 'PUT',
+    path: '/workspaces/:workspaceId/feed/celebrations/:celebrationId/reactions/:reaction',
+    summary: 'React to one of this week’s celebrations, the same reactions a post has.',
+    params: celebrationParams,
+    status: 204,
+    response: null,
+  }),
+  'feed.unreactToCelebration': contract({
+    method: 'DELETE',
+    path: '/workspaces/:workspaceId/feed/celebrations/:celebrationId/reactions/:reaction',
+    summary: 'Take back a reaction to a celebration.',
+    params: celebrationParams,
+    status: 204,
+    response: null,
   }),
 } as const;

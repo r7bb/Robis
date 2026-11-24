@@ -97,7 +97,7 @@ describe('posting', () => {
       kind: 'text',
       authorId: member.id,
       commentCount: 0,
-      reactions: { celebrate: [], helpful: [], support: [] },
+      reactions: { celebrate: [], helpful: [], support: [], thanks: [], insightful: [] },
       photo: null,
     });
 
@@ -233,7 +233,13 @@ describe('reactions and comments', () => {
     expect((await react(owner, 'love')).statusCode).toBe(400);
 
     let shown = (await feedOf(owner, workspace.id)).items[0].post.reactions;
-    expect(shown).toEqual({ celebrate: [owner.id, member.id], helpful: [owner.id], support: [] });
+    expect(shown).toEqual({
+      celebrate: [owner.id, member.id],
+      helpful: [owner.id],
+      support: [],
+      thanks: [],
+      insightful: [],
+    });
     await react(owner, 'celebrate', 'DELETE');
     shown = (await feedOf(owner, workspace.id)).items[0].post.reactions;
     expect(shown.celebrate).toEqual([member.id]);

@@ -1,104 +1,156 @@
 'use client';
 
-import { contracts, type ResponseOf } from '@robis/shared';
+import { contracts } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
-import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { call } from '../../lib/api.ts';
 import {
   type Day,
   dateKey,
   dayLabel,
-  hourAt,
-  lanes,
+  isoWeek,
+  isWeekend,
   placeOn,
+  sameDay,
   shiftWeeks,
+  wallToday,
   weekOf,
+  weekTitle,
 } from './week-model.ts';
+import {
+  DAY_PX,
+  DayColumn,
+  DueStrip,
+  HourRail,
+  type Occurrence,
+  time,
+  toneOf,
+} from './week-parts.tsx';
 
 /**
  * The week (B8): the workspace's meetings laid out in your own time zone,
  * repeats included, and the issues due each day along the top. A grid on
- * a wide screen; a list of days on a phone.
+ * a wide screen; a list of days on a phone. Today is marked, and a line
+ * shows the time now.
  */
 
-type Week = ResponseOf<(typeof contracts)['calendar.week']>;
-type Occurrence = Week['meetings'][number];
-
-const HOURS = [0, 3, 6, 9, 12, 15, 18, 21];
-/** The grid's height for a whole day, in pixels: an hour is 40. */
-const DAY_PX = 24 * 40;
 /** The working day starts here, so the grid opens scrolled to it. */
 const FIRST_HOUR_SHOWN = 7;
-const time = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
+const MINUTE_MS = 60_000;
+const weekday = new Intl.DateTimeFormat('en-GB', { weekday: 'short', timeZone: 'UTC' });
+const shortDay = (day: Day) => weekday.format(new Date(Date.UTC(day.year, day.month - 1, day.day)));
 
-const tone = (meeting: Occurrence) =>
-  meeting.myResponse === null
-    ? 'border-line bg-surface text-muted'
-    : meeting.myResponse === 'pending'
-      ? 'border-dashed border-accent-soft/60 bg-raised text-content'
-      : 'border-accent-soft/50 bg-accent/15 text-content';
+/** The time now, ticking once a minute so the line for now moves. */
+function useNow() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), MINUTE_MS);
+    return () => clearInterval(timer);
+  }, []);
+  return now;
+}
 
-function DayColumn({ day, zone, meetings }: { day: Day; zone: string; meetings: Occurrence[] }) {
-  const placed = meetings
-    .map((meeting) => ({
-      meeting,
-      at: placeOn(day, new Date(meeting.startsAt), meeting.durationMinutes, zone),
-    }))
-    .filter(
-      (item): item is { meeting: Occurrence; at: { top: number; height: number } } =>
-        item.at !== null,
-    );
-  const laid = lanes(placed.map(({ at }) => ({ start: at.top, end: at.top + at.height })));
+const Chevron = ({ back }: { back?: boolean }) => (
+  <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3.5 w-3.5" fill="none">
+    <path
+      d={back ? 'M10 3 5 8l5 5' : 'm6 3 5 5-5 5'}
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+function plural(count: number, one: string, many: string) {
+  return `${count} ${count === 1 ? one : many}`;
+}
+
+function DayHeading({ day, today }: { day: Day; today: boolean }) {
   return (
-    <div className="relative border-l border-line" style={{ height: DAY_PX }}>
-      {HOURS.map((hour) => (
-        <div
-          key={hour}
-          className="absolute inset-x-0 border-t border-line/50"
-          style={{ top: `${hourAt(day, hour, zone) * 100}%` }}
-        />
-      ))}
-      {placed.map(({ meeting, at }, i) => (
-        <div
-          key={`${meeting.meetingId}-${meeting.week}`}
-          className={`absolute overflow-hidden rounded-md border px-1.5 py-1 text-[11px] leading-tight ${tone(meeting)}`}
-          style={{
-            top: `${at.top * 100}%`,
-            height: `max(${at.height * 100}%, 1.25rem)`,
-            left: `${(laid[i]!.lane / laid[i]!.lanes) * 100}%`,
-            width: `${100 / laid[i]!.lanes}%`,
-          }}
-        >
-          <p className="truncate font-medium">{meeting.title}</p>
-          <p className="truncate text-faint">{time.format(new Date(meeting.startsAt))}</p>
-        </div>
-      ))}
-    </div>
+    <p className="flex items-baseline gap-1.5 px-2 pb-1 pt-2">
+      <span
+        className={`text-[11px] font-medium uppercase tracking-wide ${today ? 'text-accent-soft' : isWeekend(day) ? 'text-faint' : 'text-muted'}`}
+      >
+        {shortDay(day)}
+      </span>
+      <span
+        className={`grid h-7 min-w-7 place-items-center rounded-full px-1 text-base font-semibold tabular-nums ${today ? 'bg-accent text-accent-contrast' : 'text-content'}`}
+      >
+        {day.day}
+      </span>
+      {today ? <span className="sr-only">(today)</span> : null}
+    </p>
   );
 }
 
-function DueStrip({ workspaceId, issues }: { workspaceId: string; issues: Week['issues'] }) {
-  if (issues.length === 0) return <div className="min-h-6" />;
+function PhoneList({
+  days,
+  today,
+  meetingsOn,
+  dueOn,
+}: {
+  days: Day[];
+  today: Day;
+  meetingsOn: (day: Day) => Occurrence[];
+  dueOn: (day: Day) => { id: string; key: string; title: string }[];
+}) {
   return (
-    <ul className="space-y-1 px-1 pb-1">
-      {issues.map((issue) => (
-        <li key={issue.id}>
-          <Link
-            href={`/workspaces/${workspaceId}/issues/${issue.id}`}
-            className={`block truncate rounded border border-line bg-raised px-1.5 py-0.5 text-[11px] text-content hover:border-accent-soft/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft ${issue.status === 'DONE' ? 'line-through opacity-60' : ''}`}
+    <ol className="space-y-2.5 sm:hidden">
+      {days.map((day) => {
+        const isToday = sameDay(day, today);
+        const meetings = meetingsOn(day);
+        const due = dueOn(day);
+        return (
+          <li
+            key={dateKey(day)}
+            className={`flex gap-3 rounded-xl border p-3 ${isToday ? 'border-accent-soft/50 bg-accent/[0.06]' : 'border-line bg-raised'}`}
           >
-            <span className="font-mono text-faint">{issue.key}</span> {issue.title}
-          </Link>
-        </li>
-      ))}
-    </ul>
+            <div className="w-10 shrink-0 text-center">
+              <p
+                className={`text-[10px] font-medium uppercase ${isToday ? 'text-accent-soft' : 'text-faint'}`}
+              >
+                {shortDay(day)}
+              </p>
+              <p className="text-xl font-semibold tabular-nums text-content">{day.day}</p>
+            </div>
+            <ul className="min-w-0 flex-1 space-y-1.5 text-sm">
+              {meetings.map((m) => (
+                <li
+                  key={`${m.meetingId}-${m.week}`}
+                  className="flex items-center gap-2 text-content"
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`h-2 w-2 shrink-0 rounded-full ${toneOf(m).dot}`}
+                  />
+                  <span className="tabular-nums text-faint">
+                    {time.format(new Date(m.startsAt))}
+                  </span>
+                  <span className="truncate">{m.title}</span>
+                </li>
+              ))}
+              {due.map((issue) => (
+                <li key={issue.id} className="truncate text-muted">
+                  Due: <span className="font-mono text-faint">{issue.key}</span> {issue.title}
+                </li>
+              ))}
+              {meetings.length + due.length === 0 ? (
+                <li className="text-faint">Nothing planned</li>
+              ) : null}
+            </ul>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
 export function WeekView({ workspaceId }: { workspaceId: string }) {
   const zone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone, []);
-  const grid = useRef<HTMLDivElement>(null);
+  const now = useNow();
+  const today = wallToday(now, zone);
+  const grid = useRef<HTMLElement>(null);
   useEffect(() => {
     if (grid.current) grid.current.scrollTop = (DAY_PX * FIRST_HOUR_SHOWN) / 24;
   }, []);
@@ -122,68 +174,67 @@ export function WeekView({ workspaceId }: { workspaceId: string }) {
   const dueOn = (day: Day) => issues.filter((issue) => issue.dueOn === dateKey(day));
   const meetingsOn = (day: Day) =>
     meetings.filter((m) => placeOn(day, new Date(m.startsAt), m.durationMinutes, zone));
-  const button =
-    'rounded-md border border-line px-2.5 py-1 text-xs text-muted hover:bg-surface hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft';
+  const onThisWeek = week.days.some((day) => sameDay(day, today));
+  const step =
+    'grid h-8 place-items-center rounded-md px-2.5 text-xs font-medium text-muted transition hover:bg-surface hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft';
 
   return (
     <section aria-label={`Week of ${dayLabel(week.days[0]!)}`}>
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <p className="mr-auto text-sm text-muted">
-          {dayLabel(week.days[0]!)} to {dayLabel(week.days[6]!)} · times in{' '}
-          {zone.replace(/_/g, ' ')}
-        </p>
-        <button type="button" className={button} onClick={() => setAnchor(shiftWeeks(anchor, -1))}>
-          Previous week
-        </button>
-        <button type="button" className={button} onClick={() => setAnchor(new Date())}>
-          This week
-        </button>
-        <button type="button" className={button} onClick={() => setAnchor(shiftWeeks(anchor, 1))}>
-          Next week
-        </button>
+      <div className="mb-4 flex flex-wrap items-end gap-3">
+        <div className="mr-auto">
+          <h2 className="text-2xl font-semibold tracking-tight text-content">
+            {weekTitle(week.days)}
+          </h2>
+          <p className="mt-0.5 text-xs text-faint">
+            Week {isoWeek(week.days[0]!)} · {plural(meetings.length, 'meeting', 'meetings')} ·{' '}
+            {plural(issues.length, 'issue due', 'issues due')} · times in {zone.replace(/_/g, ' ')}
+          </p>
+        </div>
+        <div className="inline-flex items-center gap-0.5 rounded-lg border border-line bg-raised p-0.5 shadow-sm">
+          <button
+            type="button"
+            className={step}
+            aria-label="Previous week"
+            onClick={() => setAnchor(shiftWeeks(anchor, -1))}
+          >
+            <Chevron back />
+          </button>
+          <button
+            type="button"
+            className={`${step} ${onThisWeek ? 'text-content' : ''}`}
+            aria-pressed={onThisWeek}
+            onClick={() => setAnchor(new Date())}
+          >
+            This week
+          </button>
+          <button
+            type="button"
+            className={step}
+            aria-label="Next week"
+            onClick={() => setAnchor(shiftWeeks(anchor, 1))}
+          >
+            <Chevron />
+          </button>
+        </div>
       </div>
       {data.isError ? (
-        <p role="alert" className="text-sm text-muted">
+        <p role="alert" className="mb-3 text-sm text-muted">
           The week could not be loaded. Try again in a moment.
         </p>
       ) : null}
 
-      {/* Phones: a list of the days. */}
-      <ol className="space-y-3 sm:hidden">
-        {week.days.map((day) => (
-          <li key={dateKey(day)} className="rounded-lg border border-line bg-raised p-3">
-            <h3 className="text-xs font-semibold text-content">{dayLabel(day)}</h3>
-            <ul className="mt-1.5 space-y-1 text-sm">
-              {meetingsOn(day).map((m) => (
-                <li key={`${m.meetingId}-${m.week}`} className="text-content">
-                  <span className="tabular-nums text-faint">
-                    {time.format(new Date(m.startsAt))}
-                  </span>{' '}
-                  {m.title}
-                </li>
-              ))}
-              {dueOn(day).map((issue) => (
-                <li key={issue.id} className="text-muted">
-                  Due: {issue.key} {issue.title}
-                </li>
-              ))}
-              {meetingsOn(day).length + dueOn(day).length === 0 ? (
-                <li className="text-faint">Nothing</li>
-              ) : null}
-            </ul>
-          </li>
-        ))}
-      </ol>
+      <PhoneList days={week.days} today={today} meetingsOn={meetingsOn} dueOn={dueOn} />
 
       {/* Wider screens: the grid. */}
-      <div className="hidden overflow-hidden rounded-lg border border-line sm:block">
-        <div className="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))] border-b border-line bg-raised">
+      <div className="hidden overflow-hidden rounded-xl border border-line bg-surface shadow-sm sm:block">
+        <div className="grid grid-cols-[3.5rem_repeat(7,minmax(0,1fr))] border-b border-line bg-raised">
           <div />
           {week.days.map((day) => (
-            <div key={dateKey(day)} className="border-l border-line">
-              <p className="px-1.5 py-1.5 text-[11px] font-semibold text-content">
-                {dayLabel(day)}
-              </p>
+            <div
+              key={dateKey(day)}
+              className={`border-l border-line ${sameDay(day, today) ? 'bg-accent/[0.06]' : ''}`}
+            >
+              <DayHeading day={day} today={sameDay(day, today)} />
               <DueStrip workspaceId={workspaceId} issues={dueOn(day)} />
             </div>
           ))}
@@ -194,25 +245,27 @@ export function WeekView({ workspaceId }: { workspaceId: string }) {
           // biome-ignore lint/a11y/noNoninteractiveTabindex: a scrollable area must take focus to be scrolled without a mouse (WCAG 2.1.1)
           tabIndex={0}
           aria-label="The week, hour by hour"
-          className="max-h-[32rem] overflow-y-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+          className="max-h-[36rem] overflow-y-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-soft"
         >
-          <div className="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))]">
-            <div className="relative" style={{ height: DAY_PX }} aria-hidden="true">
-              {HOURS.map((hour) => (
-                <span
-                  key={hour}
-                  className="absolute right-1 -translate-y-1/2 text-[10px] tabular-nums text-faint"
-                  style={{ top: `${(hour / 24) * 100}%` }}
-                >
-                  {String(hour).padStart(2, '0')}:00
-                </span>
-              ))}
-            </div>
+          <div className="grid grid-cols-[3.5rem_repeat(7,minmax(0,1fr))]">
+            <HourRail />
             {week.days.map((day) => (
-              <DayColumn key={dateKey(day)} day={day} zone={zone} meetings={meetingsOn(day)} />
+              <DayColumn
+                key={dateKey(day)}
+                day={day}
+                zone={zone}
+                meetings={meetingsOn(day)}
+                now={now}
+                isToday={sameDay(day, today)}
+              />
             ))}
           </div>
         </section>
+        {meetings.length === 0 && data.isSuccess ? (
+          <p className="border-t border-line px-4 py-2.5 text-xs text-faint">
+            No meetings this week. Schedule one from Meetings and it appears here.
+          </p>
+        ) : null}
       </div>
     </section>
   );

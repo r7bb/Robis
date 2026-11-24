@@ -81,7 +81,17 @@ export type ServerEvent =
    */
   | { type: 'story.changed'; workspaceId: string; storyId: string | null; actorId: string | null }
   /** A feed post, a comment on one, or a reaction changed (Phase 2c). Ids only. */
-  | { type: 'feed.changed'; workspaceId: string; postId: string; actorId: string };
+  | { type: 'feed.changed'; workspaceId: string; postId: string; actorId: string }
+  /** Someone reacted to a celebration, or took it back. Ids only. */
+  | { type: 'celebration.changed'; workspaceId: string; celebrationId: string; actorId: string }
+  /** A space, a thread in one, a reply or a reaction changed. Ids only. */
+  | {
+      type: 'space.changed';
+      workspaceId: string;
+      spaceId: string;
+      threadId: string | null;
+      actorId: string;
+    };
 
 export type PresenceUser = {
   userId: string;

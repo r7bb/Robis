@@ -155,3 +155,17 @@ export const ISSUE_TITLES: readonly string[] = [
   'Mark a check-in answer as private',
   'Export a project board as CSV',
 ];
+
+/** Replies in a space. */
+export const SPACE_REPLIES: readonly string[] = [
+  'The backup job runs at noon and saturates the link. Moving it to midnight fixed it for us.',
+  'Ask in the access request form; the platform lead approves within a day.',
+  'There is one in the design library under Foundations. Use that one.',
+  'Leave a comment with where you stopped and what you would try next. That helps most.',
+  'Same here. Restarting the client helped once, but not reliably.',
+  'Big yes to this.',
+  'I tried this last week and it worked first time.',
+  'Could we try it for a month and see?',
+  'This saved me an hour today, thanks.',
+  'Worth adding to the onboarding guide.',
+];

@@ -21,6 +21,7 @@
     "./feed-celebrations": "./src/feed/celebrations.ts",
     "./feed-health": "./src/feed/health.ts",
     "./feed-week": "./src/feed/week.ts",
+    "./space-replies": "./src/spaces/reply-routes.ts",
     "./hardening": "./src/hardening.ts",
     "./images": "./src/media/images.ts",
     "./insights-flow": "./src/insights/flow.ts",

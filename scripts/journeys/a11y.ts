@@ -161,7 +161,7 @@ export async function a11yJourney(checks: Checks, ports: readonly [number, numbe
     );
     const ws = `/workspaces/${workspaceId}`;
 
-    for (const theme of ['midnight', 'daylight', 'forest']) {
+    for (const theme of ['midnight', 'daylight', 'mist', 'forest']) {
       await api(page, ws, 'PATCH', { theme });
       const on = `on ${theme}`;
       await check(checks, page, `home ${on}`, '/workspaces');
@@ -180,6 +180,7 @@ export async function a11yJourney(checks: Checks, ports: readonly [number, numbe
     await check(checks, page, 'activity', `${ws}/activity`);
     await check(checks, page, 'meetings', `${ws}/meetings`);
     await check(checks, page, 'the feed', `${ws}/feed`);
+    await check(checks, page, 'spaces', `${ws}/spaces`);
     await check(checks, page, 'the calendar', `${ws}/calendar`);
     await check(checks, page, 'insights', `${ws}/insights`);
     await check(checks, page, 'automations', `${ws}/automations`);

@@ -1,15 +1,18 @@
 import {
+  celebrationReactions,
   type Database,
   issues,
   projects,
+  publishEvent,
   users,
   workspaceMembers,
   workspaces,
 } from '@robis/database';
-import { contracts } from '@robis/shared';
+import { contracts, noReactions, type PostReaction } from '@robis/shared';
 import { and, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { serve } from '../contract.ts';
+import { ApiError } from '../errors.ts';
 import {
   CELEBRATION_DAYS,
   finishedProjects,
@@ -27,7 +30,21 @@ import {
   todayFor,
   worthShowing,
 } from '../feed/health.ts';
-import { currentMembership, requireAuth, requireMembership } from '../plugins/authz.ts';
+import {
+  currentMembership,
+  currentUser,
+  requireAuth,
+  requireMembership,
+} from '../plugins/authz.ts';
+import { rateLimit } from '../plugins/rate-limit.ts';
+
+/** Reactions to celebrations a person may give or take back in an hour, as on posts. */
+const REACTIONS_PER_HOUR = 300;
+const HOUR_MS = 3_600_000;
+/** How long the list of live celebration ids is kept per workspace. */
+const LIVE_IDS_MS = 10_000;
+/** Workspaces kept at once before the cache starts again. */
+const LIVE_IDS_KEPT = 500;
 
 const isOpen = sql`${issues.status} not in ('DONE', 'CANCELED')`;
 const count = (where: ReturnType<typeof sql>) =>
@@ -127,6 +144,41 @@ async function celebrationsOf(db: Database, workspaceId: string, now: Date) {
   ]);
 }
 
+/** Who reacted how to each of these celebrations, in one query. */
+async function withReactions<T extends { id: string }>(
+  db: Database,
+  workspaceId: string,
+  shown: T[],
+) {
+  const byId = new Map(shown.map((c) => [c.id, noReactions()]));
+  if (shown.length > 0) {
+    const rows = await db
+      .select({
+        celebrationId: celebrationReactions.celebrationId,
+        userId: celebrationReactions.userId,
+        reaction: celebrationReactions.reaction,
+      })
+      .from(celebrationReactions)
+      // Only people still here: someone who left is not shown reacting.
+      .innerJoin(
+        workspaceMembers,
+        and(
+          eq(workspaceMembers.workspaceId, celebrationReactions.workspaceId),
+          eq(workspaceMembers.userId, celebrationReactions.userId),
+        ),
+      )
+      .where(
+        and(
+          eq(celebrationReactions.workspaceId, workspaceId),
+          inArray(celebrationReactions.celebrationId, [...byId.keys()]),
+        ),
+      )
+      .orderBy(celebrationReactions.createdAt);
+    for (const row of rows) byId.get(row.celebrationId)?.[row.reaction].push(row.userId);
+  }
+  return shown.map((c) => ({ ...c, reactions: byId.get(c.id)! }));
+}
+
 /**
  * Beside the Feed's posts (Phase 2c): how each project is doing, and the
  * week's milestones, worked out from the work on every read, so they are
@@ -165,7 +217,99 @@ export async function feedHighlightRoutes(app: FastifyInstance, opts: { db: Data
     { preHandler: [requireAuth, requireMembership(db, 'issue:read')] },
     async (request) => {
       const { workspaceId } = currentMembership(request);
-      return { celebrations: await celebrationsOf(db, workspaceId, new Date()) };
+      const shown = await celebrationsOf(db, workspaceId, new Date());
+      return { celebrations: await withReactions(db, workspaceId, shown) };
+    },
+  );
+
+  const reactLimit = rateLimit({
+    name: 'celebration-react',
+    limit: REACTIONS_PER_HOUR,
+    windowMs: HOUR_MS,
+  });
+
+  /**
+   * The ids on the list right now, kept a few seconds per workspace: working
+   * them out reads every project, so a burst of reactions reads them once.
+   */
+  const liveIds = new Map<string, { at: number; ids: Set<string> }>();
+  async function liveCelebrations(workspaceId: string) {
+    const kept = liveIds.get(workspaceId);
+    if (kept && Date.now() - kept.at < LIVE_IDS_MS) return kept.ids;
+    const ids = new Set((await celebrationsOf(db, workspaceId, new Date())).map((c) => c.id));
+    if (liveIds.size > LIVE_IDS_KEPT) liveIds.clear();
+    liveIds.set(workspaceId, { at: Date.now(), ids });
+    return ids;
+  }
+
+  /**
+   * Only a celebration on the list right now takes a reaction: its id is
+   * worked out, so anything else is a name nobody is celebrating. Taking one
+   * back needs no such check, so a reaction can be undone after its week.
+   */
+  async function celebrationHere(workspaceId: string, celebrationId: string) {
+    if (!(await liveCelebrations(workspaceId)).has(celebrationId)) {
+      throw ApiError.notFound('Celebration not found');
+    }
+  }
+
+  async function toggle(
+    request: Parameters<typeof currentUser>[0],
+    celebrationId: string,
+    reaction: PostReaction,
+    on: boolean,
+  ) {
+    const { workspaceId } = currentMembership(request);
+    const user = currentUser(request);
+    if (on) await celebrationHere(workspaceId, celebrationId);
+    const key = { workspaceId, celebrationId, userId: user.id, reaction };
+    const changed = on
+      ? await db
+          .insert(celebrationReactions)
+          .values(key)
+          .onConflictDoNothing()
+          .returning({ id: celebrationReactions.celebrationId })
+      : await db
+          .delete(celebrationReactions)
+          .where(
+            and(
+              eq(celebrationReactions.workspaceId, workspaceId),
+              eq(celebrationReactions.celebrationId, celebrationId),
+              eq(celebrationReactions.userId, user.id),
+              eq(celebrationReactions.reaction, reaction),
+            ),
+          )
+          .returning({ id: celebrationReactions.celebrationId });
+    if (changed.length === 0) return;
+    try {
+      await publishEvent(db, {
+        type: 'celebration.changed',
+        workspaceId,
+        celebrationId,
+        actorId: user.id,
+      });
+    } catch (error) {
+      request.log.warn({ err: error }, 'feed: celebration reaction not published');
+    }
+  }
+
+  serve(
+    app,
+    contracts['feed.reactToCelebration'],
+    { preHandler: [requireAuth, requireMembership(db, 'issue:read'), reactLimit] },
+    async (request, { params: { celebrationId, reaction } }) => {
+      await toggle(request, celebrationId, reaction, true);
+      return undefined;
+    },
+  );
+
+  serve(
+    app,
+    contracts['feed.unreactToCelebration'],
+    { preHandler: [requireAuth, requireMembership(db, 'issue:read'), reactLimit] },
+    async (request, { params: { celebrationId, reaction } }) => {
+      await toggle(request, celebrationId, reaction, false);
+      return undefined;
     },
   );
 }

@@ -97,3 +97,61 @@ const dayName = new Intl.DateTimeFormat('en-GB', {
 export function dayLabel(day: Day): string {
   return dayName.format(new Date(Date.UTC(day.year, day.month - 1, day.day)));
 }
+
+const monthYear = new Intl.DateTimeFormat('en-GB', {
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+const monthShort = new Intl.DateTimeFormat('en-GB', { month: 'short', timeZone: 'UTC' });
+const utc = (day: Day) => new Date(Date.UTC(day.year, day.month - 1, day.day));
+
+/** "November 2026", or "Nov to Dec 2026" for a week across two months. */
+export function weekTitle(days: readonly Day[]): string {
+  const first = days[0]!;
+  const last = days[days.length - 1]!;
+  if (first.month === last.month && first.year === last.year) return monthYear.format(utc(first));
+  if (first.year === last.year) {
+    return `${monthShort.format(utc(first))} to ${monthShort.format(utc(last))} ${last.year}`;
+  }
+  return `${monthShort.format(utc(first))} ${first.year} to ${monthShort.format(utc(last))} ${last.year}`;
+}
+
+/** The ISO week number of a day: weeks start on Monday, week 1 holds 4 January. */
+export function isoWeek(day: Day): number {
+  const date = utc(day);
+  const thursday = new Date(date.getTime() + (3 - ((date.getUTCDay() + 6) % 7)) * 86_400_000);
+  const yearStart = Date.UTC(thursday.getUTCFullYear(), 0, 1);
+  return Math.floor((thursday.getTime() - yearStart) / (7 * 86_400_000)) + 1;
+}
+
+/** Where `now` falls in a day column, as a fraction from its top, or null on other days. */
+export function nowOn(day: Day, now: Date, zone: string): number | null {
+  const dayStart = instantOf(day, zone).getTime();
+  const dayEnd = instantOf(addDays(day, 1), zone).getTime();
+  const at = now.getTime();
+  if (at < dayStart || at >= dayEnd) return null;
+  return (at - dayStart) / (dayEnd - dayStart);
+}
+
+/** Saturday or Sunday. */
+export function isWeekend(day: Day): boolean {
+  const weekday = utc(day).getUTCDay();
+  return weekday === 0 || weekday === 6;
+}
+
+/** The same calendar date. */
+export const sameDay = (a: Day, b: Day) => dateKey(a) === dateKey(b);
+
+/** A stable colour slot for a meeting, so the same meeting keeps its colour every week. */
+export function toneIndex(id: string, slots: number): number {
+  let hash = 0;
+  for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return hash % slots;
+}
+
+/** Today's date in `zone`, at midnight. */
+export function wallToday(now: Date, zone: string): Day {
+  const { year, month, day } = wallOf(now, zone);
+  return { year, month, day, hour: 0, minute: 0 };
+}

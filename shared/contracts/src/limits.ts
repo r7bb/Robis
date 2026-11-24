@@ -50,8 +50,37 @@ export const POST_MAX_LENGTH = 2000;
 /** A comment on a feed post. */
 export const POST_COMMENT_MAX_LENGTH = 1000;
 
-/** The three reactions a post can have: faces, never totals (Phase 2c). */
-export const POST_REACTIONS = ['celebrate', 'helpful', 'support'] as const;
+/**
+ * The reactions a post, a celebration or a space's reply can have: faces,
+ * never totals (Phase 2c). Thanks and Insightful joined the first three.
+ */
+export const POST_REACTIONS = ['celebrate', 'helpful', 'support', 'thanks', 'insightful'] as const;
+export type PostReaction = (typeof POST_REACTIONS)[number];
+
+/** Each reaction with nobody on it yet. */
+export const noReactions = (): Record<PostReaction, string[]> =>
+  Object.fromEntries(POST_REACTIONS.map((name) => [name, []])) as unknown as Record<
+    PostReaction,
+    string[]
+  >;
+
+/**
+ * Spaces (the feed's topics): groups within the workspace where a question
+ * or an idea gets a thread, replies nest under replies, and the best answer
+ * is marked. Limits keep a thread a conversation, not a document.
+ */
+export const SPACE_THREAD_KINDS = ['question', 'idea', 'discussion', 'tip'] as const;
+export type SpaceThreadKind = (typeof SPACE_THREAD_KINDS)[number];
+export const SPACE_NAME_MAX_LENGTH = 40;
+export const SPACE_DESCRIPTION_MAX_LENGTH = 200;
+export const SPACES_PER_WORKSPACE_MAX = 100;
+export const THREAD_TITLE_MAX_LENGTH = 160;
+export const THREAD_BODY_MAX_LENGTH = 5000;
+export const SPACE_REPLY_MAX_LENGTH = 3000;
+/** How deep replies nest before a reply answers its parent's level instead. */
+export const SPACE_REPLY_DEPTH_MAX = 6;
+/** Replies a thread holds, all read with it at once. */
+export const SPACE_REPLIES_SHOWN_MAX = 500;
 
 /** A weekly check-in answer (Phase 2c): what you are working on, in a few lines. */
 export const CHECK_IN_MAX_LENGTH = 500;

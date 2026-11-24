@@ -16,12 +16,12 @@ import { contract, timestamp } from './contract.ts';
  */
 
 const postParams = workspaceParams.extend({ postId: z.string() });
-const reaction = z.enum(POST_REACTIONS);
+export const reaction = z.enum(POST_REACTIONS);
 
 const image = z.object({ url: z.string(), width: z.number().int(), height: z.number().int() });
 
 /** Who reacted, by id, for each reaction: shown as faces, never as a total. */
-const reactions = z.object(
+export const reactions = z.object(
   Object.fromEntries(POST_REACTIONS.map((name) => [name, z.array(uuid)])) as Record<
     (typeof POST_REACTIONS)[number],
     z.ZodArray<typeof uuid>
@@ -161,7 +161,7 @@ export const feedContracts = {
   'posts.react': contract({
     method: 'PUT',
     path: '/workspaces/:workspaceId/posts/:postId/reactions/:reaction',
-    summary: 'React to a post: celebrate, helpful or support.',
+    summary: 'React to a post: celebrate, helpful, support, thanks or insightful.',
     params: postParams.extend({ reaction }),
     status: 204,
     response: null,

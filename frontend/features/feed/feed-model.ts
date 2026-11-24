@@ -16,6 +16,17 @@ export const REACTION_NAMES: Record<Reaction, string> = {
   celebrate: 'Celebrate',
   helpful: 'Helpful',
   support: 'Support',
+  thanks: 'Thanks',
+  insightful: 'Insightful',
+};
+
+/** A small mark beside each name, decoration only: the name is what is read out. */
+export const REACTION_MARKS: Record<Reaction, string> = {
+  celebrate: '🎉',
+  helpful: '💡',
+  support: '🤝',
+  thanks: '🙏',
+  insightful: '✨',
 };
 
 /** When an item happened, whichever kind it is. */

@@ -643,20 +643,22 @@ body {
 /*
  * Status, priority and label colours on a light theme (C9). They are the
  * pale 200 and 300 shades, chosen to read on the dark themes; on a light
- * page those fall well below 4.5:1, so each takes its 700 shade instead.
- * One place, rather than a light variant on every badge.
+ * page those fall well below 4.5:1, so each takes a 700 or 800 shade
+ * instead: 800 for sky, emerald and amber, which on a tinted page (Mist,
+ * Meadow) behind a tinted chip measured under 4.5:1 at 700. One place,
+ * rather than a light variant on every badge.
  */
 :root[data-scheme="light"] :is(.text-slate-300) {
   color: rgb(51 65 85);
 }
 :root[data-scheme="light"] :is(.text-sky-200, .text-sky-300) {
-  color: rgb(3 105 161);
+  color: rgb(7 89 133);
 }
 :root[data-scheme="light"] :is(.text-emerald-200, .text-emerald-300) {
-  color: rgb(4 120 87);
+  color: rgb(6 95 70);
 }
 :root[data-scheme="light"] :is(.text-amber-200, .text-amber-300) {
-  color: rgb(180 83 9);
+  color: rgb(146 64 14);
 }
 :root[data-scheme="light"] :is(.text-rose-200, .text-rose-300) {
   color: rgb(190 18 60);

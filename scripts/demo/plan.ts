@@ -14,6 +14,9 @@ export const ACTIONS = [
   'postComment',
   'move',
   'file',
+  'ask',
+  'answer',
+  'markHelpful',
 ] as const;
 export type Action = (typeof ACTIONS)[number];
 
@@ -29,6 +32,9 @@ export const WEIGHTS: Readonly<Record<Action, number>> = {
   postComment: 10,
   move: 16,
   file: 6,
+  ask: 4,
+  answer: 8,
+  markHelpful: 8,
 };
 
 /**
@@ -39,7 +45,8 @@ export const WEIGHTS: Readonly<Record<Action, number>> = {
 const MAY: Readonly<Record<ActorRole, ReadonlySet<Action>>> = {
   ADMIN: new Set(ACTIONS),
   MEMBER: new Set(ACTIONS),
-  GUEST: new Set<Action>(['chat', 'react', 'issueComment', 'postComment']),
+  // In a space a guest answers and marks what helped, but starts nothing.
+  GUEST: new Set<Action>(['chat', 'react', 'issueComment', 'postComment', 'answer', 'markHelpful']),
   AGENT: new Set<Action>(['chat', 'post', 'issueComment', 'move', 'file']),
 };
 

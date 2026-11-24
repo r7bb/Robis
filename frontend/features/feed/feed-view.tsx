@@ -3,11 +3,12 @@
 import { can, contracts } from '@robis/shared';
 import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ago } from '../../components/activity-feed.tsx';
 import { Avatar } from '../../components/ui/avatar.tsx';
 import { BASE_URL, call, type Member } from '../../lib/api.ts';
 import { channelHref } from '../../lib/links.ts';
+import { usePeople } from '../../lib/use-people.ts';
 import { useStories } from '../stories/stories-context.tsx';
 import { StoriesStrip } from '../stories/stories-strip.tsx';
 import { useWorkspaceRole } from '../workspace/page-frame.tsx';
@@ -66,19 +67,6 @@ function useFeed(workspaceId: string, me: string | null) {
     neverSeen: !firstPage?.seenAt,
     ...splitAtSeen(items, seenOnArrival.current ?? null, me, arrivedAt.current),
   };
-}
-
-function usePeople(workspaceId: string) {
-  const members = useQuery({
-    queryKey: ['members', workspaceId],
-    queryFn: () => call(contracts['members.list'], { params: { workspaceId } }),
-  });
-  const list = members.data?.members;
-  const people = useMemo(
-    () => new Map((list ?? []).map((member) => [member.userId, member])),
-    [list],
-  );
-  return { list: list ?? [], people };
 }
 
 export function FeedView({ workspaceId }: { workspaceId: string }) {

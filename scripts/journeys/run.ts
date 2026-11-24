@@ -32,6 +32,7 @@ import { offlineIssueJourney } from './offline-issue.ts';
 import { phoneJourney } from './phone.ts';
 import { shareJourney } from './share.ts';
 import { signupJourney } from './signup.ts';
+import { spacesJourney } from './spaces.ts';
 import { chatJourney, documentJourney } from './together.ts';
 
 /** Debugging ports, one per Chrome, clear of the smoke tests' 9487 and 9488. */
@@ -55,6 +56,7 @@ const JOURNEYS: Record<string, (checks: Checks) => Promise<void>> = {
   share: (checks) => shareJourney(checks, FIRST_PORT + 18),
   a11y: (checks) => a11yJourney(checks, [FIRST_PORT + 19, FIRST_PORT + 20, FIRST_PORT + 21]),
   keyboard: (checks) => keyboardDialogsJourney(checks, FIRST_PORT + 22),
+  spaces: (checks) => spacesJourney(checks, [FIRST_PORT + 23, FIRST_PORT + 24]),
 };
 
 async function main() {

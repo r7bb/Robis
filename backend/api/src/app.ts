@@ -66,6 +66,7 @@ import { pushKey, pushRoutes } from './routes/push.ts';
 import { savedViewRoutes } from './routes/saved-views.ts';
 import { searchRoutes } from './routes/search.ts';
 import { signupRoutes } from './routes/signup.ts';
+import { spaceRoutes } from './routes/spaces.ts';
 import { storyRoutes } from './routes/stories.ts';
 import { twoFactorRoutes } from './routes/two-factor.ts';
 import { webhookRoutes } from './routes/webhooks.ts';
@@ -347,6 +348,7 @@ export function buildApp({
   app.register(postRoutes, { db, storage });
   app.register(feedRoutes, { db });
   app.register(feedHighlightRoutes, { db });
+  app.register(spaceRoutes, { db });
   app.register(insightRoutes, { db, operators: operatorsFrom(env.HEALTH_OPERATORS) });
   app.register(calendarRoutes, { db, webOrigin: env.WEB_ORIGIN });
   app.register(calendarImportRoutes, { db });

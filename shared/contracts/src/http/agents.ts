@@ -174,6 +174,14 @@ export const agentContracts = {
     status: 201,
     response: z.object({ agent: agent.omit({ tokens: true }), token: issuedToken }),
   }),
+  'agents.rename': contract({
+    method: 'PATCH',
+    path: '/workspaces/:workspaceId/agents/:agentId',
+    summary: 'Rename an agent; its username, tokens and history stay as they are.',
+    params: agentParams,
+    body: z.object({ name: z.string().trim().min(1, 'Name the agent').max(60) }),
+    response: z.object({ agent: z.object({ id: uuid, name: z.string() }) }),
+  }),
   'agents.remove': contract({
     method: 'DELETE',
     path: '/workspaces/:workspaceId/agents/:agentId',

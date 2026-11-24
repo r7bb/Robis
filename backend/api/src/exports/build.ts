@@ -14,6 +14,9 @@ import {
   messages,
   projects,
   savedViews,
+  spaceReplies,
+  spaces,
+  spaceThreads,
   users,
   workspaceMembers,
   workspaces,
@@ -155,6 +158,15 @@ async function collect(db: Executor, workspaceId: string) {
       .select()
       .from(savedViews)
       .where(eq(savedViews.workspaceId, workspaceId)),
+    'spaces.jsonl': await db.select().from(spaces).where(eq(spaces.workspaceId, workspaceId)),
+    'space-threads.jsonl': await db
+      .select()
+      .from(spaceThreads)
+      .where(eq(spaceThreads.workspaceId, workspaceId)),
+    'space-replies.jsonl': await db
+      .select()
+      .from(spaceReplies)
+      .where(eq(spaceReplies.workspaceId, workspaceId)),
   };
   return { workspace, rows, files };
 }

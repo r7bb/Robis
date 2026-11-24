@@ -14,8 +14,10 @@ import {
   ISSUE_TITLES,
   POST_COMMENTS,
   POSTS,
+  SPACE_REPLIES,
 } from './content.ts';
 import { type Action, nextStatus, pickFresh, pickOne, type Random, remember } from './plan.ts';
+import { SPACE_THREADS, SPACES } from './spaces-content.ts';
 
 /** What every action can see and keeps: the workspace, and the lines said lately. */
 export type World = {
@@ -27,7 +29,7 @@ export type World = {
 type Issue = { id: string; key: string; title: string; status: string };
 type Post = { id: string; authorId: string };
 
-const REACTIONS = ['celebrate', 'helpful', 'support'] as const;
+const REACTIONS = ['celebrate', 'helpful', 'support', 'thanks', 'insightful'] as const;
 
 /** A fresh line from `bank`, remembered so it is not said again soon. */
 function say(world: World, bank: readonly string[]): string {
@@ -137,6 +139,105 @@ async function file(actor: Actor, world: World) {
   return `filed on ${target.project.name}: ${title}`;
 }
 
+type SpaceRef = { id: string; name: string };
+type ThreadRef = { id: string; title: string; authorId: string; kind: string; solved: boolean };
+type ReplyRef = { id: string; authorId: string; deleted: boolean };
+
+/** The demo's spaces, making any that are missing when the actor may. */
+async function spacesOf(actor: Actor, world: World, mayStart: boolean): Promise<SpaceRef[]> {
+  const { spaces } = await actor.call<{ spaces: SpaceRef[] }>('GET', `${base(world)}/spaces`);
+  if (!mayStart) return spaces;
+  const made: SpaceRef[] = [];
+  for (const wanted of SPACES) {
+    if (spaces.some((s) => s.name === wanted.name)) continue;
+    const { space } = await actor.call<{ space: SpaceRef }>(
+      'POST',
+      `${base(world)}/spaces`,
+      wanted,
+    );
+    made.push(space);
+  }
+  return [...spaces, ...made];
+}
+
+/** A recent thread in a random space, started by someone else. */
+async function someoneElsesThread(actor: Actor, world: World) {
+  const space = pickOne(await spacesOf(actor, world, false), world.random);
+  if (!space) return null;
+  const { threads } = await actor.call<{ threads: ThreadRef[] }>(
+    'GET',
+    `${base(world)}/spaces/${space.id}/threads?sort=active`,
+  );
+  const thread = pickOne(
+    threads.slice(0, 8).filter((t) => t.authorId !== actor.userId),
+    world.random,
+  );
+  return thread ? { space, thread } : null;
+}
+
+async function ask(actor: Actor, world: World) {
+  const space = pickOne(await spacesOf(actor, world, true), world.random);
+  if (!space) return null;
+  const titles = SPACE_THREADS.map((t) => t.title);
+  const title = say(world, titles);
+  const thread = SPACE_THREADS.find((t) => t.title === title)!;
+  await actor.call('POST', `${base(world)}/spaces/${space.id}/threads`, thread);
+  return `asked in ${space.name}: ${title}`;
+}
+
+async function answer(actor: Actor, world: World) {
+  const found = await someoneElsesThread(actor, world);
+  if (!found) return null;
+  const { replies } = await actor.call<{ replies: ReplyRef[] }>(
+    'GET',
+    `${base(world)}/space-threads/${found.thread.id}`,
+  );
+  // Now and then, a reply to a reply rather than to the thread.
+  const under =
+    world.random() < 0.3
+      ? pickOne(
+          replies.filter((r) => !r.deleted),
+          world.random,
+        )
+      : null;
+  const body = say(world, SPACE_REPLIES);
+  await actor.call('POST', `${base(world)}/space-threads/${found.thread.id}/replies`, {
+    body,
+    ...(under ? { parentId: under.id } : {}),
+  });
+  return `replied in ${found.space.name}: ${body}`;
+}
+
+/** Mark someone's reply Helpful; on your own unanswered question, now and then mark it the answer. */
+async function markHelpful(actor: Actor, world: World) {
+  const space = pickOne(await spacesOf(actor, world, false), world.random);
+  if (!space) return null;
+  const { threads } = await actor.call<{ threads: ThreadRef[] }>(
+    'GET',
+    `${base(world)}/spaces/${space.id}/threads?sort=active`,
+  );
+  const thread = pickOne(threads.slice(0, 8), world.random);
+  if (!thread) return null;
+  const { replies } = await actor.call<{ replies: ReplyRef[] }>(
+    'GET',
+    `${base(world)}/space-threads/${thread.id}`,
+  );
+  const reply = pickOne(
+    replies.filter((r) => !r.deleted && r.authorId !== actor.userId),
+    world.random,
+  );
+  if (!reply) return null;
+  await actor.call('PUT', `${base(world)}/space-reactions/${reply.id}/helpful`);
+  const mine = thread.authorId === actor.userId;
+  if (mine && thread.kind === 'question' && !thread.solved && world.random() < 0.5) {
+    await actor.call('PUT', `${base(world)}/space-threads/${thread.id}/answer`, {
+      replyId: reply.id,
+    });
+    return `marked an answer in ${space.name}: ${thread.title}`;
+  }
+  return `found a reply helpful in ${space.name}`;
+}
+
 export const DO: Readonly<Record<Action, (actor: Actor, world: World) => Promise<string | null>>> =
   {
     chat,
@@ -146,4 +247,7 @@ export const DO: Readonly<Record<Action, (actor: Actor, world: World) => Promise
     postComment,
     move,
     file,
+    ask,
+    answer,
+    markHelpful,
   };

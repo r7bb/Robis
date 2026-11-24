@@ -1,0 +1,1 @@
+ALTER TABLE "space_threads" ADD COLUMN "solved_at" timestamp with time zone;

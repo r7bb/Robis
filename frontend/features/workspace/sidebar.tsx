@@ -235,6 +235,7 @@ function MoreLinks({ workspaceId }: { workspaceId: string }) {
   const pathname = usePathname();
   const links = [
     { href: `/workspaces/${workspaceId}/feed`, label: 'Feed' },
+    { href: `/workspaces/${workspaceId}/spaces`, label: 'Spaces' },
     { href: `/workspaces/${workspaceId}/meetings`, label: 'Meetings' },
     { href: `/workspaces/${workspaceId}/calendar`, label: 'Calendar' },
     { href: `/workspaces/${workspaceId}/activity`, label: 'Activity' },
@@ -249,7 +250,7 @@ function MoreLinks({ workspaceId }: { workspaceId: string }) {
           <Link
             href={link.href}
             aria-current={pathname === link.href ? 'page' : undefined}
-            className={`${ROW} ${rowTone(pathname === link.href)}`}
+            className={`${ROW} ${rowTone(pathname === link.href || pathname.startsWith(`${link.href}/`))}`}
           >
             {link.label}
           </Link>

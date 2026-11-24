@@ -88,7 +88,12 @@ async function freeUsername(tx: Tx, name: string): Promise<string> {
 async function findAgent(db: Database | Tx, workspaceId: string, agentId: string) {
   if (!isUuid(agentId)) return null;
   const [row] = await db
-    .select({ id: users.id, username: users.username, role: workspaceMembers.role })
+    .select({
+      id: users.id,
+      name: users.name,
+      username: users.username,
+      role: workspaceMembers.role,
+    })
     .from(workspaceMembers)
     .innerJoin(users, eq(users.id, workspaceMembers.userId))
     .where(
@@ -368,6 +373,29 @@ export async function agentRoutes(app: FastifyInstance, opts: { db: Database }) 
       return undefined;
     },
   );
+
+  serve(app, contracts['agents.rename'], manage, async (request, { params: { agentId }, body }) => {
+    const actor = currentUser(request);
+    const { workspaceId } = currentMembership(request);
+    const agent = await findAgent(db, workspaceId, agentId);
+    if (!agent) throw ApiError.notFound('Agent not found');
+    await db.transaction(async (tx) => {
+      // Only an agent in this workspace: the lookup above is scoped to it.
+      await tx
+        .update(users)
+        .set({ name: body.name, updatedAt: new Date() })
+        .where(and(eq(users.id, agent.id), eq(users.kind, 'agent')));
+      await recordAudit(tx, auditActor(request), {
+        workspaceId,
+        entityType: 'agent',
+        entityId: agent.id,
+        eventType: 'agent.renamed',
+        payload: { from: agent.name, to: body.name },
+      });
+    });
+    await publishEvent(db, { type: 'member.changed', workspaceId, actorId: actor.id });
+    return { agent: { id: agent.id, name: body.name } };
+  });
 
   serve(app, contracts['agents.remove'], manage, async (request, { params: { agentId } }) => {
     const actor = currentUser(request);

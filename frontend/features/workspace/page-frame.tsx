@@ -21,13 +21,16 @@ export function PageFrame({
   title,
   lead,
   children,
+  wide = false,
 }: {
   title: string;
   lead: string;
   children: ReactNode;
+  /** For a page that is a grid, such as the week: the room it needs. */
+  wide?: boolean;
 }) {
   return (
-    <div className="mx-auto w-full max-w-3xl px-6 py-8">
+    <div className={`mx-auto w-full px-6 py-8 ${wide ? 'max-w-6xl' : 'max-w-3xl'}`}>
       <h1 className="text-balance text-lg font-semibold tracking-tight text-content">{title}</h1>
       <p className="mt-1 max-w-[65ch] text-sm text-muted">{lead}</p>
       <div className="mt-6">{children}</div>

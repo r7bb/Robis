@@ -4,6 +4,7 @@ import {
   LABEL_COLOURS,
   POST_REACTIONS,
   ROLES,
+  SPACE_THREAD_KINDS,
   SUGGESTION_ACTIONS,
   SUGGESTION_KINDS,
   USER_KINDS,
@@ -938,6 +939,141 @@ export const postReactions = pgTable(
     createdAt: createdAt(),
   },
   (t) => [primaryKey({ columns: [t.postId, t.userId, t.reaction] })],
+);
+
+/**
+ * Reactions on a celebration (the feed's well dones). A celebration is worked
+ * out from the work rather than stored, under an id that stays the same for
+ * the same milestone, so its reactions are kept against that id.
+ */
+export const celebrationReactions = pgTable(
+  'celebration_reactions',
+  {
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    celebrationId: text('celebration_id').notNull(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    reaction: text('reaction', { enum: POST_REACTIONS }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.workspaceId, t.celebrationId, t.userId, t.reaction] })],
+);
+
+/** A space: a topic within the workspace, where threads are started. */
+export const spaces = pgTable(
+  'spaces',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    description: text('description').notNull().default(''),
+    createdBy: uuid('created_by')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('spaces_workspace_name_key').on(t.workspaceId, sql`lower(${t.name})`)],
+);
+
+/** A thread in a space: a question, an idea, a discussion or a tip. */
+export const spaceThreads = pgTable(
+  'space_threads',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    spaceId: uuid('space_id')
+      .notNull()
+      .references(() => spaces.id, { onDelete: 'cascade' }),
+    authorId: uuid('author_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    kind: text('kind', { enum: SPACE_THREAD_KINDS }).notNull(),
+    title: text('title').notNull(),
+    body: text('body').notNull().default(''),
+    /** The reply marked as the answer, for a question. */
+    solvedReplyId: uuid('solved_reply_id').references((): AnyPgColumn => spaceReplies.id, {
+      onDelete: 'set null',
+    }),
+    /** When the answer was marked, for counting answers by week or month. */
+    solvedAt: timestamp('solved_at', { withTimezone: true }),
+    lastActivityAt: timestamp('last_activity_at', { withTimezone: true }).notNull().defaultNow(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('space_threads_space_activity_idx').on(t.spaceId, t.lastActivityAt.desc()),
+    index('space_threads_workspace_created_idx').on(t.workspaceId, t.createdAt.desc()),
+  ],
+);
+
+/** A reply in a thread, to the thread or to another reply. */
+export const spaceReplies = pgTable(
+  'space_replies',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    threadId: uuid('thread_id')
+      .notNull()
+      .references(() => spaceThreads.id, { onDelete: 'cascade' }),
+    parentId: uuid('parent_id').references((): AnyPgColumn => spaceReplies.id, {
+      onDelete: 'cascade',
+    }),
+    authorId: uuid('author_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    /** Emptied when taken down, so the replies under it keep their place. */
+    body: text('body').notNull(),
+    depth: integer('depth').notNull().default(0),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('space_replies_thread_created_idx').on(t.threadId, t.createdAt),
+    index('space_replies_author_idx').on(t.authorId),
+  ],
+);
+
+/** Reactions on a thread itself. */
+export const spaceThreadReactions = pgTable(
+  'space_thread_reactions',
+  {
+    threadId: uuid('thread_id')
+      .notNull()
+      .references(() => spaceThreads.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    reaction: text('reaction', { enum: POST_REACTIONS }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.threadId, t.userId, t.reaction] })],
+);
+
+/** Reactions on a reply: Helpful here is what the most helpful lists count. */
+export const spaceReplyReactions = pgTable(
+  'space_reply_reactions',
+  {
+    replyId: uuid('reply_id')
+      .notNull()
+      .references(() => spaceReplies.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    reaction: text('reaction', { enum: POST_REACTIONS }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.replyId, t.userId, t.reaction] }),
+    index('space_reply_reactions_created_idx').on(t.reaction, t.createdAt),
+  ],
 );
 
 /** Who acted: a person, an agent acting through a token, or Robis itself. */

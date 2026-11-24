@@ -204,6 +204,12 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Spaces for questions and answers, reactions on celebrations, a livelier
+  calendar and two tinted light themes.** Spaces bring forum-style topics
+  into the workspace: ask, reply in nested threads, mark the answer and see
+  who has been most helpful. Celebrations take reactions, the calendar marks
+  today and now in colour, Mist and Meadow are light themes that are not all
+  white, and the agent is now called RoRo.
 - **Every dialog by keyboard, and Robis that says when it cannot be
   reached.** Each dialog now opens from the keyboard, keeps focus inside,
   has a name, and closes on Escape with focus back where it was; and the
@@ -211,9 +217,6 @@ no write lost and nothing done twice.
 - **Fourteen common attacks, each tried against Robis.** The usual attacks
   on a new web app, from typing /admin to guessing the login code, are each
   tried in a test, and the one that found a gap is fixed.
-- **Accessibility checked on every page, and what it found fixed.** axe now
-  checks every page the screenshots capture, on three themes, in CI, and the
-  contrast, naming and keyboard problems it found are fixed.
 
 <!-- latest:end -->
 

@@ -9,11 +9,12 @@ import { Avatar } from '../../components/ui/avatar.tsx';
 import { ApiError, BASE_URL, call, type Member } from '../../lib/api.ts';
 import { personHref } from '../../lib/links.ts';
 import { StoryRing } from '../stories/story-ring.tsx';
-import { feedKey, type Post, REACTION_NAMES, type Reaction, reactedBy } from './feed-model.ts';
+import { feedKey, type Post, type Reaction } from './feed-model.ts';
+import { ReactionBar } from './reaction-bar.tsx';
 
 /**
  * One post on the feed (Phase 2c): who and when, the words or the photo,
- * three reactions shown as who reacted (never a total), and its comments
+ * its reactions shown as who reacted (never a total), and its comments
  * behind a button, so the feed stays a list to read rather than a wall.
  */
 
@@ -107,7 +108,7 @@ export function PostCard({
   );
 }
 
-/** Celebrate, Helpful, Support: pressed when you have, with who reacted beside each. */
+/** The reactions on a post, through the shared bar. */
 function Reactions({
   workspaceId,
   post,
@@ -120,7 +121,6 @@ function Reactions({
   me: string | null;
 }) {
   const queryClient = useQueryClient();
-  const names = new Map([...people].map(([id, member]) => [id, member.name]));
   const toggle = useMutation({
     mutationFn: ({ reaction, on }: { reaction: Reaction; on: boolean }) =>
       call(contracts[on ? 'posts.react' : 'posts.unreact'], {
@@ -128,48 +128,14 @@ function Reactions({
       }),
     onSettled: () => queryClient.invalidateQueries({ queryKey: feedKey(workspaceId) }),
   });
-
   return (
-    <div className="flex flex-wrap gap-1.5">
-      {(Object.keys(REACTION_NAMES) as Reaction[]).map((reaction) => {
-        const ids = post.reactions[reaction];
-        const mine = me !== null && ids.includes(me);
-        const who = reactedBy(ids, me, names);
-        return (
-          <button
-            key={reaction}
-            type="button"
-            aria-pressed={mine}
-            title={who || undefined}
-            disabled={toggle.isPending}
-            onClick={() => toggle.mutate({ reaction, on: !mine })}
-            className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft ${
-              mine
-                ? 'border-accent-soft bg-accent/15 text-content'
-                : 'border-line text-muted hover:bg-surface hover:text-content'
-            }`}
-          >
-            {REACTION_NAMES[reaction]}
-            {ids.length > 0 ? (
-              <span className="flex -space-x-1.5" aria-hidden="true">
-                {ids.slice(0, 3).map((id) => (
-                  <span key={id} className="flex shrink-0 rounded-full ring-2 ring-raised">
-                    <Avatar
-                      name={people.get(id)?.name ?? '?'}
-                      seed={id}
-                      avatar={people.get(id)?.avatar ?? null}
-                      size="sm"
-                      className="!h-4 !w-4 !text-[7px]"
-                    />
-                  </span>
-                ))}
-              </span>
-            ) : null}
-            {who ? <span className="sr-only">: {who}</span> : null}
-          </button>
-        );
-      })}
-    </div>
+    <ReactionBar
+      reactions={post.reactions}
+      people={people}
+      me={me}
+      pending={toggle.isPending}
+      onToggle={(reaction, on) => toggle.mutate({ reaction, on })}
+    />
   );
 }
 

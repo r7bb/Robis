@@ -459,3 +459,59 @@ describe('marking agents where they appear', () => {
     expect(bot.email).toBeNull();
   });
 });
+
+describe('renaming an agent', () => {
+  test('an admin renames it; the change is audited and its username stays', async () => {
+    const { owner, workspace, agent } = await setUp();
+    const renamed = await request(`/workspaces/${workspace.id}/agents/${agent.id}`, {
+      method: 'PATCH',
+      actor: owner,
+      payload: { name: '  RoRo  ' },
+    });
+    expect(renamed.statusCode).toBe(200);
+    expect(renamed.json().agent).toEqual({ id: agent.id, name: 'RoRo' });
+
+    const { ownerDb } = await getHarness();
+    const [row] = await ownerDb.select().from(users).where(eq(users.id, agent.id));
+    expect(row?.name).toBe('RoRo');
+    expect(row?.username).toBe(agent.username);
+    const audits = await ownerDb
+      .select()
+      .from(auditEvents)
+      .where(and(eq(auditEvents.entityId, agent.id), eq(auditEvents.eventType, 'agent.renamed')));
+    expect(JSON.parse(String(audits[0]?.payload))).toEqual({ from: 'Triage bot', to: 'RoRo' });
+  });
+
+  test('a member cannot rename it, nor the agent itself', async () => {
+    const { owner, workspace, agent } = await setUp();
+    const member = await createActor('Member');
+    await addMember(owner, workspace.id, member, 'MEMBER');
+    const path = `/workspaces/${workspace.id}/agents/${agent.id}`;
+    const payload = { name: 'Mine now' };
+    expect((await request(path, { method: 'PATCH', actor: member, payload })).statusCode).toBe(403);
+    expect((await request(path, { method: 'PATCH', headers: as(agent), payload })).statusCode).toBe(
+      403,
+    );
+  });
+
+  test('an agent of another workspace is not found, and an empty name is refused', async () => {
+    const { owner, workspace } = await setUp();
+    const stranger = await createActor('Stranger');
+    const elsewhere = await createWorkspace(stranger);
+    const theirs = await createAgent(stranger, elsewhere.id);
+    const across = await request(`/workspaces/${workspace.id}/agents/${theirs.id}`, {
+      method: 'PATCH',
+      actor: owner,
+      payload: { name: 'Taken' },
+    });
+    expect(across.statusCode).toBe(404);
+    const [mine] = (await request(`/workspaces/${workspace.id}/agents`, { actor: owner })).json()
+      .agents;
+    const empty = await request(`/workspaces/${workspace.id}/agents/${mine.id}`, {
+      method: 'PATCH',
+      actor: owner,
+      payload: { name: '   ' },
+    });
+    expect(empty.statusCode).toBe(400);
+  });
+});

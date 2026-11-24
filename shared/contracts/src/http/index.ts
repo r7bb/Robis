@@ -32,6 +32,7 @@ import { projectContracts } from './projects.ts';
 import { pushContracts } from './push.ts';
 import { apiReference } from './reference.ts';
 import { savedViewContracts } from './saved-views.ts';
+import { spaceContracts } from './spaces.ts';
 import { storyContracts } from './stories.ts';
 import { twoFactorContracts } from './two-factor.ts';
 import { webhookContracts } from './webhooks.ts';
@@ -139,6 +140,7 @@ export const contracts = {
   ...profileContracts,
   ...feedContracts,
   ...feedHighlightContracts,
+  ...spaceContracts,
   ...insightContracts,
   ...calendarContracts,
   ...automationContracts,

@@ -30,7 +30,9 @@ describe('who may do what', () => {
     expect(mayDo('GUEST', 'chat')).toBe(true);
     expect(mayDo('GUEST', 'react')).toBe(true);
     expect(mayDo('GUEST', 'postComment')).toBe(true);
-    for (const action of ['file', 'move', 'post'] as const) {
+    expect(mayDo('GUEST', 'answer')).toBe(true);
+    expect(mayDo('GUEST', 'markHelpful')).toBe(true);
+    for (const action of ['file', 'move', 'post', 'ask'] as const) {
       expect(mayDo('GUEST', action)).toBe(false);
     }
   });

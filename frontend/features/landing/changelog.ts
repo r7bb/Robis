@@ -46,6 +46,27 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title:
+      'Spaces for questions and answers, reactions on celebrations, a livelier calendar and two tinted light themes',
+    brief:
+      'Spaces bring forum-style topics into the workspace: ask, reply in nested threads, mark the answer and see who has been most helpful. Celebrations take reactions, the calendar marks today and now in colour, Mist and Meadow are light themes that are not all white, and the agent is now called RoRo.',
+    summary:
+      'Spaces are topics inside the workspace (IT help, design reviews, how we work) where anyone who may post starts a question, idea, discussion or tip and anyone who may comment replies, replies nesting under replies up to six deep. Whoever asked, or an admin, marks the reply that answered it; a solved question says so on the list, and Unanswered shows the rest. Threads sort by active, new, top or unanswered. Most helpful ranks people by the Helpful marks their replies received and the answers they gave, this week, this month or of all time; marking your own reply, or answering your own question, counts for nothing. Everything updates live, starting and taking down are audited without the words, and spaces are in the workspace export. Reactions grew to five (Celebrate, Helpful, Support, Thanks, Insightful) on posts, threads and replies, and celebrations now take Celebrate, Support and Thanks, kept against the milestone’s stable id. The calendar shows the month and ISO week, today’s date in the accent, a line for now that moves each minute, each meeting in a colour it keeps week after week with its start and end, shaded weekends and room to read titles. Mist and Meadow are tinted light themes, and on all three light themes amber, emerald and sky text moved a shade darker after measuring under 4.5:1 behind a tinted chip. Agents can be renamed from the Team panel, and the demo’s Muse is now RoRo.',
+    checked:
+      'Fourteen API tests for spaces (who may start, reply, mark and take down; nesting; the answer; the most helpful counting only other people’s marks; 404 from outside), two for celebration reactions and three for renaming an agent; tests for the calendar’s title, ISO week, line for now across a clock change and today in another zone. A two-person browser journey starts a space, asks, answers, sees the reply arrive without a reload, marks it Helpful and the answer, and finds the answerer first in Most helpful. The accessibility journey passes on every page, Spaces and Mist included, after the amber fix it prompted. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Spaces',
+      where: 'Spaces, in the sidebar under Feed',
+      layers: [
+        'Screen: pages for the spaces, a space’s threads and a thread’s nested replies, with Most helpful beside them',
+        'API: twelve endpoints for spaces, threads, replies, the answer, reactions and the most helpful, and two for celebration reactions',
+        'Database: six tables for spaces, threads, replies, reactions on threads and on replies, and reactions on celebrations',
+      ],
+    },
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Every dialog by keyboard, and Robis that says when it cannot be reached',
     brief:
       'Each dialog now opens from the keyboard, keeps focus inside, has a name, and closes on Escape with focus back where it was; and the page shown when Robis is down says so instead of blaming the connection.',

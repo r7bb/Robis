@@ -5,7 +5,7 @@
  * The seeded teammates (not the owner, whose account is yours) sign in
  * with the demo password and stay present over live sockets, so they show
  * as here. Two agents join them: Scout, the workspace's triage agent, and
- * Muse, its Different shots agent. Every so often one of them does
+ * RoRo, its Different shots agent. Every so often one of them does
  * something a teammate would: says a line in a channel, posts to the Feed,
  * reacts or comments, comments on an issue, moves one along, or files one.
  * The words are written lines picked at random (scripts/demo/content.ts);
@@ -39,9 +39,10 @@ const PEOPLE = [
   { email: 'mia@robis.test', name: 'Mia' },
 ];
 
-const AGENTS = [
+/** `formerly`: names it went by, so a renamed agent is found and renamed, not made twice. */
+const AGENTS: { name: string; triage: boolean; shots: boolean; formerly?: string[] }[] = [
   { name: 'Scout', triage: true, shots: false },
-  { name: 'Muse', triage: false, shots: true },
+  { name: 'RoRo', triage: false, shots: true, formerly: ['Muse'] },
 ];
 
 const log = (line: string) =>
@@ -84,7 +85,13 @@ async function bringAgents(admin: Signed, workspaceId: string): Promise<Held[]> 
   const label = `demo:life ${new Date().toISOString().slice(0, 16)}`;
   return Promise.all(
     AGENTS.map(async (spec) => {
-      const existing = agents.find((agent) => agent.name === spec.name);
+      const existing = agents.find(
+        (agent) => agent.name === spec.name || spec.formerly?.includes(agent.name),
+      );
+      if (existing && existing.name !== spec.name) {
+        await admin.call('PATCH', `${path}/${existing.id}`, { name: spec.name });
+        log(`renamed ${existing.name} to ${spec.name}`);
+      }
       if (existing) {
         const token = await admin.call<{ token: { id: string; secret: string } }>(
           'POST',

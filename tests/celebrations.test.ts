@@ -193,3 +193,57 @@ describe('anniversaries, on their own', () => {
     });
   });
 });
+
+describe('reacting to a celebration', () => {
+  test('a reaction shows who gave it, once however often it is given, and can be taken back', async () => {
+    const { owner, member, workspace } = await team();
+    const [welcome] = await celebrationsFor(owner, workspace.id);
+    expect(welcome?.kind).toBe('joined');
+    const path = `/workspaces/${workspace.id}/feed/celebrations/${encodeURIComponent(welcome!.id)}/reactions`;
+
+    for (let i = 0; i < 2; i++) {
+      expect((await request(`${path}/celebrate`, { method: 'PUT', actor: owner })).statusCode).toBe(
+        204,
+      );
+    }
+    expect((await request(`${path}/thanks`, { method: 'PUT', actor: member })).statusCode).toBe(
+      204,
+    );
+    const [seen] = (
+      await request(`/workspaces/${workspace.id}/feed/celebrations`, { actor: member })
+    ).json().celebrations;
+    expect(seen.reactions.celebrate).toEqual([owner.id]);
+    expect(seen.reactions.thanks).toEqual([member.id]);
+
+    expect(
+      (await request(`${path}/celebrate`, { method: 'DELETE', actor: owner })).statusCode,
+    ).toBe(204);
+    const [after] = (
+      await request(`/workspaces/${workspace.id}/feed/celebrations`, { actor: owner })
+    ).json().celebrations;
+    expect(after.reactions.celebrate).toEqual([]);
+  });
+
+  test('only a celebration on the list takes one, and only from inside the workspace', async () => {
+    const { owner, member, workspace } = await team();
+    const made = celebrationId('joined', owner.id);
+    const invented = await request(
+      `/workspaces/${workspace.id}/feed/celebrations/${encodeURIComponent(made)}/reactions/celebrate`,
+      { method: 'PUT', actor: owner },
+    );
+    expect(invented.statusCode).toBe(404);
+
+    const [welcome] = await celebrationsFor(owner, workspace.id);
+    const stranger = await createActor('Stranger');
+    const outside = await request(
+      `/workspaces/${workspace.id}/feed/celebrations/${encodeURIComponent(welcome!.id)}/reactions/celebrate`,
+      { method: 'PUT', actor: stranger },
+    );
+    expect(outside.statusCode).toBe(404);
+    const unknown = await request(
+      `/workspaces/${workspace.id}/feed/celebrations/${encodeURIComponent(welcome!.id)}/reactions/love`,
+      { method: 'PUT', actor: member },
+    );
+    expect(unknown.statusCode).toBe(400);
+  });
+});

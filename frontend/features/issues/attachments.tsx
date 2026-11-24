@@ -333,7 +333,7 @@ export function IssueAttachments({
           <button
             type="button"
             onClick={() => setOpen(null)}
-            className="absolute right-4 top-4 rounded-md bg-black/60 px-3 py-1.5 text-sm text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+            className="absolute right-4 top-4 rounded-md bg-raised px-3 py-1.5 text-sm text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
           >
             Close
           </button>

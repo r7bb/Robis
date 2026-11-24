@@ -1,5 +1,5 @@
 import { type Database, postComments, postReactions, posts } from '@robis/database';
-import { isUuid, type POST_REACTIONS } from '@robis/shared';
+import { isUuid, noReactions, type PostReaction } from '@robis/shared';
 import { and, count, eq, inArray } from 'drizzle-orm';
 import { ApiError } from '../errors.ts';
 
@@ -10,9 +10,7 @@ import { ApiError } from '../errors.ts';
  */
 
 export type PostRow = typeof posts.$inferSelect;
-type Reactions = Record<(typeof POST_REACTIONS)[number], string[]>;
-
-const noReactions = (): Reactions => ({ celebrate: [], helpful: [], support: [] });
+type Reactions = Record<PostReaction, string[]>;
 
 /** A post in this workspace, or 404: never another workspace's, never a 403. */
 export async function postIn(db: Database, workspaceId: string, postId: string): Promise<PostRow> {

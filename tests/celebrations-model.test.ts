@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+import { noReactions } from '@robis/shared';
 import {
   type Celebration,
   firstName,
@@ -17,6 +18,7 @@ const base = {
 } as const;
 const of = (fields: Pick<Celebration, 'kind' | 'count'> & Partial<Celebration>): Celebration => ({
   ...base,
+  reactions: noReactions(),
   ...fields,
 });
 

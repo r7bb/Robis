@@ -56,6 +56,17 @@ const PHRASES: Record<string, (payload: Payload) => string> = {
   'agent.token_issued': (p) => `gave ${who(p)} a new token`,
   'agent.token_revoked': (p) => `revoked a token of ${who(p)}`,
   'agent.removed': (p) => `removed the agent ${who(p)}`,
+  'agent.renamed': (p) =>
+    `renamed the agent ${text(p, 'from') ?? ''} to ${text(p, 'to') ?? 'something new'}`.replace(
+      '  ',
+      ' ',
+    ),
+  'space.created': (p) => named('started the space', text(p, 'name')),
+  'space.thread_created': (p) =>
+    text(p, 'space') ? `started a thread in ${text(p, 'space')}` : 'started a thread',
+  'space.thread_deleted': (p) => removal(p, 'thread'),
+  'space.replied': () => 'replied in a space',
+  'space.reply_deleted': (p) => removal(p, 'reply in a space'),
   'issue.created': (p) => issue(p, 'created'),
   'issue.status_changed': (p) => `moved ${text(p, 'key') ?? 'an issue'} ${moved(p)}`,
   'issue.updated': (p) => `edited ${text(p, 'key') ?? 'an issue'}`,

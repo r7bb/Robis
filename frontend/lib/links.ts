@@ -53,3 +53,15 @@ export function personHref(workspaceId: string, userId: string): string {
 export function issueHref(workspaceId: string, issueId: string): string {
   return `/workspaces/${workspaceId}/issues/${issueId}`;
 }
+
+export function spacesHref(workspaceId: string): string {
+  return `/workspaces/${workspaceId}/spaces`;
+}
+
+export function spaceHref(workspaceId: string, spaceId: string): string {
+  return `/workspaces/${workspaceId}/spaces/${spaceId}`;
+}
+
+export function threadHref(workspaceId: string, threadId: string): string {
+  return `/workspaces/${workspaceId}/spaces/threads/${threadId}`;
+}

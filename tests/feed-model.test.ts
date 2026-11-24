@@ -15,7 +15,7 @@ function postAt(id: string, createdAt: string): FeedItem {
       createdAt,
       editedAt: null,
       commentCount: 0,
-      reactions: { celebrate: [], helpful: [], support: [] },
+      reactions: { celebrate: [], helpful: [], support: [], thanks: [], insightful: [] },
     },
   };
 }

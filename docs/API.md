@@ -19,7 +19,7 @@ way.
 `{ "error": "<code>", "message": "<words for people>" }`. A stranger to a
 workspace gets 404, never 403, so its existence is not given away.
 
-178 routes.
+193 routes.
 
 ## activity
 
@@ -53,6 +53,14 @@ Remove an agent: its tokens stop working and it leaves the workspace.
 
 - Answers: 204
 - Name: `agents.remove`
+
+### `PATCH /workspaces/{workspaceId}/agents/{agentId}`
+
+Rename an agent; its username, tokens and history stay as they are.
+
+- Body: `name` (required)
+- Answers: 200
+- Name: `agents.rename`
 
 ### `POST /workspaces/{workspaceId}/agents/{agentId}/tokens`
 
@@ -590,6 +598,20 @@ Milestones from the last seven days worth a well done: a project finished, an is
 - Answers: 200
 - Name: `feed.celebrations`
 
+### `DELETE /workspaces/{workspaceId}/feed/celebrations/{celebrationId}/reactions/{reaction}`
+
+Take back a reaction to a celebration.
+
+- Answers: 204
+- Name: `feed.unreactToCelebration`
+
+### `PUT /workspaces/{workspaceId}/feed/celebrations/{celebrationId}/reactions/{reaction}`
+
+React to one of this week’s celebrations, the same reactions a post has.
+
+- Answers: 204
+- Name: `feed.reactToCelebration`
+
 ### `GET /workspaces/{workspaceId}/feed/projects`
 
 How each active project is doing, from its issues: open, done in the last seven days, overdue, urgent, and a state worked out from those (needs a look, on track, quiet or finished).
@@ -1119,7 +1141,7 @@ Take back a reaction.
 
 ### `PUT /workspaces/{workspaceId}/posts/{postId}/reactions/{reaction}`
 
-React to a post: celebrate, helpful or support.
+React to a post: celebrate, helpful, support, thanks or insightful.
 
 - Answers: 204
 - Name: `posts.react`
@@ -1244,6 +1266,106 @@ Issues, documents and comments matching a query, best first; one kind with type,
 - Query: `q`, `type`, `limit`
 - Answers: 200
 - Name: `search.workspace`
+
+## space-reactions
+
+### `DELETE /workspaces/{workspaceId}/space-reactions/{targetId}/{reaction}`
+
+Take back a reaction in a space.
+
+- Answers: 204
+- Name: `spaces.unreact`
+
+### `PUT /workspaces/{workspaceId}/space-reactions/{targetId}/{reaction}`
+
+React to a thread or a reply in a space.
+
+- Answers: 204
+- Name: `spaces.react`
+
+## space-replies
+
+### `DELETE /workspaces/{workspaceId}/space-replies/{replyId}`
+
+Take down a reply you wrote, or as an admin, any. Its words go; the replies under it stay.
+
+- Answers: 204
+- Name: `spaces.deleteReply`
+
+## space-threads
+
+### `DELETE /workspaces/{workspaceId}/space-threads/{threadId}`
+
+Take down a thread you started, or as an admin, any, with its replies.
+
+- Answers: 204
+- Name: `spaces.deleteThread`
+
+### `GET /workspaces/{workspaceId}/space-threads/{threadId}`
+
+A thread and its replies, oldest first, each with the reply it answers.
+
+- Answers: 200
+- Name: `spaces.thread`
+
+### `PUT /workspaces/{workspaceId}/space-threads/{threadId}/answer`
+
+Mark the reply that answered a question, or clear it: for whoever asked, or an admin.
+
+- Body: `replyId` (required)
+- Answers: 200
+- Name: `spaces.solve`
+
+### `POST /workspaces/{workspaceId}/space-threads/{threadId}/replies`
+
+Reply to a thread, or to a reply in it.
+
+- Body: `body` (required), `parentId`
+- Answers: 201
+- Name: `spaces.reply`
+
+## spaces
+
+### `GET /workspaces/{workspaceId}/spaces`
+
+Every space in the workspace, the most recently active first.
+
+- Answers: 200
+- Name: `spaces.list`
+
+### `POST /workspaces/{workspaceId}/spaces`
+
+Start a space: a topic for threads, named once per workspace.
+
+- Body: `name` (required), `description`
+- Answers: 201
+- Name: `spaces.create`
+
+### `GET /workspaces/{workspaceId}/spaces/{spaceId}/threads`
+
+A space’s threads: most recently active, newest, most reacted to, or questions with no answer yet.
+
+- Query: `sort`
+- Answers: 200
+- Name: `spaces.threads`
+
+### `POST /workspaces/{workspaceId}/spaces/{spaceId}/threads`
+
+Start a thread in a space: a question, an idea, a discussion or a tip.
+
+- Body: `kind` (required), `title` (required), `body`
+- Answers: 201
+- Name: `spaces.createThread`
+
+## spaces-leaders
+
+### `GET /workspaces/{workspaceId}/spaces-leaders`
+
+The most helpful people and replies across every space: Helpful marks received and answers given, this week, this month or of all time.
+
+- Query: `period`
+- Answers: 200
+- Name: `spaces.leaders`
 
 ## stories
 
