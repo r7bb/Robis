@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
+import { useOverlay } from '../lib/use-overlay.ts';
 
 /**
  * Destructive actions, behind a confirmation.
@@ -74,6 +75,7 @@ export function DeleteButton({
   const cancelRef = useRef<HTMLButtonElement>(null);
   /** Where focus came from, so closing puts it back. */
   const openerRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   // Cancel is focused rather than the destructive action: a stray Enter on an
   // opened dialog should not delete anything.
@@ -81,25 +83,22 @@ export function DeleteButton({
     if (open) cancelRef.current?.focus();
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false);
-    };
-
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [open]);
-
-  if (!allowed) return null;
-
   function close() {
     setOpen(false);
     setError(null);
     setPassword('');
-    openerRef.current?.focus();
   }
+
+  // Tab kept inside, Escape closing it, the page behind still, and focus back
+  // on the button that opened it when it goes, however it goes (C9).
+  useOverlay({
+    active: open,
+    onClose: close,
+    panel: dialogRef,
+    returnFocus: () => openerRef.current,
+  });
+
+  if (!allowed) return null;
 
   async function confirm() {
     setBusy(true);
@@ -151,6 +150,7 @@ export function DeleteButton({
           />
 
           <div
+            ref={dialogRef}
             role="alertdialog"
             aria-modal="true"
             aria-labelledby={titleId}

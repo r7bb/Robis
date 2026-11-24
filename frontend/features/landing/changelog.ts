@@ -45,6 +45,17 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
+    area: 'Product',
+    title: 'Every dialog by keyboard, and Robis that says when it cannot be reached',
+    brief:
+      'Each dialog now opens from the keyboard, keeps focus inside, has a name, and closes on Escape with focus back where it was; and the page shown when Robis is down says so instead of blaming the connection.',
+    summary:
+      'A keyboard journey opens every dialog (the issue peek, shortcut help, command palette, deleting, the camera, a picture full size, scheduling a meeting, posting and watching a story) and checks each takes focus, is named for a screen reader, keeps Tab inside and closes on Escape with focus back on what opened it; it also moves through the board with J and writes in a document with no mouse. Three failed and are fixed: the delete confirmation and the full-size picture let Tab wander onto the page behind and left focus nowhere after Escape (the picture now has a Close button too), and scheduling a meeting was a dialog with no name. Separately, the page shown when a page cannot load said “You’re offline” even when the connection was fine and Robis itself was restarting, and its Try again button was blocked by the security policy. It now says Robis cannot be reached, gives both reasons, tries again by itself every ten seconds, and the service worker shows it for a proxy’s 502, 503 or 504 too.',
+    checked:
+      'The keyboard journey passes on nine dialogs, the board and the document editor; the accessibility journey still passes on every page. In Chrome against the stack, with the web server stopped the page said Robis cannot be reached, and when it was started again the page reloaded to where it was going by itself. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-24',
     area: 'Security',
     title: 'Fourteen common attacks, each tried against Robis',
     brief:

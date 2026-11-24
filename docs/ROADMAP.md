@@ -91,8 +91,9 @@ fresh workspace reproduces issues, comments and labels. Account deletion
 page the screenshot script captures, on three themes, in CI, and fails on
 serious or critical findings; the contrast, naming and keyboard problems
 it found are fixed. The landing field stills when reduced motion is turned
-on, even with the page open. A keyboard and screen reader pass and message
-files for a second language are next.
+on, even with the page open. Every dialog works by keyboard and is named
+for screen readers, checked by a journey. Message files for a second
+language are next.
 
 **Phone and installable app (C8).** A manifest and icons so
 a phone installs Robis to its home screen, and every page checked at

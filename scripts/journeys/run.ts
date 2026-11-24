@@ -10,7 +10,8 @@
  * demo workspace opening from the first run, and a workspace export
  * downloaded once and a CSV imported once (C6), every page fitting a
  * phone's width, an issue read and commented on offline, and a photo and
- * link shared to Robis (C8), and axe on every captured page (C9).
+ * link shared to Robis (C8), and axe on every captured page and every
+ * dialog by keyboard (C9).
  * Each journey's people get Chromes of their own and fresh accounts, never
  * the demo ones. Run in CI on every push and pull request.
  *
@@ -24,6 +25,7 @@ import { Checks } from './checks.ts';
 import { demoWorkspaceJourney, emptyViewsJourney } from './empty-views.ts';
 import { exportJourney } from './export.ts';
 import { importJourney } from './import.ts';
+import { keyboardDialogsJourney } from './keyboard-dialogs.ts';
 import { guestJourney, meetingJourney, strangerJourney } from './meetings-access.ts';
 import { offlineBoardJourney } from './offline-board.ts';
 import { offlineIssueJourney } from './offline-issue.ts';
@@ -52,6 +54,7 @@ const JOURNEYS: Record<string, (checks: Checks) => Promise<void>> = {
   'offline-issue': (checks) => offlineIssueJourney(checks, FIRST_PORT + 17),
   share: (checks) => shareJourney(checks, FIRST_PORT + 18),
   a11y: (checks) => a11yJourney(checks, [FIRST_PORT + 19, FIRST_PORT + 20, FIRST_PORT + 21]),
+  keyboard: (checks) => keyboardDialogsJourney(checks, FIRST_PORT + 22),
 };
 
 async function main() {

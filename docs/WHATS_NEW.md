@@ -6,6 +6,11 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Every dialog by keyboard, and Robis that says when it cannot be
+  reached** (2026-11-24). Each dialog now opens from the keyboard, keeps
+  focus inside, has a name, and closes on Escape with focus back where it
+  was; and the page shown when Robis is down says so instead of blaming the
+  connection.
 - **Fourteen common attacks, each tried against Robis** (2026-11-24). The
   usual attacks on a new web app, from typing /admin to guessing the login
   code, are each tried in a test, and the one that found a gap is fixed.

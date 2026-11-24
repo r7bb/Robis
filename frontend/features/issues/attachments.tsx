@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BASE_URL, call } from '../../lib/api.ts';
 import { getSyncEngine } from '../../lib/sync.ts';
+import { useOverlay } from '../../lib/use-overlay.ts';
 
 /** An image on an issue or comment, as the contract describes it. */
 export type Attachment = ResponseOf<(typeof contracts)['attachments.list']>['attachments'][number];
@@ -107,6 +108,10 @@ export function IssueAttachments({
   const [revision, setRevision] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState<Attachment | null>(null);
+  const viewer = useRef<HTMLDivElement>(null);
+  // Tab kept inside the full-size view, Escape closing it, and focus back on
+  // the picture that opened it (C9).
+  useOverlay({ active: open !== null, onClose: () => setOpen(null), panel: viewer });
 
   const key = useMemo(() => ['attachments', workspaceId, issueId] as const, [workspaceId, issueId]);
   const list = useQuery({
@@ -314,16 +319,24 @@ export function IssueAttachments({
       ) : null}
 
       {open ? (
+        // biome-ignore lint/a11y/useKeyWithClickEvents: a click on the backdrop closes it; from the keyboard Escape (useOverlay) and the Close button do
         <div
+          ref={viewer}
           role="dialog"
           aria-modal="true"
-          aria-label="Image"
+          aria-label="Image, full size"
           tabIndex={-1}
           onClick={() => setOpen(null)}
-          onKeyDown={(event) => event.key === 'Escape' && setOpen(null)}
-          ref={(element) => element?.focus()}
           className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4 backdrop-blur-sm"
         >
+          {/* Something to hold focus, and a way out for anyone who does not know Escape (C9). */}
+          <button
+            type="button"
+            onClick={() => setOpen(null)}
+            className="absolute right-4 top-4 rounded-md bg-black/60 px-3 py-1.5 text-sm text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+          >
+            Close
+          </button>
           {/* biome-ignore lint/performance/noImgElement: served by the API with the session cookie */}
           <img
             src={`${BASE_URL}${open.url}`}

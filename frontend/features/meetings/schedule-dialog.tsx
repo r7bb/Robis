@@ -167,6 +167,9 @@ export function ScheduleDialog({
   return (
     <dialog
       ref={dialog}
+      // Named by its heading, so it is announced as what it is (C9).
+      aria-labelledby={`${fieldId}-heading`}
+      aria-describedby={`${fieldId}-lead`}
       // Escape fires `cancel`, which would otherwise close the element
       // without telling the parent, leaving `open` stuck true.
       onCancel={(event) => {
@@ -177,8 +180,10 @@ export function ScheduleDialog({
     >
       <form onSubmit={submit} className="space-y-4 p-5">
         <header>
-          <h2 className="text-base font-semibold text-content">Schedule a meeting</h2>
-          <p className="mt-0.5 text-xs text-faint">
+          <h2 id={`${fieldId}-heading`} className="text-base font-semibold text-content">
+            Schedule a meeting
+          </h2>
+          <p id={`${fieldId}-lead`} className="mt-0.5 text-xs text-faint">
             Everyone in the workspace can see it. Invitees also get a yes/no.
           </p>
         </header>

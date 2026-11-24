@@ -204,15 +204,16 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Every dialog by keyboard, and Robis that says when it cannot be
+  reached.** Each dialog now opens from the keyboard, keeps focus inside,
+  has a name, and closes on Escape with focus back where it was; and the
+  page shown when Robis is down says so instead of blaming the connection.
 - **Fourteen common attacks, each tried against Robis.** The usual attacks
   on a new web app, from typing /admin to guessing the login code, are each
   tried in a test, and the one that found a gap is fixed.
 - **Accessibility checked on every page, and what it found fixed.** axe now
   checks every page the screenshots capture, on three themes, in CI, and the
   contrast, naming and keyboard problems it found are fixed.
-- **Share a photo or link to Robis from a phone.** With Robis installed, a
-  photo, a link or some words shared from another app become an issue on the
-  board you pick, with or without a signal.
 
 <!-- latest:end -->
 
