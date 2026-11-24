@@ -62,7 +62,11 @@ export const cycleContracts = {
     path: '/workspaces/:workspaceId/projects/:projectId/cycles',
     summary: 'Plan a cycle on a board: a name and the days it runs, at most eight weeks.',
     params: workspaceParams.extend({ projectId: z.string() }),
-    body: z.object(fields),
+    body: z.object({
+      ...fields,
+      /** The planner's zone, whose calendar the days are; UTC when not known. */
+      timeZone: z.string().max(64).optional(),
+    }),
     status: 201,
     response: z.object({ cycle }),
   }),

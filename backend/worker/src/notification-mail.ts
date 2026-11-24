@@ -71,6 +71,13 @@ function linkOf(webOrigin: string, row: Row, payload: Record<string, unknown>): 
     const reply = typeof payload.replyId === 'string' ? `#reply-${payload.replyId}` : '';
     return `${webOrigin}/workspaces/${row.workspaceId}/spaces/threads/${payload.threadId}${reply}`;
   }
+  if (
+    row.workspaceId &&
+    typeof payload.cycleId === 'string' &&
+    typeof payload.projectId === 'string'
+  ) {
+    return `${webOrigin}/workspaces/${row.workspaceId}/projects/${payload.projectId}?cycle=${payload.cycleId}`;
+  }
   if (row.kind === 'nudge' && typeof payload.nudge === 'string') {
     return `${webOrigin}/guide/${payload.nudge}`;
   }

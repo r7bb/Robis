@@ -1,4 +1,4 @@
-import { channelHref } from './links.ts';
+import { boardHref, channelHref } from './links.ts';
 
 /**
  * What an inbox entry says about something done to you (C3): who did it,
@@ -19,6 +19,8 @@ type Item = {
     change?: 'moved' | 'changed' | 'canceled';
     threadId?: string;
     replyId?: string;
+    cycleId?: string;
+    projectId?: string;
     channelId?: string;
     messageId?: string;
   };
@@ -92,7 +94,7 @@ export function describeNotification(item: Item): {
   }
 }
 
-/** Where an entry about an issue, a meeting or a thread leads. */
+/** Where an entry about an issue, a meeting, a thread or a cycle leads. */
 export function notificationHref(item: Item): string {
   const { payload, workspaceId } = item;
   if (payload.issueId && workspaceId) {
@@ -104,6 +106,9 @@ export function notificationHref(item: Item): string {
   if (payload.threadId && workspaceId) {
     const reply = payload.replyId ? `#reply-${payload.replyId}` : '';
     return `/workspaces/${workspaceId}/spaces/threads/${payload.threadId}${reply}`;
+  }
+  if (payload.cycleId && payload.projectId && workspaceId) {
+    return boardHref(workspaceId, payload.projectId, { filter: { cycleId: payload.cycleId } });
   }
   return item.workspaceId ? `/workspaces/${item.workspaceId}` : '/workspaces';
 }

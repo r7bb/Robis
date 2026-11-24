@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'A notice the day before a cycle ends',
+    brief:
+      'The day before a cycle’s last day, everyone with an issue still open in it hears that it ends tomorrow and how many of theirs are open, with a link to the board narrowed to the cycle.',
+    summary:
+      'A cycle now keeps the zone of whoever planned it, so its days are that calendar’s. From nine in the morning there on the day before its last day, each person with an issue still open in it, done and canceled ones aside, gets one notice: Relaunch ends tomorrow, 2 of your issues are still open on Web. It sits under Priority in the inbox, as something that asks for a look, and opens the board narrowed to the cycle. Nobody with nothing open hears of it, nor anyone about a board that is archived. Each person is told once for each end date however often the hourly look runs: someone given work in the cycle later that day still hears, and a cycle moved to end later is told again before its new last day. It follows the person’s notification settings like any other kind, with Cycles ending to turn it off, and comes by mail and push where those are on.',
+    checked:
+      'Five tests: whether a cycle ends tomorrow on its own clock (before and after nine, London and Tokyo); two people with work open told once each with their own counts, someone with only finished work and an unassigned issue telling nobody, and the link and mail line; work given later that day told on the next look, and a cycle moved to end later told again; nothing before nine where it was planned; nothing from an archived board until it is unarchived, and an unknown zone planned in UTC. The inbox tab test now puts it under Priority. The notification settings, mail text, demo and service role tests. In the stack, a cycle planned in New York ending tomorrow put one entry under Priority, Relaunch ends tomorrow with 2 of your issues are still open on Web, linking to the board narrowed to it; the same cycle planned in Tokyo, where it was not yet nine, told nobody. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Workload for the cycles running now',
     brief:
       'While a cycle runs, Workload on Insights can count only what each person has planned in the cycles running now, rather than everything open.',

@@ -756,11 +756,18 @@ export const cycles = pgTable(
     name: text('name').notNull(),
     startsOn: date('starts_on', { mode: 'string' }).notNull(),
     endsOn: date('ends_on', { mode: 'string' }).notNull(),
+    /**
+     * The planner's IANA zone: whose calendar the days are, so "ends
+     * tomorrow" is said at a sensible hour there.
+     */
+    timeZone: text('time_zone').notNull().default('UTC'),
     createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
     createdAt: createdAt(),
   },
   (t) => [
     index('cycles_project_starts_idx').on(t.projectId, t.startsOn),
+    // The hourly look for cycles ending tomorrow.
+    index('cycles_ends_on_idx').on(t.endsOn),
     check('cycles_ends_after_start', sql`${t.endsOn} >= ${t.startsOn}`),
   ],
 );
@@ -1822,7 +1829,7 @@ export const notificationSettings = pgTable(
     primaryKey({ columns: [t.userId, t.kind, t.channel] }),
     check(
       'notification_settings_kind',
-      sql`${t.kind} in ('mention', 'assignment', 'issue_comment', 'meeting', 'nudge', 'space_reply', 'space_answer')`,
+      sql`${t.kind} in ('mention', 'assignment', 'issue_comment', 'meeting', 'nudge', 'space_reply', 'space_answer', 'cycle_ending')`,
     ),
     check('notification_settings_channel', sql`${t.channel} in ('in_app', 'email', 'push')`),
   ],

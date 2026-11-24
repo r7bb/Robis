@@ -20,6 +20,7 @@ import { startTracingFromEnv } from '@robis/telemetry';
 import { log, setLogService } from '@robis/telemetry/log';
 import { assistHandler } from './assist-job.ts';
 import { auditStreamConfig, httpSink, streamAuditEvents } from './audit-stream.ts';
+import { CYCLE_ENDING_JOB } from './cycle-ending.ts';
 import { handlers } from './handlers.ts';
 import { DEFAULT_HEARTBEAT_FILE, heartbeat } from './heartbeat.ts';
 import { mailHandlers } from './mail.ts';
@@ -103,6 +104,8 @@ async function scheduleMaintenance() {
     { kind: 'digests.scan', delayMs: HOUR_MS },
     // Stories past their 24 hours (B2): hidden at once, deleted within this.
     { kind: STORY_EXPIRY_JOB, delayMs: STORY_EXPIRY_INTERVAL_MS },
+    // Hourly, so a cycle's day-before notice goes out within the hour of nine there.
+    { kind: CYCLE_ENDING_JOB, delayMs: HOUR_MS },
   ]);
   if (dropped > 0) log.info(`maintenance: dropped ${dropped} repeated waiting jobs`);
 }
@@ -193,6 +196,7 @@ reschedule('nudges.scan', NUDGE_INTERVAL_MS);
 reschedule('agents.judge', HOUR_MS);
 reschedule('digests.scan', HOUR_MS);
 reschedule(STORY_EXPIRY_JOB, STORY_EXPIRY_INTERVAL_MS);
+reschedule(CYCLE_ENDING_JOB, HOUR_MS);
 
 await scheduleMaintenance();
 

@@ -1,6 +1,7 @@
 /**
  * The inbox in two (idea 4): Priority, what asks something of you (you were
- * named, given an issue, invited, or a meeting you are in changed), and
+ * named, given an issue, invited, a meeting you are in changed, or a cycle
+ * with your work open ends tomorrow), and
  * Other, what is good to know (comments on your issues, suggestions). Any
  * kind not named here is Other, so a new kind never jumps the queue. Later
  * holds what was snoozed, until its time comes.
@@ -22,6 +23,8 @@ const PRIORITY_KINDS: ReadonlySet<string> = new Set([
   'meeting',
   // You asked to be reminded, so it asks something of you.
   'reminder',
+  // Work of yours is open in a cycle that ends tomorrow.
+  'cycle_ending',
 ]);
 
 export function inboxTabOf(kind: string): InboxTab {

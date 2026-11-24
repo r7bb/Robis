@@ -21,4 +21,8 @@ export const NOTIFICATION_KIND_NAMES: Record<NotificationKind, { name: string; w
     name: 'Answers marked',
     when: 'Your reply is marked as the answer to a question.',
   },
+  cycle_ending: {
+    name: 'Cycles ending',
+    when: 'The day before a cycle ends, while issues of yours in it are still open.',
+  },
 };

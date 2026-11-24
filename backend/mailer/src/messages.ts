@@ -298,6 +298,8 @@ export function notificationLine(item: NotificationLine): string {
       return `${c.actor} replied in ${c.title || 'a thread'}${said(c.excerpt)}`;
     case 'space_answer':
       return `${c.actor} marked your reply as the answer to ${c.title || 'a question'}`;
+    case 'cycle_ending':
+      return `${c.title || 'A cycle'} ends tomorrow${said(c.body)}`;
     default:
       return `${c.actor} mentioned you on ${issue}${said(c.excerpt)}`;
   }

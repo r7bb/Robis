@@ -12,6 +12,7 @@
     "./heartbeat": "./src/heartbeat.ts",
     "./mail": "./src/mail.ts",
     "./metrics": "./src/metrics.ts",
+    "./cycle-ending": "./src/cycle-ending.ts",
     "./nudges": "./src/nudges.ts",
     "./webhook": "./src/webhook.ts",
     "./workspace-webhook": "./src/workspace-webhook.ts",

@@ -268,6 +268,8 @@ export const WORKER_GRANTS: TableGrants = {
   // Who is told of a reply in a space, or of an answer marked (C3).
   space_threads: ['select'],
   space_replies: ['select'],
+  // Who is told a cycle ends tomorrow.
+  cycles: ['select'],
   sessions: ['select', 'delete'],
   // Idempotency keys past their replay window (stage 3, item 30).
   mutations: ['select', 'delete'],

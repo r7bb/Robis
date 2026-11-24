@@ -33,6 +33,7 @@ const KINDS = [
   'nudge',
   'space_reply',
   'space_answer',
+  'cycle_ending',
 ];
 
 async function settingsOf(actor: Actor) {

@@ -20,6 +20,7 @@ import {
   STORY_EXPIRY_JOB,
   scanDigests,
 } from '@robis/database';
+import { CYCLE_ENDING_JOB, runCycleEndingScan } from './cycle-ending.ts';
 import { notifyHandlers } from './notify.ts';
 import { scanNudges } from './nudges.ts';
 import type { Handlers } from './runner.ts';
@@ -80,6 +81,11 @@ export const runDigestScan = async (_payload: unknown, { db }: { db: Database })
   await scanDigests(db);
 };
 
+/** Tell people with work open in a cycle that ends tomorrow. Runs hourly. */
+export const runCycleEnding = async (_payload: unknown, { db }: { db: Database }) => {
+  await runCycleEndingScan(db);
+};
+
 /** Delete stories past their 24 hours, and queue their files (B2). */
 export const runStoryExpiry = async (_payload: unknown, { db }: { db: Database }) => {
   await expireStories(db);
@@ -96,4 +102,5 @@ export const handlers: Handlers = {
   'agents.judge': judgeAgentWork,
   'digests.scan': runDigestScan,
   [STORY_EXPIRY_JOB]: runStoryExpiry,
+  [CYCLE_ENDING_JOB]: runCycleEnding,
 };

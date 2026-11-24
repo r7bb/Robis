@@ -33,6 +33,15 @@ describe('a line of a digest', () => {
     );
     expect(
       notificationLine({
+        kind: 'cycle_ending',
+        actor: null,
+        link: 'x',
+        title: 'Relaunch',
+        body: '2 of your issues are still open on Web.',
+      }),
+    ).toBe('Relaunch ends tomorrow: 2 of your issues are still open on Web.');
+    expect(
+      notificationLine({
         kind: 'nudge',
         actor: null,
         title: 'Try a document',

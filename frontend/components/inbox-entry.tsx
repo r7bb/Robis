@@ -43,6 +43,14 @@ function hrefFor(item: NotificationItem): string {
 function headlineFor(item: NotificationItem) {
   if (item.kind === 'nudge') return item.payload.title ?? 'Suggestion';
 
+  if (item.kind === 'cycle_ending') {
+    return (
+      <>
+        <span className="font-medium">{item.payload.title ?? 'A cycle'}</span> ends tomorrow
+      </>
+    );
+  }
+
   if (item.kind === 'export') {
     return (
       <>
@@ -80,7 +88,9 @@ function headlineFor(item: NotificationItem) {
 function bodyFor(item: NotificationItem): string | undefined {
   if (item.kind === 'invitation') return 'Accept or decline it on your workspaces page.';
   if (item.kind === 'export') return 'Download it once, from the People page.';
-  return item.kind === 'nudge' ? item.payload.body : describeNotification(item).body;
+  return item.kind === 'nudge' || item.kind === 'cycle_ending'
+    ? item.payload.body
+    : describeNotification(item).body;
 }
 
 /**

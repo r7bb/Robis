@@ -41,6 +41,7 @@ export const NOTIFICATION_KINDS = [
   'nudge',
   'space_reply',
   'space_answer',
+  'cycle_ending',
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 

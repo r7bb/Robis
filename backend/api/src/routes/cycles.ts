@@ -9,7 +9,7 @@ import {
   recordAudit,
   type Tx,
 } from '@robis/database';
-import { CYCLE_DAYS_MAX, can, contracts, isUuid } from '@robis/shared';
+import { CYCLE_DAYS_MAX, can, canonicalZone, contracts, isUuid } from '@robis/shared';
 import { and, asc, eq, notInArray } from 'drizzle-orm';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { serve } from '../contract.ts';
@@ -182,6 +182,7 @@ export async function cycleRoutes(app: FastifyInstance, opts: { db: Database }) 
             name: body.name,
             startsOn: body.startsOn,
             endsOn: body.endsOn,
+            timeZone: canonicalZone(body.timeZone ?? 'UTC') ?? 'UTC',
             createdBy: currentUser(request).id,
           })
           .returning();

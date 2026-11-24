@@ -1474,7 +1474,7 @@ A board’s cycles, earliest first, each with how many of its issues are done.
 
 Plan a cycle on a board: a name and the days it runs, at most eight weeks.
 
-- Body: `name` (required), `startsOn` (required), `endsOn` (required)
+- Body: `name` (required), `startsOn` (required), `endsOn` (required), `timeZone`
 - Answers: 201
 - Name: `cycles.create`
 

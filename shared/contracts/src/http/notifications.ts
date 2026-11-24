@@ -25,7 +25,10 @@ const payload = z.looseObject({
   /** Replies and answers in spaces (C3). */
   threadId: z.string().optional(),
   replyId: z.string().optional(),
-  /** Nudges, and the thread a space notification is about. */
+  /** A cycle about to end, and its board. */
+  cycleId: z.string().optional(),
+  projectId: z.string().optional(),
+  /** Nudges, the thread a space notification is about, and a cycle's name. */
   title: z.string().optional(),
   body: z.string().optional(),
   nudge: z.string().optional(),

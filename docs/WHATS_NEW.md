@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **A notice the day before a cycle ends** (2026-11-24). The day before a
+  cycle’s last day, everyone with an issue still open in it hears that it
+  ends tomorrow and how many of theirs are open, with a link to the board
+  narrowed to the cycle.
 - **Workload for the cycles running now** (2026-11-24). While a cycle runs,
   Workload on Insights can count only what each person has planned in the
   cycles running now, rather than everything open.

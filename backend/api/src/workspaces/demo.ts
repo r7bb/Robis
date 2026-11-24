@@ -100,6 +100,7 @@ async function planDemoCycle(
       name: DEMO_WORKSPACE.cycle.name,
       startsOn: day(today),
       endsOn: day(addDays(today, DEMO_WORKSPACE.cycle.days - 1)),
+      timeZone: zone,
       createdBy: owner.id,
     })
     .returning({ id: cycles.id });

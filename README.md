@@ -204,15 +204,16 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **A notice the day before a cycle ends.** The day before a cycle’s last
+  day, everyone with an issue still open in it hears that it ends tomorrow
+  and how many of theirs are open, with a link to the board narrowed to the
+  cycle.
 - **Workload for the cycles running now.** While a cycle runs, Workload on
   Insights can count only what each person has planned in the cycles running
   now, rather than everything open.
 - **A burn-up chart for the cycle.** Chart on the cycle bar draws how much
   of the cycle was done by the end of each day so far, against a dashed line
   of an even pace to all of it by the last day.
-- **Ask Sapha how the cycle is going.** Type “how is the cycle going” or
-  “what’s left in the sprint on Web” in the command palette, and Sapha
-  answers there: done of planned, days left and what is still open.
 
 <!-- latest:end -->
 

@@ -157,7 +157,12 @@ function PlanCycle({
     mutationFn: () =>
       call(contracts['cycles.create'], {
         params: { workspaceId, projectId },
-        body: { name: name.trim(), startsOn, endsOn },
+        body: {
+          name: name.trim(),
+          startsOn,
+          endsOn,
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: cyclesKey(workspaceId, projectId) });
