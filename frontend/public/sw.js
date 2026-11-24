@@ -36,7 +36,7 @@
  * and claims open clients. That machinery already existed; it had simply
  * never run, because the version had never changed.
  */
-const VERSION = 'robis-v4';
+const VERSION = 'robis-v5';
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 
@@ -109,17 +109,26 @@ function isStaticAsset(url) {
 async function networkFirst(request) {
   const cache = await caches.open(SHELL_CACHE);
 
+  const fallback = async () =>
+    (await cache.match(request)) ?? (await cache.match(OFFLINE_FALLBACK));
   try {
     const response = await fetch(request);
+    // The proxy answering for a server that is down or restarting (502, 503,
+    // 504) is no more Robis than no answer at all: show the kept copy, or the
+    // page that says Robis cannot be reached and tries again by itself.
+    if (UNREACHABLE.has(response.status)) return (await fallback()) ?? response;
     // Only cache successful, complete responses; a 404 or a redirect would be
     // a bad thing to replay offline. Nor a page whose URL carries a one-time
     // link: the Cache API ignores the `no-store` those pages send.
     if (response.ok && !isTokenPage(new URL(request.url))) cache.put(request, response.clone());
     return response;
   } catch {
-    return (await cache.match(request)) ?? (await cache.match(OFFLINE_FALLBACK));
+    return fallback();
   }
 }
+
+/** Answers from the front proxy that mean the app behind it is not there. */
+const UNREACHABLE = new Set([502, 503, 504]);
 
 async function cacheFirst(request) {
   const cache = await caches.open(ASSET_CACHE);

@@ -3,7 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Robis — offline</title>
+    <title>Robis can't be reached</title>
+    <!-- Tries again by itself: the security policy refuses scripts here, and
+         a refresh needs none. -->
+    <meta http-equiv="refresh" content="10" />
     <style>
       :root { color-scheme: dark; }
       body {
@@ -18,7 +21,9 @@
       main { max-width: 28rem; padding: 0 1.5rem; text-align: center; }
       h1 { font-size: 1.25rem; font-weight: 600; color: #fff; margin: 0 0 0.5rem; }
       p { font-size: 0.875rem; line-height: 1.6; color: #94a3b8; margin: 0 0 1.5rem; }
-      button {
+      .retry {
+        display: inline-block;
+        text-decoration: none;
         border: 1px solid #252a33;
         background: #16191f;
         color: #e2e8f0;
@@ -27,18 +32,21 @@
         font-size: 0.875rem;
         cursor: pointer;
       }
-      button:hover { border-color: #475569; }
+      .retry:hover { border-color: #475569; }
     </style>
   </head>
   <body>
     <main>
-      <h1>You're offline</h1>
+      <h1>Robis can't be reached right now</h1>
       <p>
-        This page hasn't been visited yet, so there's no cached copy. Boards you
-        have already opened still work offline — your unsynced changes are saved
-        on this device and will upload when you reconnect.
+        Either this device has lost its connection, or Robis itself is down or
+        restarting. This page tries again every ten seconds.
       </p>
-      <button type="button" onclick="location.reload()">Try again</button>
+      <p>
+        Boards you have already opened still work offline, and changes made on
+        them are kept on this device until they can be sent.
+      </p>
+      <a class="retry" href="">Try again</a>
     </main>
   </body>
 </html>
