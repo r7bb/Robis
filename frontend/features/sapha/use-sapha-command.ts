@@ -11,14 +11,21 @@ import { placeOf } from './run-intent.ts';
 /** Shorter than this, a request is more likely a search than something to do. */
 const ASK_FROM = 8;
 
-/** A question about an issue, answered in the palette. */
-export type Question = { kind: 'blockers' | 'about'; issueKey: string };
+/** A question answered in the palette: about an issue, or how the cycle is going. */
+export type Question = Extract<SaphaIntent, { kind: 'blockers' | 'about' | 'cycle' }>;
 
 /** A change Sapha read, shown in the palette to be confirmed. */
 export type Proposal = Exclude<
   SaphaIntent,
-  { kind: 'open' | 'search' | 'go' | 'blockers' | 'about' }
+  { kind: 'open' | 'search' | 'go' | 'blockers' | 'about' | 'cycle' }
 >;
+
+/** The intent as a question to answer here, or null when it is not one. */
+export function questionOf(intent: SaphaIntent): Question | null {
+  return intent.kind === 'blockers' || intent.kind === 'about' || intent.kind === 'cycle'
+    ? intent
+    : null;
+}
 
 /** What a role must be allowed to do for Sapha to offer the change. */
 function actionFor(intent: SaphaIntent): Action | undefined {
@@ -48,7 +55,7 @@ export function useSaphaCommand(
   query: string,
   propose: (intent: Proposal) => void,
   ask: (request: string) => void,
-  /** A question to answer in the palette: what an issue waits on, or how it stands. */
+  /** A question to answer in the palette: about an issue, or how the cycle is going. */
   answer: (question: Question) => void,
 ): Command[] {
   const router = useRouter();
@@ -68,7 +75,8 @@ export function useSaphaCommand(
       },
     ];
   }
-  if (intent.kind === 'blockers' || intent.kind === 'about') {
+  const question = questionOf(intent);
+  if (question) {
     return [
       {
         id: 'sapha',
@@ -76,7 +84,7 @@ export function useSaphaCommand(
         group: 'Sapha',
         hint: 'Answers here',
         keepOpen: true,
-        run: () => answer({ kind: intent.kind, issueKey: intent.issueKey }),
+        run: () => answer(question),
       },
     ];
   }
@@ -91,7 +99,7 @@ export function useSaphaCommand(
       keepOpen: !looking,
       run: looking
         ? () => {
-            void placeOf(workspaceId, intent as Exclude<SaphaIntent, Proposal>)
+            void placeOf(workspaceId, intent as Parameters<typeof placeOf>[1])
               .then((href) => router.push(href))
               // An issue key not found here: search for it instead.
               .catch(() => router.push(searchHref(workspaceId, query)));

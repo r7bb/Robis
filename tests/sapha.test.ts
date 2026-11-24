@@ -160,6 +160,57 @@ describe('saying what it will do', () => {
   });
 });
 
+describe('asking how the cycle is going', () => {
+  test('in the ways people ask, on one board when named, as typed', () => {
+    for (const text of [
+      'how is the cycle going?',
+      "how's the sprint",
+      'what is left in the cycle',
+      'cycle progress',
+      'Sapha, how is our current cycle doing',
+    ]) {
+      expect(read(text)).toEqual({ kind: 'cycle', board: null });
+    }
+    expect(read('how is the cycle going on Web Relaunch')).toEqual({
+      kind: 'cycle',
+      board: 'Web Relaunch',
+    });
+    expect(read("what's left in the sprint for the App board")).toEqual({
+      kind: 'cycle',
+      board: 'App',
+    });
+  });
+
+  test('for me or us is every board, not a board called me', () => {
+    expect(read('how is the cycle going for me')).toEqual({ kind: 'cycle', board: null });
+    expect(read('what is left in the sprint for us')).toEqual({ kind: 'cycle', board: null });
+  });
+
+  test('said back plainly; a bare word is still a search', () => {
+    expect(describeIntent(read('how is the cycle going')!, NOW)).toBe('How the cycles are going');
+    expect(describeIntent(read('cycle status on Web')!, NOW)).toBe('How the cycle on Web is going');
+    expect(read('cycle')).toBeNull();
+    expect(read('find cycle time')).toEqual({ kind: 'search', query: 'cycle time' });
+  });
+
+  test('from the provider’s parts too, the board bounded', () => {
+    const parts = {
+      kind: 'cycle' as const,
+      issueKey: null,
+      status: null,
+      priority: null,
+      person: null,
+      title: null,
+      board: '  Web  ',
+      when: null,
+      query: null,
+      place: null,
+    };
+    expect(intentFromParts(parts, NOW)).toEqual({ kind: 'cycle', board: 'Web' });
+    expect(intentFromParts({ ...parts, board: null }, NOW)).toEqual({ kind: 'cycle', board: null });
+  });
+});
+
 describe('tier 1: parts from the provider', () => {
   const none = {
     kind: 'none' as const,

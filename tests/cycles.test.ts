@@ -171,6 +171,19 @@ describe('moving a cycle’s unfinished issues on', () => {
     expect((await rollover(guest, ws, first.id, second.id)).statusCode).toBe(403);
   });
 
+  test('never back into a cycle that ends sooner; an empty cycle moves nothing', async () => {
+    const { owner, project, ws, file } = await board();
+    const first = (await plan(owner, ws, project.id, TWO_WEEKS)).json().cycle;
+    const second = (await plan(owner, ws, project.id, NEXT_TWO_WEEKS)).json().cycle;
+    const issue = await file('Open');
+    await put(owner, ws, issue.id, second.id);
+    const backwards = await rollover(owner, ws, second.id, first.id);
+    expect(backwards.statusCode).toBe(400);
+    expect(backwards.json().error).toBe('earlier_cycle');
+    const empty = await rollover(owner, ws, first.id, second.id);
+    expect(empty.json()).toMatchObject({ moved: 0, cycle: { id: second.id, total: 1 } });
+  });
+
   test('a cycle in another workspace is not found', async () => {
     const { owner, project, ws } = await board();
     const first = (await plan(owner, ws, project.id, TWO_WEEKS)).json().cycle;

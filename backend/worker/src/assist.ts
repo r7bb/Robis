@@ -121,7 +121,7 @@ export const PROMPTS = {
     'assign (to a person by name, or "me"), unassign, due (a due day; no when clears it), create (a new issue',
     'with a title, on a board if one is named), remind (about an issue, at a time), schedule (a meeting with a',
     'title, at a time), open (an issue), blockers (what an issue waits on), about (who has an issue and how',
-    'it stands), search (a query), go (to day,',
+    'it stands), cycle (how the cycle running now is going, on a board if one is named), search (a query), go (to day,',
     'calendar, feed, spaces or meetings).',
     'An issue is named by its key, like REL-12; never invent a key. Copy any time in the words it was said in,',
     'like "tomorrow 9am", never as a date. Leave a part null when the request does not say it.',

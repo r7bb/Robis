@@ -42,6 +42,7 @@ import { chatReadRoutes } from './routes/chat-reads.ts';
 import { commentRoutes } from './routes/comments.ts';
 import { consentRoutes } from './routes/consent.ts';
 import { cycleRoutes } from './routes/cycles.ts';
+import { currentCycleRoutes } from './routes/cycles-current.ts';
 import { discussionRoutes } from './routes/discussion.ts';
 import { documentVersionRoutes } from './routes/document-versions.ts';
 import { documentRoutes } from './routes/documents.ts';
@@ -353,6 +354,7 @@ export function buildApp({
   app.register(notificationRoutes, { db });
   app.register(chatReadRoutes, { db });
   app.register(cycleRoutes, { db });
+  app.register(currentCycleRoutes, { db });
   app.register(projectUpdateRoutes, { db });
   app.register(repeatRoutes, { db });
   app.register(workloadRoutes, { db });

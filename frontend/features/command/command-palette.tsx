@@ -195,6 +195,10 @@ export function CommandPalette({
           setAsking(null);
           setProposal(intent);
         }}
+        onQuestion={(question) => {
+          setAsking(null);
+          setAnswering(question);
+        }}
         onBack={() => {
           setAsking(null);
           setAnswering(null);
@@ -396,6 +400,7 @@ function SaphaPane({
   answering,
   proposal,
   onAsked,
+  onQuestion,
   onBack,
   onClose,
   children,
@@ -405,6 +410,7 @@ function SaphaPane({
   answering: Question | null;
   proposal: Proposal | null;
   onAsked: (intent: Proposal) => void;
+  onQuestion: (question: Question) => void;
   onBack: () => void;
   onClose: () => void;
   children: ReactNode;
@@ -430,6 +436,7 @@ function SaphaPane({
         workspaceId={workspaceId}
         request={asking}
         onIntent={onAsked}
+        onQuestion={onQuestion}
         onBack={onBack}
         onClose={onClose}
       />

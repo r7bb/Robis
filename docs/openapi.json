@@ -8906,6 +8906,157 @@
         }
       }
     },
+    "/workspaces/{workspaceId}/cycles/current": {
+      "get": {
+        "operationId": "cycles.current",
+        "summary": "The cycles running today on the workspace’s boards, each with how its issues stand and the first few still open, work under way first.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "cycles": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "projectId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "startsOn": {
+                            "type": "string"
+                          },
+                          "endsOn": {
+                            "type": "string"
+                          },
+                          "total": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "done": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "canceled": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "inProgress": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "projectName": {
+                            "type": "string"
+                          },
+                          "projectKey": {
+                            "type": "string"
+                          },
+                          "open": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                },
+                                "key": {
+                                  "type": "string"
+                                },
+                                "title": {
+                                  "type": "string"
+                                },
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "TODO",
+                                    "IN_PROGRESS",
+                                    "IN_REVIEW",
+                                    "DONE",
+                                    "CANCELED"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "key",
+                                "title",
+                                "status"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "projectId",
+                          "name",
+                          "startsOn",
+                          "endsOn",
+                          "total",
+                          "done",
+                          "canceled",
+                          "inProgress",
+                          "projectName",
+                          "projectKey",
+                          "open"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "cycles"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/workspaces/{workspaceId}/projects/{projectId}/cycles": {
       "get": {
         "operationId": "cycles.list",
@@ -21605,6 +21756,7 @@
                                         "open",
                                         "blockers",
                                         "about",
+                                        "cycle",
                                         "search",
                                         "go",
                                         "none"

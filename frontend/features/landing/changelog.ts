@@ -46,13 +46,24 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Ask Sapha how the cycle is going',
+    brief:
+      'Type “how is the cycle going” or “what’s left in the sprint on Web” in the command palette, and Sapha answers there: done of planned, days left and what is still open.',
+    summary:
+      'Sapha now reads questions about cycles, in the ways people ask them (how is the cycle going, what is left in the sprint, cycle progress), on one board when it is named by its name or key (for me or for us means every board). The answer comes in the palette for each cycle running today on a board that is not archived: how many of the planned issues are done, the days left, and the first five still open with work under way first, each a link, and Show this cycle opening the board narrowed to it. Today is the asker’s own calendar day. With assistance on, a question Sapha reads through the assistant is now answered in the palette too, as one typed plainly is, rather than opening the issue.',
+    checked:
+      'Three tests through the API: each board’s running cycle with its counts and what is left, under way first, and ended and future cycles left out; today taken from the asker; an archived board’s cycle left out, a guest able to read it and a stranger not. Three tests of the ways the question is read, said back and taken from the assistant’s parts, and three of which board a question names and how days left are said. In the browser, the question on a board of three answered 1 of 3 done, 6 days left, with the two open issues listed. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Move a cycle’s unfinished issues on',
     brief:
       'When a cycle ends with issues still open, the board says how many, and one press moves them into the cycle running now or the next one planned.',
     summary:
-      'Once a cycle’s last day has passed with issues in it that are neither done nor canceled, the cycle bar adds a line naming the cycle and how many it left, and members who plan get Move them to the cycle running today, or else the next to start. Finished and canceled issues stay with the cycle they were done in, so its record of what it finished is kept. Each issue moved is recorded as an edit to its cycle, as if moved by hand, and boards that are open update straight away. Guests see the line but not the button.',
+      'Once a cycle’s last day has passed with issues in it that are neither done nor canceled, the cycle bar adds a line naming the cycle and how many it left, and members who plan get Move them to the cycle running today, or else the next to start. Finished and canceled issues stay with the cycle they were done in, so its record of what it finished is kept. Each issue moved is recorded as an edit to its cycle, as if moved by hand, and boards that are open update straight away. Work moves on only, never back into a cycle that ends sooner. Guests see the line but not the button.',
     checked:
-      'Three tests through the API: only the open and in-progress issues move, the done, canceled and unplanned ones stay, and asking again moves none; a cycle on another board, or the same cycle, is refused, and a guest cannot move them; a cycle from another workspace is not found. Four tests of which cycle is left over and where it would go, including a cycle ending today counting as still running. The full suite, lint, typecheck, knip and docs:links.',
+      'Four tests through the API: only the open and in-progress issues move, the done, canceled and unplanned ones stay, and asking again moves none; a cycle on another board, or the same cycle, is refused, and a guest cannot move them; a move back into a cycle that ends sooner is refused and an empty cycle moves nothing; a cycle from another workspace is not found. Four tests of which cycle is left over and where it would go, including a cycle ending today counting as still running. The full suite, lint, typecheck, knip and docs:links.',
   },
   {
     date: '2026-11-24',

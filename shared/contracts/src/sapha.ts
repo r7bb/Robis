@@ -27,6 +27,8 @@ export type SaphaIntent =
   | { kind: 'blockers'; issueKey: string }
   /** A question: who has an issue and how it stands, answered in the palette. */
   | { kind: 'about'; issueKey: string }
+  /** How the cycle running now is going, on one board when named. */
+  | { kind: 'cycle'; board: string | null }
   | { kind: 'search'; query: string }
   | { kind: 'go'; place: SaphaPlace };
 
@@ -37,6 +39,7 @@ export const LOOKING_INTENTS: ReadonlySet<SaphaIntent['kind']> = new Set([
   'go',
   'blockers',
   'about',
+  'cycle',
 ]);
 
 const KEY = '([a-z][a-z0-9]{0,9}-\\d{1,9})';
@@ -173,7 +176,20 @@ function making(text: string, original: string, now: Date): SaphaIntent | null {
   return null;
 }
 
+const CYCLE = '(?:cycle|sprint)';
+const CYCLE_QUESTION = new RegExp(
+  `^(?:how(?:'s| is) (?:the |this |our |my )?(?:current )?${CYCLE}(?: going| doing| looking)?|(?:what(?:'s| is) )?left in (?:the |this |our )?${CYCLE}|(?:the )?${CYCLE} (?:progress|status))(?: (?:on|for|in) (?:the )?(.+?))?(?: board)?$`,
+);
+
+/** Words after "for" that mean the asker's own boards, not one named. */
+const EVERY_BOARD = /^(?:me|us|my team|our team|the team|everyone)$/;
+
 function looking(text: string, request: string): SaphaIntent | null {
+  const cycle = CYCLE_QUESTION.exec(text);
+  if (cycle) {
+    const board = cycle[1] && !EVERY_BOARD.test(cycle[1]) ? asTyped(request, cycle[1]) : null;
+    return { kind: 'cycle', board };
+  }
   let m = new RegExp(
     `^(?:what(?:'s| is| are)|who(?:'s| is)) (?:blocking|holding up|in the way of) ${KEY}$`,
   ).exec(text);
@@ -256,6 +272,10 @@ export function describeIntent(intent: SaphaIntent, _now: Date = new Date()): st
       return `What ${intent.issueKey} waits on`;
     case 'about':
       return `How ${intent.issueKey} stands`;
+    case 'cycle':
+      return intent.board
+        ? `How the cycle on ${intent.board} is going`
+        : 'How the cycles are going';
     case 'search':
       return `Search for “${intent.query}”`;
     case 'go':
@@ -276,6 +296,7 @@ export const SAPHA_KINDS = [
   'open',
   'blockers',
   'about',
+  'cycle',
   'search',
   'go',
   'none',
@@ -373,6 +394,8 @@ export function intentFromParts(parts: SaphaParts, now: Date = new Date()): Saph
     }
     case 'go':
       return parts.place ? { kind: 'go', place: parts.place } : null;
+    case 'cycle':
+      return { kind: 'cycle', board: words(parts.board, 80) };
     default:
       return null;
   }

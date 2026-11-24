@@ -7,24 +7,27 @@ import { useEffect } from 'react';
 import { call } from '../../lib/api.ts';
 import { waitForAnswer } from '../assist/use-assist.ts';
 import { placeOf } from './run-intent.ts';
-import type { Proposal } from './use-sapha-command.ts';
+import { type Proposal, type Question, questionOf } from './use-sapha-command.ts';
 
 /**
  * Asking the assistant what a request means (Sapha, tier 1), shown in the
  * palette while it reads. Only the words typed are sent. What comes back is
- * checked as tier 0's reading is, then goes where a look goes, or to the
- * same card that waits for Do it.
+ * checked as tier 0's reading is, then is answered here, goes where a look
+ * goes, or opens the same card that waits for Do it.
  */
 export function SaphaAsk({
   workspaceId,
   request,
   onIntent,
+  onQuestion,
   onBack,
   onClose,
 }: {
   workspaceId: string;
   request: string;
   onIntent: (intent: Proposal) => void;
+  /** A question read from the words, answered in the palette as one typed plainly is. */
+  onQuestion: (question: Question) => void;
   onBack: () => void;
   onClose: () => void;
 }) {
@@ -41,8 +44,10 @@ export function SaphaAsk({
       return intent;
     },
     onSuccess: async (intent) => {
+      const question = questionOf(intent);
+      if (question) return onQuestion(question);
       if (!LOOKING_INTENTS.has(intent.kind)) return onIntent(intent as Proposal);
-      const href = await placeOf(workspaceId, intent as Exclude<SaphaIntent, Proposal>).catch(
+      const href = await placeOf(workspaceId, intent as Parameters<typeof placeOf>[1]).catch(
         () => null,
       );
       onClose();

@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Ask Sapha how the cycle is going** (2026-11-24). Type “how is the cycle
+  going” or “what’s left in the sprint on Web” in the command palette, and
+  Sapha answers there: done of planned, days left and what is still open.
 - **Move a cycle’s unfinished issues on** (2026-11-24). When a cycle ends
   with issues still open, the board says how many, and one press moves them
   into the cycle running now or the next one planned.

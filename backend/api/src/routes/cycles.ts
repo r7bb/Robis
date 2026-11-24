@@ -10,7 +10,7 @@ import {
   type Tx,
 } from '@robis/database';
 import { CYCLE_DAYS_MAX, can, contracts, isUuid } from '@robis/shared';
-import { and, asc, eq, notInArray, sql } from 'drizzle-orm';
+import { and, asc, eq, notInArray } from 'drizzle-orm';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { serve } from '../contract.ts';
 import { ApiError } from '../errors.ts';
@@ -21,6 +21,7 @@ import {
   requireAuth,
   requireMembership,
 } from '../plugins/authz.ts';
+import { CYCLE_COUNTS, FINISHED } from './cycle-counts.ts';
 import { applyIssueUpdate, delegateOf } from './issue-writes.ts';
 import { loadProject } from './projects.ts';
 
@@ -62,9 +63,6 @@ function assertSpan(startsOn: string, endsOn: string) {
   }
 }
 
-/** Statuses an issue is finished in, and so stays with the cycle it was done in. */
-const FINISHED = ['DONE', 'CANCELED'] as const;
-
 /**
  * Move a cycle's unfinished issues to another of the board's cycles, each
  * recorded as an edit to its cycle. The target is held so it cannot be
@@ -78,12 +76,13 @@ async function moveUnfinished(
     workspaceId: string;
     projectId: string;
     fromId: string;
+    fromEndsOn: string;
     toId: string;
     delegateId: string | null;
   },
 ): Promise<string[]> {
   const [target] = await tx
-    .select({ id: cycles.id })
+    .select({ id: cycles.id, endsOn: cycles.endsOn })
     .from(cycles)
     .where(
       and(
@@ -94,6 +93,10 @@ async function moveUnfinished(
     )
     .for('share');
   if (!target) throw ApiError.badRequest('That cycle is not on this board', 'bad_cycle');
+  // Work left over goes on, never back into a cycle that is over sooner.
+  if (target.endsOn < job.fromEndsOn) {
+    throw ApiError.badRequest('Move them to a cycle that ends later', 'earlier_cycle');
+  }
 
   const rows = await tx
     .select({ issue: issues, projectKey: projects.key })
@@ -132,17 +135,7 @@ export async function cycleRoutes(app: FastifyInstance, opts: { db: Database }) 
 
   async function withCounts(projectId: string, cycleId?: string) {
     const rows = await db
-      .select({
-        id: cycles.id,
-        projectId: cycles.projectId,
-        name: cycles.name,
-        startsOn: cycles.startsOn,
-        endsOn: cycles.endsOn,
-        total: sql<number>`count(${issues.id})::int`,
-        done: sql<number>`(count(${issues.id}) filter (where ${issues.status} = 'DONE'))::int`,
-        canceled: sql<number>`(count(${issues.id}) filter (where ${issues.status} = 'CANCELED'))::int`,
-        inProgress: sql<number>`(count(${issues.id}) filter (where ${issues.status} in ('IN_PROGRESS', 'IN_REVIEW')))::int`,
-      })
+      .select(CYCLE_COUNTS)
       .from(cycles)
       .leftJoin(issues, eq(issues.cycleId, cycles.id))
       .where(and(eq(cycles.projectId, projectId), cycleId ? eq(cycles.id, cycleId) : undefined))
@@ -241,6 +234,7 @@ export async function cycleRoutes(app: FastifyInstance, opts: { db: Database }) 
           workspaceId,
           projectId: from.projectId,
           fromId: from.id,
+          fromEndsOn: from.endsOn,
           toId,
           delegateId: delegateOf(user),
         }),

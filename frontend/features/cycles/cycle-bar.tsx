@@ -5,22 +5,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { call } from '../../lib/api.ts';
 import { localToday } from '../../lib/due-date.ts';
+import { addDays, daysLeftLine } from './cycle-days.ts';
 import { LeftOverLine } from './left-over-line.tsx';
 import { currentCycle, cyclesKey, useCycles } from './use-cycles.ts';
 
-const DAY_MS = 86_400_000;
 /** A new cycle is this long unless changed. */
 const DEFAULT_DAYS = 14;
-
-function addDays(day: string, days: number): string {
-  return new Date(Date.parse(`${day}T00:00:00Z`) + days * DAY_MS).toISOString().slice(0, 10);
-}
-
-function daysLeft(today: string, endsOn: string): number {
-  return Math.round(
-    (Date.parse(`${endsOn}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / DAY_MS,
-  );
-}
 
 /**
  * The board's current cycle (or the next), as a bar of what is done, with
@@ -103,17 +93,12 @@ function CycleProgress({
   const counted = cycle.total - cycle.canceled;
   const share = counted > 0 ? Math.round((cycle.done / counted) * 100) : 0;
   const running = cycle.startsOn <= today;
-  const left = daysLeft(today, cycle.endsOn);
   return (
     <div>
       <div className="flex flex-wrap items-baseline justify-between gap-2 text-xs">
         <span className="font-medium text-content">{cycle.name}</span>
         <span className="text-faint">
-          {running
-            ? left === 0
-              ? 'ends today'
-              : `${left} ${left === 1 ? 'day' : 'days'} left`
-            : `starts ${cycle.startsOn}`}
+          {running ? daysLeftLine(today, cycle.endsOn) : `starts ${cycle.startsOn}`}
           {' · '}
           {cycle.done} of {counted} done
         </span>

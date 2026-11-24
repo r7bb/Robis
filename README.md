@@ -204,16 +204,15 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Ask Sapha how the cycle is going.** Type “how is the cycle going” or
+  “what’s left in the sprint on Web” in the command palette, and Sapha
+  answers there: done of planned, days left and what is still open.
 - **Move a cycle’s unfinished issues on.** When a cycle ends with issues
   still open, the board says how many, and one press moves them into the
   cycle running now or the next one planned.
 - **The demo board arrives with a cycle planned.** A new demo workspace
   plans its unfinished work in a two-week cycle from the day it is made, so
   the board opens with the cycle’s progress and days left.
-- **Cycles: plan a board’s work in stretches of days.** A board can plan
-  cycles, such as two weeks at a time; an issue is planned for one, the
-  board shows the current cycle’s progress and days left, and Only this
-  cycle narrows the board to it.
 
 <!-- latest:end -->
 

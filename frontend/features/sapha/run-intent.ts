@@ -13,7 +13,10 @@ import { findBoard, findPerson } from './resolve.ts';
 
 export type Done = { said: string; href: string | null };
 
-type Change = Exclude<SaphaIntent, { kind: 'open' | 'search' | 'go' | 'blockers' | 'about' }>;
+type Change = Exclude<
+  SaphaIntent,
+  { kind: 'open' | 'search' | 'go' | 'blockers' | 'about' | 'cycle' }
+>;
 
 async function issueByKey(workspaceId: string, key: string) {
   try {

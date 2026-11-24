@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { call } from '../../lib/api.ts';
 import { dateFormat } from '../../lib/i18n/format.ts';
 import { issueHref } from '../../lib/links.ts';
+import { CycleAnswer } from './sapha-cycle-answer.tsx';
 import type { Question } from './use-sapha-command.ts';
 
 const FINISHED = new Set(['DONE', 'CANCELED']);
@@ -51,9 +52,8 @@ function standing({ issue, assignee }: Read): string {
 }
 
 /**
- * Sapha answers a question about an issue in the palette: how it stands
- * (its status, who has it, when it is due) and what it waits on, each
- * blocker a link and finished ones struck through.
+ * Sapha answers a question in the palette: about an issue, or how the
+ * cycle running now is going. Escape goes back to the list.
  */
 export function SaphaAnswer({
   workspaceId,
@@ -66,15 +66,6 @@ export function SaphaAnswer({
   onBack: () => void;
   onClose: () => void;
 }) {
-  const { issueKey } = question;
-  const answer = useQuery({
-    queryKey: ['sapha-answer', workspaceId, issueKey],
-    queryFn: () => readIssue(workspaceId, issueKey),
-    retry: false,
-  });
-  const read = answer.data;
-  const open = read?.waiting.filter((b) => !FINISHED.has(b.status)) ?? [];
-
   return (
     <section
       aria-label="Sapha"
@@ -87,6 +78,39 @@ export function SaphaAnswer({
       }}
     >
       <p className="text-[11px] font-medium uppercase tracking-wide text-faint">Sapha</p>
+      {question.kind === 'cycle' ? (
+        <CycleAnswer workspaceId={workspaceId} board={question.board} onClose={onClose} />
+      ) : (
+        <IssueAnswer workspaceId={workspaceId} question={question} onClose={onClose} />
+      )}
+    </section>
+  );
+}
+
+/**
+ * How an issue stands (its status, who has it, when it is due) and what it
+ * waits on, each blocker a link and finished ones struck through.
+ */
+function IssueAnswer({
+  workspaceId,
+  question,
+  onClose,
+}: {
+  workspaceId: string;
+  question: Exclude<Question, { kind: 'cycle' }>;
+  onClose: () => void;
+}) {
+  const { issueKey } = question;
+  const answer = useQuery({
+    queryKey: ['sapha-answer', workspaceId, issueKey],
+    queryFn: () => readIssue(workspaceId, issueKey),
+    retry: false,
+  });
+  const read = answer.data;
+  const open = read?.waiting.filter((b) => !FINISHED.has(b.status)) ?? [];
+
+  return (
+    <>
       {answer.isPending ? <p className="text-sm text-faint">Looking…</p> : null}
       {answer.isError ? (
         <p role="alert" className="text-sm text-danger-soft">
@@ -136,6 +160,6 @@ export function SaphaAnswer({
           </Link>
         </div>
       ) : null}
-    </section>
+    </>
   );
 }

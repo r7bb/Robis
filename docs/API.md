@@ -19,7 +19,7 @@ way.
 `{ "error": "<code>", "message": "<words for people>" }`. A stranger to a
 workspace gets 404, never 403, so its existence is not given away.
 
-239 routes.
+240 routes.
 
 ## activity
 
@@ -615,6 +615,14 @@ Move a cycle’s unfinished issues, those not done or canceled, to another cycle
 - Body: `toCycleId` (required)
 - Answers: 200
 - Name: `cycles.rollover`
+
+### `GET /workspaces/{workspaceId}/cycles/current`
+
+The cycles running today on the workspace’s boards, each with how its issues stand and the first few still open, work under way first.
+
+- Query: `today`
+- Answers: 200
+- Name: `cycles.current`
 
 ## documents
 

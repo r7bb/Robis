@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ISSUE_STATUSES } from '../domain.ts';
 import { dueDateSchema, uuid } from '../schemas.ts';
 import { workspaceParams } from './common.ts';
 import { contract } from './contract.ts';
@@ -30,7 +31,25 @@ const fields = {
   endsOn: dueDateSchema,
 };
 
+/** A running cycle, with its board and the first few issues still open. */
+const runningCycle = cycle.extend({
+  projectName: z.string(),
+  projectKey: z.string(),
+  open: z.array(
+    z.object({ id: uuid, key: z.string(), title: z.string(), status: z.enum(ISSUE_STATUSES) }),
+  ),
+});
+
 export const cycleContracts = {
+  'cycles.current': contract({
+    method: 'GET',
+    path: '/workspaces/:workspaceId/cycles/current',
+    summary:
+      'The cycles running today on the workspace’s boards, each with how its issues stand and the first few still open, work under way first.',
+    params: workspaceParams,
+    query: z.object({ today: dueDateSchema.optional() }),
+    response: z.object({ cycles: z.array(runningCycle) }),
+  }),
   'cycles.list': contract({
     method: 'GET',
     path: '/workspaces/:workspaceId/projects/:projectId/cycles',
