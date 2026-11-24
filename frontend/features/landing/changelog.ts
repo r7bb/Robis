@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Shipping and removing ask first',
+    brief:
+      'Ship it on a release now asks once more, since shipping cannot be undone, and removing a release or a template asks before it goes for everyone.',
+    summary:
+      'An interface review of the evening’s new screens found three actions done on a single press. Ship it now first says what it will do (its notes are written and it takes no more issues) with Not yet and Ship now. Removing a release uses the same confirmation as deleting a board, naming what stays (its issues, in no release) and what goes with it (its notes, once shipped). Removing a template asks for a second press, Remove for everyone, which a click elsewhere cancels. The release notes heading now follows the page’s own, release counts line up in even-width figures, and the name fields no longer offer the browser’s past entries.',
+    checked:
+      'In the browser, Ship it showed the question with Not yet and Ship now on one line, and Ship now shipped Version 2.0 with its notes. Lint, typecheck, the full suite, knip and docs:links.',
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Ask Sapha how the release is going',
     brief:
       'Type “how is the release going” or “what’s left for the release Version 2” in the command palette, and Sapha answers there with done of planned, its day and what is still open.',

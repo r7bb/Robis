@@ -82,6 +82,8 @@ export function SaveAsTemplate({
         value={name}
         onChange={(event) => setName(event.target.value)}
         aria-label="Template name"
+        name="template-name"
+        autoComplete="off"
         maxLength={60}
         className="min-w-0 flex-1 rounded-md border border-line bg-surface px-2 py-1 text-xs text-content outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
       />

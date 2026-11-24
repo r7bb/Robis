@@ -83,6 +83,8 @@ function TemplateList({
 }) {
   const me = useMyId();
   const queryClient = useQueryClient();
+  // Removing asks a second press: the template goes for everyone.
+  const [confirming, setConfirming] = useState<string | null>(null);
   const remove = useMutation({
     mutationFn: (templateId: string) =>
       call(contracts['issueTemplates.remove'], { params: { workspaceId, templateId } }),
@@ -115,12 +117,25 @@ function TemplateList({
             {admin || template.createdBy === me ? (
               <button
                 type="button"
-                aria-label={`Remove the template ${template.name}`}
+                aria-label={
+                  confirming === template.id
+                    ? `Remove the template ${template.name} for everyone`
+                    : `Remove the template ${template.name}`
+                }
                 disabled={remove.isPending}
-                onClick={() => remove.mutate(template.id)}
-                className="shrink-0 rounded px-1.5 text-xs text-faint hover:text-danger-soft focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-soft"
+                onClick={() =>
+                  confirming === template.id
+                    ? remove.mutate(template.id)
+                    : setConfirming(template.id)
+                }
+                onBlur={() => setConfirming(null)}
+                className={`shrink-0 rounded px-1.5 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-soft ${
+                  confirming === template.id
+                    ? 'font-medium text-danger-soft'
+                    : 'text-faint hover:text-danger-soft'
+                }`}
               >
-                Remove
+                {confirming === template.id ? 'Remove for everyone?' : 'Remove'}
               </button>
             ) : null}
           </li>
@@ -183,6 +198,8 @@ function FileFromTemplate({
         value={title}
         onChange={(event) => setTitle(event.target.value)}
         aria-label="Title"
+        name="issue-title"
+        autoComplete="off"
         maxLength={200}
         className={FIELD}
       />

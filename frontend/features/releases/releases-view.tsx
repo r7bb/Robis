@@ -4,6 +4,7 @@ import { can, contracts, type Role } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { type FormEvent, useState } from 'react';
+import { DeleteButton } from '../../components/delete-button.tsx';
 import { call } from '../../lib/api.ts';
 import { dateFormat } from '../../lib/i18n/format.ts';
 import { issueHref } from '../../lib/links.ts';
@@ -86,7 +87,7 @@ function ReleaseRow({
     >
       <span className="flex flex-wrap items-baseline justify-between gap-2">
         <span className="text-sm font-medium text-content">{release.name}</span>
-        <span className="text-xs text-faint">
+        <span className="text-xs tabular-nums text-faint">
           {whenLine(release)} · {release.done} of {counted} done
         </span>
       </span>
@@ -183,28 +184,68 @@ function ReleaseDetail({
             {(failed as Error).message}
           </p>
         ) : null}
-        {mayTakeAway ? (
-          <button
-            type="button"
-            disabled={takeAway.isPending}
-            onClick={() => takeAway.mutate()}
-            className="rounded-md px-2.5 py-1 text-xs text-muted hover:text-danger-soft"
-          >
-            Remove
-          </button>
-        ) : null}
+        <DeleteButton
+          name={release.name}
+          kind="release"
+          cascade={
+            release.notes
+              ? 'Its issues stay where they are, in no release. Its release notes go with it.'
+              : 'Its issues stay where they are, in no release.'
+          }
+          allowed={mayTakeAway}
+          onConfirm={async () => {
+            await takeAway.mutateAsync();
+          }}
+        />
         {canShip ? (
-          <button
-            type="button"
-            disabled={ship.isPending}
-            onClick={() => ship.mutate()}
-            className="rounded-md bg-accent px-3 py-1 text-xs font-medium text-accent-contrast hover:bg-accent-hover disabled:opacity-50"
-          >
-            Ship it
-          </button>
+          <ShipButton name={release.name} onShip={() => ship.mutate()} busy={ship.isPending} />
         ) : null}
       </div>
     </div>
+  );
+}
+
+/**
+ * Ship it, asked twice: shipping happens once and cannot be undone, so the
+ * first press says what it will do and the second does it.
+ */
+function ShipButton({ name, onShip, busy }: { name: string; onShip: () => void; busy: boolean }) {
+  const [asking, setAsking] = useState(false);
+  if (!asking) {
+    return (
+      <button
+        type="button"
+        onClick={() => setAsking(true)}
+        className="rounded-md bg-accent px-3 py-1 text-xs font-medium text-accent-contrast hover:bg-accent-hover"
+      >
+        Ship it
+      </button>
+    );
+  }
+  return (
+    <fieldset className="flex min-w-0 flex-wrap items-center justify-end gap-2">
+      <legend className="sr-only">Ship {name}</legend>
+      <span className="min-w-0 flex-1 basis-60 text-right text-xs text-muted">
+        Ship {name} now? Its notes are written and it takes no more issues.
+      </span>
+      <span className="flex shrink-0 gap-2">
+        <button
+          type="button"
+          onClick={() => setAsking(false)}
+          className="whitespace-nowrap rounded-md px-2 py-1 text-xs text-faint hover:text-content"
+        >
+          Not yet
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onShip}
+          className="whitespace-nowrap rounded-md bg-accent px-3 py-1 text-xs font-medium text-accent-contrast hover:bg-accent-hover disabled:opacity-50"
+        >
+          Ship now
+        </button>
+      </span>
+    </fieldset>
   );
 }
 
@@ -213,7 +254,7 @@ function ReleaseNotes({ notes }: { notes: string }) {
   return (
     <section aria-label="Release notes" className="rounded-md border border-line bg-surface p-3">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-xs font-medium text-content">Release notes</h3>
+        <h2 className="text-xs font-medium text-content">Release notes</h2>
         <button
           type="button"
           onClick={() =>
@@ -266,6 +307,8 @@ function NewRelease({ workspaceId }: { workspaceId: string }) {
         value={name}
         onChange={(event) => setName(event.target.value)}
         aria-label="Release name"
+        name="release-name"
+        autoComplete="off"
         placeholder="Version 2.0"
         maxLength={80}
         className={`${FIELD} min-w-0 flex-1`}

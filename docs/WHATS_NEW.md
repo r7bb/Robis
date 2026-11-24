@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Shipping and removing ask first** (2026-11-24). Ship it on a release now
+  asks once more, since shipping cannot be undone, and removing a release or
+  a template asks before it goes for everyone.
 - **Ask Sapha how the release is going** (2026-11-24). Type “how is the
   release going” or “what’s left for the release Version 2” in the command
   palette, and Sapha answers there with done of planned, its day and what is
