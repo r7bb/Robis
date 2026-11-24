@@ -5,8 +5,10 @@ import {
   type Executor,
   encodeCursor,
   enqueue,
+  FOREIGN_KEY_VIOLATION,
   issueLabels,
   issues,
+  pgErrorCode,
   projects,
   publishEvent,
   recordAgentChanges,
@@ -411,25 +413,34 @@ export async function issueRoutes(
       const project = await loadProject(db, workspaceId, before.projectId);
 
       return withIdempotency(db, request, reply, 200, async () => {
-        const updated = await db.transaction(async (tx) => {
-          if (input.parentId) {
-            await assertParentAllowed(tx, {
+        const updated = await db
+          .transaction(async (tx) => {
+            if (input.parentId) {
+              await assertParentAllowed(tx, {
+                workspaceId,
+                projectId: before.projectId,
+                issueId,
+                parentId: input.parentId,
+              });
+            }
+            return applyIssueUpdate(tx, auditActor(request), {
               workspaceId,
-              projectId: before.projectId,
               issueId,
-              parentId: input.parentId,
+              input,
+              delegateId: delegateOf(user),
+              issueKey: `${project.key}-${before.number}`,
+              title: before.title,
+              previous: before,
             });
-          }
-          return applyIssueUpdate(tx, auditActor(request), {
-            workspaceId,
-            issueId,
-            input,
-            delegateId: delegateOf(user),
-            issueKey: `${project.key}-${before.number}`,
-            title: before.title,
-            previous: before,
+          })
+          .catch((error: unknown) => {
+            // The cycle was removed between the check and the save: say so,
+            // as for any cycle not on this board, rather than a server error.
+            if (input.cycleId && pgErrorCode(error) === FOREIGN_KEY_VIOLATION) {
+              throw ApiError.badRequest('That cycle is not on this board', 'bad_cycle');
+            }
+            throw error;
           });
-        });
 
         await publishEvent(db, {
           type: 'issue.updated',
