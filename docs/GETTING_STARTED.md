@@ -15,7 +15,7 @@ bun run journeys
 To see the demo workspace busy rather than still, start the stack with
 `--profile demo` (or run `bun run demo:life` against it). The seeded
 teammates Alex, John and Mia stay present, and with two agents, Scout and
-Wren, they chat, post, react, comment and move work along every half
+Saphi, they chat, post, react, comment and move work along every half
 minute or so, from written lines and through the API like anyone. The
 owner's account is left alone. Development only: the demo password it
 signs in with is refused anywhere else.

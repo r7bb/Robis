@@ -197,6 +197,10 @@ services:
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       VAPID_SUBJECT: ${VAPID_SUBJECT:-}
+      # The optional language-model provider (B5, D3): unset, nothing is sent
+      # anywhere. From the shell or deploy/.env, which git ignores.
+      SUMMARY_API_KEY: ${SUMMARY_API_KEY:-}
+      SUMMARY_MODEL: ${SUMMARY_MODEL:-}
     depends_on:
       migrate: { condition: service_completed_successfully }
       mail: { condition: service_healthy }

@@ -3,19 +3,19 @@
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
 
 /**
- * The feed's three tabs (a quieter feed): Following, only the people you
- * follow; Everyone, the whole workspace less anyone you muted; Highlights,
- * the check-in, celebrations and how the projects are doing, which used to
- * stack above the posts. The tab you left on is remembered in this browser.
+ * The feed's two tabs: Following, only the people and spaces you follow,
+ * quiet; Everyone, the whole workspace with all that is happening in it
+ * (the check-in, the day's shots, celebrations, how the projects are doing)
+ * above the posts, less anyone you muted. The tab you left on is remembered
+ * in this browser.
  */
 
-const FEED_TABS = ['following', 'everyone', 'highlights'] as const;
+const FEED_TABS = ['following', 'everyone'] as const;
 export type FeedTab = (typeof FEED_TABS)[number];
 
 const LABELS: Record<FeedTab, string> = {
   following: 'Following',
   everyone: 'Everyone',
-  highlights: 'Highlights',
 };
 
 const tabKey = (workspaceId: string) => `robis-feed-tab:${workspaceId}`;
@@ -53,13 +53,12 @@ export function FeedTabs({
 }: {
   tab: FeedTab;
   onChange: (tab: FeedTab) => void;
-  /** Something in Highlights is waiting for you, such as this week's check-in. */
+  /** Something on Everyone is waiting for you, such as this week's check-in. */
   waiting: boolean;
 }) {
   const buttons = useRef<Record<FeedTab, HTMLButtonElement | null>>({
     following: null,
     everyone: null,
-    highlights: null,
   });
 
   // Arrow keys move between tabs, as a tab list does (WAI-ARIA).
@@ -77,7 +76,7 @@ export function FeedTabs({
       role="tablist"
       aria-label="What the feed shows"
       onKeyDown={keys}
-      className="mt-6 grid grid-cols-3 rounded-xl border border-line bg-raised p-1"
+      className="mt-6 grid grid-cols-2 rounded-xl border border-line bg-raised p-1"
     >
       {FEED_TABS.map((id) => (
         <button
@@ -99,7 +98,7 @@ export function FeedTabs({
           }`}
         >
           {LABELS[id]}
-          {id === 'highlights' && waiting ? (
+          {id === 'everyone' && waiting ? (
             <>
               <span
                 aria-hidden="true"

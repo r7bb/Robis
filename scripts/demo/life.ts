@@ -5,7 +5,7 @@
  * The seeded teammates (not the owner, whose account is yours) sign in
  * with the demo password and stay present over live sockets, so they show
  * as here. Two agents join them: Scout, the workspace's triage agent, and
- * Wren, its Different shots agent. Every so often one of them does
+ * Saphi, its Different shots agent. Every so often one of them does
  * something a teammate would: says a line in a channel, posts to the Feed,
  * reacts or comments, comments on an issue, moves one along, or files one.
  * The words are written lines picked at random (scripts/demo/content.ts);
@@ -21,6 +21,7 @@
 import { boardOf, DO, type World } from './actions.ts';
 import { type Actor, asAgent, RefusedError, type Stack, signIn, stayPresent } from './client.ts';
 import { type ActorRole, nextAction, pause, pickOne } from './plan.ts';
+import { writeTogether } from './write-together.ts';
 
 const stack: Stack = {
   web: process.env.LIFE_WEB_URL ?? 'http://127.0.0.1:3000',
@@ -42,7 +43,7 @@ const PEOPLE = [
 /** `formerly`: names it went by, so a renamed agent is found and renamed, not made twice. */
 const AGENTS: { name: string; triage: boolean; shots: boolean; formerly?: string[] }[] = [
   { name: 'Scout', triage: true, shots: false },
-  { name: 'Wren', triage: false, shots: true, formerly: ['Muse', 'RoRo'] },
+  { name: 'Saphi', triage: false, shots: true, formerly: ['Muse', 'RoRo', 'Wren'] },
 ];
 
 const log = (line: string) =>
@@ -141,6 +142,10 @@ async function act(actors: readonly Actor[], world: World): Promise<boolean> {
   }
 }
 
+/** How long between two people writing together: every few minutes. */
+const MIN_WRITE_GAP_MS = 90_000;
+const MAX_WRITE_GAP_MS = 240_000;
+
 async function main() {
   refuseRemote();
   log(`demo:life against ${stack.web}, workspace ${WORKSPACE_SLUG}`);
@@ -161,6 +166,20 @@ async function main() {
   const world: World = { workspaceId, random: Math.random, recent: [] };
 
   let running = true;
+  // Now and then two of the people write in the same document at once.
+  const writers = people.filter((_, i) => roles[i] !== 'GUEST');
+  void (async () => {
+    while (running) {
+      await Bun.sleep(pause(MIN_WRITE_GAP_MS, MAX_WRITE_GAP_MS, world.random));
+      if (!running) break;
+      try {
+        const said = await writeTogether(stack, writers, workspaceId, world.random, world.recent);
+        if (said) log(said);
+      } catch (error) {
+        log(`writing together did not happen: ${error instanceof Error ? error.message : error}`);
+      }
+    }
+  })();
   const stop = async () => {
     if (!running) return;
     running = false;

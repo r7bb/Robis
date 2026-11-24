@@ -204,6 +204,10 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **A livelier feed: who is here now, and Everyone back as it was.** The
+  feed opens on who is here now and the agents at work; Everyone again shows
+  the check-in, the day’s shots, celebrations and project health above the
+  posts; and in the demo, two teammates write in the same document at once.
 - **Follow a space, and its new threads come to Following.** Follow a space
   from its page and every new question, idea or tip there shows in your
   Following tab as one line that opens the thread.
@@ -211,10 +215,6 @@ no write lost and nothing done twice.
   image.** The composer’s duplicate hints and the triage agent now use the
   small sentence model that doubled recall in the measurement, fetched and
   hash-checked when the image is built, with word TF-IDF as the fallback.
-- **Follow people, and a feed in three tidy tabs.** Follow teammates and the
-  Following tab shows only them; mute someone to quiet Everyone; the
-  check-in, celebrations and project health move to Highlights, so posts are
-  no longer buried under cards.
 
 <!-- latest:end -->
 

@@ -1,8 +1,8 @@
 /**
  * A quieter feed: the Following tab starts empty with teammates to follow,
  * following one from there fills it with their posts and nobody else's, the
- * arrow keys move between tabs, and Highlights holds the check-in that used
- * to sit above every post.
+ * arrow keys move between tabs, and Everyone opens on what is happening,
+ * the check-in first, above the posts.
  */
 
 import { press, WAIT_MS, waitUntil } from '../smoke/browser-input.ts';
@@ -49,12 +49,11 @@ export async function followingJourney(checks: Checks, ports: readonly [number, 
 
     await page.eval(`${tab('Following')}.focus()`);
     await press(page, 'ArrowRight');
-    await press(page, 'ArrowRight');
     checks.check(
-      'the arrow keys move along the tabs to Highlights, and it holds the check-in',
+      'the arrow keys move to Everyone, which opens on what is happening, the check-in first',
       await waitUntil(
         page,
-        `${tab('Highlights')}.getAttribute('aria-selected') === 'true' && document.activeElement === ${tab('Highlights')} && document.querySelector('[role="tabpanel"]').textContent.includes('What are you working on')`,
+        `${tab('Everyone')}.getAttribute('aria-selected') === 'true' && document.activeElement === ${tab('Everyone')} && document.querySelector('[role="tabpanel"]').textContent.includes('What are you working on')`,
       ),
     );
 

@@ -466,20 +466,20 @@ describe('renaming an agent', () => {
     const renamed = await request(`/workspaces/${workspace.id}/agents/${agent.id}`, {
       method: 'PATCH',
       actor: owner,
-      payload: { name: '  Wren  ' },
+      payload: { name: '  Saphi  ' },
     });
     expect(renamed.statusCode).toBe(200);
-    expect(renamed.json().agent).toEqual({ id: agent.id, name: 'Wren' });
+    expect(renamed.json().agent).toEqual({ id: agent.id, name: 'Saphi' });
 
     const { ownerDb } = await getHarness();
     const [row] = await ownerDb.select().from(users).where(eq(users.id, agent.id));
-    expect(row?.name).toBe('Wren');
+    expect(row?.name).toBe('Saphi');
     expect(row?.username).toBe(agent.username);
     const audits = await ownerDb
       .select()
       .from(auditEvents)
       .where(and(eq(auditEvents.entityId, agent.id), eq(auditEvents.eventType, 'agent.renamed')));
-    expect(JSON.parse(String(audits[0]?.payload))).toEqual({ from: 'Triage bot', to: 'Wren' });
+    expect(JSON.parse(String(audits[0]?.payload))).toEqual({ from: 'Triage bot', to: 'Saphi' });
   });
 
   test('a member cannot rename it, nor the agent itself', async () => {

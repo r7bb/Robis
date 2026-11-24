@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'A livelier feed: who is here now, and Everyone back as it was',
+    brief:
+      'The feed opens on who is here now and the agents at work; Everyone again shows the check-in, the day’s shots, celebrations and project health above the posts; and in the demo, two teammates write in the same document at once.',
+    summary:
+      'Following and Everyone stay, and the Highlights tab is gone: Everyone is the lively feed it was, with this week’s check-in, Saphi’s Different shots, celebrations and how the projects are doing above the posts, while Following stays the quiet list of people and spaces you chose. A Here now strip at the top shows the teammates with Robis open, each with a live dot and the board they are on, and the workspace’s agents at work, from the realtime presence that already existed. In the demo workspace, every few minutes two teammates open the same sample document (a launch plan, weekly sync notes, an onboarding checklist) and type a line each at the same time, carets moving, through the document’s shared editing, never overwriting each other; each document keeps its latest eight notes so it stays a page. The demo’s ideas agent is now called Saphi.',
+    checked:
+      'The browser journey moves from Following to Everyone with the arrow keys and finds the check-in there, and still follows people and spaces. Tests for the demo’s documents: the oldest note gives way past eight, and every sample is short and dash-free. Watched against the stack: the demo renamed Wren to Saphi and two teammates wrote together in a sample document.',
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Follow a space, and its new threads come to Following',
     brief:
       'Follow a space from its page and every new question, idea or tip there shows in your Following tab as one line that opens the thread.',

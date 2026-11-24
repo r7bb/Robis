@@ -133,3 +133,26 @@ describe('the written lines', () => {
     }
   });
 });
+
+describe('writing together', () => {
+  test('the oldest note gives way once a document holds enough of them', async () => {
+    const { oldestNoteToDrop } = await import('@robis/scripts/demo/write-together.ts');
+    const { NOTES_KEPT } = await import('@robis/scripts/demo/doc-content.ts');
+    const head = 'Launch plan\n\nNotes\n';
+    const notes = Array.from({ length: NOTES_KEPT }, (_, i) => `- note ${i + 1}`);
+    expect(oldestNoteToDrop(head + notes.slice(1).join('\n'))).toBeNull();
+    const full = `${head}${notes.join('\n')}\n`;
+    const drop = oldestNoteToDrop(full);
+    expect(full.slice(drop!.from, drop!.from + drop!.length)).toBe('- note 1\n');
+    expect(oldestNoteToDrop('No notes heading here')).toBeNull();
+  });
+
+  test('every sample document is plain, short and dash-free', async () => {
+    const { SAMPLE_DOCUMENTS } = await import('@robis/scripts/demo/doc-content.ts');
+    for (const sample of SAMPLE_DOCUMENTS) {
+      expect(sample.opening).toContain('\nNotes\n');
+      expect(sample.lines.length).toBeGreaterThanOrEqual(6);
+      for (const line of [sample.opening, ...sample.lines]) expect(/[–—]/.test(line)).toBe(false);
+    }
+  });
+});

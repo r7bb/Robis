@@ -1,7 +1,7 @@
 'use client';
 
 import { can, contracts } from '@robis/shared';
-import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { ago } from '../../components/activity-feed.tsx';
@@ -18,6 +18,7 @@ import { type FeedItem, feedKey, itemAuthor, itemKey, splitAtSeen } from './feed
 import { type FeedTab, FeedTabs, panelId, tabId, useFeedTab } from './feed-tabs.tsx';
 import { useFollows } from './follow-button.tsx';
 import { FollowingEmpty } from './following-empty.tsx';
+import { HereNow } from './here-now.tsx';
 import { PostCard } from './post-card.tsx';
 import { PostComposer } from './post-composer.tsx';
 import { ProjectHealthCards } from './project-health.tsx';
@@ -79,7 +80,7 @@ function useFeed(workspaceId: string, me: string | null, scope: FeedScope) {
   };
 }
 
-type FeedScope = Exclude<FeedTab, 'highlights'>;
+type FeedScope = FeedTab;
 
 /** The posts of one scope: what is new, the end, and earlier behind a button. */
 function FeedList({
@@ -162,14 +163,7 @@ export function FeedView({ workspaceId }: { workspaceId: string }) {
   const stories = useStories();
   const [tab, setTab] = useFeedTab(workspaceId);
   const [listed, setListed] = useState<boolean | null>(null);
-  // Opened straight on Highlights, no list has said yet whether you checked in.
-  const asked = useQuery({
-    queryKey: [...feedKey(workspaceId), 'check-in'],
-    queryFn: () =>
-      call(contracts['feed.list'], { params: { workspaceId }, query: { scope: 'following' } }),
-    enabled: tab === 'highlights' && listed === null,
-  });
-  const checkedIn = listed ?? asked.data?.checkedInThisWeek ?? true;
+  const checkedIn = listed ?? true;
   const [draft, setDraft] = useState<{ words: string; at: number } | null>(null);
   const mayPost = role ? can(role, 'post:create') : false;
   const mayReadWork = role ? can(role, 'issue:read') : false;
@@ -180,6 +174,7 @@ export function FeedView({ workspaceId }: { workspaceId: string }) {
       <p className="mt-1 text-sm text-muted">
         What the team has been sharing. It ends where you last caught up.
       </p>
+      <HereNow workspaceId={workspaceId} me={myId} people={people} />
       {stories?.enabled ? (
         <div className="mt-4 overflow-hidden rounded-xl border border-line bg-raised">
           <StoriesStrip members={members} />
@@ -193,7 +188,7 @@ export function FeedView({ workspaceId }: { workspaceId: string }) {
 
       <FeedTabs tab={tab} onChange={setTab} waiting={mayPost && !checkedIn} />
       <section id={panelId(tab)} role="tabpanel" aria-labelledby={tabId(tab)}>
-        {tab === 'highlights' ? (
+        {tab === 'everyone' ? (
           <Highlights
             workspaceId={workspaceId}
             me={myId}
@@ -201,32 +196,27 @@ export function FeedView({ workspaceId }: { workspaceId: string }) {
             mayPost={mayPost}
             mayReadWork={mayReadWork}
             checkedIn={checkedIn}
-            onWellDone={(words) => {
-              // The composer sits above the tabs: the well done waits there.
-              setDraft({ words, at: Date.now() });
-              setTab('everyone');
-            }}
+            onWellDone={(words) => setDraft({ words, at: Date.now() })}
           />
-        ) : (
-          <FeedList
-            key={tab}
-            workspaceId={workspaceId}
-            scope={tab}
-            me={myId}
-            members={members}
-            people={people}
-            onCheckedIn={setListed}
-          />
-        )}
+        ) : null}
+        <FeedList
+          key={tab}
+          workspaceId={workspaceId}
+          scope={tab}
+          me={myId}
+          members={members}
+          people={people}
+          onCheckedIn={setListed}
+        />
       </section>
     </div>
   );
 }
 
 /**
- * Highlights: this week's check-in, the day's Different shots, the week's
- * celebrations and how the projects are doing, each for those who may use
- * it, gathered here rather than stacked above every post.
+ * What is happening, above the posts on Everyone: this week's check-in, the
+ * day's Different shots, the week's celebrations and how the projects are
+ * doing, each for those who may use it.
  */
 function Highlights({
   workspaceId,

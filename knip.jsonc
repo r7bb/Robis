@@ -6,7 +6,11 @@
     // Libraries need no entries: their package exports are the entries.
     // These are the programs, run directly rather than imported.
     "backend/api": {
-      "entry": ["src/main.ts"]
+      "entry": ["src/main.ts"],
+      // demo:life runs from inside this package in the stack (compose's
+      // life service mounts scripts/demo here), so what it imports must
+      // resolve from here: yjs, for two teammates writing in one document.
+      "ignoreDependencies": ["yjs"]
     },
     "backend/realtime": {
       "entry": ["src/main.ts"]

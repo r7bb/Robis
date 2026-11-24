@@ -6,6 +6,11 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **A livelier feed: who is here now, and Everyone back as it was**
+  (2026-11-24). The feed opens on who is here now and the agents at work;
+  Everyone again shows the check-in, the day’s shots, celebrations and
+  project health above the posts; and in the demo, two teammates write in
+  the same document at once.
 - **Follow a space, and its new threads come to Following** (2026-11-24).
   Follow a space from its page and every new question, idea or tip there
   shows in your Following tab as one line that opens the thread.
