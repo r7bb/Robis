@@ -46,7 +46,10 @@
         Boards you have already opened still work offline, and changes made on
         them are kept on this device until they can be sent.
       </p>
-      <a class="retry" href="">Try again</a>
+      <!-- A form, not a script: sending it loads this address again. -->
+      <form method="get">
+        <button class="retry" type="submit">Try again</button>
+      </form>
     </main>
   </body>
 </html>
