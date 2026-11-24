@@ -19,7 +19,7 @@ way.
 `{ "error": "<code>", "message": "<words for people>" }`. A stranger to a
 workspace gets 404, never 403, so its existence is not given away.
 
-216 routes.
+219 routes.
 
 ## activity
 
@@ -621,6 +621,27 @@ Rename a document.
 - Body: `title`
 - Answers: 200
 - Name: `documents.update`
+
+### `GET /workspaces/{workspaceId}/documents/{documentId}/versions`
+
+How a document read at moments while it changed, newest first: at most one every ten minutes, the latest fifty.
+
+- Answers: 200
+- Name: `documents.versions`
+
+### `POST /workspaces/{workspaceId}/documents/{documentId}/versions`
+
+Keep the document as it reads now as a version, before putting another back, so that can be undone too.
+
+- Answers: 200
+- Name: `documents.keepVersion`
+
+### `GET /workspaces/{workspaceId}/documents/{documentId}/versions/{versionId}`
+
+One version of a document, whole, to read or put back.
+
+- Answers: 200
+- Name: `documents.version`
 
 ## exports
 

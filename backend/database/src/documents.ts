@@ -1,7 +1,7 @@
-import { and, asc, eq, lte } from 'drizzle-orm';
+import { and, asc, desc, eq, lte, notInArray } from 'drizzle-orm';
 import * as Y from 'yjs';
 import type { Executor } from './index.ts';
-import { documents, documentUpdates } from './schema.ts';
+import { documents, documentUpdates, documentVersions } from './schema.ts';
 
 /**
  * Persistence for Yjs documents.
@@ -143,6 +143,46 @@ export async function recordUpdate(
     await compactDocument(db, documentId);
   }
   return seq;
+}
+
+/** At most one version in this long, however much is typed. */
+export const VERSION_EVERY_MS = 10 * 60_000;
+/** Versions kept per document; past this, the oldest go. */
+export const VERSIONS_KEPT = 50;
+
+/**
+ * Keep this text as a version (History), when the last one kept is older
+ * than `VERSION_EVERY_MS` and reads differently; the first edit after a quiet
+ * spell is kept at once. Returns whether one was kept. Only the latest
+ * `VERSIONS_KEPT` stay.
+ */
+export async function recordVersion(
+  db: Executor,
+  documentId: string,
+  text: string,
+  now: Date = new Date(),
+  /** Kept however recent the last: the text about to be replaced by a restore. */
+  { whatever = false }: { whatever?: boolean } = {},
+): Promise<boolean> {
+  const [last] = await db
+    .select({ text: documentVersions.text, createdAt: documentVersions.createdAt })
+    .from(documentVersions)
+    .where(eq(documentVersions.documentId, documentId))
+    .orderBy(desc(documentVersions.createdAt))
+    .limit(1);
+  const tooSoon = !whatever && last && now.getTime() - last.createdAt.getTime() < VERSION_EVERY_MS;
+  if (last && (last.text === text || tooSoon)) return false;
+  await db.insert(documentVersions).values({ documentId, text, createdAt: now });
+  const kept = db
+    .select({ id: documentVersions.id })
+    .from(documentVersions)
+    .where(eq(documentVersions.documentId, documentId))
+    .orderBy(desc(documentVersions.createdAt))
+    .limit(VERSIONS_KEPT);
+  await db
+    .delete(documentVersions)
+    .where(and(eq(documentVersions.documentId, documentId), notInArray(documentVersions.id, kept)));
+  return true;
 }
 
 /**

@@ -5,6 +5,7 @@ import {
   loadDocument,
   pgErrorCode,
   recordUpdate,
+  recordVersion,
 } from '@robis/database';
 import type { DocumentAwareness } from '@robis/shared';
 import { log } from '@robis/telemetry/log';
@@ -150,6 +151,13 @@ export class DocumentRoom {
       // flush retries rather than silently losing edits.
       this.pending.unshift(...batch);
       throw error;
+    }
+
+    // History: a version now and then. Best-effort, as the edit is safe.
+    try {
+      await recordVersion(this.db, this.documentId, this.doc.getText('content').toString());
+    } catch (error) {
+      log.error(`document ${this.documentId}: version not kept`, { err: error });
     }
 
     // Stored: peers with this document open read it from there. Telling them

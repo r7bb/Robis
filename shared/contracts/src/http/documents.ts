@@ -59,4 +59,37 @@ export const documentContracts = {
     status: 204,
     response: null,
   }),
+  'documents.versions': contract({
+    method: 'GET',
+    path: '/workspaces/:workspaceId/documents/:documentId/versions',
+    summary:
+      'How a document read at moments while it changed, newest first: at most one every ten minutes, the latest fifty.',
+    params: documentParams,
+    response: z.object({
+      versions: z.array(
+        z.object({
+          id: uuid,
+          createdAt: timestamp,
+          /** The start of it, for the list. */
+          preview: z.string(),
+          length: z.number().int().nonnegative(),
+        }),
+      ),
+    }),
+  }),
+  'documents.keepVersion': contract({
+    method: 'POST',
+    path: '/workspaces/:workspaceId/documents/:documentId/versions',
+    summary:
+      'Keep the document as it reads now as a version, before putting another back, so that can be undone too.',
+    params: documentParams,
+    response: z.object({ kept: z.boolean() }),
+  }),
+  'documents.version': contract({
+    method: 'GET',
+    path: '/workspaces/:workspaceId/documents/:documentId/versions/:versionId',
+    summary: 'One version of a document, whole, to read or put back.',
+    params: documentParams.extend({ versionId: z.string() }),
+    response: z.object({ version: z.object({ id: uuid, createdAt: timestamp, text: z.string() }) }),
+  }),
 } as const;

@@ -214,6 +214,9 @@ export const GATEWAY_GRANTS: TableGrants = {
   documents: ['select', 'update'],
   // Delete: compaction folds old updates into the document's snapshot.
   document_updates: ['select', 'insert', 'delete'],
+  // History: a version kept as a document changes; delete, the oldest past
+  // the most kept.
+  document_versions: ['select', 'insert', 'delete'],
   // Live-update timings for system health (Phase 6); select and update for
   // the upsert that adds a minute's counts to what is there.
   instrument_readings: ['select', 'insert', 'update'],

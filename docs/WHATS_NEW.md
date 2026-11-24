@@ -6,6 +6,15 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **A shared picture no longer goes missing from the issue made of it**
+  (2026-11-24). Sharing a picture to Robis made the issue and the link but,
+  about half the time, dropped the picture; changes waiting to be sent now
+  always go in the order they were made.
+- **Document history: see earlier versions, and put one back** (2026-11-24).
+  A document keeps how it read as it changed, at most one version every ten
+  minutes and the latest fifty; History shows them, and Put this back
+  restores one for everyone, keeping what was there first so it can be
+  undone.
 - **Meeting notes, with follow-ups that become issues** (2026-11-24). Each
   meeting has notes that anyone in it can write and everyone can read;
   checklist, TODO and Action lines are follow-ups, and Make an issue files

@@ -41,6 +41,7 @@ import { chatReadRoutes } from './routes/chat-reads.ts';
 import { commentRoutes } from './routes/comments.ts';
 import { consentRoutes } from './routes/consent.ts';
 import { discussionRoutes } from './routes/discussion.ts';
+import { documentVersionRoutes } from './routes/document-versions.ts';
 import { documentRoutes } from './routes/documents.ts';
 import { exportRoutes } from './routes/exports.ts';
 import { feedRoutes } from './routes/feed.ts';
@@ -339,6 +340,7 @@ export function buildApp({
   app.register(myMeetingRoutes, { db });
   app.register(commentRoutes, { db });
   app.register(documentRoutes, { db });
+  app.register(documentVersionRoutes, { db });
   app.register(channelRoutes, { db });
   app.register(meetingRoutes, { db });
   app.register(meetingNotesRoutes, { db });

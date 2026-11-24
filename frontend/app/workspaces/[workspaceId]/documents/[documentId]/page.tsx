@@ -7,6 +7,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef } from 'react';
 import { DeleteButton } from '../../../../../components/delete-button.tsx';
 import { ErrorState } from '../../../../../components/ui/primitives.tsx';
+import { DocumentHistory } from '../../../../../features/documents/document-history.tsx';
 import { call } from '../../../../../lib/api.ts';
 import { lastTheme, useApplyTheme } from '../../../../../lib/theme.ts';
 import { useDocument } from '../../../../../lib/use-document.ts';
@@ -127,6 +128,15 @@ function DocumentView() {
           onConfirm={() => remove.mutateAsync()}
         />
       </header>
+
+      <DocumentHistory
+        workspaceId={workspaceId}
+        documentId={documentId}
+        current={doc.text}
+        canRestore={doc.connected}
+        // One edit for everyone editing, as any other.
+        onRestore={(text) => doc.edit(0, doc.text.length, text)}
+      />
 
       {others.length > 0 && (
         <p className="mt-2 text-xs text-faint">

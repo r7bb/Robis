@@ -46,6 +46,37 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'A shared picture no longer goes missing from the issue made of it',
+    brief:
+      'Sharing a picture to Robis made the issue and the link but, about half the time, dropped the picture; changes waiting to be sent now always go in the order they were made.',
+    summary:
+      'Changes made on a device wait in a queue and are sent in the order they were made, by the time each was queued. Two queued in the same millisecond, an issue and its picture from a share, fell back to comparing their random ids, so the picture was sometimes sent first, refused as attached to no issue, and dropped. Each change now gets a time strictly after the one before it, so the order made is the order sent. The share page also reads a shared picture whole into memory before the shared copy is cleared, so the picture it queues never depends on that copy.',
+    checked:
+      'A test that queues an issue and its picture in one stopped millisecond, with ids that sort the picture first, and finds the issue first; the 51 other offline-queue tests. The share journey, which had failed in CI and locally two times in three, passed four times in a row, and the two offline journeys passed. The full suite, lint, typecheck and knip.',
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
+    title: 'Document history: see earlier versions, and put one back',
+    brief:
+      'A document keeps how it read as it changed, at most one version every ten minutes and the latest fifty; History shows them, and Put this back restores one for everyone, keeping what was there first so it can be undone.',
+    summary:
+      'As a document is edited, the live gateway keeps its text as a version: the first edit after a quiet spell at once, then at most one every ten minutes, only when it reads differently, and only the latest fifty. History on the document lists them newest first with the start of each; choosing one shows it whole, and says so when it reads the same as now. Put this back first keeps the document as it reads now on the server as a version, however recent the last, and then writes the chosen text into the document as one edit, which reaches everyone editing like any other; so a restore can itself be undone by putting back the version just kept. Anyone who may read the document reads its history; keeping a version is best-effort and never holds up an edit.',
+    checked:
+      'Five tests: the first edit kept and more within ten minutes not, an unchanged text never kept twice, only the latest fifty kept, the list newest first with previews and one read whole, another workspace’s document and a version of another document not found, and the text before a restore kept however soon. In the browser, an edit and a later change, then Put this back on the first: the document read as before, and the changed text was kept to go back to. The document, accessibility, keyboard and phone journeys, and the stack smoke test. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Document history',
+      where: 'A document, History',
+      layers: [
+        'Screen: History with each version, read whole, and Put this back',
+        'API: documents.versions, documents.version and documents.keepVersion',
+        'Realtime: a version kept as a document changes, at most every ten minutes',
+      ],
+    },
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Meeting notes, with follow-ups that become issues',
     brief:
       'Each meeting has notes that anyone in it can write and everyone can read; checklist, TODO and Action lines are follow-ups, and Make an issue files one and ticks its line with the new key.',

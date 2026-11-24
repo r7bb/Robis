@@ -1458,6 +1458,24 @@ export const documentUpdates = pgTable(
 );
 
 /**
+ * A document as it read at a moment (History): its text, kept by the live
+ * gateway at most every few minutes while it changes, and only the latest
+ * of them. Restoring writes this text back through the editor, as an edit.
+ */
+export const documentVersions = pgTable(
+  'document_versions',
+  {
+    id: id(),
+    documentId: uuid('document_id')
+      .notNull()
+      .references(() => documents.id, { onDelete: 'cascade' }),
+    text: text('text').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index('document_versions_document_created_idx').on(t.documentId, t.createdAt.desc())],
+);
+
+/**
  * Background job queue.
  *
  * Postgres rather than Redis + BullMQ, for the same reason `NOTIFY` replaced
