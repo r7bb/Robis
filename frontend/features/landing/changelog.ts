@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Today, faces on every board and document, and agents writing beside you',
+    brief:
+      'A Today page gathers what is yours to do; the sidebar shows who has each board and document open; and an agent can now edit a document live with its own caret, as the demo’s Saphi does.',
+    summary:
+      'Today, first in the sidebar, greets you and lists what is yours in this workspace: overdue, due today, today’s meetings, due this week, in progress, the mentions waiting for you and a few to pick up next, or a kind word when there is nothing. Beside each board and document in the sidebar, small faces show who has it open right now, and the feed’s Here now says which board or document each teammate is in; opening a document now tells teammates you are there. An agent can join a document over the realtime connection with its token, from a server only: the gateway reads an agent’s token only when the request carries no Origin, which every browser sends, and the socket then passes the same membership checks as anyone, and is held to its token’s own workspace; revoking or expiring the token closes a socket already open with it; the gateway reads the token by its hash and never marks it used. In the demo, Saphi now takes turns writing in the sample documents beside the teammates.',
+    checked:
+      'Tests for Today’s groups and words, and that its list holds only your open issues here, soonest due first, with a stranger refused; gateway tests that an agent’s token from a server joins its workspace and its edit reaches another editor, while the same token with an Origin, a revoked token, and another workspace (even one the agent belongs to) are all refused, and revoking the token closes a socket already open. A security review of the change found nothing serious; its two medium points (open sockets outliving a revoked token, and the socket not pinned to the token’s workspace) are fixed. Screenshots of Today and of a teammate’s face beside a board in the sidebar, against the stack, where the demo logged Alex and Saphi writing together in the onboarding checklist.',
+    feature: {
+      name: 'Today',
+      where: 'Today, first in the sidebar',
+      layers: [
+        'Screen: a Today page grouping your work, faces beside boards and documents, and Here now naming where each teammate is',
+        'API: one endpoint listing your open issues in a workspace, soonest due first',
+        'Realtime: an agent’s token accepted from servers only, and the open document reported as where you are',
+      ],
+    },
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'A livelier feed: who is here now, and Everyone back as it was',
     brief:
       'The feed opens on who is here now and the agents at work; Everyone again shows the check-in, the day’s shots, celebrations and project health above the posts; and in the demo, two teammates write in the same document at once.',

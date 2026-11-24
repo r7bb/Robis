@@ -34,6 +34,7 @@ import { apiReference } from './reference.ts';
 import { savedViewContracts } from './saved-views.ts';
 import { spaceContracts } from './spaces.ts';
 import { storyContracts } from './stories.ts';
+import { todayContracts } from './today.ts';
 import { twoFactorContracts } from './two-factor.ts';
 import { webhookContracts } from './webhooks.ts';
 import { weekContracts } from './week.ts';
@@ -141,6 +142,7 @@ export const contracts = {
   ...feedContracts,
   ...feedHighlightContracts,
   ...spaceContracts,
+  ...todayContracts,
   ...insightContracts,
   ...calendarContracts,
   ...automationContracts,

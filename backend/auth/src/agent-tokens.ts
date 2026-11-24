@@ -69,7 +69,7 @@ export async function resolveAgentToken(
   user: AuthenticatedUser;
   role: Role | null;
   /** Which token, and whether it was minted for one run (it expires). */
-  token: { id: string; perRun: boolean };
+  token: { id: string; perRun: boolean; workspaceId: string };
 } | null> {
   if (!isAgentToken(secret)) return null;
 
@@ -130,7 +130,11 @@ export async function resolveAgentToken(
       hasTwoFactor: false,
     },
     role: sameWorkspace ? (row.role ?? null) : null,
-    token: { id: row.tokenId, perRun: row.tokenExpiresAt !== null },
+    token: {
+      id: row.tokenId,
+      perRun: row.tokenExpiresAt !== null,
+      workspaceId: row.tokenWorkspaceId,
+    },
   };
 }
 

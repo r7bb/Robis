@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Today, faces on every board and document, and agents writing beside
+  you** (2026-11-24). A Today page gathers what is yours to do; the sidebar
+  shows who has each board and document open; and an agent can now edit a
+  document live with its own caret, as the demo’s Saphi does.
 - **A livelier feed: who is here now, and Everyone back as it was**
   (2026-11-24). The feed opens on who is here now and the agents at work;
   Everyone again shows the check-in, the day’s shots, celebrations and

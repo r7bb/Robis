@@ -1,6 +1,7 @@
 /**
  * Two teammates writing in one document at once (demo:life): every few
- * minutes two of the demo's people open the same sample document over the
+ * minutes two of the demo's people (or one of them and Saphi, the ideas
+ * agent, with its own token) open the same sample document over the
  * realtime socket, as a browser does, show their cursors, and type a line
  * each, a few characters at a time, so anyone watching sees both carets
  * move and both lines appear. Edits go through the document's CRDT, so the
@@ -12,7 +13,22 @@ import type { Actor, Stack } from './client.ts';
 import { NOTES_KEPT, SAMPLE_DOCUMENTS, type SampleDocument } from './doc-content.ts';
 import { pickFresh, pickOne, type Random } from './plan.ts';
 
-type Writer = Pick<Actor, 'name' | 'call'> & { cookie: string };
+/**
+ * Someone who can write: a person, whose socket carries their session cookie
+ * and the web origin as a browser's does, or an agent, whose socket carries
+ * its token and no origin, as a server's does.
+ */
+export type Writer = Pick<Actor, 'name' | 'call'> & { socketHeaders: Record<string, string> };
+
+export const personWriter = (
+  stack: Stack,
+  person: Pick<Actor, 'name' | 'call'> & { cookie: string },
+): Writer => ({ ...person, socketHeaders: { cookie: person.cookie, origin: stack.origin } });
+
+export const agentWriter = (agent: Pick<Actor, 'name' | 'call'>, secret: string): Writer => ({
+  ...agent,
+  socketHeaders: { authorization: `Bearer ${secret}` },
+});
 
 const TYPE_STEP_MS = 120;
 const CHARS_PER_STEP = 3;
@@ -50,12 +66,14 @@ class OpenDocument {
     private readonly documentId: string,
   ) {
     this.socket = new WebSocket(`${stack.web.replace(/^http/, 'ws')}/ws`, {
-      headers: { cookie: writer.cookie, origin: stack.origin },
+      headers: writer.socketHeaders,
     } as unknown as string[]);
     this.synced = new Promise((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error('the document did not sync')), SYNC_WAIT_MS);
       this.socket.addEventListener('open', () => {
         this.send({ type: 'subscribe', workspaceId: this.workspaceId });
+        // Shows them in the document for anyone watching the sidebar or the feed.
+        this.send({ type: 'location', location: this.documentId });
         this.send({ type: 'doc.open', documentId: this.documentId });
       });
       this.socket.addEventListener('message', (raw) => {

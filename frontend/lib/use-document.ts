@@ -66,6 +66,8 @@ export function useDocument(workspaceId: string, documentId: string): DocumentSt
       // Workspace membership is checked on subscribe; the document is then
       // checked against that workspace.
       send({ type: 'subscribe', workspaceId });
+      // Teammates see you in this document: in the sidebar and on the feed.
+      send({ type: 'location', location: documentId });
       send({ type: 'doc.open', documentId });
     };
 

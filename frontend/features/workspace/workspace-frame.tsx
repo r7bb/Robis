@@ -57,11 +57,13 @@ function useFrameLive(
   projectId: string | null,
   channelId: string | null,
   issueId: string | null,
+  /** Where you are, as others see it: the board, or the document, open. */
+  location: string | null,
 ) {
   const listeners = useRef(new Set<(event: ServerEvent) => void>());
   const { presence, state } = useRealtime(
     workspaceId,
-    projectId,
+    location,
     (event) => {
       for (const listener of listeners.current) listener(event);
     },
@@ -84,11 +86,18 @@ function FrameError({ error }: { error: unknown }) {
   return <ErrorState message={(error as Error).message} />;
 }
 
+/** Where you are, as teammates see it: the board or the document open, if any. */
+function useFrameLocation(): string | null {
+  const { projectId, documentId } = useParams<{ projectId?: string; documentId?: string }>();
+  return projectId ?? documentId ?? null;
+}
+
 export function WorkspaceFrame({ children }: { children: ReactNode }) {
   const { workspaceId, projectId = null } = useParams<{
     workspaceId: string;
     projectId?: string;
   }>();
+  const location = useFrameLocation();
   const pathname = usePathname();
 
   const workspace = useQuery({
@@ -111,7 +120,7 @@ export function WorkspaceFrame({ children }: { children: ReactNode }) {
   const { channelId, choose, askedAt } = useOpenRoom(rooms);
   // The issue open in the peek, if any, so its changes reach it live.
   const peeked = useSearchParams().get(PEEK_PARAM);
-  const live = useFrameLive(workspaceId, projectId, channelId, peeked);
+  const live = useFrameLive(workspaceId, projectId, channelId, peeked, location);
 
   const chat = useChatPanel();
   const { setOpen: setChatOpen } = chat;

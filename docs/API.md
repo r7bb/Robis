@@ -19,7 +19,7 @@ way.
 `{ "error": "<code>", "message": "<words for people>" }`. A stranger to a
 workspace gets 404, never 403, so its existence is not given away.
 
-200 routes.
+201 routes.
 
 ## activity
 
@@ -1478,6 +1478,15 @@ How often this workspace's people used each kind of hint, beside the offline eva
 
 - Answers: 200
 - Name: `suggestions.stats`
+
+## today
+
+### `GET /workspaces/{workspaceId}/today`
+
+The open issues assigned to you in this workspace, soonest due first, then by priority: what the Today page groups.
+
+- Answers: 200
+- Name: `today.mine`
 
 ## two-factor-required
 

@@ -204,6 +204,10 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Today, faces on every board and document, and agents writing beside
+  you.** A Today page gathers what is yours to do; the sidebar shows who has
+  each board and document open; and an agent can now edit a document live
+  with its own caret, as the demo’s Saphi does.
 - **A livelier feed: who is here now, and Everyone back as it was.** The
   feed opens on who is here now and the agents at work; Everyone again shows
   the check-in, the day’s shots, celebrations and project health above the
@@ -211,10 +215,6 @@ no write lost and nothing done twice.
 - **Follow a space, and its new threads come to Following.** Follow a space
   from its page and every new question, idea or tip there shows in your
   Following tab as one line that opens the thread.
-- **Duplicate hints now come from a sentence model, served from the ML
-  image.** The composer’s duplicate hints and the triage agent now use the
-  small sentence model that doubled recall in the measurement, fetched and
-  hash-checked when the image is built, with word TF-IDF as the fallback.
 
 <!-- latest:end -->
 

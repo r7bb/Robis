@@ -69,6 +69,7 @@ import { searchRoutes } from './routes/search.ts';
 import { signupRoutes } from './routes/signup.ts';
 import { spaceRoutes } from './routes/spaces.ts';
 import { storyRoutes } from './routes/stories.ts';
+import { todayRoutes } from './routes/today.ts';
 import { twoFactorRoutes } from './routes/two-factor.ts';
 import { webhookRoutes } from './routes/webhooks.ts';
 import { weekRoutes } from './routes/week.ts';
@@ -351,6 +352,7 @@ export function buildApp({
   app.register(feedHighlightRoutes, { db });
   app.register(spaceRoutes, { db });
   app.register(followRoutes, { db });
+  app.register(todayRoutes, { db });
   app.register(insightRoutes, { db, operators: operatorsFrom(env.HEALTH_OPERATORS) });
   app.register(calendarRoutes, { db, webOrigin: env.WEB_ORIGIN });
   app.register(calendarImportRoutes, { db });

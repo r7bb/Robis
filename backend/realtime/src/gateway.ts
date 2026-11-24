@@ -1,5 +1,12 @@
-import { type AuthenticatedUser, resolveSession, SESSION_COOKIE } from '@robis/auth';
 import {
+  type AuthenticatedUser,
+  isAgentToken,
+  resolveAgentToken,
+  resolveSession,
+  SESSION_COOKIE,
+} from '@robis/auth';
+import {
+  agentTokens,
   type Database,
   type DocumentNotice,
   type EventMeta,
@@ -32,7 +39,7 @@ import {
 } from '@robis/shared';
 import { contextFrom, endSpan, SpanKind, startSpan } from '@robis/telemetry';
 import { log } from '@robis/telemetry/log';
-import { and, eq, isNotNull } from 'drizzle-orm';
+import { and, eq, gt, isNotNull, isNull, or } from 'drizzle-orm';
 import type postgres from 'postgres';
 import * as Y from 'yjs';
 import { DocumentRooms, documentInWorkspace } from './documents.ts';
@@ -91,14 +98,24 @@ async function notReadyBecause(
   workspaceId: string,
 ): Promise<string | null> {
   const [row] = await db
-    .select({ kind: users.avatarKind, ref: users.avatarRef, terms: users.termsVersion })
+    .select({
+      kind: users.avatarKind,
+      ref: users.avatarRef,
+      terms: users.termsVersion,
+      account: users.kind,
+    })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
-  if (row?.terms !== TERMS_VERSION) return 'Agree to the current terms before you continue';
-  if (!(row.kind && row.ref)) return 'Add a picture before you start';
+  // An agent agrees to nothing and signs in with no second step, as the API
+  // treats it: the admin who added it answers for it.
+  const agent = row?.account === 'agent';
+  if (!agent && row?.terms !== TERMS_VERSION) {
+    return 'Agree to the current terms before you continue';
+  }
+  if (!(row?.kind && row.ref)) return 'Add a picture before you start';
   // A workspace that requires two-factor (C4), as the API asks it.
-  if (await requiresTwoFactor(db, workspaceId)) {
+  if (!agent && (await requiresTwoFactor(db, workspaceId))) {
     const [on] = await db
       .select({ userId: twoFactor.userId })
       .from(twoFactor)
@@ -125,6 +142,12 @@ type SocketData = {
   scopes: Set<string> | null;
   /** Documents this connection has open, so close can release all of them. */
   openDocuments: Set<string>;
+  /**
+   * For an agent's socket: the token it came with and that token's
+   * workspace. The socket joins only that workspace, and closes once the
+   * token is revoked or expires, as the API stops honouring it.
+   */
+  agentToken: { id: string; workspaceId: string } | null;
 };
 
 export type GatewayOptions = {
@@ -301,7 +324,9 @@ export async function createGateway(options: GatewayOptions) {
    * each refusal is counted at the point it is decided rather than inferred
    * later from a status code.
    */
-  async function authenticateUpgrade(request: Request): Promise<AuthenticatedUser | Response> {
+  async function authenticateUpgrade(
+    request: Request,
+  ): Promise<{ user: AuthenticatedUser; agentToken: SocketData['agentToken'] } | Response> {
     // Browsers do not enforce same-origin on WebSockets, so the gateway has
     // to check Origin itself; otherwise any site could open an authenticated
     // socket using the visitor's cookie.
@@ -309,6 +334,23 @@ export async function createGateway(options: GatewayOptions) {
     if (origin && origin !== webOrigin) {
       upgrades.inc({ outcome: 'forbidden_origin' });
       return new Response('Forbidden origin', { status: 403 });
+    }
+
+    // An agent's token, for a client that is not a browser: no Origin, and
+    // an Authorization header, which a browser can neither omit nor set on
+    // a socket. The socket then passes the same membership checks as anyone
+    // when it subscribes, so an agent hears only its own workspace.
+    const bearer = request.headers.get('authorization')?.match(/^Bearer (\S+)$/)?.[1];
+    if (!origin && bearer && isAgentToken(bearer)) {
+      const resolved = await resolveAgentToken(db, bearer, '');
+      if (!resolved) {
+        upgrades.inc({ outcome: 'invalid_agent_token' });
+        return new Response('Unauthorized', { status: 401 });
+      }
+      return {
+        user: resolved.user,
+        agentToken: { id: resolved.token.id, workspaceId: resolved.token.workspaceId },
+      };
     }
 
     const token = readCookie(request.headers.get('cookie'), sessionCookie);
@@ -326,7 +368,7 @@ export async function createGateway(options: GatewayOptions) {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    return user;
+    return { user, agentToken: null };
   }
 
   const server = Bun.serve<SocketData>({
@@ -340,8 +382,9 @@ export async function createGateway(options: GatewayOptions) {
 
       if (url.pathname !== '/ws') return new Response('Not found', { status: 404 });
 
-      const user = await authenticateUpgrade(request);
-      if (user instanceof Response) return user;
+      const authenticated = await authenticateUpgrade(request);
+      if (authenticated instanceof Response) return authenticated;
+      const { user, agentToken } = authenticated;
 
       const upgraded = srv.upgrade(request, {
         data: {
@@ -352,6 +395,7 @@ export async function createGateway(options: GatewayOptions) {
           location: null,
           scopes: null,
           openDocuments: new Set<string>(),
+          agentToken,
         } satisfies SocketData,
       });
 
@@ -442,6 +486,22 @@ export async function createGateway(options: GatewayOptions) {
   }
 
   /** Why someone may not watch a workspace now, or null when they may. */
+  /** Whether an agent's token is still unrevoked and unexpired. */
+  async function tokenStillGood(tokenId: string): Promise<boolean> {
+    const [row] = await db
+      .select({ id: agentTokens.id })
+      .from(agentTokens)
+      .where(
+        and(
+          eq(agentTokens.id, tokenId),
+          isNull(agentTokens.revokedAt),
+          or(isNull(agentTokens.expiresAt), gt(agentTokens.expiresAt, new Date())),
+        ),
+      )
+      .limit(1);
+    return Boolean(row);
+  }
+
   async function refusalOf(userId: string, workspaceId: string) {
     if (!(await findMembership(db, workspaceId, userId))) {
       return 'You are no longer a member of that workspace';
@@ -458,18 +518,25 @@ export async function createGateway(options: GatewayOptions) {
    * closed, so the page shows it is no longer live.
    */
   async function recheckFeeds() {
-    const checks = [...sockets].map((socket) =>
-      enqueue(socket, async () => {
-        const { userId, workspaceId } = socket.data;
-        if (!workspaceId) return;
-        const reason = await refusalOf(userId, workspaceId);
-        if (!reason || socket.data.workspaceId !== workspaceId) return;
-        await leaveFeed(socket);
-        send(socket, { type: 'error', message: reason });
-        socket.close(REFUSED_CLOSE_CODE, 'Refused');
-      }),
-    );
-    await Promise.all(checks);
+    await Promise.all([...sockets].map((socket) => enqueue(socket, () => recheckOne(socket))));
+  }
+
+  /** Tell a connection why, and close it. */
+  async function cutOff(socket: Bun.ServerWebSocket<SocketData>, reason: string) {
+    if (socket.data.workspaceId) await leaveFeed(socket);
+    send(socket, { type: 'error', message: reason });
+    socket.close(REFUSED_CLOSE_CODE, 'Refused');
+  }
+
+  async function recheckOne(socket: Bun.ServerWebSocket<SocketData>) {
+    const { userId, workspaceId, agentToken } = socket.data;
+    // An agent's token revoked or expired: the socket goes, joined or not.
+    if (agentToken && !(await tokenStillGood(agentToken.id))) {
+      return cutOff(socket, 'This token is no longer valid');
+    }
+    if (!workspaceId) return;
+    const reason = await refusalOf(userId, workspaceId);
+    if (reason && socket.data.workspaceId === workspaceId) await cutOff(socket, reason);
   }
 
   /** One handler per message type, so the switch stays flat as kinds are added. */
@@ -501,6 +568,11 @@ export async function createGateway(options: GatewayOptions) {
    * who you are, membership proves what you may watch.
    */
   async function handleSubscribe(socket: Bun.ServerWebSocket<SocketData>, workspaceId: string) {
+    // An agent's token is for one workspace, as at the API.
+    const pinned = socket.data.agentToken?.workspaceId;
+    if (pinned && pinned !== workspaceId.toLowerCase()) {
+      return send(socket, { type: 'error', message: 'Not a member of that workspace' });
+    }
     const membership = await findMembership(db, workspaceId, socket.data.userId);
 
     if (!membership) {

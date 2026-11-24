@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test';
-import { quantileEdge, readInstrument, users, workspaces } from '@robis/database';
+import { quantileEdge, readInstrument, users, workspaceMembers, workspaces } from '@robis/database';
 import { createGateway } from '@robis/realtime/gateway';
 import type { ServerMessage } from '@robis/shared';
 import { traceInMemory } from '@robis/telemetry/testing';
@@ -1019,4 +1019,151 @@ describe('live-update timings (Phase 6)', () => {
     expect(added.reduce((sum, n) => sum + n, 0)).toBe(1);
     expect(quantileEdge(added, 1)).toBeLessThanOrEqual(1_000);
   });
+});
+
+describe('an agent on the socket', () => {
+  async function agentOf(owner: Actor, workspaceId: string) {
+    const made = await request(`/workspaces/${workspaceId}/agents`, {
+      method: 'POST',
+      actor: owner,
+      payload: { name: 'Saphi', role: 'MEMBER' },
+    });
+    if (made.statusCode !== 201) throw new Error(`agent: ${made.statusCode} ${made.body}`);
+    const { agent, token } = made.json();
+    return { id: agent.id as string, secret: token.secret as string, tokenId: token.id as string };
+  }
+
+  const open = (headers: Record<string, string>) =>
+    new Promise<WebSocket | null>((resolve) => {
+      const socket = new WebSocket(wsUrl, { headers } as never);
+      socket.addEventListener('open', () => resolve(socket), { once: true });
+      socket.addEventListener('error', () => resolve(null), { once: true });
+      socket.addEventListener('close', () => resolve(null), { once: true });
+    });
+
+  const said = (socket: WebSocket) => {
+    const messages: ServerMessage[] = [];
+    socket.addEventListener('message', (event) => messages.push(JSON.parse(String(event.data))));
+    return messages;
+  };
+
+  async function until<T>(read: () => T | undefined, ms = 4000): Promise<T> {
+    const deadline = Date.now() + ms;
+    while (Date.now() < deadline) {
+      const found = read();
+      if (found !== undefined) return found;
+      await Bun.sleep(25);
+    }
+    throw new Error('timed out');
+  }
+
+  test('a server with the agent’s token joins its workspace and edits a document', async () => {
+    const owner = await createActor('Owner');
+    const workspace = await createWorkspace(owner);
+    const saphi = await agentOf(owner, workspace.id);
+    const made = await request(`/workspaces/${workspace.id}/documents`, {
+      method: 'POST',
+      actor: owner,
+      payload: { title: 'Ideas' },
+    });
+    const document = made.json().document as { id: string };
+
+    const socket = await open({ authorization: `Bearer ${saphi.secret}` });
+    expect(socket).not.toBeNull();
+    const messages = said(socket!);
+    socket!.send(JSON.stringify({ type: 'subscribe', workspaceId: workspace.id }));
+    await until(() => messages.find((m) => m.type === 'ready')).catch((e) => {
+      throw new Error(`${e} ${JSON.stringify(messages)}`);
+    });
+    socket!.send(JSON.stringify({ type: 'doc.open', documentId: document.id }));
+    await until(() => messages.find((m) => m.type === 'doc.sync'));
+
+    const watcher = await TestClient.connect(owner);
+    await watcher.subscribe(workspace.id);
+    await watcher.openDocument(document.id);
+    const local = new Y.Doc();
+    local.getText('content').insert(0, 'Drafted by an agent');
+    socket!.send(
+      JSON.stringify({
+        type: 'doc.update',
+        documentId: document.id,
+        update: Buffer.from(Y.encodeStateAsUpdate(local)).toString('base64'),
+      }),
+    );
+    // The editor hears it from the agent's connection: the only other one open.
+    const update = await watcher.waitFor(
+      (m): m is Extract<ServerMessage, { type: 'doc.update' }> => m.type === 'doc.update',
+    );
+    const seen = new Y.Doc();
+    Y.applyUpdate(seen, new Uint8Array(Buffer.from(update.update, 'base64')));
+    expect(seen.getText('content').toString()).toBe('Drafted by an agent');
+    socket!.close();
+    watcher.close();
+  }, 20_000);
+
+  test('a browser cannot use it, a revoked token is refused, and another workspace stays shut', async () => {
+    const owner = await createActor('Owner');
+    const workspace = await createWorkspace(owner);
+    const saphi = await agentOf(owner, workspace.id);
+
+    // With an Origin, as any page would send, the token is not looked at.
+    expect(
+      await open({ authorization: `Bearer ${saphi.secret}`, origin: 'http://localhost:3000' }),
+    ).toBeNull();
+
+    const stranger = await createActor('Stranger');
+    const elsewhere = await createWorkspace(stranger, 'Elsewhere');
+    const socket = await open({ authorization: `Bearer ${saphi.secret}` });
+    const messages = said(socket!);
+    socket!.send(JSON.stringify({ type: 'subscribe', workspaceId: elsewhere.id }));
+    const refused = await until(() => messages.find((m) => m.type === 'error'));
+    expect(refused.type).toBe('error');
+    socket!.close();
+
+    await request(`/workspaces/${workspace.id}/agents/${saphi.id}/tokens/${saphi.tokenId}`, {
+      method: 'DELETE',
+      actor: owner,
+    });
+    expect(await open({ authorization: `Bearer ${saphi.secret}` })).toBeNull();
+  }, 20_000);
+
+  test('revoking the token closes a socket already open with it', async () => {
+    const owner = await createActor('Owner');
+    const workspace = await createWorkspace(owner);
+    const saphi = await agentOf(owner, workspace.id);
+    const socket = await open({ authorization: `Bearer ${saphi.secret}` });
+    const messages = said(socket!);
+    socket!.send(JSON.stringify({ type: 'subscribe', workspaceId: workspace.id }));
+    await until(() => messages.find((m) => m.type === 'ready'));
+    const closed = new Promise<void>((resolve) =>
+      socket!.addEventListener('close', () => resolve(), { once: true }),
+    );
+
+    await request(`/workspaces/${workspace.id}/agents/${saphi.id}/tokens/${saphi.tokenId}`, {
+      method: 'DELETE',
+      actor: owner,
+    });
+    await gateway.recheckFeeds();
+    await closed;
+    expect(messages.some((m) => m.type === 'error')).toBe(true);
+  }, 20_000);
+
+  test('the socket joins only its token’s workspace, even where the agent is also a member', async () => {
+    const owner = await createActor('Owner');
+    const workspace = await createWorkspace(owner);
+    const saphi = await agentOf(owner, workspace.id);
+    const other = await createWorkspace(owner, 'Other');
+    const { ownerDb } = await getHarness();
+    await ownerDb
+      .insert(workspaceMembers)
+      .values({ workspaceId: other.id, userId: saphi.id, role: 'MEMBER' });
+
+    const socket = await open({ authorization: `Bearer ${saphi.secret}` });
+    const messages = said(socket!);
+    socket!.send(JSON.stringify({ type: 'subscribe', workspaceId: other.id }));
+    const refused = await until(() => messages.find((m) => m.type === 'error'));
+    expect(refused.type).toBe('error');
+    expect(messages.some((m) => m.type === 'ready')).toBe(false);
+    socket!.close();
+  }, 20_000);
 });

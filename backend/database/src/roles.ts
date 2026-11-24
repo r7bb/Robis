@@ -206,6 +206,11 @@ export const GATEWAY_GRANTS: TableGrants = {
   two_factor: ['select (user_id, confirmed_at)'],
   workspaces: ['select'],
   workspace_members: ['select'],
+  // An agent's socket (a document edited live by an agent): the lookup of
+  // its token by hash, read only; the API alone marks a token used.
+  agent_tokens: [
+    'select (id, agent_id, workspace_id, token_hash, expires_at, revoked_at, last_used_at)',
+  ],
   documents: ['select', 'update'],
   // Delete: compaction folds old updates into the document's snapshot.
   document_updates: ['select', 'insert', 'delete'],

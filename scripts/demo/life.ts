@@ -21,7 +21,7 @@
 import { boardOf, DO, type World } from './actions.ts';
 import { type Actor, asAgent, RefusedError, type Stack, signIn, stayPresent } from './client.ts';
 import { type ActorRole, nextAction, pause, pickOne } from './plan.ts';
-import { writeTogether } from './write-together.ts';
+import { agentWriter, personWriter, type Writer, writeTogether } from './write-together.ts';
 
 const stack: Stack = {
   web: process.env.LIFE_WEB_URL ?? 'http://127.0.0.1:3000',
@@ -77,7 +77,8 @@ async function findWorkspace(person: Signed): Promise<string> {
   return found.id;
 }
 
-type Held = { actor: Actor; agentId: string; tokenId: string };
+/** An agent at work: who it is, its token (to revoke on leaving), and whether it drafts in documents. */
+type Held = { actor: Actor; agentId: string; tokenId: string; secret: string; writes: boolean };
 
 /** The demo's agents, made by an admin if missing, each with a fresh token. */
 async function bringAgents(admin: Signed, workspaceId: string): Promise<Held[]> {
@@ -101,6 +102,8 @@ async function bringAgents(admin: Signed, workspaceId: string): Promise<Held[]> 
         );
         return {
           actor: asAgent(stack, spec.name, existing.id, token.token.secret),
+          secret: token.token.secret,
+          writes: spec.shots,
           agentId: existing.id,
           tokenId: token.token.id,
         };
@@ -117,6 +120,8 @@ async function bringAgents(admin: Signed, workspaceId: string): Promise<Held[]> 
       });
       return {
         actor: asAgent(stack, spec.name, made.agent.id, made.token.secret),
+        secret: made.token.secret,
+        writes: spec.shots,
         agentId: made.agent.id,
         tokenId: made.token.id,
       };
@@ -167,7 +172,11 @@ async function main() {
 
   let running = true;
   // Now and then two of the people write in the same document at once.
-  const writers = people.filter((_, i) => roles[i] !== 'GUEST');
+  // The people who may edit, and the ideas agent, which drafts beside them.
+  const writers: Writer[] = [
+    ...people.filter((_, i) => roles[i] !== 'GUEST').map((person) => personWriter(stack, person)),
+    ...agents.filter((held) => held.writes).map((held) => agentWriter(held.actor, held.secret)),
+  ];
   void (async () => {
     while (running) {
       await Bun.sleep(pause(MIN_WRITE_GAP_MS, MAX_WRITE_GAP_MS, world.random));

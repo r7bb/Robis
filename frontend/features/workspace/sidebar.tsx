@@ -12,6 +12,8 @@ import { ApiError, call } from '../../lib/api.ts';
 import { useT } from '../../lib/i18n/locale-context.tsx';
 import { boardHref } from '../../lib/links.ts';
 import { useOverlay } from '../../lib/use-overlay.ts';
+import { useMyId } from '../../lib/use-people.ts';
+import { HereStack } from './here-stack.tsx';
 
 /**
  * The left rail, and the only list of where things are: the boards, the
@@ -144,6 +146,7 @@ function Boards({
   });
   const rows = (projects.data?.projects ?? []).filter((project) => !project.archived);
   const { t } = useT();
+  const me = useMyId();
 
   return (
     <AddableSection
@@ -161,7 +164,8 @@ function Boards({
               aria-current={project.id === activeId ? 'page' : undefined}
               className={`${ROW} ${rowTone(project.id === activeId)}`}
             >
-              <span className="truncate">{project.name}</span>
+              <span className="min-w-0 flex-1 truncate">{project.name}</span>
+              <HereStack location={project.id} me={me} />
               <span className="shrink-0 text-[11px] tabular-nums text-faint">
                 {project.openIssues}
                 <span className="sr-only"> open issues</span>
@@ -195,6 +199,7 @@ function Docs({ workspaceId, role }: { workspaceId: string; role: Role | undefin
   });
   const rows = documents.data?.documents ?? [];
   const { t } = useT();
+  const me = useMyId();
 
   return (
     <AddableSection
@@ -215,7 +220,8 @@ function Docs({ workspaceId, role }: { workspaceId: string; role: Role | undefin
                 aria-current={pathname === href ? 'page' : undefined}
                 className={`${ROW} ${rowTone(pathname === href)}`}
               >
-                <span className="truncate">{document.title}</span>
+                <span className="min-w-0 flex-1 truncate">{document.title}</span>
+                <HereStack location={document.id} me={me} />
               </Link>
             </li>
           );
@@ -238,6 +244,7 @@ function MoreLinks({ workspaceId }: { workspaceId: string }) {
   const pathname = usePathname();
   const { t } = useT();
   const links = [
+    { href: `/workspaces/${workspaceId}/today`, label: t('nav.today') },
     { href: `/workspaces/${workspaceId}/feed`, label: t('nav.feed') },
     { href: `/workspaces/${workspaceId}/spaces`, label: t('nav.spaces') },
     { href: `/workspaces/${workspaceId}/meetings`, label: t('nav.meetings') },

@@ -170,3 +170,34 @@ describe('following a space', () => {
     ).toBe(404);
   });
 });
+
+describe('today', () => {
+  test('lists only your open issues here, soonest due first, never closed ones or another person’s', async () => {
+    const { me, friend, ws } = await team();
+    const project = (
+      await request(`${ws}/projects`, {
+        method: 'POST',
+        actor: me,
+        payload: { name: 'Launch', key: 'LAU' },
+      })
+    ).json().project;
+    const file = (title: string, fields: Record<string, unknown>) =>
+      request(`${ws}/projects/${project.id}/issues`, {
+        method: 'POST',
+        actor: me,
+        payload: { title, ...fields },
+      });
+    await file('Later', { assigneeId: me.id, dueOn: '2026-12-20' });
+    await file('Sooner', { assigneeId: me.id, dueOn: '2026-11-25' });
+    await file('No day', { assigneeId: me.id });
+    await file('Done already', { assigneeId: me.id, status: 'DONE' });
+    await file('Someone else’s', { assigneeId: friend.id });
+    const listed = (await request(`${ws}/today`, { actor: me })).json<{
+      issues: { title: string }[];
+    }>();
+    expect(listed.issues.map((i) => i.title)).toEqual(['Sooner', 'Later', 'No day']);
+    expect(
+      (await request(`${ws}/today`, { actor: await createActor('Stranger') })).statusCode,
+    ).toBe(404);
+  });
+});

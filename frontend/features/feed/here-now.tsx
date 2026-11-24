@@ -8,7 +8,7 @@ import { useLive } from '../workspace/live.tsx';
 
 /**
  * Who is here now, at the top of the feed: the teammates with Robis open,
- * each with a live dot and the board they are on, and the workspace's
+ * each with a live dot and the board or document they have open, and the workspace's
  * agents, so the feed opens on a team at work rather than a list. Presence
  * is the realtime gateway's own; nothing new is kept about anyone.
  */
@@ -29,7 +29,15 @@ export function HereNow({
     queryKey: ['projects', workspaceId],
     queryFn: () => call(contracts['projects.list'], { params: { workspaceId } }),
   });
-  const boardName = new Map((projects.data?.projects ?? []).map((p) => [p.id, p.name]));
+  const documents = useQuery({
+    queryKey: ['documents', workspaceId],
+    queryFn: () => call(contracts['documents.list'], { params: { workspaceId } }),
+  });
+  // Where each location is, in words: a board's name, or a document's title.
+  const placeName = new Map<string, string>([
+    ...(projects.data?.projects ?? []).map((p) => [p.id, `on ${p.name}`] as const),
+    ...(documents.data?.documents ?? []).map((d) => [d.id, `in ${d.title}`] as const),
+  ]);
   const here = presence.filter((user) => user.userId !== me).slice(0, SHOWN);
   const agents = [...people.values()].filter((member) => member.kind === 'agent');
   if (state !== 'live' || (here.length === 0 && agents.length === 0)) return null;
@@ -51,7 +59,7 @@ export function HereNow({
       </h2>
       <ul className="mt-2.5 flex flex-wrap gap-2">
         {here.map((user) => {
-          const where = user.location ? boardName.get(user.location) : undefined;
+          const where = user.location ? placeName.get(user.location) : undefined;
           const member = people.get(user.userId);
           return (
             <li
@@ -71,7 +79,7 @@ export function HereNow({
                 />
               </span>
               <span className="text-content">{user.name}</span>
-              <span className="text-faint">{where ? `on ${where}` : 'around'}</span>
+              <span className="text-faint">{where ?? 'around'}</span>
             </li>
           );
         })}
