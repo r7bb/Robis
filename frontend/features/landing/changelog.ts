@@ -46,6 +46,25 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Workload: who is carrying what',
+    brief:
+      'Insights now shows each person’s open issues as a bar, with what is in progress, overdue, due this week or urgent, and says when someone is carrying well above the team’s typical load.',
+    summary:
+      'A Workload section on Insights lists everyone in the workspace (people, not agents, and those with nothing open too) by how many issues they have open here, with in progress, overdue, due in the next seven days and urgent counts. The team’s typical load is the median, and someone is called out only when they have at least five open and at least twice the median, so three issues among people with one is not called buried, and a team that is all busy has nobody singled out. Overdue is counted against your own calendar’s today. It is there for sharing work out, and says so.',
+    checked:
+      'Four tests: the median with the idle counted, the heavy rule (well above and over the floor, not otherwise), the open issues per person by state with the idle listed and agents and finished issues left out, and another workspace not found. In the browser, two people’s loads showed with bars. The phone and accessibility journeys. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Workload',
+      where: 'Insights, Workload',
+      layers: [
+        'Screen: each person’s open issues as a bar, with what needs a look',
+        'API: insights.workload, counted when asked, nothing kept',
+      ],
+    },
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Sapha answers: what is blocking an issue?',
     brief:
       'Ask the palette “what’s blocking REL-4?” or “what is REL-4 waiting on?” and Sapha answers there, each blocker a link and finished ones struck through.',

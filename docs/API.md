@@ -19,7 +19,7 @@ way.
 `{ "error": "<code>", "message": "<words for people>" }`. A stranger to a
 workspace gets 404, never 403, so its existence is not given away.
 
-225 routes.
+226 routes.
 
 ## activity
 
@@ -797,6 +797,14 @@ This workspace's hint acceptance and, for the server's operators, its job queue 
 
 - Answers: 200
 - Name: `insights.health`
+
+### `GET /workspaces/{workspaceId}/insights/workload`
+
+Each person’s open issues here: in progress, overdue, due in the next seven days and urgent, most open first, with the team’s median.
+
+- Query: `today`
+- Answers: 200
+- Name: `insights.workload`
 
 ## invitations
 

@@ -80,6 +80,7 @@ import { todayRoutes } from './routes/today.ts';
 import { twoFactorRoutes } from './routes/two-factor.ts';
 import { webhookRoutes } from './routes/webhooks.ts';
 import { weekRoutes } from './routes/week.ts';
+import { workloadRoutes } from './routes/workload.ts';
 import { workspaceRoutes } from './routes/workspaces.ts';
 import { createSuggestionClient, type SuggestionClient } from './suggestions.ts';
 
@@ -348,6 +349,7 @@ export function buildApp({
   app.register(meetingNotesRoutes, { db });
   app.register(notificationRoutes, { db });
   app.register(chatReadRoutes, { db });
+  app.register(workloadRoutes, { db });
   app.register(issueBlockRoutes, { db });
   app.register(reminderRoutes, { db });
   app.register(notificationSettingRoutes, { db, limits });

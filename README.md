@@ -204,16 +204,16 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Workload: who is carrying what.** Insights now shows each person’s open
+  issues as a bar, with what is in progress, overdue, due this week or
+  urgent, and says when someone is carrying well above the team’s typical
+  load.
 - **Sapha answers: what is blocking an issue?.** Ask the palette “what’s
   blocking REL-4?” or “what is REL-4 waiting on?” and Sapha answers there,
   each blocker a link and finished ones struck through.
 - **Blocked by: issues that wait on others.** An issue can say what it waits
   on, by key; the board marks a waiting card Blocked until what it waits on
   is done, and the other issue shows what it is holding up.
-- **Ask Sapha: requests in your own words, read by the assistant.** Where
-  assistance is on, a request Sapha does not read by itself gets an Ask
-  Sapha row; only the words typed are sent, and what comes back goes to the
-  same card that waits for Do it.
 
 <!-- latest:end -->
 

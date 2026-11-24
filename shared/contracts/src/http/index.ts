@@ -42,6 +42,7 @@ import { todayContracts } from './today.ts';
 import { twoFactorContracts } from './two-factor.ts';
 import { webhookContracts } from './webhooks.ts';
 import { weekContracts } from './week.ts';
+import { workloadContracts } from './workload.ts';
 import { workspaceContracts } from './workspaces.ts';
 
 export {
@@ -118,10 +119,12 @@ export {
   type WebhookEvent,
 } from './webhooks.ts';
 export { WEEK_WINDOW_MAX_HOURS } from './week.ts';
+export { WORKLOAD_HEAVY_MIN, WORKLOAD_HEAVY_RATIO } from './workload.ts';
 
 /** Every route the API serves through a contract, by name. */
 export const contracts = {
   ...workspaceContracts,
+  ...workloadContracts,
   ...projectContracts,
   ...memberContracts,
   ...agentContracts,
