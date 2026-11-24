@@ -1,9 +1,17 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
-import { ISSUE_PRIORITIES } from '@robis/shared';
+import { ISSUE_PRIORITIES, saphaPartsSchema } from '@robis/shared';
 import { log } from '@robis/telemetry/log';
 import { z } from 'zod';
-import { type Assistant, keepAgenda, keepDraft, keepPoints, PROMPTS, quoted } from './assist.ts';
+import {
+  type Assistant,
+  keepAgenda,
+  keepDraft,
+  keepParts,
+  keepPoints,
+  PROMPTS,
+  quoted,
+} from './assist.ts';
 import type { Summarizer } from './triage.ts';
 
 /**
@@ -115,6 +123,8 @@ const AgendaShape = z.object({
   items: z.array(z.object({ text: z.string(), issueIds: z.array(z.string()) })),
 });
 const DraftShape = z.object({ title: z.string(), priority: z.enum(ISSUE_PRIORITIES) });
+/** A request is a line typed in the command bar. */
+const MAX_REQUEST_CHARS = 300;
 
 export function providerAssistant(options: {
   apiKey: string;
@@ -192,6 +202,15 @@ export function providerAssistant(options: {
         DraftShape,
       );
       return answer ? keepDraft(answer) : null;
+    },
+    async interpret(request) {
+      const answer = await ask(
+        'intent',
+        PROMPTS.interpret,
+        `<request>${quoted(request, MAX_REQUEST_CHARS)}</request>`,
+        saphaPartsSchema,
+      );
+      return answer ? keepParts(answer) : null;
     },
   };
 }

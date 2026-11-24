@@ -1032,7 +1032,7 @@ export const assistRequests = pgTable(
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    kind: text('kind', { enum: ['summary', 'agenda', 'issue'] }).notNull(),
+    kind: text('kind', { enum: ['summary', 'agenda', 'issue', 'intent'] }).notNull(),
     /** What to ask: emptied once answered. */
     input: jsonb('input'),
     status: text('status', { enum: ['pending', 'done', 'failed'] })

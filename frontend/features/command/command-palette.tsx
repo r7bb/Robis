@@ -1,7 +1,15 @@
 'use client';
 
 import type { Role } from '@robis/shared';
-import { type KeyboardEvent, type RefObject, useEffect, useId, useRef, useState } from 'react';
+import {
+  type KeyboardEvent,
+  type ReactNode,
+  type RefObject,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react';
 import { Kbd } from '../../components/ui/kbd.tsx';
 import {
   allowedCommands,
@@ -9,6 +17,7 @@ import {
   type Command,
   rankCommands,
 } from '../../lib/commands.ts';
+import { SaphaAsk } from '../sapha/sapha-ask.tsx';
 import { SaphaCard } from '../sapha/sapha-card.tsx';
 import { type Proposal, useSaphaCommand } from '../sapha/use-sapha-command.ts';
 import { usePaletteSources } from './use-palette-sources.ts';
@@ -42,8 +51,10 @@ export function CommandPalette({
   const [active, setActive] = useState(0);
   // A change Sapha read, waiting for a yes in place of the list.
   const [proposal, setProposal] = useState<Proposal | null>(null);
+  // A request Sapha is asking the assistant to read (tier 1).
+  const [asking, setAsking] = useState<string | null>(null);
   const parent = stack.at(-1);
-  const sapha = useSaphaCommand(workspaceId, parent ? '' : query, setProposal);
+  const sapha = useSaphaCommand(workspaceId, parent ? '' : query, setProposal, setAsking);
 
   const { local, found, searching } = usePaletteSources(
     workspaceId,
@@ -166,14 +177,20 @@ export function CommandPalette({
         />
       </div>
 
-      {proposal ? (
-        <SaphaCard
-          workspaceId={workspaceId}
-          intent={proposal}
-          onBack={() => setProposal(null)}
-          onClose={onClose}
-        />
-      ) : (
+      <SaphaPane
+        workspaceId={workspaceId}
+        asking={asking}
+        proposal={proposal}
+        onAsked={(intent) => {
+          setAsking(null);
+          setProposal(intent);
+        }}
+        onBack={() => {
+          setAsking(null);
+          setProposal(null);
+        }}
+        onClose={onClose}
+      >
         <PaletteList
           listRef={listRef}
           listId={listId}
@@ -185,7 +202,7 @@ export function CommandPalette({
           searching={searching}
           query={query}
         />
-      )}
+      </SaphaPane>
 
       {/* Always mounted, so a change of count is announced. */}
       <p className="sr-only" aria-live="polite">
@@ -359,4 +376,41 @@ function PaletteList({
       ) : null}
     </>
   );
+}
+
+/** Sapha asking, or waiting for a yes, in place of the list; the list otherwise. */
+function SaphaPane({
+  workspaceId,
+  asking,
+  proposal,
+  onAsked,
+  onBack,
+  onClose,
+  children,
+}: {
+  workspaceId: string;
+  asking: string | null;
+  proposal: Proposal | null;
+  onAsked: (intent: Proposal) => void;
+  onBack: () => void;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  if (proposal) {
+    return (
+      <SaphaCard workspaceId={workspaceId} intent={proposal} onBack={onBack} onClose={onClose} />
+    );
+  }
+  if (asking) {
+    return (
+      <SaphaAsk
+        workspaceId={workspaceId}
+        request={asking}
+        onIntent={onAsked}
+        onBack={onBack}
+        onClose={onClose}
+      />
+    );
+  }
+  return <>{children}</>;
 }

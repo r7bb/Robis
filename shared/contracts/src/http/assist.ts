@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ISSUE_PRIORITIES } from '../domain.ts';
+import { saphaPartsSchema } from '../sapha.ts';
 import { uuid } from '../schemas.ts';
 import { workspaceParams } from './common.ts';
 import { contract } from './contract.ts';
@@ -67,6 +68,16 @@ export const assistContracts = {
     status: 201,
     response: requested,
   }),
+  'assist.interpret': contract({
+    method: 'POST',
+    path: '/workspaces/:workspaceId/assist/interpret',
+    summary:
+      'Sapha, tier 1: a request the browser could not read, read by the provider into the parts of one action, for the asker to check and confirm.',
+    params: workspaceParams,
+    body: z.object({ request: z.string().trim().min(1).max(300) }),
+    status: 201,
+    response: requested,
+  }),
   'assist.result': contract({
     method: 'GET',
     path: '/workspaces/:workspaceId/assist/requests/:requestId',
@@ -88,6 +99,7 @@ export const assistContracts = {
             title: z.string(),
             priority: z.enum(ISSUE_PRIORITIES),
           }),
+          z.object({ kind: z.literal('intent'), parts: saphaPartsSchema }),
         ])
         .nullable(),
     }),

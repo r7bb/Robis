@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Ask Sapha: requests in your own words, read by the assistant**
+  (2026-11-24). Where assistance is on, a request Sapha does not read by
+  itself gets an Ask Sapha row; only the words typed are sent, and what
+  comes back goes to the same card that waits for Do it.
 - **The team’s week, on the feed** (2026-11-24). A card on the feed counts
   the last seven days across the workspace (issues finished, questions
   answered, meetings held, documents changed, messages) and names who

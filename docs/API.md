@@ -19,7 +19,7 @@ way.
 `{ "error": "<code>", "message": "<words for people>" }`. A stranger to a
 workspace gets 404, never 403, so its existence is not given away.
 
-220 routes.
+221 routes.
 
 ## activity
 
@@ -122,6 +122,14 @@ A draft agenda for a meeting from the issues its title and agenda name by key, f
 - Body: `meetingId` (required)
 - Answers: 201
 - Name: `assist.agenda`
+
+### `POST /workspaces/{workspaceId}/assist/interpret`
+
+Sapha, tier 1: a request the browser could not read, read by the provider into the parts of one action, for the asker to check and confirm.
+
+- Body: `request` (required)
+- Answers: 201
+- Name: `assist.interpret`
 
 ### `POST /workspaces/{workspaceId}/assist/issue`
 

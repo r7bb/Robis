@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Ask Sapha: requests in your own words, read by the assistant',
+    brief:
+      'Where assistance is on, a request Sapha does not read by itself gets an Ask Sapha row; only the words typed are sent, and what comes back goes to the same card that waits for Do it.',
+    summary:
+      'Sapha first reads a request in the browser, as before. When it cannot, and the workspace has turned assistance on (with the server’s provider key), the palette offers Ask Sapha. Only the words typed are sent, through the same queue the worker answers, and the provider may answer only with the parts of one of Sapha’s actions: which kind, an issue key, a status, a priority, a name, a title, a board, a time in the words it was said in, a search or a place. The browser checks those parts as it checks its own reading (a real key, a real status, a time read on your own clock, so the provider never decides a date), then looks where a look goes or shows the card that changes nothing until Do it. Anything else is no answer. With no key, or assistance off, the row never appears and nothing is sent.',
+    checked:
+      'Two tests of turning parts into actions (the same intents, the time from its words on this clock; parts that do not hold are nothing) and three through the API with a stand-in provider (a request read into parts with only the words sent, off until turned on and no answer said plainly, and the shape enforced: none or nonsense is no answer). No paid call was made. The keyboard, accessibility and phone journeys, and the stack smoke test. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Ask Sapha',
+      where: 'The command palette, where assistance is on',
+      layers: [
+        'Screen: an Ask Sapha row, a reading card, then the same confirm card',
+        'API: assist.interpret, answered by the worker',
+        'Provider: one action’s parts in a fixed shape, checked in the browser',
+      ],
+    },
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'The team’s week, on the feed',
     brief:
       'A card on the feed counts the last seven days across the workspace (issues finished, questions answered, meetings held, documents changed, messages) and names who finished most.',

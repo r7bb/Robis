@@ -71,5 +71,9 @@ async function answer(assistant: Assistant, input: AssistInput): Promise<AssistR
       const draft = await assistant.draftIssue(input.message);
       return draft ? { kind: 'issue', ...draft } : null;
     }
+    case 'intent': {
+      const parts = await assistant.interpret(input.request);
+      return parts ? { kind: 'intent', parts } : null;
+    }
   }
 }

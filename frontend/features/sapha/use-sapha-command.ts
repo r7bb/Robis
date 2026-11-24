@@ -5,7 +5,11 @@ import { useRouter } from 'next/navigation';
 import type { Command } from '../../lib/commands.ts';
 import type { Action } from '../../lib/permissions.ts';
 import { searchHref } from '../../lib/search-links.ts';
+import { useAssist } from '../assist/use-assist.ts';
 import { placeOf } from './run-intent.ts';
+
+/** Shorter than this, a request is more likely a search than something to do. */
+const ASK_FROM = 8;
 
 /** A change Sapha read, shown in the palette to be confirmed. */
 export type Proposal = Exclude<SaphaIntent, { kind: 'open' | 'search' | 'go' }>;
@@ -27,19 +31,35 @@ function actionFor(intent: SaphaIntent): Action | undefined {
 }
 
 /**
- * The palette's Sapha row (tier 0): when what was typed reads as a request,
- * one command saying what it will do. Looking goes at once; a change opens
- * Sapha's card (`propose`) and waits for a yes. Nothing is sent anywhere to
- * be read: the request is understood here, in the browser.
+ * The palette's Sapha row. Tier 0: when what was typed reads as a request,
+ * one command saying what it will do, understood here in the browser.
+ * Looking goes at once; a change opens Sapha's card (`propose`) and waits
+ * for a yes. Tier 1: when it does not read, and the workspace has turned
+ * assistance on, Ask Sapha sends only the words typed to be read (`ask`).
  */
 export function useSaphaCommand(
   workspaceId: string,
   query: string,
   propose: (intent: Proposal) => void,
+  ask: (request: string) => void,
 ): Command[] {
   const router = useRouter();
+  const { available } = useAssist(workspaceId);
   const intent = interpret(query);
-  if (!intent) return [];
+  const typed = query.trim();
+  if (!intent) {
+    if (!available || typed.length < ASK_FROM) return [];
+    return [
+      {
+        id: 'sapha-ask',
+        title: `Ask Sapha: “${typed}”`,
+        group: 'Sapha',
+        hint: 'Uses the assistant',
+        keepOpen: true,
+        run: () => ask(typed),
+      },
+    ];
+  }
   const looking = LOOKING_INTENTS.has(intent.kind);
   return [
     {

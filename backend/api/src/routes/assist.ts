@@ -266,6 +266,17 @@ export async function assistRoutes(app: FastifyInstance, opts: { db: Database; k
 
   serve(
     app,
+    contracts['assist.interpret'],
+    { preHandler: [requireAuth, requireMembership(db, 'workspace:read'), askLimit] },
+    async (request, { body }) => {
+      await assertAvailable(request);
+      // Only the words typed: nothing from the workspace goes with them.
+      return ask(request, { kind: 'intent', request: body.request });
+    },
+  );
+
+  serve(
+    app,
     contracts['assist.result'],
     { preHandler: [requireAuth, requireMembership(db, 'workspace:read')] },
     async (request, { params: { requestId } }) => {

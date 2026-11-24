@@ -33,7 +33,7 @@ import {
 } from '@robis/database';
 import { runMigrations } from '@robis/database/migrate';
 import { MemoryMailer } from '@robis/mailer';
-import { TERMS_VERSION } from '@robis/shared';
+import { type SaphaParts, TERMS_VERSION } from '@robis/shared';
 import { localDiskStorage } from '@robis/storage';
 import type { AgendaItem, Assistant, IssueDraft, SummaryPoint } from '@robis/worker/assist';
 import { assistHandler } from '@robis/worker/assist-job';
@@ -214,10 +214,11 @@ let assistAnswers: {
   summarise: SummaryPoint[] | null;
   agenda: AgendaItem[] | null;
   draftIssue: IssueDraft | null;
-} = { summarise: [], agenda: [], draftIssue: null };
+  interpret: SaphaParts | null;
+} = { summarise: [], agenda: [], draftIssue: null, interpret: null };
 
 export function setAssist(answers: Partial<typeof assistAnswers>) {
-  assistAnswers = { summarise: [], agenda: [], draftIssue: null, ...answers };
+  assistAnswers = { summarise: [], agenda: [], draftIssue: null, interpret: null, ...answers };
   assistCalls.length = 0;
 }
 
@@ -239,6 +240,10 @@ const assistStub: Assistant = {
   async draftIssue(message) {
     assistCalls.push({ kind: 'draftIssue', input: { message } });
     return assistAnswers.draftIssue;
+  },
+  async interpret(request) {
+    assistCalls.push({ kind: 'interpret', input: { request } });
+    return assistAnswers.interpret;
   },
 };
 

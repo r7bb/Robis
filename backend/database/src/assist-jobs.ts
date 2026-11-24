@@ -1,3 +1,5 @@
+import type { SaphaParts } from '@robis/shared';
+
 /**
  * Assistance (D3) as a job: the API cannot talk to the language-model
  * provider (only the worker holds that port), so an ask is a row plus a job.
@@ -19,7 +21,9 @@ export type AssistIssue = {
 export type AssistInput =
   | { kind: 'summary'; subject: string; snippets: AssistSnippet[] }
   | { kind: 'agenda'; meeting: string; issues: AssistIssue[] }
-  | { kind: 'issue'; message: string };
+  | { kind: 'issue'; message: string }
+  /** Sapha, tier 1: a request tier 0 could not read. */
+  | { kind: 'intent'; request: string };
 
 export type AssistResult =
   | { kind: 'summary'; points: { text: string; sources: string[] }[] }
@@ -28,4 +32,5 @@ export type AssistResult =
       items: { text: string; issueIds: string[] }[];
       issues: { id: string; key: string; title: string }[];
     }
-  | { kind: 'issue'; title: string; priority: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' };
+  | { kind: 'issue'; title: string; priority: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' }
+  | { kind: 'intent'; parts: SaphaParts };

@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-11-24): **1990 TypeScript tests, 132 Python tests, lint and
+Status (2026-11-24): **1996 TypeScript tests, 132 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -231,9 +231,9 @@ runs here. The images still run
 the upgrade removes and the image scan would otherwise fail on. Drop the
 step once a digest Dependabot proposes scans clean (stage 4, item 38).
 
-**Product.** Sapha reads a dozen kinds of request in the palette (tier 0);
-next, the optional provider for requests it does not yet read, off by default
-and shown the same confirm card. (Drag and drop on the board, the search results page,
+**Product.** Sapha reads a dozen kinds of request in the palette, and with
+assistance on, asks the provider about the rest (tier 1); next, answers to
+questions (what is blocking REL-4?) drawn from the workspace, with sources. (Drag and drop on the board, the search results page,
 filtering by label and bulk actions, once listed here, are built: see
 `frontend/features/board/` and the search page.)
 

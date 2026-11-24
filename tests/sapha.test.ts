@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { describeIntent, interpret } from '@robis/shared';
+import { describeIntent, intentFromParts, interpret } from '@robis/shared';
 
 /**
  * Sapha, tier 0: plain requests read into one of a few intents, with no
@@ -143,5 +143,51 @@ describe('saying what it will do', () => {
     const looks = ['open REL-4', 'find vpn', 'my day'];
     for (const text of changes) expect(read(text)?.kind).toMatch(/status|create|remind/);
     for (const text of looks) expect(read(text)?.kind).toMatch(/open|search|go/);
+  });
+});
+
+describe('tier 1: parts from the provider', () => {
+  const none = {
+    kind: 'none' as const,
+    issueKey: null,
+    status: null,
+    priority: null,
+    person: null,
+    title: null,
+    board: null,
+    when: null,
+    query: null,
+    place: null,
+  };
+
+  test('read into the same intents, the time from its words on this clock', () => {
+    expect(
+      intentFromParts({ ...none, kind: 'status', issueKey: 'rel-4', status: 'DONE' }, NOW),
+    ).toEqual({ kind: 'status', issueKey: 'REL-4', status: 'DONE' });
+    expect(
+      intentFromParts({ ...none, kind: 'remind', issueKey: 'REL-12', when: 'tomorrow 9am' }, NOW),
+    ).toEqual({ kind: 'remind', issueKey: 'REL-12', at: new Date(2026, 10, 25, 9) });
+    expect(
+      intentFromParts(
+        { ...none, kind: 'schedule', title: '  Planning  ', when: 'friday 3pm' },
+        NOW,
+      ),
+    ).toEqual({ kind: 'schedule', title: 'Planning', at: new Date(2026, 10, 27, 15) });
+    expect(intentFromParts({ ...none, kind: 'go', place: 'calendar' }, NOW)).toEqual({
+      kind: 'go',
+      place: 'calendar',
+    });
+  });
+
+  test('parts that do not hold are nothing: no key, no time, none at all', () => {
+    expect(
+      intentFromParts({ ...none, kind: 'status', issueKey: 'not a key', status: 'DONE' }, NOW),
+    ).toBeNull();
+    expect(intentFromParts({ ...none, kind: 'status', issueKey: 'REL-4' }, NOW)).toBeNull();
+    expect(
+      intentFromParts({ ...none, kind: 'remind', issueKey: 'REL-4', when: 'someday' }, NOW),
+    ).toBeNull();
+    expect(intentFromParts({ ...none, kind: 'create', title: '   ' }, NOW)).toBeNull();
+    expect(intentFromParts(none, NOW)).toBeNull();
   });
 });

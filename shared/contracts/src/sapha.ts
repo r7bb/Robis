@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import type { IssuePriority, IssueStatus } from './domain.ts';
 import { parseWhen } from './when.ts';
 
@@ -235,5 +236,114 @@ export function describeIntent(intent: SaphaIntent, _now: Date = new Date()): st
       return `Search for “${intent.query}”`;
     case 'go':
       return PLACE_LINES[intent.place];
+  }
+}
+
+/** The kinds of request the provider may answer with; `none` when it is none of them. */
+export const SAPHA_KINDS = [
+  'status',
+  'priority',
+  'assign',
+  'unassign',
+  'due',
+  'create',
+  'remind',
+  'schedule',
+  'open',
+  'search',
+  'go',
+  'none',
+] as const;
+const SAPHA_PLACES = ['day', 'calendar', 'feed', 'spaces', 'meetings'] as const;
+const ISSUE_KEY_PATTERN = /^[A-Za-z][A-Za-z0-9]{0,9}-\d{1,9}$/;
+
+/**
+ * Sapha, tier 1: a request tier 0 cannot read, read by the optional
+ * provider into these parts, and nothing else. A time comes back in the
+ * words it was said in, and is read here on the person's own clock, so the
+ * provider never decides a date; every part is checked by `intentFromParts`.
+ */
+export const saphaPartsSchema = z.object({
+  kind: z.enum(SAPHA_KINDS),
+  issueKey: z.string().nullable(),
+  status: z.enum(['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE', 'CANCELED']).nullable(),
+  priority: z.enum(['NONE', 'LOW', 'MEDIUM', 'HIGH', 'URGENT']).nullable(),
+  /** A person's name as said, or "me". */
+  person: z.string().nullable(),
+  /** A new issue's or meeting's title. */
+  title: z.string().nullable(),
+  board: z.string().nullable(),
+  /** When, in words: "tomorrow 9am", "friday", "in 2 hours". */
+  when: z.string().nullable(),
+  query: z.string().nullable(),
+  place: z.enum(SAPHA_PLACES).nullable(),
+});
+export type SaphaParts = z.infer<typeof saphaPartsSchema>;
+
+/** Text from the provider, trimmed and bounded, or null when empty. */
+function words(text: string | null, max: number): string | null {
+  const trimmed = text?.trim().replace(/\s+/g, ' ').slice(0, max) ?? '';
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function keyOf(parts: SaphaParts): string | null {
+  const key = parts.issueKey?.trim() ?? '';
+  return ISSUE_KEY_PATTERN.test(key) ? key.toUpperCase() : null;
+}
+
+/** An issue change, when the parts name a real key and what to change. */
+function issueIntent(parts: SaphaParts, issueKey: string, now: Date): SaphaIntent | null {
+  switch (parts.kind) {
+    case 'status':
+      return parts.status ? { kind: 'status', issueKey, status: parts.status } : null;
+    case 'priority':
+      return parts.priority ? { kind: 'priority', issueKey, priority: parts.priority } : null;
+    case 'assign': {
+      const person = words(parts.person, 80);
+      return person ? { kind: 'assign', issueKey, person } : null;
+    }
+    case 'unassign':
+      return { kind: 'unassign', issueKey };
+    case 'due': {
+      if (!parts.when) return { kind: 'due', issueKey, dueOn: null };
+      const when = parseWhen(parts.when, now);
+      return when ? { kind: 'due', issueKey, dueOn: dayOf(when) } : null;
+    }
+    case 'remind': {
+      const at = parts.when ? parseWhen(parts.when, now) : null;
+      return at ? { kind: 'remind', issueKey, at } : null;
+    }
+    case 'open':
+      return { kind: 'open', issueKey };
+    default:
+      return null;
+  }
+}
+
+/** An intent from the provider's parts, checked as tier 0's are; null when they do not hold. */
+export function intentFromParts(parts: SaphaParts, now: Date = new Date()): SaphaIntent | null {
+  const issueKey = keyOf(parts);
+  if (issueKey) {
+    const change = issueIntent(parts, issueKey, now);
+    if (change) return change;
+  }
+  switch (parts.kind) {
+    case 'create': {
+      const title = words(parts.title, 200);
+      return title ? { kind: 'create', title, board: words(parts.board, 80) } : null;
+    }
+    case 'schedule': {
+      const title = words(parts.title, 200);
+      const at = parts.when ? parseWhen(parts.when, now) : null;
+      return title && at ? { kind: 'schedule', title, at } : null;
+    }
+    case 'search': {
+      const query = words(parts.query, 200);
+      return query ? { kind: 'search', query } : null;
+    }
+    case 'go':
+      return parts.place ? { kind: 'go', place: parts.place } : null;
+    default:
+      return null;
   }
 }

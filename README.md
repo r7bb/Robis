@@ -204,6 +204,10 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Ask Sapha: requests in your own words, read by the assistant.** Where
+  assistance is on, a request Sapha does not read by itself gets an Ask
+  Sapha row; only the words typed are sent, and what comes back goes to the
+  same card that waits for Do it.
 - **The team’s week, on the feed.** A card on the feed counts the last seven
   days across the workspace (issues finished, questions answered, meetings
   held, documents changed, messages) and names who finished most.
@@ -211,10 +215,6 @@ no write lost and nothing done twice.
   Sharing a picture to Robis made the issue and the link but, about half the
   time, dropped the picture; changes waiting to be sent now always go in the
   order they were made.
-- **Document history: see earlier versions, and put one back.** A document
-  keeps how it read as it changed, at most one version every ten minutes and
-  the latest fifty; History shows them, and Put this back restores one for
-  everyone, keeping what was there first so it can be undone.
 
 <!-- latest:end -->
 

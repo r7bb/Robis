@@ -14,7 +14,7 @@ Written to be checkable. Every row names a file you can open.
 | --- | --- |
 | Services | 5 (web, API, realtime gateway, worker, MCP server for agents) plus an optional ML service |
 | Database tables | 18 |
-| HTTP endpoints | 231 |
+| HTTP endpoints | 232 |
 | Tests | Counted in [docs/ROADMAP.md](docs/ROADMAP.md), the one place they are kept |
 | Screenshots | 35, all captured from the running app |
 | Measured throughput | ~3,600 req/s, zero errors |
@@ -205,6 +205,7 @@ JavaScript.
 | Notification inbox with dedupe | `backend/api/src/routes/notifications.ts` |
 | Snooze and Remind me: an entry put off waits under Later and comes back unread; a reminder of an issue, message or thread is a snoozed note to yourself, pushed at its time; times in plain words | `backend/api/src/routes/reminders.ts`, `shared/contracts/src/when.ts`, `frontend/components/inbox-entry.tsx` |
 | Sapha in the command palette: plain requests read in the browser into a dozen intents (status, priority, assignee, due day, new issue, reminder, meeting, open, search, go), changes shown on a card and done as the person only after Do it | `shared/contracts/src/sapha.ts`, `frontend/features/sapha/` |
+| Ask Sapha (tier 1): where assistance is on, a request not read in the browser is read by the provider into one action's parts, checked in the browser and confirmed on the same card | `backend/worker/src/assist.ts`, `shared/contracts/src/sapha.ts`, `frontend/features/sapha/sapha-ask.tsx` |
 | Chat that keeps your place: unread counts per room, a New line, marking read while in view, and quick reactions on messages | `backend/api/src/routes/chat-reads.ts`, `frontend/features/chat/use-reads.ts`, `frontend/features/chat/message-reactions.tsx` |
 | Asked before? Up to five threads sharing two or more words with a draft title, answered first | `backend/api/src/spaces/similar.ts`, `frontend/features/spaces/asked-before.tsx` |
 | Meeting notes: written by whoever is in the meeting, a save over a newer one refused; checklist, TODO and Action lines are follow-ups filed as issues and ticked with their key | `backend/api/src/meetings/notes.ts`, `shared/contracts/src/follow-ups.ts`, `frontend/features/meetings/meeting-notes.tsx` |

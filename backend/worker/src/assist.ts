@@ -1,4 +1,9 @@
-import { ISSUE_PRIORITIES, type IssuePriority } from '@robis/shared';
+import {
+  ISSUE_PRIORITIES,
+  type IssuePriority,
+  type SaphaParts,
+  saphaPartsSchema,
+} from '@robis/shared';
 
 /**
  * Assistance (D3): advisory help from the optional language-model provider,
@@ -30,6 +35,8 @@ export type Assistant = {
   summarise(subject: string, snippets: readonly Snippet[]): Promise<SummaryPoint[] | null>;
   agenda(meeting: string, issues: readonly AgendaIssue[]): Promise<AgendaItem[] | null>;
   draftIssue(message: string): Promise<IssueDraft | null>;
+  /** Sapha, tier 1: a request read into parts; the browser checks and confirms them. */
+  interpret(request: string): Promise<SaphaParts | null>;
 };
 
 /** Points in a summary, and items in an agenda: a glance, not a report. */
@@ -108,4 +115,21 @@ export const PROMPTS = {
     'URGENT only for something broken for many people now, HIGH, MEDIUM, LOW, or NONE when it is not clear.',
     DATA_RULE,
   ].join(' '),
+  interpret: [
+    'You read one request typed into a work tracker’s command bar into the parts of one action.',
+    'Actions: status (move an issue to TODO, IN_PROGRESS, IN_REVIEW, DONE or CANCELED), priority,',
+    'assign (to a person by name, or "me"), unassign, due (a due day; no when clears it), create (a new issue',
+    'with a title, on a board if one is named), remind (about an issue, at a time), schedule (a meeting with a',
+    'title, at a time), open (an issue), search (a query), go (to day, calendar, feed, spaces or meetings).',
+    'An issue is named by its key, like REL-12; never invent a key. Copy any time in the words it was said in,',
+    'like "tomorrow 9am", never as a date. Leave a part null when the request does not say it.',
+    'If the request is none of these actions, the kind is none.',
+    DATA_RULE,
+  ].join(' '),
 } as const;
+
+/** The parts as the shape allows, or null: what fails the shape is never passed on. */
+export function keepParts(parts: unknown): SaphaParts | null {
+  const checked = saphaPartsSchema.safeParse(parts);
+  return checked.success && checked.data.kind !== 'none' ? checked.data : null;
+}

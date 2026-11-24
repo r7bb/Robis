@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
 import { assistRequests } from '@robis/database';
-import { keepAgenda, keepDraft, keepPoints, quoted } from '@robis/worker/assist';
+import { keepAgenda, keepDraft, keepParts, keepPoints, quoted } from '@robis/worker/assist';
 import { providerAssistant } from '@robis/worker/assist-provider';
 import { eq } from 'drizzle-orm';
 import {
@@ -277,5 +277,60 @@ describe('what is kept', () => {
       .from(assistRequests)
       .where(eq(assistRequests.id, done.id!));
     expect(row).toEqual({ input: null, status: 'done' });
+  });
+});
+
+describe('Sapha, tier 1', () => {
+  const none = {
+    kind: 'none' as const,
+    issueKey: null,
+    status: null,
+    priority: null,
+    person: null,
+    title: null,
+    board: null,
+    when: null,
+    query: null,
+    place: null,
+  };
+
+  test('a request is read into parts, with only the words typed sent', async () => {
+    const { owner, ws } = await team();
+    await turnOn(owner, ws);
+    const parts = { ...none, kind: 'remind' as const, issueKey: 'REL-4', when: 'monday morning' };
+    setAssist({ interpret: parts });
+    const { statusCode, body } = await answered(owner, ws, 'interpret', {
+      request: 'nudge me about REL-4 on monday morning',
+    });
+    expect(statusCode).toBe(200);
+    expect(body).toEqual({ status: 'done', result: { kind: 'intent', parts } });
+    expect(assistCalls).toEqual([
+      { kind: 'interpret', input: { request: 'nudge me about REL-4 on monday morning' } },
+    ]);
+  });
+
+  test('off until turned on, and nothing back is said plainly', async () => {
+    const { owner, ws } = await team();
+    const off = await request(`${ws}/assist/interpret`, {
+      method: 'POST',
+      actor: owner,
+      payload: { request: 'do the thing' },
+    });
+    expect(off.statusCode).toBe(404);
+    await turnOn(owner, ws);
+    setAssist({ interpret: null });
+    const { body } = await answered(owner, ws, 'interpret', { request: 'do the thing' });
+    expect(body).toEqual({ status: 'failed', result: null });
+  });
+
+  test('the provider’s parts must hold the shape; none, or nonsense, is no answer', () => {
+    expect(keepParts({ ...none, kind: 'status', issueKey: 'REL-4', status: 'DONE' })).toMatchObject(
+      {
+        kind: 'status',
+      },
+    );
+    expect(keepParts(none)).toBeNull();
+    expect(keepParts({ ...none, kind: 'status', status: 'SHIPPED' })).toBeNull();
+    expect(keepParts({ kind: 'go' })).toBeNull();
   });
 });
