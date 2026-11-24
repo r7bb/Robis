@@ -18,6 +18,7 @@ import { issueCommands } from '../../lib/page-commands.ts';
 import { may } from '../../lib/permissions.ts';
 import { remembered } from '../../lib/remembered.ts';
 import { useCommands } from '../command/command-provider.tsx';
+import { CyclePicker } from '../cycles/cycle-picker.tsx';
 import { RemindMe } from '../reminders/remind-me.tsx';
 import { IssueAttachments } from './attachments.tsx';
 import { BlockedBy } from './blocked-by.tsx';
@@ -198,6 +199,16 @@ export function IssueDetail({
                 finished={data.status === 'DONE' || data.status === 'CANCELED'}
                 canEdit={canEdit}
                 onChange={(dueOn) => update.mutate({ dueOn })}
+              />
+            </Field>
+
+            <Field label="Cycle">
+              <CyclePicker
+                workspaceId={workspaceId}
+                projectId={data.projectId}
+                value={data.cycleId}
+                canEdit={canEdit}
+                onChange={(cycleId) => update.mutate({ cycleId })}
               />
             </Field>
 

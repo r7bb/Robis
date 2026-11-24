@@ -694,6 +694,8 @@ export const issues = pgTable(
     parentId: uuid('parent_id').references((): AnyPgColumn => issues.id, {
       onDelete: 'set null',
     }),
+    /** The cycle it is planned for, one of its own board's; none when unplanned. */
+    cycleId: uuid('cycle_id').references((): AnyPgColumn => cycles.id, { onDelete: 'set null' }),
     createdBy: uuid('created_by')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict' }),
@@ -714,6 +716,7 @@ export const issues = pgTable(
   (t) => [
     uniqueIndex('issues_project_number_key').on(t.projectId, t.number),
     index('issues_workspace_id_idx').on(t.workspaceId),
+    index('issues_cycle_idx').on(t.cycleId),
     // The home's overview: the latest issue per workspace, and the last two
     // weeks of creations and edits (routes/overview.ts).
     index('issues_workspace_created_idx').on(t.workspaceId, t.createdAt),
@@ -733,6 +736,32 @@ export const issues = pgTable(
       .where(sql`${t.status} = 'DONE'`),
     check('issues_parent_not_self', sql`${t.parentId} <> ${t.id}`),
     index('issues_search_idx').using('gin', t.searchVector),
+  ],
+);
+
+/**
+ * A cycle: a stretch of days a board plans work for, such as two weeks.
+ * Its issues point at it; deleting it leaves them unplanned, not gone.
+ */
+export const cycles = pgTable(
+  'cycles',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    startsOn: date('starts_on', { mode: 'string' }).notNull(),
+    endsOn: date('ends_on', { mode: 'string' }).notNull(),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('cycles_project_starts_idx').on(t.projectId, t.startsOn),
+    check('cycles_ends_after_start', sql`${t.endsOn} >= ${t.startsOn}`),
   ],
 );
 

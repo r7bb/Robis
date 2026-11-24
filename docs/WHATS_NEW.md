@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Cycles: plan a board’s work in stretches of days** (2026-11-24). A board
+  can plan cycles, such as two weeks at a time; an issue is planned for one,
+  the board shows the current cycle’s progress and days left, and Only this
+  cycle narrows the board to it.
 - **The demo shows the new things at work** (2026-11-24). A demo workspace
   now arrives with the team’s update on its board, one issue waiting on
   another, a weekly repeat and last week’s meeting notes with follow-ups;

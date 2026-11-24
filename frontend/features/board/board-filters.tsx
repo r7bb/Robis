@@ -14,6 +14,7 @@ import { DeleteButton } from '../../components/delete-button.tsx';
 import { priorityLabel, statusLabel } from '../../components/ui/badges.tsx';
 import { call } from '../../lib/api.ts';
 import { isFiltered, sameFilter, withField } from '../../lib/board-filter.ts';
+import { useCycles } from '../cycles/use-cycles.ts';
 
 /**
  * The board's filter bar (C1): narrow by status, priority, assignee and
@@ -61,6 +62,11 @@ export function BoardFilters({
     label: m.name,
   }));
   const labelOptions: Option[] = labels.map((l) => ({ value: l.id, label: l.name }));
+  const cycles = useCycles(workspaceId, projectId);
+  const cycleOptions: Option[] = (cycles.data?.cycles ?? []).map((c) => ({
+    value: c.id,
+    label: c.name,
+  }));
 
   return (
     <fieldset className="mt-6 flex flex-wrap items-center gap-2">
@@ -101,6 +107,15 @@ export function BoardFilters({
         options={labelOptions}
         onChange={(v) => onChange(withField(filter, 'labelId', v))}
       />
+      {cycleOptions.length > 0 ? (
+        <FilterSelect
+          label="Cycle"
+          any="Any cycle"
+          value={filter.cycleId}
+          options={cycleOptions}
+          onChange={(v) => onChange(withField(filter, 'cycleId', v))}
+        />
+      ) : null}
       {isFiltered(filter) && (
         <button type="button" onClick={() => onChange({})} className={QUIET_BUTTON}>
           Clear filters

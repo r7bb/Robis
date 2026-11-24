@@ -250,6 +250,8 @@ export const updateIssueSchema = z
     dueOn: dueDateSchema.nullable(),
     /** The issue it is part of, or null to stand alone (C1). */
     parentId: uuid.nullable(),
+    /** The cycle it is planned for, one of its board's, or null for none. */
+    cycleId: uuid.nullable(),
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, { message: 'No fields to update' });
@@ -265,6 +267,8 @@ export const boardFilterSchema = z.object({
   priority: z.enum(ISSUE_PRIORITIES).optional(),
   /** Only issues carrying this label. */
   labelId: uuid.optional(),
+  /** Only issues planned for this cycle. */
+  cycleId: uuid.optional(),
 });
 export type BoardFilter = z.infer<typeof boardFilterSchema>;
 

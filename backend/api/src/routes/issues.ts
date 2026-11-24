@@ -16,6 +16,7 @@ import {
   workspaces,
 } from '@robis/database';
 import {
+  type BoardFilter,
   type CreateIssueInput,
   contracts,
   isUuid,
@@ -23,7 +24,7 @@ import {
   TRIAGE_JOB,
   type TriageJob,
 } from '@robis/shared';
-import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, type SQL, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { serve, shape } from '../contract.ts';
 import { ApiError } from '../errors.ts';
@@ -36,6 +37,7 @@ import {
 } from '../plugins/authz.ts';
 import { withIdempotency } from '../plugins/idempotency.ts';
 import type { SuggestionClient } from '../suggestions.ts';
+import { assertCycleOn } from './cycles.ts';
 import { assertParentAllowed, loadRelatives } from './issue-tree.ts';
 import {
   applyIssueUpdate,
@@ -173,6 +175,34 @@ export async function fileIssue(
   return { ...created!, key: `${bumped.key}-${bumped.number}` };
 }
 
+/** What the board's filter asks of the list, as conditions on the issues. */
+function listFilters(
+  db: Database,
+  workspaceId: string,
+  projectId: string,
+  query: BoardFilter,
+): SQL[] {
+  const filters: SQL[] = [eq(issues.projectId, projectId), eq(issues.workspaceId, workspaceId)];
+  if (query.status) filters.push(eq(issues.status, query.status));
+  if (query.assigneeId) filters.push(eq(issues.assigneeId, query.assigneeId));
+  if (query.priority) filters.push(eq(issues.priority, query.priority));
+  if (query.cycleId) filters.push(eq(issues.cycleId, query.cycleId));
+  if (query.labelId) {
+    filters.push(
+      inArray(
+        issues.id,
+        db
+          .select({ id: issueLabels.issueId })
+          .from(issueLabels)
+          .where(
+            and(eq(issueLabels.labelId, query.labelId), eq(issueLabels.workspaceId, workspaceId)),
+          ),
+      ),
+    );
+  }
+  return filters;
+}
+
 export async function issueRoutes(
   app: FastifyInstance,
   opts: { db: Database; suggestions: SuggestionClient },
@@ -227,26 +257,7 @@ export async function issueRoutes(
 
       const project = await loadProject(db, workspaceId, projectId);
 
-      const filters = [eq(issues.projectId, projectId), eq(issues.workspaceId, workspaceId)];
-      if (query.status) filters.push(eq(issues.status, query.status));
-      if (query.assigneeId) filters.push(eq(issues.assigneeId, query.assigneeId));
-      if (query.priority) filters.push(eq(issues.priority, query.priority));
-      if (query.labelId) {
-        filters.push(
-          inArray(
-            issues.id,
-            db
-              .select({ id: issueLabels.issueId })
-              .from(issueLabels)
-              .where(
-                and(
-                  eq(issueLabels.labelId, query.labelId),
-                  eq(issueLabels.workspaceId, workspaceId),
-                ),
-              ),
-          ),
-        );
-      }
+      const filters = listFilters(db, workspaceId, projectId, query);
 
       /*
        * Keyset paging: take rows strictly "after" the cursor in the sort
@@ -280,6 +291,7 @@ export async function issueRoutes(
           position: issues.position,
           dueOn: issues.dueOn,
           parentId: issues.parentId,
+          cycleId: issues.cycleId,
           assigneeName: users.name,
           createdAt: issues.createdAt,
           updatedAt: issues.updatedAt,
@@ -391,6 +403,8 @@ export async function issueRoutes(
       const before = await loadIssue(db, workspaceId, issueId);
 
       if (input.assigneeId) await assertAssignable(db, workspaceId, input.assigneeId);
+      // A cycle of its own board only: another board's, or another workspace's, is not found.
+      if (input.cycleId) await assertCycleOn(db, workspaceId, before.projectId, input.cycleId);
 
       // The key is resolved and stored now rather than joined at read time,
       // so the entry still names the issue after the issue is deleted.

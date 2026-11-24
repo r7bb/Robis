@@ -38,6 +38,8 @@ const issue = z.object({
   dueOn: z.string().nullable(),
   /** The issue it is part of, or null (C1). */
   parentId: uuid.nullable(),
+  /** The cycle it is planned for, or null. */
+  cycleId: uuid.nullable().default(null),
   createdBy: uuid,
   createdAt: timestamp,
   updatedAt: timestamp,
@@ -101,6 +103,7 @@ export const issueContracts = {
             position: true,
             dueOn: true,
             parentId: true,
+            cycleId: true,
             createdAt: true,
             updatedAt: true,
           })

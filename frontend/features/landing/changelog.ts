@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Cycles: plan a board’s work in stretches of days',
+    brief:
+      'A board can plan cycles, such as two weeks at a time; an issue is planned for one, the board shows the current cycle’s progress and days left, and Only this cycle narrows the board to it.',
+    summary:
+      'Members plan a cycle on a board with a name and the days it runs (at most eight weeks), and put issues in it from the issue’s Cycle field. The board shows the cycle running today, or the next to start, as a bar of how much is done (canceled issues left out of the count) with the days left, and Only this cycle narrows the board to its issues; the cycle is also one of the board’s filters, so it can be part of a saved view or a shared link. An issue may be planned only for one of its own board’s cycles. Removing a cycle leaves its issues on the board, unplanned. Guests see cycles but do not plan them.',
+    checked:
+      'Four tests through the API: a cycle planned, issues put in it, counted and listed by it; days that end before they start or run past eight weeks refused; an issue refused a cycle from another board; and a removed cycle leaving its issue unplanned, with a guest unable to plan. The existing issue, board filter, saved view and offline tests. In the browser, Only this cycle showed three of four issues and the bar read 1 of 3 done with ten days left. The offline, offline issue, keyboard and phone journeys, and the stack smoke test. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Cycles',
+      where: 'A board: the cycle bar and the Cycle filter; an issue, Cycle',
+      layers: [
+        'Screen: the current cycle’s progress, Only this cycle, a cycle filter, and Cycle on an issue',
+        'API: cycles.list, create, update and remove; issues take a cycle of their own board',
+        'Database: cycles, and the cycle each issue is planned for',
+      ],
+    },
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'The demo shows the new things at work',
     brief:
       'A demo workspace now arrives with the team’s update on its board, one issue waiting on another, a weekly repeat and last week’s meeting notes with follow-ups; and the demo’s people react to chat and write the odd project update.',

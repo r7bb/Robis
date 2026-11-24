@@ -10,6 +10,7 @@ import { calendarContracts } from './calendar.ts';
 import { channelContracts } from './channels.ts';
 import { chatReadContracts } from './chat-reads.ts';
 import { type Contract, statusesOf } from './contract.ts';
+import { cycleContracts } from './cycles.ts';
 import { discussionContracts } from './discussion.ts';
 import { documentContracts } from './documents.ts';
 import { exportContracts } from './exports.ts';
@@ -67,6 +68,7 @@ export {
 } from './automation.ts';
 export { UNREAD_SHOWN_MAX } from './chat-reads.ts';
 export * from './contract.ts';
+export { CYCLE_DAYS_MAX } from './cycles.ts';
 export { DISCUSSION_LIMIT, DISCUSSION_PREVIEW_CHARS } from './discussion.ts';
 export {
   EXPORT_KEEP_DAYS,
@@ -146,6 +148,7 @@ export const contracts = {
   ...issueBlockContracts,
   ...documentContracts,
   ...channelContracts,
+  ...cycleContracts,
   ...chatReadContracts,
   ...meetingContracts,
   ...notificationContracts,

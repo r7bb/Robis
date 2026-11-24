@@ -204,6 +204,10 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Cycles: plan a board’s work in stretches of days.** A board can plan
+  cycles, such as two weeks at a time; an issue is planned for one, the
+  board shows the current cycle’s progress and days left, and Only this
+  cycle narrows the board to it.
 - **The demo shows the new things at work.** A demo workspace now arrives
   with the team’s update on its board, one issue waiting on another, a
   weekly repeat and last week’s meeting notes with follow-ups; and the
@@ -212,10 +216,6 @@ no write lost and nothing done twice.
   “who has REL-4?”, “status of REL-4” or “how’s REL-4 going?” and Sapha
   answers there: its status, who has it, when it is due, its priority, and
   what it waits on.
-- **Project updates: the team’s word on how a board is going.** A board can
-  carry a short written update, marked on track, at risk or off track; the
-  latest shows above the board and on the feed’s project card beside the
-  health worked out from its issues.
 
 <!-- latest:end -->
 

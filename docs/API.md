@@ -19,7 +19,7 @@ way.
 `{ "error": "<code>", "message": "<words for people>" }`. A stranger to a
 workspace gets 404, never 403, so its existence is not given away.
 
-234 routes.
+238 routes.
 
 ## activity
 
@@ -591,6 +591,23 @@ Delete your own comment, or as an admin, anyone's.
 - Answers: 204
 - Name: `comments.delete`
 
+## cycles
+
+### `DELETE /workspaces/{workspaceId}/cycles/{cycleId}`
+
+Remove a cycle; its issues stay on the board, unplanned.
+
+- Answers: 204
+- Name: `cycles.remove`
+
+### `PATCH /workspaces/{workspaceId}/cycles/{cycleId}`
+
+Rename a cycle or move its days.
+
+- Body: `name`, `startsOn`, `endsOn`
+- Answers: 200
+- Name: `cycles.update`
+
 ## documents
 
 ### `GET /workspaces/{workspaceId}/documents`
@@ -872,7 +889,7 @@ One issue, with its labels, the issue it is part of, and its sub-issues.
 
 Change an issue: its title, description, status, priority, assignee, place on the board, due day or parent.
 
-- Body: `title`, `description`, `status`, `priority`, `assigneeId`, `position`, `dueOn`, `parentId`
+- Body: `title`, `description`, `status`, `priority`, `assigneeId`, `position`, `dueOn`, `parentId`, `cycleId`
 - Answers: 200
 - Name: `issues.update`
 
@@ -1422,6 +1439,21 @@ The issues on a board that still wait on an issue not yet done or canceled.
 - Answers: 200
 - Name: `projects.blocked`
 
+### `GET /workspaces/{workspaceId}/projects/{projectId}/cycles`
+
+A board’s cycles, earliest first, each with how many of its issues are done.
+
+- Answers: 200
+- Name: `cycles.list`
+
+### `POST /workspaces/{workspaceId}/projects/{projectId}/cycles`
+
+Plan a cycle on a board: a name and the days it runs, at most eight weeks.
+
+- Body: `name` (required), `startsOn` (required), `endsOn` (required)
+- Answers: 201
+- Name: `cycles.create`
+
 ### `POST /workspaces/{workspaceId}/projects/{projectId}/import/csv`
 
 Import issues from a CSV file whose first row names its columns (title, description, status, priority, labels, id).
@@ -1450,7 +1482,7 @@ Import the issues of a Robis workspace export, with their labels and comments, i
 
 A page of a project's issues, newest first, with a cursor for the next.
 
-- Query: `status`, `assigneeId`, `priority`, `labelId`, `limit`, `cursor`
+- Query: `status`, `assigneeId`, `priority`, `labelId`, `cycleId`, `limit`, `cursor`
 - Answers: 200
 - Name: `issues.list`
 

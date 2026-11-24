@@ -25,6 +25,7 @@ import {
   filterToQuery,
   isFiltered,
   matchesFilter,
+  withField,
 } from '../../lib/board-filter.ts';
 import { COMPOSE_PARAM } from '../../lib/links.ts';
 import { boardCommands } from '../../lib/page-commands.ts';
@@ -34,6 +35,7 @@ import { concernsBoard } from '../../lib/realtime-events.ts';
 import { useMemberAvatars } from '../../lib/use-member-avatars.ts';
 import { useOfflineBoard } from '../../lib/use-offline-board.ts';
 import { useCommands, useOpenPalette } from '../command/command-provider.tsx';
+import { CycleBar } from '../cycles/cycle-bar.tsx';
 import { DuplicateHints } from '../issues/duplicate-hints.tsx';
 import { usePeek } from '../issues/issue-peek.tsx';
 import { PriorityHint } from '../issues/priority-hint.tsx';
@@ -261,6 +263,14 @@ export function ProjectBoard({
         onChange={setFilter}
         canEdit={may(role, 'saveView')}
         labels={labels.data?.labels ?? []}
+      />
+
+      <CycleBar
+        workspaceId={workspaceId}
+        projectId={projectId}
+        canPlan={canEdit}
+        showingOnly={filter.cycleId}
+        onShowOnly={(cycleId) => setFilter(withField(filter, 'cycleId', cycleId ?? ''))}
       />
 
       <div className="mt-3 flex items-center justify-between gap-4">
