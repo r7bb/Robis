@@ -203,6 +203,7 @@ JavaScript.
 | Full-text search over issues, documents, comments | `backend/database/src/search.ts` |
 | Stored generated `tsvector` columns | `backend/database/src/schema.ts` |
 | Notification inbox with dedupe | `backend/api/src/routes/notifications.ts` |
+| Space notifications: a reply tells the thread's author and the reply it answers, a marked answer tells its author once; stale news tells no one | `backend/worker/src/notify-spaces.ts` |
 | Mention notifications | `backend/worker/src/handlers.ts` |
 | Stale-issue nudges | `backend/worker/src/nudges.ts` |
 | `SKIP LOCKED` job queue with retries | `backend/database/src/queue.ts` |

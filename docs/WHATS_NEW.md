@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Spaces tell you when someone replies, and when your answer is marked**
+  (2026-11-24). Whoever asks hears of each reply, whoever is replied to
+  hears too, and whoever answered hears once their reply is marked as the
+  answer; each can be turned off like any other notification.
 - **Assistance you can turn on: summaries, draft agendas and issues from
   chat** (2026-11-24). With a provider key on the server and an admin
   switching it on, a long thread or busy channel gets a Summarise button, a

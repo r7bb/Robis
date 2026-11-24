@@ -204,6 +204,10 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Spaces tell you when someone replies, and when your answer is marked.**
+  Whoever asks hears of each reply, whoever is replied to hears too, and
+  whoever answered hears once their reply is marked as the answer; each can
+  be turned off like any other notification.
 - **Assistance you can turn on: summaries, draft agendas and issues from
   chat.** With a provider key on the server and an admin switching it on, a
   long thread or busy channel gets a Summarise button, a meeting a Draft
@@ -213,10 +217,6 @@ no write lost and nothing done twice.
   you.** A Today page gathers what is yours to do; the sidebar shows who has
   each board and document open; and an agent can now edit a document live
   with its own caret, as the demo’s Saphi does.
-- **A livelier feed: who is here now, and Everyone back as it was.** The
-  feed opens on who is here now and the agents at work; Everyone again shows
-  the check-in, the day’s shots, celebrations and project health above the
-  posts; and in the demo, two teammates write in the same document at once.
 
 <!-- latest:end -->
 

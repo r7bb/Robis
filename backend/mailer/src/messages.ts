@@ -294,6 +294,10 @@ export function notificationLine(item: NotificationLine): string {
       return `${c.actor} ${MEETING_DID[c.change] ?? 'changed'} ${c.title || 'a meeting'}`;
     case 'nudge':
       return [c.title, c.body].filter(Boolean).join(': ');
+    case 'space_reply':
+      return `${c.actor} replied in ${c.title || 'a thread'}${said(c.excerpt)}`;
+    case 'space_answer':
+      return `${c.actor} marked your reply as the answer to ${c.title || 'a question'}`;
     default:
       return `${c.actor} mentioned you on ${issue}${said(c.excerpt)}`;
   }

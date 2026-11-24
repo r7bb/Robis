@@ -262,6 +262,9 @@ export const WORKER_GRANTS: TableGrants = {
   // Who is told when a meeting moves or is called off (C3).
   meetings: ['select'],
   meeting_attendees: ['select'],
+  // Who is told of a reply in a space, or of an answer marked (C3).
+  space_threads: ['select'],
+  space_replies: ['select'],
   sessions: ['select', 'delete'],
   // Idempotency keys past their replay window (stage 3, item 30).
   mutations: ['select', 'delete'],

@@ -67,6 +67,10 @@ function linkOf(webOrigin: string, row: Row, payload: Record<string, unknown>): 
   if (row.workspaceId && typeof payload.issueId === 'string') {
     return `${webOrigin}/workspaces/${row.workspaceId}/issues/${payload.issueId}`;
   }
+  if (row.workspaceId && typeof payload.threadId === 'string') {
+    const reply = typeof payload.replyId === 'string' ? `#reply-${payload.replyId}` : '';
+    return `${webOrigin}/workspaces/${row.workspaceId}/spaces/threads/${payload.threadId}${reply}`;
+  }
   if (row.kind === 'nudge' && typeof payload.nudge === 'string') {
     return `${webOrigin}/guide/${payload.nudge}`;
   }

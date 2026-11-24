@@ -39,6 +39,8 @@ export const NOTIFICATION_KINDS = [
   'issue_comment',
   'meeting',
   'nudge',
+  'space_reply',
+  'space_answer',
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 

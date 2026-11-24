@@ -294,3 +294,13 @@ export type MeetingJob = {
   /** The meeting, the kind of change and the notice window (or once, for a cancellation). */
   eventId: string;
 };
+
+/**
+ * Something happened in a space that someone should hear of (C3): a reply
+ * (its thread's author and the reply it answers hear) or a reply marked as
+ * the answer (its author hears). Queued with the change; the job names the
+ * reply only, and the worker reads the rest.
+ */
+export const NOTIFY_SPACE_JOB = 'notify.space';
+export type SpaceEvent = 'reply' | 'answer';
+export type SpaceJob = { replyId: string; event: SpaceEvent; actorId: string };

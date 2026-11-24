@@ -25,7 +25,15 @@ import {
 beforeEach(resetDatabase);
 afterAll(closeHarness);
 
-const KINDS = ['mention', 'assignment', 'issue_comment', 'meeting', 'nudge'];
+const KINDS = [
+  'mention',
+  'assignment',
+  'issue_comment',
+  'meeting',
+  'nudge',
+  'space_reply',
+  'space_answer',
+];
 
 async function settingsOf(actor: Actor) {
   const response = await request('/me/notification-settings', { actor });

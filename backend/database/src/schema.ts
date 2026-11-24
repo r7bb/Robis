@@ -1660,7 +1660,7 @@ export const notificationSettings = pgTable(
     primaryKey({ columns: [t.userId, t.kind, t.channel] }),
     check(
       'notification_settings_kind',
-      sql`${t.kind} in ('mention', 'assignment', 'issue_comment', 'meeting', 'nudge')`,
+      sql`${t.kind} in ('mention', 'assignment', 'issue_comment', 'meeting', 'nudge', 'space_reply', 'space_answer')`,
     ),
     check('notification_settings_channel', sql`${t.channel} in ('in_app', 'email', 'push')`),
   ],

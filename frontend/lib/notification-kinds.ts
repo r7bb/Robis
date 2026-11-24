@@ -13,4 +13,12 @@ export const NOTIFICATION_KIND_NAMES: Record<NotificationKind, { name: string; w
     when: 'A meeting you are in is moved, changed or called off.',
   },
   nudge: { name: 'Suggestions', when: 'A next step to try, at most one a week.' },
+  space_reply: {
+    name: 'Replies in spaces',
+    when: 'Someone replies to your thread, or to your reply, in a space.',
+  },
+  space_answer: {
+    name: 'Answers marked',
+    when: 'Your reply is marked as the answer to a question.',
+  },
 };

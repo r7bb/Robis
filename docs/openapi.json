@@ -8579,6 +8579,12 @@
                                   "canceled"
                                 ]
                               },
+                              "threadId": {
+                                "type": "string"
+                              },
+                              "replyId": {
+                                "type": "string"
+                              },
                               "title": {
                                 "type": "string"
                               },
@@ -8824,7 +8830,9 @@
                               "assignment",
                               "issue_comment",
                               "meeting",
-                              "nudge"
+                              "nudge",
+                              "space_reply",
+                              "space_answer"
                             ]
                           },
                           "channels": {
@@ -8885,7 +8893,9 @@
                       "assignment",
                       "issue_comment",
                       "meeting",
-                      "nudge"
+                      "nudge",
+                      "space_reply",
+                      "space_answer"
                     ]
                   },
                   "channel": {
@@ -8930,7 +8940,9 @@
                               "assignment",
                               "issue_comment",
                               "meeting",
-                              "nudge"
+                              "nudge",
+                              "space_reply",
+                              "space_answer"
                             ]
                           },
                           "channels": {
@@ -9017,7 +9029,9 @@
                           "assignment",
                           "issue_comment",
                           "meeting",
-                          "nudge"
+                          "nudge",
+                          "space_reply",
+                          "space_answer"
                         ]
                       }
                     }
@@ -9077,7 +9091,9 @@
                           "assignment",
                           "issue_comment",
                           "meeting",
-                          "nudge"
+                          "nudge",
+                          "space_reply",
+                          "space_answer"
                         ]
                       }
                     }

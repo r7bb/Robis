@@ -10,12 +10,14 @@ import {
   meetings,
   NOTIFY_ASSIGNMENT_JOB,
   NOTIFY_MEETING_JOB,
+  NOTIFY_SPACE_JOB,
   notify,
   projects,
   users,
   workspaceMembers,
 } from '@robis/database';
 import { and, eq, inArray, ne } from 'drizzle-orm';
+import { notifySpace } from './notify-spaces.ts';
 import type { Handlers } from './runner.ts';
 
 /**
@@ -233,4 +235,5 @@ export const notifyHandlers: Handlers = {
   'notify.mentions': notifyComment,
   [NOTIFY_ASSIGNMENT_JOB]: notifyAssignment,
   [NOTIFY_MEETING_JOB]: notifyMeeting,
+  [NOTIFY_SPACE_JOB]: notifySpace,
 };

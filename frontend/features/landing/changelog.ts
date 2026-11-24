@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Spaces tell you when someone replies, and when your answer is marked',
+    brief:
+      'Whoever asks hears of each reply, whoever is replied to hears too, and whoever answered hears once their reply is marked as the answer; each can be turned off like any other notification.',
+    summary:
+      'Two new kinds of notification, Replies in spaces and Answers marked, go through the same door as mentions and meeting changes, so each person’s choices in the app, by email and by push apply. A reply tells the thread’s author and, for a reply to a reply, that reply’s author; a reply marked as the answer tells whoever wrote it, once ever, however often it is unmarked and marked again. Nobody hears of what they did themselves, agents are never told, and news gone stale before the worker reads it (a reply taken down, an answer unmarked) tells no one. The inbox entry and the digest line name the thread, quote the start of a reply, and lead to the reply itself.',
+    checked:
+      'Eight tests through the API and the worker: whoever asked hears with a link to the reply, a reply to a reply tells both authors once each, your own replies and answers tell no one, a reply taken down first or an answer unmarked first tells no one, turned off makes nothing, and an answer marked twice tells once. The digest lines for both kinds. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Space notifications',
+      where: 'The inbox, and Account, Notifications',
+      layers: [
+        'Screen: inbox entries leading to the reply, and two new rows in notification settings',
+        'Worker: one job for a reply or an answer, finding who should hear',
+        'Database: the two kinds allowed in settings',
+      ],
+    },
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Assistance you can turn on: summaries, draft agendas and issues from chat',
     brief:
       'With a provider key on the server and an admin switching it on, a long thread or busy channel gets a Summarise button, a meeting a Draft agenda, and a chat message Make an issue; all marked as generated and saved nowhere until someone uses them.',

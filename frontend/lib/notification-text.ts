@@ -15,6 +15,8 @@ type Item = {
     excerpt?: string;
     title?: string;
     change?: 'moved' | 'changed' | 'canceled';
+    threadId?: string;
+    replyId?: string;
   };
 };
 
@@ -54,6 +56,20 @@ export function describeNotification(item: Item): {
         subject: payload.title ?? 'a meeting',
         body: undefined,
       };
+    case 'space_reply':
+      return {
+        actor,
+        did: 'replied in',
+        subject: payload.title ?? 'a thread',
+        body: payload.excerpt,
+      };
+    case 'space_answer':
+      return {
+        actor,
+        did: 'marked your reply as the answer to',
+        subject: payload.title ?? 'a question',
+        body: undefined,
+      };
     default:
       return {
         actor,
@@ -64,10 +80,15 @@ export function describeNotification(item: Item): {
   }
 }
 
-/** Where an entry about an issue or a meeting leads. */
+/** Where an entry about an issue, a meeting or a thread leads. */
 export function notificationHref(item: Item): string {
-  if (item.payload.issueId && item.workspaceId) {
-    return `/workspaces/${item.workspaceId}/issues/${item.payload.issueId}`;
+  const { payload, workspaceId } = item;
+  if (payload.issueId && workspaceId) {
+    return `/workspaces/${workspaceId}/issues/${payload.issueId}`;
+  }
+  if (payload.threadId && workspaceId) {
+    const reply = payload.replyId ? `#reply-${payload.replyId}` : '';
+    return `/workspaces/${workspaceId}/spaces/threads/${payload.threadId}${reply}`;
   }
   return item.workspaceId ? `/workspaces/${item.workspaceId}` : '/workspaces';
 }

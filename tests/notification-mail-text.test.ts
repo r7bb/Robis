@@ -24,6 +24,13 @@ describe('a line of a digest', () => {
     expect(notificationLine({ ...base, kind: 'meeting', title: 'Retro', change: 'canceled' })).toBe(
       'Alice called off Retro',
     );
+    const thread = { actor: 'Alice', link: 'x', title: 'VPN drops at noon' };
+    expect(notificationLine({ ...thread, kind: 'space_reply', excerpt: 'Try the backup' })).toBe(
+      'Alice replied in VPN drops at noon: Try the backup',
+    );
+    expect(notificationLine({ ...thread, kind: 'space_answer' })).toBe(
+      'Alice marked your reply as the answer to VPN drops at noon',
+    );
     expect(
       notificationLine({
         kind: 'nudge',

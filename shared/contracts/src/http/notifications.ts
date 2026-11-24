@@ -22,7 +22,10 @@ const payload = z.looseObject({
   meetingId: z.string().optional(),
   startsAt: z.string().optional(),
   change: z.enum(['moved', 'changed', 'canceled']).optional(),
-  /** Nudges. */
+  /** Replies and answers in spaces (C3). */
+  threadId: z.string().optional(),
+  replyId: z.string().optional(),
+  /** Nudges, and the thread a space notification is about. */
   title: z.string().optional(),
   body: z.string().optional(),
   nudge: z.string().optional(),

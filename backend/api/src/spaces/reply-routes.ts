@@ -1,6 +1,9 @@
 import {
   type Database,
+  enqueue,
+  NOTIFY_SPACE_JOB,
   recordAudit,
+  type SpaceJob,
   spaceReplies,
   spaceReplyReactions,
   spaces,
@@ -146,6 +149,8 @@ export async function spaceReplyRoutes(
           eventType: 'space.replied',
           payload: { threadId: thread.id },
         });
+        const job: SpaceJob = { replyId: created!.id, event: 'reply', actorId: user.id };
+        await enqueue(tx, NOTIFY_SPACE_JOB, job);
         return created!;
       });
       await notify(request, thread.spaceId, thread.id);
@@ -211,15 +216,22 @@ export async function spaceReplyRoutes(
         ? sql`exists (select 1 from ${spaceReplies} where ${spaceReplies.id} = ${body.replyId}
             and ${spaceReplies.threadId} = ${thread.id} and ${spaceReplies.deletedAt} is null)`
         : undefined;
-      const set = await db
-        .update(spaceThreads)
-        .set({
-          solvedReplyId: body.replyId,
-          solvedAt: body.replyId ? now : null,
-          lastActivityAt: now,
-        })
-        .where(and(eq(spaceThreads.id, thread.id), answerStands))
-        .returning({ id: spaceThreads.id });
+      const set = await db.transaction(async (tx) => {
+        const rows = await tx
+          .update(spaceThreads)
+          .set({
+            solvedReplyId: body.replyId,
+            solvedAt: body.replyId ? now : null,
+            lastActivityAt: now,
+          })
+          .where(and(eq(spaceThreads.id, thread.id), answerStands))
+          .returning({ id: spaceThreads.id });
+        if (rows.length > 0 && body.replyId) {
+          const job: SpaceJob = { replyId: body.replyId, event: 'answer', actorId: user.id };
+          await enqueue(tx, NOTIFY_SPACE_JOB, job);
+        }
+        return rows;
+      });
       if (set.length === 0) {
         throw ApiError.badRequest('That reply is not in this thread', 'bad_answer');
       }
