@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { call } from '../../lib/api.ts';
 import { localToday } from '../../lib/due-date.ts';
+import { LeftOverLine } from './left-over-line.tsx';
 import { currentCycle, cyclesKey, useCycles } from './use-cycles.ts';
 
 const DAY_MS = 86_400_000;
@@ -58,6 +59,13 @@ export function CycleBar({
       ) : (
         <p className="text-xs text-faint">No cycle planned on this board.</p>
       )}
+      <LeftOverLine
+        workspaceId={workspaceId}
+        projectId={projectId}
+        cycles={cycles.data?.cycles ?? []}
+        today={today}
+        canPlan={canPlan}
+      />
       {canPlan ? (
         planning ? (
           <PlanCycle

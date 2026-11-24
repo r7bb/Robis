@@ -204,6 +204,9 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Move a cycle’s unfinished issues on.** When a cycle ends with issues
+  still open, the board says how many, and one press moves them into the
+  cycle running now or the next one planned.
 - **The demo board arrives with a cycle planned.** A new demo workspace
   plans its unfinished work in a two-week cycle from the day it is made, so
   the board opens with the cycle’s progress and days left.
@@ -211,10 +214,6 @@ no write lost and nothing done twice.
   cycles, such as two weeks at a time; an issue is planned for one, the
   board shows the current cycle’s progress and days left, and Only this
   cycle narrows the board to it.
-- **The demo shows the new things at work.** A demo workspace now arrives
-  with the team’s update on its board, one issue waiting on another, a
-  weekly repeat and last week’s meeting notes with follow-ups; and the
-  demo’s people react to chat and write the odd project update.
 
 <!-- latest:end -->
 

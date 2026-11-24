@@ -104,3 +104,80 @@ describe('cycles', () => {
     expect((await plan(guest, ws, project.id, TWO_WEEKS)).statusCode).toBe(403);
   });
 });
+
+const NEXT_TWO_WEEKS = { name: 'Cycle 2', startsOn: '2026-12-07', endsOn: '2026-12-20' };
+
+const rollover = (actor: Actor, ws: string, fromId: string, toCycleId: string) =>
+  request(`${ws}/cycles/${fromId}/rollover`, { method: 'POST', actor, payload: { toCycleId } });
+
+describe('moving a cycle’s unfinished issues on', () => {
+  test('moves what is not done or canceled, and leaves the rest where they were', async () => {
+    const { owner, project, ws, file } = await board();
+    const first = (await plan(owner, ws, project.id, TWO_WEEKS)).json().cycle;
+    const second = (await plan(owner, ws, project.id, NEXT_TWO_WEEKS)).json().cycle;
+    const [open, doing, done, dropped, unplanned] = [
+      await file('Open'),
+      await file('Doing'),
+      await file('Done'),
+      await file('Dropped'),
+      await file('Unplanned'),
+    ];
+    for (const issue of [open, doing, done, dropped]) await put(owner, ws, issue.id, first.id);
+    const status = (issueId: string, value: string) =>
+      request(`${ws}/issues/${issueId}`, {
+        method: 'PATCH',
+        actor: owner,
+        payload: { status: value },
+      });
+    await status(doing.id, 'IN_PROGRESS');
+    await status(done.id, 'DONE');
+    await status(dropped.id, 'CANCELED');
+
+    const moved = await rollover(owner, ws, first.id, second.id);
+    expect(moved.statusCode).toBe(200);
+    expect(moved.json()).toMatchObject({
+      moved: 2,
+      cycle: { id: second.id, total: 2, inProgress: 1 },
+    });
+
+    const cycleOf = async (issueId: string) =>
+      (await request(`${ws}/issues/${issueId}`, { actor: owner })).json().issue.cycleId;
+    expect(await cycleOf(open.id)).toBe(second.id);
+    expect(await cycleOf(doing.id)).toBe(second.id);
+    expect(await cycleOf(done.id)).toBe(first.id);
+    expect(await cycleOf(dropped.id)).toBe(first.id);
+    expect(await cycleOf(unplanned.id)).toBeNull();
+
+    const again = await rollover(owner, ws, first.id, second.id);
+    expect(again.json().moved).toBe(0);
+  });
+
+  test('only to another cycle on the same board; a guest cannot move them', async () => {
+    const { owner, workspace, project, ws } = await board();
+    const first = (await plan(owner, ws, project.id, TWO_WEEKS)).json().cycle;
+    const other = await createProject(owner, workspace.id, 'Other');
+    const theirs = (await plan(owner, ws, other.id, TWO_WEEKS)).json().cycle;
+
+    const elsewhere = await rollover(owner, ws, first.id, theirs.id);
+    expect(elsewhere.statusCode).toBe(400);
+    expect(elsewhere.json().error).toBe('bad_cycle');
+    const itself = await rollover(owner, ws, first.id, first.id);
+    expect(itself.statusCode).toBe(400);
+    expect(itself.json().error).toBe('same_cycle');
+
+    const guest = await createActor('Guest');
+    await addMember(owner, workspace.id, guest, 'GUEST');
+    const second = (await plan(owner, ws, project.id, NEXT_TWO_WEEKS)).json().cycle;
+    expect((await rollover(guest, ws, first.id, second.id)).statusCode).toBe(403);
+  });
+
+  test('a cycle in another workspace is not found', async () => {
+    const { owner, project, ws } = await board();
+    const first = (await plan(owner, ws, project.id, TWO_WEEKS)).json().cycle;
+    const second = (await plan(owner, ws, project.id, NEXT_TWO_WEEKS)).json().cycle;
+    const stranger = await createActor('Stranger');
+    const theirs = await createWorkspace(stranger);
+    const refused = await rollover(stranger, `/workspaces/${theirs.id}`, first.id, second.id);
+    expect(refused.statusCode).toBe(404);
+  });
+});

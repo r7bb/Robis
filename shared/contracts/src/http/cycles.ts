@@ -58,6 +58,15 @@ export const cycleContracts = {
       .refine((v) => Object.keys(v).length > 0, 'No fields to update'),
     response: z.object({ cycle }),
   }),
+  'cycles.rollover': contract({
+    method: 'POST',
+    path: '/workspaces/:workspaceId/cycles/:cycleId/rollover',
+    summary:
+      'Move a cycle’s unfinished issues, those not done or canceled, to another cycle on the same board.',
+    params: workspaceParams.extend({ cycleId: z.string() }),
+    body: z.object({ toCycleId: uuid }),
+    response: z.object({ moved: z.number().int().nonnegative(), cycle }),
+  }),
   'cycles.remove': contract({
     method: 'DELETE',
     path: '/workspaces/:workspaceId/cycles/:cycleId',

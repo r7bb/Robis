@@ -14,7 +14,7 @@ Written to be checkable. Every row names a file you can open.
 | --- | --- |
 | Services | 5 (web, API, realtime gateway, worker, MCP server for agents) plus an optional ML service |
 | Database tables | 18 |
-| HTTP endpoints | 249 |
+| HTTP endpoints | 250 |
 | Tests | Counted in [docs/ROADMAP.md](docs/ROADMAP.md), the one place they are kept |
 | Screenshots | 35, all captured from the running app |
 | Measured throughput | ~3,600 req/s, zero errors |
@@ -216,6 +216,7 @@ JavaScript.
 | Repeats: issues filed on a board on a schedule at an hour on the creator's clock, by the API's runner, once each time due | `shared/contracts/src/repeats.ts`, `backend/api/src/repeats/run.ts`, `backend/api/src/routes/repeats.ts`, `frontend/features/board/repeats-panel.tsx` |
 | Project updates: a short written status marked on track, at risk or off track, above the board and on the feed's project card | `backend/api/src/routes/project-updates.ts`, `frontend/features/projects/` |
 | Cycles: a board's work planned in stretches of days, issues put in one of their own board's, progress and days left on the board, and a cycle filter | `backend/api/src/routes/cycles.ts`, `frontend/features/cycles/` |
+| Left over: when a cycle ended with issues neither done nor canceled, the board says how many, and one press moves them to the cycle running or the next, each move recorded as an edit | `backend/api/src/routes/cycles.ts`, `frontend/features/cycles/left-over.ts`, `frontend/features/cycles/left-over-line.tsx` |
 | Space notifications: a reply tells the thread's author and the reply it answers, a marked answer tells its author once; stale news tells no one | `backend/worker/src/notify-spaces.ts` |
 | Mention notifications | `backend/worker/src/handlers.ts` |
 | Stale-issue nudges | `backend/worker/src/nudges.ts` |

@@ -1,6 +1,16 @@
-import { cycles, type Database, type Executor, issues, recordAudit } from '@robis/database';
+import {
+  type AuditActor,
+  cycles,
+  type Database,
+  type Executor,
+  issues,
+  projects,
+  publishEvent,
+  recordAudit,
+  type Tx,
+} from '@robis/database';
 import { CYCLE_DAYS_MAX, can, contracts, isUuid } from '@robis/shared';
-import { and, asc, eq, sql } from 'drizzle-orm';
+import { and, asc, eq, notInArray, sql } from 'drizzle-orm';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { serve } from '../contract.ts';
 import { ApiError } from '../errors.ts';
@@ -11,6 +21,7 @@ import {
   requireAuth,
   requireMembership,
 } from '../plugins/authz.ts';
+import { applyIssueUpdate, delegateOf } from './issue-writes.ts';
 import { loadProject } from './projects.ts';
 
 const DAY_MS = 86_400_000;
@@ -49,6 +60,66 @@ function assertSpan(startsOn: string, endsOn: string) {
   if (daysIn(startsOn, endsOn) > CYCLE_DAYS_MAX) {
     throw ApiError.badRequest(`A cycle is at most ${CYCLE_DAYS_MAX} days`, 'too_long');
   }
+}
+
+/** Statuses an issue is finished in, and so stays with the cycle it was done in. */
+const FINISHED = ['DONE', 'CANCELED'] as const;
+
+/**
+ * Move a cycle's unfinished issues to another of the board's cycles, each
+ * recorded as an edit to its cycle. The target is held so it cannot be
+ * removed part way, and the issues are locked in id order so two moves at
+ * once cannot deadlock. Returns the ids moved.
+ */
+async function moveUnfinished(
+  tx: Tx,
+  actor: AuditActor,
+  job: {
+    workspaceId: string;
+    projectId: string;
+    fromId: string;
+    toId: string;
+    delegateId: string | null;
+  },
+): Promise<string[]> {
+  const [target] = await tx
+    .select({ id: cycles.id })
+    .from(cycles)
+    .where(
+      and(
+        eq(cycles.id, job.toId),
+        eq(cycles.workspaceId, job.workspaceId),
+        eq(cycles.projectId, job.projectId),
+      ),
+    )
+    .for('share');
+  if (!target) throw ApiError.badRequest('That cycle is not on this board', 'bad_cycle');
+
+  const rows = await tx
+    .select({ issue: issues, projectKey: projects.key })
+    .from(issues)
+    .innerJoin(projects, eq(projects.id, issues.projectId))
+    .where(
+      and(
+        eq(issues.workspaceId, job.workspaceId),
+        eq(issues.cycleId, job.fromId),
+        notInArray(issues.status, [...FINISHED]),
+      ),
+    )
+    .orderBy(asc(issues.id))
+    .for('update', { of: issues });
+  for (const { issue, projectKey } of rows) {
+    await applyIssueUpdate(tx, actor, {
+      workspaceId: job.workspaceId,
+      issueId: issue.id,
+      input: { cycleId: job.toId },
+      delegateId: job.delegateId,
+      issueKey: `${projectKey}-${issue.number}`,
+      title: issue.title,
+      previous: issue,
+    });
+  }
+  return rows.map((row) => row.issue.id);
 }
 
 /**
@@ -150,6 +221,41 @@ export async function cycleRoutes(app: FastifyInstance, opts: { db: Database }) 
         .where(eq(cycles.id, row.id));
       const [cycle] = await withCounts(row.projectId, row.id);
       return { cycle: cycle! };
+    },
+  );
+
+  serve(
+    app,
+    contracts['cycles.rollover'],
+    { preHandler: [requireAuth, requireMembership(db, 'issue:update')] },
+    async (request, { params: { cycleId }, body }) => {
+      const { workspaceId } = currentMembership(request);
+      const user = currentUser(request);
+      const from = await cycleIn(request, cycleId);
+      const toId = body.toCycleId.toLowerCase();
+      if (toId === from.id) {
+        throw ApiError.badRequest('Choose another cycle to move them to', 'same_cycle');
+      }
+      const moved = await db.transaction((tx) =>
+        moveUnfinished(tx, auditActor(request), {
+          workspaceId,
+          projectId: from.projectId,
+          fromId: from.id,
+          toId,
+          delegateId: delegateOf(user),
+        }),
+      );
+      for (const issueId of moved) {
+        await publishEvent(db, {
+          type: 'issue.updated',
+          workspaceId,
+          projectId: from.projectId,
+          issueId,
+          actorId: user.id,
+        });
+      }
+      const [cycle] = await withCounts(from.projectId, toId);
+      return { moved: moved.length, cycle: cycle! };
     },
   );
 

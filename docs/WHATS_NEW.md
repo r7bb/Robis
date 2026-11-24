@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Move a cycle’s unfinished issues on** (2026-11-24). When a cycle ends
+  with issues still open, the board says how many, and one press moves them
+  into the cycle running now or the next one planned.
 - **The demo board arrives with a cycle planned** (2026-11-24). A new demo
   workspace plans its unfinished work in a two-week cycle from the day it is
   made, so the board opens with the cycle’s progress and days left.

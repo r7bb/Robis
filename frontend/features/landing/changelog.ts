@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Move a cycle’s unfinished issues on',
+    brief:
+      'When a cycle ends with issues still open, the board says how many, and one press moves them into the cycle running now or the next one planned.',
+    summary:
+      'Once a cycle’s last day has passed with issues in it that are neither done nor canceled, the cycle bar adds a line naming the cycle and how many it left, and members who plan get Move them to the cycle running today, or else the next to start. Finished and canceled issues stay with the cycle they were done in, so its record of what it finished is kept. Each issue moved is recorded as an edit to its cycle, as if moved by hand, and boards that are open update straight away. Guests see the line but not the button.',
+    checked:
+      'Three tests through the API: only the open and in-progress issues move, the done, canceled and unplanned ones stay, and asking again moves none; a cycle on another board, or the same cycle, is refused, and a guest cannot move them; a cycle from another workspace is not found. Four tests of which cycle is left over and where it would go, including a cycle ending today counting as still running. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'The demo board arrives with a cycle planned',
     brief:
       'A new demo workspace plans its unfinished work in a two-week cycle from the day it is made, so the board opens with the cycle’s progress and days left.',
