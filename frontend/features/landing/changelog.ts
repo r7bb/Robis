@@ -46,6 +46,25 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'The team’s week, on the feed',
+    brief:
+      'A card on the feed counts the last seven days across the workspace (issues finished, questions answered, meetings held, documents changed, messages) and names who finished most.',
+    summary:
+      'Beside the health of each project, the feed now shows the team’s week as a whole: issues finished, questions answered in spaces, meetings held, documents changed and messages, each shown only when it is not nought, with who finished the most issues (people only, never agents) and how many issues were opened and threads started. A meeting counts once if it met in the week, a repeat included, and one called off does not. It stays out of the way in a workspace where nothing happened yet.',
+    checked:
+      'Two tests through the API: a week of work counted with the finishers in order, and work finished before the week, or in another workspace, left out. In the browser, three finished issues and two messages showed with their finisher. The feed, accessibility and phone journeys. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'The team’s week',
+      where: 'The feed, Everyone, above Projects',
+      layers: [
+        'Screen: a card of the week’s numbers and who finished most',
+        'API: feed.week, one pass of counts over the last seven days',
+      ],
+    },
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'A shared picture no longer goes missing from the issue made of it',
     brief:
       'Sharing a picture to Robis made the issue and the link but, about half the time, dropped the picture; changes waiting to be sent now always go in the order they were made.',

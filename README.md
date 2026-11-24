@@ -204,6 +204,9 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **The team’s week, on the feed.** A card on the feed counts the last seven
+  days across the workspace (issues finished, questions answered, meetings
+  held, documents changed, messages) and names who finished most.
 - **A shared picture no longer goes missing from the issue made of it.**
   Sharing a picture to Robis made the issue and the link but, about half the
   time, dropped the picture; changes waiting to be sent now always go in the
@@ -212,10 +215,6 @@ no write lost and nothing done twice.
   keeps how it read as it changed, at most one version every ten minutes and
   the latest fifty; History shows them, and Put this back restores one for
   everyone, keeping what was there first so it can be undone.
-- **Meeting notes, with follow-ups that become issues.** Each meeting has
-  notes that anyone in it can write and everyone can read; checklist, TODO
-  and Action lines are follow-ups, and Make an issue files one and ticks its
-  line with the new key.
 
 <!-- latest:end -->
 

@@ -14,7 +14,7 @@ Written to be checkable. Every row names a file you can open.
 | --- | --- |
 | Services | 5 (web, API, realtime gateway, worker, MCP server for agents) plus an optional ML service |
 | Database tables | 18 |
-| HTTP endpoints | 230 |
+| HTTP endpoints | 231 |
 | Tests | Counted in [docs/ROADMAP.md](docs/ROADMAP.md), the one place they are kept |
 | Screenshots | 35, all captured from the running app |
 | Measured throughput | ~3,600 req/s, zero errors |
@@ -209,6 +209,7 @@ JavaScript.
 | Asked before? Up to five threads sharing two or more words with a draft title, answered first | `backend/api/src/spaces/similar.ts`, `frontend/features/spaces/asked-before.tsx` |
 | Meeting notes: written by whoever is in the meeting, a save over a newer one refused; checklist, TODO and Action lines are follow-ups filed as issues and ticked with their key | `backend/api/src/meetings/notes.ts`, `shared/contracts/src/follow-ups.ts`, `frontend/features/meetings/meeting-notes.tsx` |
 | Document history: a version kept as a document changes (at most every ten minutes, the latest fifty), read whole and put back as one edit after the current text is kept | `backend/database/src/documents.ts`, `backend/api/src/routes/document-versions.ts`, `frontend/features/documents/document-history.tsx` |
+| The team's week on the feed: the last seven days counted across the workspace, with who finished most | `backend/api/src/feed/team-week.ts`, `frontend/features/feed/team-week.tsx` |
 | Space notifications: a reply tells the thread's author and the reply it answers, a marked answer tells its author once; stale news tells no one | `backend/worker/src/notify-spaces.ts` |
 | Mention notifications | `backend/worker/src/handlers.ts` |
 | Stale-issue nudges | `backend/worker/src/nudges.ts` |

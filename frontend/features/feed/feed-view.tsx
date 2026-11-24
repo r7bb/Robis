@@ -23,6 +23,7 @@ import { PostCard } from './post-card.tsx';
 import { PostComposer } from './post-composer.tsx';
 import { ProjectHealthCards } from './project-health.tsx';
 import { ShotsStack } from './shots-stack.tsx';
+import { TeamWeek } from './team-week.tsx';
 import { ThreadCard } from './thread-card.tsx';
 import { YourDay } from './your-day.tsx';
 
@@ -250,6 +251,7 @@ function Highlights({
           onWellDone={mayPost ? onWellDone : undefined}
         />
       ) : null}
+      {mayReadWork ? <TeamWeek workspaceId={workspaceId} /> : null}
       {mayReadWork ? <ProjectHealthCards workspaceId={workspaceId} /> : null}
     </div>
   );

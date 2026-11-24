@@ -19,7 +19,7 @@ way.
 `{ "error": "<code>", "message": "<words for people>" }`. A stranger to a
 workspace gets 404, never 403, so its existence is not given away.
 
-219 routes.
+220 routes.
 
 ## activity
 
@@ -711,6 +711,13 @@ Mark the feed caught up to now, for you.
 
 - Answers: 200
 - Name: `feed.seen`
+
+### `GET /workspaces/{workspaceId}/feed/week`
+
+The team’s last seven days across the workspace: issues finished and opened, questions answered, threads started, meetings held, documents changed and messages, with who finished most. People only, never agents.
+
+- Answers: 200
+- Name: `feed.week`
 
 ## follows
 

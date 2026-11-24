@@ -7,6 +7,7 @@ import { API_LOG_FORMAT, apiLogMixin } from '@robis/telemetry/log';
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
 import type { Env } from './env.ts';
 import { ApiError } from './errors.ts';
+import { teamWeekRoutes } from './feed/team-week.ts';
 import {
   apiSecurityHeaders,
   isForeignWrite,
@@ -359,6 +360,7 @@ export function buildApp({
   app.register(postRoutes, { db, storage });
   app.register(feedRoutes, { db });
   app.register(feedHighlightRoutes, { db });
+  app.register(teamWeekRoutes, { db });
   app.register(spaceRoutes, { db });
   app.register(followRoutes, { db });
   app.register(todayRoutes, { db });

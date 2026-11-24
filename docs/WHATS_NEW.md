@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **The team’s week, on the feed** (2026-11-24). A card on the feed counts
+  the last seven days across the workspace (issues finished, questions
+  answered, meetings held, documents changed, messages) and names who
+  finished most.
 - **A shared picture no longer goes missing from the issue made of it**
   (2026-11-24). Sharing a picture to Robis made the issue and the link but,
   about half the time, dropped the picture; changes waiting to be sent now

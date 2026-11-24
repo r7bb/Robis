@@ -106,4 +106,25 @@ export const feedHighlightContracts = {
     status: 204,
     response: null,
   }),
+  'feed.week': contract({
+    method: 'GET',
+    path: '/workspaces/:workspaceId/feed/week',
+    summary:
+      'The team’s last seven days across the workspace: issues finished and opened, questions answered, threads started, meetings held, documents changed and messages, with who finished most. People only, never agents.',
+    params: workspaceParams,
+    response: z.object({
+      since: timestamp,
+      issuesDone: z.number().int().nonnegative(),
+      issuesOpened: z.number().int().nonnegative(),
+      answered: z.number().int().nonnegative(),
+      threadsStarted: z.number().int().nonnegative(),
+      meetingsHeld: z.number().int().nonnegative(),
+      documentsChanged: z.number().int().nonnegative(),
+      messages: z.number().int().nonnegative(),
+      /** Who finished the most issues, at most three, most first. */
+      finishers: z.array(
+        z.object({ userId: uuid, name: z.string(), done: z.number().int().positive() }),
+      ),
+    }),
+  }),
 } as const;
