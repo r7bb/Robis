@@ -11,6 +11,7 @@ import { PeopleStack } from '../chat/people-stack.tsx';
 import { RoomPicker } from '../chat/room-picker.tsx';
 import type { ChannelSummary } from '../chat/types.ts';
 import { useCreateChannel } from '../chat/use-chat.ts';
+import { useUnread } from '../chat/use-reads.ts';
 import { StoriesStrip } from '../stories/stories-strip.tsx';
 import type { ChatDraft } from './chat-controls.tsx';
 import { CHAT_MIN_WIDTH, CHAT_STEP, isChatShortcut, type useChatPanel } from './use-chat-panel.ts';
@@ -127,6 +128,7 @@ export function ChatPanel({
   const body = useRef<HTMLDivElement>(null);
   const aside = useRef<HTMLElement>(null);
   const createRoom = useCreateChannel(workspaceId);
+  const unread = useUnread(workspaceId);
   useChatShortcut(panel, body);
   useOverlay({
     active: panel.open && panel.overlay,
@@ -165,6 +167,7 @@ export function ChatPanel({
       <header className="flex h-12 shrink-0 items-center gap-2 border-b border-line px-2">
         <RoomPicker
           rooms={rooms}
+          unread={unread}
           active={channel}
           onSelect={onSelect}
           canCreate={can(role, 'channel:create')}

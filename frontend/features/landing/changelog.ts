@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Chat keeps your place: unread counts, a New line, and quick reactions',
+    brief:
+      'Each room shows how many messages wait for you, the room name carries a dot when another room has news, a New line marks where you stopped reading, and any message takes a quick reaction.',
+    summary:
+      'Robis now remembers how far each person has read in each room. The room list shows a count for every other room with messages from someone else since then (99+ past that), the room name in the chat bar carries a dot while any other room has news, and opening a room puts a New line before the first message you had not seen; the room is marked read while it is in view, and a mark never moves back. A room never opened counts only the last day, so someone new is not met with every room’s history. Each message has a small toolbar on hover or focus, floating over its corner rather than narrowing the text: React (six quick reactions), Remind me and Delete. A reaction is one of each kind per person, shown with how many and whether one is yours, and reaches everyone in the room as ids only, like messages themselves.',
+    checked:
+      'Six tests through the API: what others wrote counts and your own never does, marking read clears it and later messages count again, a mark never moves back, another workspace’s room is not found or listed, reactions are one per kind per person with yours marked and shown on the message list, and an unknown reaction or another workspace’s message is refused; three of where the New line goes and the reaction names. In the browser, three messages from a teammate showed as 3 on the room and a New line on opening, and a reaction was added. The chat, accessibility, keyboard and phone journeys. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Chat',
+      where: 'The chat panel: the room list, the New line, and each message’s toolbar',
+      layers: [
+        'Screen: unread counts and a dot, a New line, reaction chips and a hover toolbar',
+        'API: channels.unread, channels.markRead, messages.react and messages.unreact',
+        'Database: how far each person has read each room, and reactions on messages',
+      ],
+    },
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Ask Sapha in the command palette: plain requests, done once you say yes',
     brief:
       'Type “move REL-4 to done”, “give REL-4 to Ana”, “remind me about REL-12 tomorrow 9am”, “schedule Retro friday 3pm” or “what’s due today” into the palette; Sapha says what it will do, and changes nothing until Do it.',

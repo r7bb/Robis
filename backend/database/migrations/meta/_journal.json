@@ -582,6 +582,13 @@
       "when": 1795513871297,
       "tag": "0082_snooze",
       "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1795517203604,
+      "tag": "0083_chat_reads_reactions",
+      "breakpoints": true
     }
   ]
 }

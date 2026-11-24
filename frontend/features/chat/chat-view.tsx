@@ -16,6 +16,7 @@ import {
   useSendMessage,
   useSendPicture,
 } from './use-chat.ts';
+import { useReadPlace } from './use-reads.ts';
 
 /** A channel this busy is worth a summary (D3), where assistance is on. */
 const CHANNEL_SUMMARY_FROM = 10;
@@ -67,6 +68,7 @@ export function ChatView({
   const remove = useDeleteMessage(workspaceId, channelId);
 
   const messages = flattenMessages(history.data?.pages);
+  const newSince = useReadPlace(workspaceId, channelId, messages.at(-1)?.id);
 
   return (
     <section className="flex min-h-0 min-w-0 flex-1 flex-col bg-surface">
@@ -104,6 +106,8 @@ export function ChatView({
           currentUserId={currentUserId}
           avatars={avatars}
           canModerate={can(role, 'message:delete_any')}
+          canReact={can(role, 'message:create')}
+          newSince={newSince}
           onDelete={(messageId) => remove.mutate(messageId)}
           onLoadOlder={() => history.fetchNextPage()}
           hasOlder={Boolean(history.hasNextPage)}

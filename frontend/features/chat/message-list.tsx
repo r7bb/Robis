@@ -12,7 +12,9 @@ import { useScrollToHash } from '../../lib/use-scroll-to-hash.ts';
 import { IssueFromMessage } from '../assist/issue-from-message.tsx';
 import { RemindMe } from '../reminders/remind-me.tsx';
 import { StoryRing } from '../stories/story-ring.tsx';
+import { firstUnread } from './chat-place.ts';
 import { MessageBody } from './message-body.tsx';
+import { MessageReactions, ReactPicker } from './message-reactions.tsx';
 import type { ChatMessage } from './types.ts';
 
 /**
@@ -42,6 +44,8 @@ export function MessageList({
   currentUserId,
   avatars,
   canModerate,
+  canReact,
+  newSince,
   onDelete,
   onLoadOlder,
   hasOlder,
@@ -52,12 +56,16 @@ export function MessageList({
   currentUserId: string | null;
   avatars?: ReadonlyMap<string, AvatarRef>;
   canModerate: boolean;
+  canReact: boolean;
+  /** How far the reader had read on opening the room; null when nothing was new. */
+  newSince: string | null;
   onDelete: (messageId: string) => void;
   onLoadOlder: () => void;
   hasOlder: boolean;
   loadingOlder: boolean;
 }) {
   const scroller = useRef<HTMLDivElement>(null);
+  const firstNewId = firstUnread(messages, newSince, currentUserId);
   const bottomAnchor = useRef<HTMLDivElement>(null);
 
   /*
@@ -122,6 +130,7 @@ export function MessageList({
             return (
               <li key={message.id} id={`message-${message.id}`} className="scroll-mt-16">
                 {newDay ? <DaySeparator at={message.createdAt} /> : null}
+                {message.id === firstNewId ? <NewSeparator /> : null}
 
                 <MessageRow
                   workspaceId={workspaceId}
@@ -129,6 +138,7 @@ export function MessageList({
                   avatar={avatars?.get(message.authorId) ?? null}
                   grouped={grouped}
                   deletable={canModerate || message.authorId === currentUserId}
+                  canReact={canReact}
                   onDelete={() => onDelete(message.id)}
                 />
               </li>
@@ -138,6 +148,19 @@ export function MessageList({
 
         <div ref={bottomAnchor} />
       </div>
+    </div>
+  );
+}
+
+/** Where what you had not read begins. */
+function NewSeparator() {
+  return (
+    <div className="flex items-center gap-3 py-2">
+      <span className="h-px flex-1 bg-accent/50" />
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-accent-soft">
+        New<span className="sr-only"> messages from here</span>
+      </span>
+      <span className="h-px flex-1 bg-accent/50" />
     </div>
   );
 }
@@ -160,6 +183,7 @@ function MessageRow({
   avatar,
   grouped,
   deletable,
+  canReact,
   onDelete,
 }: {
   workspaceId: string;
@@ -167,11 +191,12 @@ function MessageRow({
   avatar: AvatarRef;
   grouped: boolean;
   deletable: boolean;
+  canReact: boolean;
   onDelete: () => void;
 }) {
   return (
     <div
-      className={`group flex flex-wrap gap-3 rounded-md px-2 hover:bg-surface/60 ${grouped ? 'py-0.5' : 'pt-2 pb-0.5'}`}
+      className={`group relative flex flex-wrap gap-3 rounded-md px-2 hover:bg-surface/60 focus-within:bg-surface/60 ${grouped ? 'py-0.5' : 'pt-2 pb-0.5'}`}
     >
       {grouped ? (
         // Keeps the text aligned with the ungrouped rows above it, and shows
@@ -220,22 +245,27 @@ function MessageRow({
           </p>
         ) : null}
         {message.image ? <MessagePicture image={message.image} by={message.authorName} /> : null}
+        <MessageReactions workspaceId={workspaceId} message={message} canReact={canReact} />
       </div>
 
       {message.body ? <IssueFromMessage workspaceId={workspaceId} messageId={message.id} /> : null}
-      <RemindMe workspaceId={workspaceId} about="message" id={message.id} subtle />
-      {deletable ? (
-        <button
-          type="button"
-          onClick={onDelete}
-          // Visible on hover for a mouse, and on focus so it is reachable by
-          // keyboard -- `opacity-0` alone would make it a silent trap.
-          className="self-start rounded px-1.5 py-0.5 text-[10px] text-faint opacity-0 transition-opacity hover:text-danger-soft focus-visible:opacity-100 group-hover:opacity-100"
-          aria-label={`Delete message from ${message.authorName}`}
-        >
-          Delete
-        </button>
-      ) : null}
+      {/* Floats over the row's corner rather than taking its width, shown on
+          hover for a mouse and on focus for a keyboard, so it is never a
+          silent trap. */}
+      <div className="absolute right-1 top-0 z-10 flex -translate-y-1/2 items-center gap-0.5 rounded-md border border-line bg-raised px-0.5 opacity-0 shadow-sm transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+        {canReact ? <ReactPicker workspaceId={workspaceId} message={message} /> : null}
+        <RemindMe workspaceId={workspaceId} about="message" id={message.id} subtle />
+        {deletable ? (
+          <button
+            type="button"
+            onClick={onDelete}
+            className="rounded px-1.5 py-0.5 text-[10px] text-faint hover:text-danger-soft"
+            aria-label={`Delete message from ${message.authorName}`}
+          >
+            Delete
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }

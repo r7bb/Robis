@@ -57,6 +57,13 @@ export const POST_COMMENT_MAX_LENGTH = 1000;
 export const POST_REACTIONS = ['celebrate', 'helpful', 'support', 'thanks', 'insightful'] as const;
 export type PostReaction = (typeof POST_REACTIONS)[number];
 
+/**
+ * Quick reactions on a chat message, kept by name: each screen shows its own
+ * glyph, and a name is what the API, the database and tests agree on.
+ */
+export const MESSAGE_REACTIONS = ['ok', 'love', 'laugh', 'party', 'eyes', 'done'] as const;
+export type MessageReaction = (typeof MESSAGE_REACTIONS)[number];
+
 /** Each reaction with nobody on it yet. */
 export const noReactions = (): Record<PostReaction, string[]> =>
   Object.fromEntries(POST_REACTIONS.map((name) => [name, []])) as unknown as Record<

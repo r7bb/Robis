@@ -71,6 +71,14 @@ export type ServerEvent =
       messageId: string;
       actorId: string;
     }
+  /** Someone reacted to a message, or took it back. Ids only, as above. */
+  | {
+      type: 'message.reacted';
+      workspaceId: string;
+      channelId: string;
+      messageId: string;
+      actorId: string;
+    }
   | { type: 'channel.created'; workspaceId: string; channelId: string; actorId: string }
   | { type: 'channel.deleted'; workspaceId: string; channelId: string; actorId: string }
   | { type: 'meeting.changed'; workspaceId: string; meetingId: string; actorId: string }

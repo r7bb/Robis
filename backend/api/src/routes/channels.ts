@@ -21,6 +21,7 @@ import {
   requireAuth,
   requireMembership,
 } from '../plugins/authz.ts';
+import { reactionsFor } from './chat-reads.ts';
 
 /**
  * Workspace chat.
@@ -282,11 +283,17 @@ export async function channelRoutes(app: FastifyInstance, opts: { db: Database }
         .limit(query.limit);
 
       const last = rows.at(-1);
+      const reactions = await reactionsFor(
+        db,
+        rows.map((row) => row.id),
+        currentUser(request).id,
+      );
 
       return {
         messages: rows.map(({ imageKey, imageWidth, imageHeight, ...row }) => ({
           ...row,
           image: imageOf(workspaceId, row.id, imageKey, imageWidth, imageHeight),
+          reactions: reactions.get(row.id) ?? [],
         })),
         nextCursor: rows.length === query.limit && last ? encodeCursor(last.id) : null,
       };

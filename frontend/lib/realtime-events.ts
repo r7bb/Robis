@@ -57,6 +57,12 @@ export function staleKeys(event: ServerEvent): unknown[][] {
      */
     case 'message.created':
     case 'message.deleted':
+      // The room's unread count moves with them.
+      return [
+        ['messages', event.workspaceId, event.channelId],
+        ['channel-reads', event.workspaceId],
+      ];
+    case 'message.reacted':
       return [['messages', event.workspaceId, event.channelId]];
     case 'channel.created':
     case 'channel.deleted':

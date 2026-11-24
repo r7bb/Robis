@@ -8,6 +8,7 @@ import { authContracts } from './auth.ts';
 import { automationContracts } from './automation.ts';
 import { calendarContracts } from './calendar.ts';
 import { channelContracts } from './channels.ts';
+import { chatReadContracts } from './chat-reads.ts';
 import { type Contract, statusesOf } from './contract.ts';
 import { discussionContracts } from './discussion.ts';
 import { documentContracts } from './documents.ts';
@@ -60,6 +61,7 @@ export {
   CONDITION_FIELDS,
   CONDITION_OPS,
 } from './automation.ts';
+export { UNREAD_SHOWN_MAX } from './chat-reads.ts';
 export * from './contract.ts';
 export { DISCUSSION_LIMIT, DISCUSSION_PREVIEW_CHARS } from './discussion.ts';
 export {
@@ -129,6 +131,7 @@ export const contracts = {
   ...bulkIssueContracts,
   ...documentContracts,
   ...channelContracts,
+  ...chatReadContracts,
   ...meetingContracts,
   ...notificationContracts,
   ...reminderContracts,

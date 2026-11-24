@@ -19,7 +19,7 @@ way.
 `{ "error": "<code>", "message": "<words for people>" }`. A stranger to a
 workspace gets 404, never 403, so its existence is not given away.
 
-209 routes.
+213 routes.
 
 ## activity
 
@@ -492,6 +492,15 @@ The workspace's meeting occurrences in a window of at most nine days, and the is
 - Answers: 200
 - Name: `calendar.week`
 
+## channel-reads
+
+### `GET /workspaces/{workspaceId}/channel-reads`
+
+For each room, how many messages by others came after you last read it (at most 99), and when that was.
+
+- Answers: 200
+- Name: `channels.unread`
+
 ## channels
 
 ### `GET /workspaces/{workspaceId}/channels`
@@ -547,6 +556,13 @@ Post a message to a channel.
 - Body: `body` (required)
 - Answers: 201
 - Name: `messages.create`
+
+### `PUT /workspaces/{workspaceId}/channels/{channelId}/read`
+
+Mark a room read up to its newest message.
+
+- Answers: 200
+- Name: `channels.markRead`
 
 ## check-in
 
@@ -1090,6 +1106,20 @@ Delete your own message, or as an admin, anyone's.
 
 - Answers: 204
 - Name: `messages.delete`
+
+### `DELETE /workspaces/{workspaceId}/messages/{messageId}/reactions/{reaction}`
+
+Take your reaction off a chat message.
+
+- Answers: 200
+- Name: `messages.unreact`
+
+### `PUT /workspaces/{workspaceId}/messages/{messageId}/reactions/{reaction}`
+
+Add your reaction to a chat message; adding it twice is one.
+
+- Answers: 200
+- Name: `messages.react`
 
 ## mutes
 

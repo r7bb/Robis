@@ -8,8 +8,8 @@ import { call } from '../../lib/api.ts';
 
 /**
  * Remind me: pick when, and the issue, message or thread comes back to the
- * inbox then, for the one who asked only. `subtle` is the hover-only
- * button beside a chat message; otherwise it is always shown.
+ * inbox then, for the one who asked only. `subtle` is the small button in
+ * a chat message's toolbar; otherwise it is a full-size one.
  */
 export function RemindMe({
   workspaceId,
@@ -53,7 +53,7 @@ export function RemindMe({
         onClick={() => setOpen((value) => !value)}
         className={
           subtle
-            ? 'rounded px-1.5 py-0.5 text-[10px] text-faint opacity-0 transition-opacity hover:text-content focus-visible:opacity-100 group-hover:opacity-100'
+            ? 'rounded px-1.5 py-0.5 text-[10px] text-faint hover:text-content'
             : 'rounded-md px-2 py-1 text-xs text-muted hover:bg-surface hover:text-content'
         }
       >

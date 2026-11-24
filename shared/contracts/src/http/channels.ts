@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MESSAGE_REACTIONS } from '../limits.ts';
 import {
   createChannelSchema,
   createMessageSchema,
@@ -19,6 +20,12 @@ const channel = z.object({
   createdAt: timestamp,
 });
 
+const messageReactionSummary = z.object({
+  reaction: z.enum(MESSAGE_REACTIONS),
+  count: z.number().int().positive(),
+  mine: z.boolean(),
+});
+
 /** A message as the API shows it; never its search vector. */
 /** A picture posted to a room (B2); `url` is the members-only route that serves it. */
 const messageImage = z.object({
@@ -37,6 +44,8 @@ const message = z.object({
   authorId: uuid,
   authorName: z.string(),
   image: messageImage.nullable().default(null),
+  /** Each reaction on it with anyone on it: how many, and whether one is yours. */
+  reactions: z.array(messageReactionSummary).default([]),
 });
 
 export const channelContracts = {

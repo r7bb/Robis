@@ -51,6 +51,7 @@ export function scopesOf(event: ServerEvent): string[] {
       return [`issue:${event.issueId}`];
     case 'message.created':
     case 'message.deleted':
+    case 'message.reacted':
       return [`channel:${event.channelId}`];
     default:
       return ['workspace'];

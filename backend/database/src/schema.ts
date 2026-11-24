@@ -2,6 +2,7 @@ import {
   ISSUE_PRIORITIES,
   ISSUE_STATUSES,
   LABEL_COLOURS,
+  MESSAGE_REACTIONS,
   POST_REACTIONS,
   ROLES,
   SPACE_THREAD_KINDS,
@@ -1808,6 +1809,46 @@ export const messages = pgTable(
     // looked for (its In chat list), so the scan never leaves the workspace.
     index('messages_workspace_created_idx').on(t.workspaceId, t.createdAt.desc(), t.id.desc()),
     uniqueIndex('messages_image_key_key').on(t.imageKey),
+  ],
+);
+
+/** A quick reaction on a chat message: one of each kind per person. */
+export const messageReactions = pgTable(
+  'message_reactions',
+  {
+    messageId: uuid('message_id')
+      .notNull()
+      .references(() => messages.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    reaction: text('reaction', { enum: MESSAGE_REACTIONS }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.messageId, t.userId, t.reaction] })],
+);
+
+/**
+ * How far each person has read in each room: the newest message they have
+ * seen. Messages after it, by anyone else, are unread; no row is all unread.
+ */
+export const channelReads = pgTable(
+  'channel_reads',
+  {
+    channelId: uuid('channel_id')
+      .notNull()
+      .references(() => channels.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    lastReadAt: timestamp('last_read_at', { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.channelId, t.userId] }),
+    index('channel_reads_user_idx').on(t.workspaceId, t.userId),
   ],
 );
 

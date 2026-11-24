@@ -204,6 +204,10 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Chat keeps your place: unread counts, a New line, and quick reactions.**
+  Each room shows how many messages wait for you, the room name carries a
+  dot when another room has news, a New line marks where you stopped
+  reading, and any message takes a quick reaction.
 - **Ask Sapha in the command palette: plain requests, done once you say
   yes.** Type “move REL-4 to done”, “give REL-4 to Ana”, “remind me about
   REL-12 tomorrow 9am”, “schedule Retro friday 3pm” or “what’s due today”
@@ -214,9 +218,6 @@ no write lost and nothing done twice.
   or a time you type in plain words, and it comes back unread then; Remind
   me on an issue, a chat message or a space thread does the same for
   something nobody told you about.
-- **Search finds chat, spaces and meetings too.** The search box, the search
-  page and the command palette now find chat messages, space threads and
-  their replies, and meetings, each opening right where it is.
 
 <!-- latest:end -->
 

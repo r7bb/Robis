@@ -77,8 +77,16 @@ describe('what an event makes stale', () => {
     ]);
   });
 
-  test('a chat message refreshes only that channel', () => {
-    expect(staleKeys(chat)).toEqual([['messages', W, 'c1']]);
+  test('a chat message refreshes only that channel, and the unread counts', () => {
+    expect(staleKeys(chat)).toEqual([
+      ['messages', W, 'c1'],
+      ['channel-reads', W],
+    ]);
+  });
+
+  test('a reaction refreshes only that channel', () => {
+    const reacted = { ...chat, type: 'message.reacted' } as const;
+    expect(staleKeys(reacted)).toEqual([['messages', W, 'c1']]);
   });
 
   test('a member change refreshes the roster and every open profile there (B2)', () => {

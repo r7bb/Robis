@@ -1,5 +1,6 @@
 'use client';
 
+import { UNREAD_SHOWN_MAX } from '@robis/shared';
 import { CHANNEL_NAME_MAX_LENGTH } from '@robis/shared/limits';
 import { type FormEvent, useEffect, useId, useRef, useState } from 'react';
 import { InlineError } from '../../components/ui/primitives.tsx';
@@ -13,6 +14,7 @@ import type { ChannelSummary } from './types.ts';
  */
 export function RoomPicker({
   rooms,
+  unread = NONE_WAITING,
   active,
   onSelect,
   canCreate,
@@ -21,6 +23,8 @@ export function RoomPicker({
   onCreate,
 }: {
   rooms: ChannelSummary[];
+  /** Messages waiting in each room, by id. */
+  unread?: ReadonlyMap<string, number>;
   active: ChannelSummary | null;
   onSelect: (id: string) => void;
   canCreate: boolean;
@@ -34,6 +38,10 @@ export function RoomPicker({
   const trigger = useRef<HTMLButtonElement>(null);
   const box = useRef<HTMLDivElement>(null);
   const listId = useId();
+  const waiting = (room: ChannelSummary) =>
+    room.id === active?.id ? 0 : (unread.get(room.id) ?? 0);
+  // Waiting in another room: shown on the name, so it is seen with the list closed.
+  const elsewhere = rooms.reduce((sum, room) => sum + waiting(room), 0);
 
   useEffect(() => {
     if (!open) return;
@@ -81,7 +89,7 @@ export function RoomPicker({
         type="button"
         aria-expanded={open}
         aria-controls={listId}
-        aria-label={`Room: ${active?.name ?? 'none'}. Change room`}
+        aria-label={`Room: ${active?.name ?? 'none'}. Change room${elsewhere > 0 ? `, ${elsewhere} unread in others` : ''}`}
         onClick={() => setOpen((was) => !was)}
         className="flex min-w-0 items-center gap-1 rounded-md px-1.5 py-1 text-sm font-semibold text-content transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
       >
@@ -92,6 +100,9 @@ export function RoomPicker({
         <span aria-hidden="true" className="text-xs text-faint">
           ▾
         </span>
+        {elsewhere > 0 ? (
+          <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent-soft" />
+        ) : null}
       </button>
 
       {open && (
@@ -124,6 +135,7 @@ export function RoomPicker({
                       {room.topic}
                     </span>
                   ) : null}
+                  <UnreadCount count={waiting(room)} />
                 </button>
               </li>
             ))}
@@ -155,5 +167,18 @@ export function RoomPicker({
         </div>
       )}
     </div>
+  );
+}
+
+const NONE_WAITING: ReadonlyMap<string, number> = new Map();
+
+/** A room's waiting messages, "99+" past the most counted. */
+function UnreadCount({ count }: { count: number }) {
+  if (count === 0) return null;
+  return (
+    <span className="ml-auto shrink-0 self-center rounded-full bg-accent px-1.5 text-[10px] font-semibold leading-4 text-accent-contrast">
+      {count >= UNREAD_SHOWN_MAX ? `${UNREAD_SHOWN_MAX}+` : count}
+      <span className="sr-only"> unread</span>
+    </span>
   );
 }

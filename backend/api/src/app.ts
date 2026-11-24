@@ -36,6 +36,7 @@ import { avatarRoutes } from './routes/avatars.ts';
 import { calendarRoutes } from './routes/calendar.ts';
 import { calendarImportRoutes } from './routes/calendar-import.ts';
 import { channelRoutes } from './routes/channels.ts';
+import { chatReadRoutes } from './routes/chat-reads.ts';
 import { commentRoutes } from './routes/comments.ts';
 import { consentRoutes } from './routes/consent.ts';
 import { discussionRoutes } from './routes/discussion.ts';
@@ -340,6 +341,7 @@ export function buildApp({
   app.register(channelRoutes, { db });
   app.register(meetingRoutes, { db });
   app.register(notificationRoutes, { db });
+  app.register(chatReadRoutes, { db });
   app.register(reminderRoutes, { db });
   app.register(notificationSettingRoutes, { db, limits });
   app.register(pushRoutes, { db, limits, publicKey: pushKey(env.VAPID_PUBLIC_KEY) });
