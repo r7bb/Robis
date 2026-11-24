@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Fourteen common attacks, each tried against Robis** (2026-11-24). The
+  usual attacks on a new web app, from typing /admin to guessing the login
+  code, are each tried in a test, and the one that found a gap is fixed.
 - **Accessibility checked on every page, and what it found fixed**
   (2026-11-24). axe now checks every page the screenshots capture, on three
   themes, in CI, and the contrast, naming and keyboard problems it found are

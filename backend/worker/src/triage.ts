@@ -54,7 +54,13 @@ const percent = (score: number) => score.toFixed(2);
  */
 export function triageComment(issueId: string, found: TriageHints, summary?: string | null) {
   const lines = ['Triage suggestions. Nothing on this issue was changed; a person decides.'];
-  if (summary) lines.push('', `Summary (written by a language model, unchecked): ${summary}`);
+  // Model text can never mention anyone: an issue written to steer the
+  // model into "@someone" would otherwise send them a notification. A
+  // zero-width space after each @ leaves it readable and matches no name.
+  if (summary) {
+    const inert = summary.replace(/@/g, '@\u200b');
+    lines.push('', `Summary (written by a language model, unchecked): ${inert}`);
+  }
 
   const { suggestion: priority } = found;
   lines.push('');

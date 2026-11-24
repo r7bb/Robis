@@ -64,6 +64,31 @@ with a known vulnerability. Every other rule warns: a new warning prints in
 the CI log for a person to read, and is added to this table, fixed or
 accepted, when it is.
 
+## The usual attacks, tried
+
+Fourteen attacks people try on a new web app, each tried against Robis in
+`tests/attack-list.test.ts`, with deeper suites named where they exist.
+Robis takes no payments, so the price and payment attacks are tried on what
+stands in for them. This is a list of what has been tried, not a claim that
+nothing else could work.
+
+| Attack | What happens | Tried in |
+| --- | --- | --- |
+| Type `/admin` | There is no admin page or route; both answer 404 | `attack-list` |
+| Change the id in the URL | Another workspace's issue, project, room, attachment or export is not found, through your workspace or theirs | `attack-list`, `authorization`, `attachments`, `chat` |
+| An API key in the browser | The web app's only public settings are addresses; no served script holds a key, password or database address | `attack-list` |
+| Edit the price | Fields a client should not set (who made it, which workspace, its number, demo, two-factor) are ignored | `attack-list` |
+| Order -1 items | Negative, zero, enormous or non-numeric counts and lengths are refused | `attack-list` |
+| Fake a payment | No payment route; the one inbound webhook (GitHub) is refused unless signed | `attack-list`, `github-links` |
+| Redeem it 100 times | An invitation accepted ten times at once makes one membership; export and reset links, recovery codes and keyed writes work once | `attack-list`, `exports`, `two-factor`, `idempotency` |
+| Admin at sign-up | Extra fields at sign-up are ignored; no role above your own can be given | `attack-list`, `authorization` |
+| Guess the login code | Ten tries a minute per caller, and five wrong codes end the challenge | `attack-list`, `two-factor` |
+| Prompt-inject the AI | The model only writes a one-sentence summary, marked as unchecked, that can mention nobody; it can act on nothing | `attack-list`, `triage` |
+| A script in your username | Usernames take letters, digits, dot and underscore only; names are plain words, React escapes them, and every email is plain text | `attack-list` |
+| Upload a non-photo | Only JPEG, PNG, WebP and AVIF, decoded and re-encoded; anything else is refused | `attack-list`, `attachments`, `avatars` |
+| `.env` in Git | Only the example is tracked; real ones are ignored | `attack-list` |
+| Query the database | Every query is parameterised; SQL typed into search is searched for as words; Postgres is not published outside the stack | `attack-list` |
+
 ## What is not checked
 
 - **No active scan.** The ZAP baseline only reads responses; it sends no

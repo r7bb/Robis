@@ -45,6 +45,17 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
+    area: 'Security',
+    title: 'Fourteen common attacks, each tried against Robis',
+    brief:
+      'The usual attacks on a new web app, from typing /admin to guessing the login code, are each tried in a test, and the one that found a gap is fixed.',
+    summary:
+      'A test file takes fourteen attacks people try on new web apps and tries each against Robis: typing /admin, changing the id in the address, looking for a key in the browser, setting fields a client should not, negative and enormous counts, faking a payment, using a one-time thing many times at once, making yourself an admin at sign-up, guessing the login code, steering the AI, a script in a username, uploading something that is not a photo, a .env file in Git, and SQL typed into search. Robis takes no payments, so those two are tried on what stands in for them. One gap turned up: the AI’s one-sentence summary is posted as a comment, so an issue written to steer it into “@someone” could send that person a notification. Model text can no longer mention anyone. Docs/SECURITY_CHECKS.md lists each attack, what happens, and where it is tried.',
+    checked:
+      'Sixteen tests in tests/attack-list.test.ts, all passing, alongside the deeper suites they name; the login-code limit tried on an app with its real limit rather than the harness’s raised one. Against the running stack, /admin and /api/admin answer 404 and none of the 25 scripts the site serves holds a key, a password or a database address. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-24',
     area: 'Product',
     title: 'Accessibility checked on every page, and what it found fixed',
     brief:
