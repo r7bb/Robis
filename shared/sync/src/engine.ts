@@ -186,6 +186,21 @@ export class SyncEngine {
     this.queue = new MutationQueue(storage);
   }
 
+  /** The last time stamped on a queued change, in this tab. */
+  private lastQueuedAt = 0;
+
+  /**
+   * When a change is queued: the clock, but always later than the change
+   * queued before it. The queue is sent in this order, and two changes in one
+   * millisecond (an issue and its picture, from a share) once fell back to
+   * comparing their random ids, so the picture could go first and be refused
+   * as attached to nothing.
+   */
+  private stamp(): number {
+    this.lastQueuedAt = Math.max(this.now(), this.lastQueuedAt + 1);
+    return this.lastQueuedAt;
+  }
+
   // ----------------------------------------------------------------- reads
 
   /**
@@ -249,7 +264,7 @@ export class SyncEngine {
       workspaceId,
       issueId,
       contentType,
-      queuedAt: this.now(),
+      queuedAt: this.stamp(),
       attempts: 0,
     });
 
@@ -269,7 +284,7 @@ export class SyncEngine {
       id,
       workspaceId,
       contentType,
-      queuedAt: this.now(),
+      queuedAt: this.stamp(),
       attempts: 0,
     });
     return id;
@@ -287,7 +302,7 @@ export class SyncEngine {
       workspaceId,
       issueId,
       body,
-      queuedAt: this.now(),
+      queuedAt: this.stamp(),
       attempts: 0,
     });
     return id;
@@ -421,7 +436,7 @@ export class SyncEngine {
       workspaceId,
       projectId,
       input,
-      queuedAt: this.now(),
+      queuedAt: this.stamp(),
       attempts: 0,
     });
 
@@ -454,7 +469,7 @@ export class SyncEngine {
       issueId,
       input: { ...(await this.pendingUpdateInput(issueId)), ...input },
       baseUpdatedAt: existing.updatedAt,
-      queuedAt: this.now(),
+      queuedAt: this.stamp(),
       attempts: 0,
     });
 
@@ -492,7 +507,7 @@ export class SyncEngine {
       id: `delete:${issueId}`,
       workspaceId,
       issueId,
-      queuedAt: this.now(),
+      queuedAt: this.stamp(),
       attempts: 0,
     });
   }

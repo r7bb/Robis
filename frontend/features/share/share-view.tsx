@@ -33,7 +33,13 @@ async function readShare(): Promise<Shared | null> {
   const images: Blob[] = [];
   for (let i = 0; i < head.files; i++) {
     const file = await cache.match(`/share/inbox/file-${i}`);
-    if (file) images.push(await file.blob());
+    // Read whole into memory: a blob straight from the cache can be backed
+    // by its entry, and the cache is emptied once the share is filed, which
+    // could leave the queued picture with nothing to send.
+    if (file) {
+      const type = file.headers.get('content-type') ?? '';
+      images.push(new Blob([await file.arrayBuffer()], { type }));
+    }
   }
   return { title: head.title, text: head.text, url: head.url, images };
 }

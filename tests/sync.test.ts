@@ -707,6 +707,21 @@ describe('deleting while offline', () => {
 describe('attaching an image offline', () => {
   const image = () => new Blob([new Uint8Array(2048)], { type: 'image/png' });
 
+  test('an issue and its picture queued in one millisecond go in that order', async () => {
+    // A stopped clock, and ids that sort the picture before its issue: the
+    // order must come from when each was queued, not from the ids.
+    const ids = ['ffffffff-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000002'];
+    const sameMoment = new SyncEngine(
+      new MemoryAdapter(),
+      transport,
+      () => 5_000,
+      () => ids.shift()!,
+    );
+    const issue = await sameMoment.createIssue(WORKSPACE, PROJECT, { title: 'Shared' });
+    const picture = await sameMoment.queueAttachment(WORKSPACE, issue.id, image(), 'image/png');
+    expect((await sameMoment.queue.all()).map((m) => m.id)).toEqual([issue.id, picture]);
+  });
+
   test('the image waits on the device and uploads exactly once on reconnect', async () => {
     transport.failWith = new SyncError('offline');
     const id = await engine.queueAttachment(WORKSPACE, 'issue-1', image(), 'image/png');
