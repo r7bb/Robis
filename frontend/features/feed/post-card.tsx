@@ -11,6 +11,7 @@ import { formatDateTime } from '../../lib/i18n/format.ts';
 import { personHref } from '../../lib/links.ts';
 import { StoryRing } from '../stories/story-ring.tsx';
 import { feedKey, type Post, type Reaction } from './feed-model.ts';
+import { FollowButton } from './follow-button.tsx';
 import { ReactionBar } from './reaction-bar.tsx';
 
 /**
@@ -60,6 +61,9 @@ export function PostCard({
             {post.kind === 'checkin' ? ' · weekly check-in' : ''}
           </p>
         </div>
+        {me && post.authorId !== me ? (
+          <FollowButton workspaceId={workspaceId} userId={post.authorId} name={name} onlyToFollow />
+        ) : null}
         <TakeDown workspaceId={workspaceId} post={post} me={me} role={role} />
       </header>
 

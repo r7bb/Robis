@@ -962,6 +962,52 @@ export const celebrationReactions = pgTable(
   (t) => [primaryKey({ columns: [t.workspaceId, t.celebrationId, t.userId, t.reaction] })],
 );
 
+/**
+ * Who follows whom in a workspace: the Following feed shows those people
+ * alone. Per workspace, as a person may follow a teammate here and not in
+ * another place they share.
+ */
+export const follows = pgTable(
+  'follows',
+  {
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    followerId: uuid('follower_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    followeeId: uuid('followee_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.workspaceId, t.followerId, t.followeeId] }),
+    check('follows_not_self', sql`${t.followerId} <> ${t.followeeId}`),
+  ],
+);
+
+/** Whom a person has muted on the Everyone feed here: theirs to know alone. */
+export const feedMutes = pgTable(
+  'feed_mutes',
+  {
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    mutedId: uuid('muted_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.workspaceId, t.userId, t.mutedId] }),
+    check('feed_mutes_not_self', sql`${t.userId} <> ${t.mutedId}`),
+  ],
+);
+
 /** A space: a topic within the workspace, where threads are started. */
 export const spaces = pgTable(
   'spaces',

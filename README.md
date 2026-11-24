@@ -204,6 +204,10 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Follow people, and a feed in three tidy tabs.** Follow teammates and the
+  Following tab shows only them; mute someone to quiet Everyone; the
+  check-in, celebrations and project health move to Highlights, so posts are
+  no longer buried under cards.
 - **Sentence embeddings double duplicate recall on the new set; stemming
   does not help.** Stemming, a small sentence model and a blend were
   compared on the new set’s dev half under a rule fixed in advance; only the
@@ -213,10 +217,6 @@ no write lost and nothing done twice.
   advance.** A new set of 120 queries tagged by kind of wording gap, split
   before any score and read once: character n-grams raised more alarms on
   nothing new, but neither model found a single reworded duplicate.
-- **Robis in Spanish, and dates and numbers in your own locale.** Choose
-  Español under Account and the sidebar, calendar and Spaces read in
-  Spanish; every date, time and number now follows your locale, so an
-  American reader sees the month first.
 
 <!-- latest:end -->
 

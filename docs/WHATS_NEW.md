@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Follow people, and a feed in three tidy tabs** (2026-11-24). Follow
+  teammates and the Following tab shows only them; mute someone to quiet
+  Everyone; the check-in, celebrations and project health move to
+  Highlights, so posts are no longer buried under cards.
 - **Sentence embeddings double duplicate recall on the new set; stemming
   does not help** (2026-11-24). Stemming, a small sentence model and a blend
   were compared on the new set’s dev half under a rule fixed in advance;

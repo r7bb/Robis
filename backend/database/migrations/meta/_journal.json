@@ -533,6 +533,13 @@
       "when": 1795496991190,
       "tag": "0075_space_solved_at",
       "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1795500411571,
+      "tag": "0076_follows",
+      "breakpoints": true
     }
   ]
 }

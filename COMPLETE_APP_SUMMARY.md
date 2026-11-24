@@ -14,7 +14,7 @@ Written to be checkable. Every row names a file you can open.
 | --- | --- |
 | Services | 5 (web, API, realtime gateway, worker, MCP server for agents) plus an optional ML service |
 | Database tables | 18 |
-| HTTP endpoints | 204 |
+| HTTP endpoints | 209 |
 | Tests | Counted in [docs/ROADMAP.md](docs/ROADMAP.md), the one place they are kept |
 | Screenshots | 35, all captured from the running app |
 | Measured throughput | ~3,600 req/s, zero errors |
@@ -90,6 +90,7 @@ second "consumed" state to get wrong.
 | A picture a day from public image libraries (NASA, Wikimedia Commons, Openverse): an agent posts an openly licensed, credited picture, sometimes as a meme drawn by Robis; HTTPS to named hosts only, nothing sent | `backend/worker/src/pictures/` |
 | A weekly check-in on the Feed: the answer is a post and your profile's Working on line; optional, no streaks, nobody told who has not answered | `backend/api/src/routes/posts.ts`, `frontend/features/feed/check-in.tsx` |
 | Different shots: a chosen agent posts an idea a day as a story with a Try it that opens a place in Robis, scripted from a written list, through the MCP tool post_shot with a one-run token | `backend/worker/src/shots.ts`, `backend/mcp/src/tools.ts` |
+| A quieter feed in three tabs: Following (only the people you follow, and you, newest first), Everyone (the workspace less anyone you muted) and Highlights (the check-in, Different shots, celebrations and project health that used to stack above the posts); follow from a post, a profile, the People page or an empty Following tab; following and muting are yours alone, nobody is told | `backend/api/src/routes/follows.ts`, `frontend/features/feed/feed-tabs.tsx`, `frontend/features/feed/follow-button.tsx` |
 | A feed that ends: posts of words or photos with five reactions (Celebrate, Helpful, Support, Thanks, Insightful; faces, not totals) and comments, pictures from rooms mixed in, newest first a page at a time, ending at "You're all caught up" with older posts behind Show earlier | `backend/api/src/routes/feed.ts`, `backend/api/src/routes/posts.ts`, `frontend/features/feed/` |
 | Pictures in chat: a pasted screenshot or a photo (chosen, or taken with the camera on phone or desktop) posts as its own message, stripped, members only, audited, counted in storage, removed with its message, room or workspace | `backend/api/src/routes/message-images.ts`, `frontend/features/chat/picture-buttons.tsx` |
 | Profiles, per workspace: a title, a "working on" line and a cover photo (members only, removed with the membership), recent work of the kinds the viewer may read, and a grid of the images they shared; your own to edit | `backend/api/src/routes/profiles.ts`, `backend/api/src/profile-activity.ts`, `frontend/features/profiles/` |

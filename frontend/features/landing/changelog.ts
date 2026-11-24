@@ -45,6 +45,26 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
+    area: 'Product',
+    title: 'Follow people, and a feed in three tidy tabs',
+    brief:
+      'Follow teammates and the Following tab shows only them; mute someone to quiet Everyone; the check-in, celebrations and project health move to Highlights, so posts are no longer buried under cards.',
+    summary:
+      'The feed is now three tabs. Following shows the people you follow, and you, newest first; it starts with a few teammates to follow from right there. Everyone is the whole workspace, less anyone you muted. Highlights gathers this week’s check-in, the day’s Different shots, celebrations and how the projects are doing, which used to stack above every post; a dot on the tab says when the check-in is waiting, and Say well done drops its words into the composer above the tabs. Follow from a post, a profile, the People page or the empty Following tab; mute from a profile. Both are yours alone: nobody is told, and nobody else can see. The arrow keys move between tabs, and the tab you left on is remembered. The demo’s agent is now called Wren.',
+    checked:
+      'API tests for following (the Following feed holds only them and you, twice is once, nobody else sees whom you follow), muting (it quiets only your Everyone feed) and who can be chosen (not yourself, not a stranger, not from outside). A browser journey follows a teammate from an empty Following tab, sees their post arrive, and moves to Highlights with the arrow keys to find the check-in; the accessibility and keyboard journeys pass. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Following',
+      where: 'Feed, the Following tab',
+      layers: [
+        'Screen: Following, Everyone and Highlights tabs, with Follow on posts, profiles and the People page, and Mute on profiles',
+        'API: five endpoints to list, follow, unfollow, mute and unmute, and a scope on the feed',
+        'Database: follows and feed mutes, per workspace, never yourself',
+      ],
+    },
+  },
+  {
+    date: '2026-11-24',
     area: 'ML',
     title: 'Sentence embeddings double duplicate recall on the new set; stemming does not help',
     brief:

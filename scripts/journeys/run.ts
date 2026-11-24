@@ -24,6 +24,7 @@ import { a11yJourney } from './a11y.ts';
 import { Checks } from './checks.ts';
 import { demoWorkspaceJourney, emptyViewsJourney } from './empty-views.ts';
 import { exportJourney } from './export.ts';
+import { followingJourney } from './following.ts';
 import { importJourney } from './import.ts';
 import { keyboardDialogsJourney } from './keyboard-dialogs.ts';
 import { languagesJourney } from './languages.ts';
@@ -59,6 +60,7 @@ const JOURNEYS: Record<string, (checks: Checks) => Promise<void>> = {
   keyboard: (checks) => keyboardDialogsJourney(checks, FIRST_PORT + 22),
   spaces: (checks) => spacesJourney(checks, [FIRST_PORT + 23, FIRST_PORT + 24]),
   languages: (checks) => languagesJourney(checks, FIRST_PORT + 25),
+  following: (checks) => followingJourney(checks, [FIRST_PORT + 26, FIRST_PORT + 27]),
 };
 
 async function main() {

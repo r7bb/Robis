@@ -7,6 +7,7 @@ const isAgentRole = (role: Role) => (AGENT_ROLES as readonly Role[]).includes(ro
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
+import { FollowButton } from '../features/feed/follow-button.tsx';
 import { StoryRing } from '../features/stories/story-ring.tsx';
 import { call, type Member } from '../lib/api.ts';
 import { personHref } from '../lib/links.ts';
@@ -197,6 +198,13 @@ export function MemberList({
               </span>
 
               <span className="flex items-center gap-2">
+                {me.data && member.userId !== me.data.user.id ? (
+                  <FollowButton
+                    workspaceId={workspaceId}
+                    userId={member.userId}
+                    name={member.name}
+                  />
+                ) : null}
                 {editable ? (
                   <select
                     value={member.role}

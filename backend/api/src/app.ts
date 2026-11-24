@@ -43,6 +43,7 @@ import { exportRoutes } from './routes/exports.ts';
 import { feedRoutes } from './routes/feed.ts';
 import { feedHighlightRoutes } from './routes/feed-highlights.ts';
 import { feedbackRoutes } from './routes/feedback.ts';
+import { followRoutes } from './routes/follows.ts';
 import { githubRoutes } from './routes/github.ts';
 import { importRoutes } from './routes/imports.ts';
 import { insightRoutes } from './routes/insights.ts';
@@ -349,6 +350,7 @@ export function buildApp({
   app.register(feedRoutes, { db });
   app.register(feedHighlightRoutes, { db });
   app.register(spaceRoutes, { db });
+  app.register(followRoutes, { db });
   app.register(insightRoutes, { db, operators: operatorsFrom(env.HEALTH_OPERATORS) });
   app.register(calendarRoutes, { db, webOrigin: env.WEB_ORIGIN });
   app.register(calendarImportRoutes, { db });

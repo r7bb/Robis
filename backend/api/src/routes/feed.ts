@@ -1,6 +1,16 @@
 import { type Database, messages, posts, workspaceMembers } from '@robis/database';
 import { can, contracts, isUuid } from '@robis/shared';
-import { type AnyColumn, and, desc, eq, gte, isNotNull, sql } from 'drizzle-orm';
+import {
+  type AnyColumn,
+  and,
+  desc,
+  eq,
+  gte,
+  inArray,
+  isNotNull,
+  notInArray,
+  sql,
+} from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { serve } from '../contract.ts';
 import { postsWire } from '../feed/post-wire.ts';
@@ -11,6 +21,7 @@ import {
   requireAuth,
   requireMembership,
 } from '../plugins/authz.ts';
+import { feedChoices } from './follows.ts';
 
 /** Items on a page of the feed. More are one Show earlier away, never loaded on their own. */
 const FEED_PAGE = 20;
@@ -43,6 +54,15 @@ function before(createdAt: AnyColumn, id: AnyColumn, cursor: Cursor | null) {
   return sql`((extract(epoch from ${createdAt}) * 1000000)::bigint, ${id}) < (${cursor.at}::bigint, ${cursor.id}::uuid)`;
 }
 
+/** Whose items a page holds: only these authors, or all but these. */
+type Authors = { only: string[] } | { except: string[] };
+
+function byAuthors(author: AnyColumn, authors: Authors | undefined) {
+  if (!authors) return undefined;
+  if ('only' in authors) return inArray(author, authors.only);
+  return authors.except.length > 0 ? notInArray(author, authors.except) : undefined;
+}
+
 /** Newest first, by exact time then id, as the database orders them. */
 function newestFirst(a: { at: string; id: string }, b: { at: string; id: string }): number {
   const left = BigInt(a.at);
@@ -61,16 +81,22 @@ function newestFirst(a: { at: string; id: string }, b: { at: string; id: string 
 export async function feedRoutes(app: FastifyInstance, opts: { db: Database }) {
   const { db } = opts;
 
-  async function postsBefore(workspaceId: string, cursor: Cursor | null) {
+  async function postsBefore(workspaceId: string, cursor: Cursor | null, authors?: Authors) {
     return db
       .select({ row: posts, at: micros(posts.createdAt) })
       .from(posts)
-      .where(and(eq(posts.workspaceId, workspaceId), before(posts.createdAt, posts.id, cursor)))
+      .where(
+        and(
+          eq(posts.workspaceId, workspaceId),
+          before(posts.createdAt, posts.id, cursor),
+          byAuthors(posts.authorId, authors),
+        ),
+      )
       .orderBy(desc(posts.createdAt), desc(posts.id))
       .limit(FEED_PAGE + 1);
   }
 
-  async function picturesBefore(workspaceId: string, cursor: Cursor | null) {
+  async function picturesBefore(workspaceId: string, cursor: Cursor | null, authors?: Authors) {
     return db
       .select({
         messageId: messages.id,
@@ -89,6 +115,7 @@ export async function feedRoutes(app: FastifyInstance, opts: { db: Database }) {
           isNotNull(messages.imageWidth),
           isNotNull(messages.imageHeight),
           before(messages.createdAt, messages.id, cursor),
+          byAuthors(messages.authorId, authors),
         ),
       )
       .orderBy(desc(messages.createdAt), desc(messages.id))
@@ -99,14 +126,19 @@ export async function feedRoutes(app: FastifyInstance, opts: { db: Database }) {
     app,
     contracts['feed.list'],
     { preHandler: [requireAuth, requireMembership(db, 'workspace:read')] },
-    async (request, { query: { before: cursorParam } }) => {
+    async (request, { query: { before: cursorParam, scope } }) => {
       const { workspaceId, role } = currentMembership(request);
       const user = currentUser(request);
       const cursor = decodeCursor(cursorParam);
+      const choices = await feedChoices(db, workspaceId, user.id);
+      const authors: Authors =
+        scope === 'following'
+          ? { only: [user.id, ...choices.following] }
+          : { except: choices.muted };
       // Pictures come from rooms: shown to those who may read the rooms.
       const [postRows, pictureRows, [membership], [checkedIn]] = await Promise.all([
-        postsBefore(workspaceId, cursor),
-        can(role, 'channel:read') ? picturesBefore(workspaceId, cursor) : [],
+        postsBefore(workspaceId, cursor, authors),
+        can(role, 'channel:read') ? picturesBefore(workspaceId, cursor, authors) : [],
         db
           .select({ seenAt: workspaceMembers.feedSeenAt })
           .from(workspaceMembers)

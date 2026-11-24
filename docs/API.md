@@ -19,7 +19,7 @@ way.
 `{ "error": "<code>", "message": "<words for people>" }`. A stranger to a
 workspace gets 404, never 403, so its existence is not given away.
 
-193 routes.
+198 routes.
 
 ## activity
 
@@ -587,7 +587,7 @@ A download address for a ready export: it works once, for 5 minutes, and only si
 
 The feed, newest first: posts and pictures from rooms, a page at a time; `seenAt` is where you last caught up.
 
-- Query: `before`
+- Query: `before`, `scope`
 - Answers: 200
 - Name: `feed.list`
 
@@ -626,6 +626,29 @@ Mark the feed caught up to now, for you.
 
 - Answers: 200
 - Name: `feed.seen`
+
+## follows
+
+### `GET /workspaces/{workspaceId}/follows`
+
+Whom you follow and whom you muted here: yours alone to see.
+
+- Answers: 200
+- Name: `follows.list`
+
+### `DELETE /workspaces/{workspaceId}/follows/{userId}`
+
+Stop following someone here.
+
+- Answers: 204
+- Name: `follows.unfollow`
+
+### `PUT /workspaces/{workspaceId}/follows/{userId}`
+
+Follow someone here, so the Following feed shows their posts.
+
+- Answers: 204
+- Name: `follows.follow`
 
 ## github
 
@@ -1019,6 +1042,22 @@ Delete your own message, or as an admin, anyone's.
 
 - Answers: 204
 - Name: `messages.delete`
+
+## mutes
+
+### `DELETE /workspaces/{workspaceId}/mutes/{userId}`
+
+Show someone’s posts on your Everyone feed again.
+
+- Answers: 204
+- Name: `follows.unmute`
+
+### `PUT /workspaces/{workspaceId}/mutes/{userId}`
+
+Hide someone’s posts from your Everyone feed. Nobody is told.
+
+- Answers: 204
+- Name: `follows.mute`
 
 ## notifications
 

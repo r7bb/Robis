@@ -8,13 +8,16 @@ import { ago } from '../../components/activity-feed.tsx';
 import { Avatar } from '../../components/ui/avatar.tsx';
 import { BASE_URL, call, type Member } from '../../lib/api.ts';
 import { channelHref } from '../../lib/links.ts';
-import { usePeople } from '../../lib/use-people.ts';
+import { useMyId, usePeople } from '../../lib/use-people.ts';
 import { useStories } from '../stories/stories-context.tsx';
 import { StoriesStrip } from '../stories/stories-strip.tsx';
 import { useWorkspaceRole } from '../workspace/page-frame.tsx';
 import { Celebrations } from './celebrations.tsx';
 import { CheckIn } from './check-in.tsx';
 import { type FeedItem, feedKey, itemKey, splitAtSeen } from './feed-model.ts';
+import { type FeedTab, FeedTabs, panelId, tabId, useFeedTab } from './feed-tabs.tsx';
+import { useFollows } from './follow-button.tsx';
+import { FollowingEmpty } from './following-empty.tsx';
 import { PostCard } from './post-card.tsx';
 import { PostComposer } from './post-composer.tsx';
 import { ProjectHealthCards } from './project-health.tsx';
@@ -32,13 +35,13 @@ import { ShotsStack } from './shots-stack.tsx';
  * visit, while the visit itself is marked as the new point, so coming back
  * shows only what is newer.
  */
-function useFeed(workspaceId: string, me: string | null) {
+function useFeed(workspaceId: string, me: string | null, scope: FeedScope) {
   const feed = useInfiniteQuery({
-    queryKey: feedKey(workspaceId),
+    queryKey: [...feedKey(workspaceId), scope],
     queryFn: ({ pageParam }) =>
       call(contracts['feed.list'], {
         params: { workspaceId },
-        query: pageParam ? { before: pageParam } : {},
+        query: pageParam ? { before: pageParam, scope } : { scope },
       }),
     initialPageParam: null as string | null,
     getNextPageParam: (page) => page.nextCursor,
@@ -55,74 +58,83 @@ function useFeed(workspaceId: string, me: string | null) {
   });
   const marked = useRef(false);
   useEffect(() => {
-    if (!firstPage || marked.current) return;
+    // Caught up means the whole workspace: only Everyone moves the mark.
+    if (!firstPage || marked.current || scope !== 'everyone') return;
     marked.current = true;
     markSeen();
-  }, [firstPage, markSeen]);
+  }, [firstPage, markSeen, scope]);
 
   const items = feed.data?.pages.flatMap((page) => page.items) ?? [];
   return {
     feed,
     items,
     neverSeen: !firstPage?.seenAt,
-    ...splitAtSeen(items, seenOnArrival.current ?? null, me, arrivedAt.current),
+    checkedIn: firstPage ? firstPage.checkedInThisWeek : true,
+    // Following is a short list you chose, so all of it shows, newest first:
+    // someone just followed should not arrive already behind Show earlier.
+    ...(scope === 'following'
+      ? { fresh: items, earlier: [] }
+      : splitAtSeen(items, seenOnArrival.current ?? null, me, arrivedAt.current)),
   };
 }
 
-export function FeedView({ workspaceId }: { workspaceId: string }) {
+type FeedScope = Exclude<FeedTab, 'highlights'>;
+
+/** The posts of one scope: what is new, the end, and earlier behind a button. */
+function FeedList({
+  workspaceId,
+  scope,
+  me,
+  members,
+  people,
+  onCheckedIn,
+}: {
+  workspaceId: string;
+  scope: FeedScope;
+  me: string | null;
+  members: readonly Member[];
+  people: ReadonlyMap<string, Member>;
+  onCheckedIn: (checkedIn: boolean) => void;
+}) {
   const { role } = useWorkspaceRole();
-  const me = useQuery({
-    queryKey: ['me'],
-    queryFn: () => call(contracts['auth.me']),
-    retry: false,
-  });
-  const { list: memberList, people } = usePeople(workspaceId);
-  const myId = me.data?.user.id ?? null;
-  const { feed, items, neverSeen, fresh, earlier } = useFeed(workspaceId, myId);
+  const { following } = useFollows(workspaceId);
+  const { feed, items, neverSeen, fresh, earlier, checkedIn } = useFeed(workspaceId, me, scope);
   const [showEarlier, setShowEarlier] = useState(false);
+  useEffect(() => onCheckedIn(checkedIn), [checkedIn, onCheckedIn]);
   const more = earlier.length > 0 || feed.hasNextPage;
   const card = (item: FeedItem) => (
     <li key={itemKey(item)}>
       {item.kind === 'post' ? (
-        <PostCard
-          workspaceId={workspaceId}
-          post={item.post}
-          people={people}
-          me={myId}
-          role={role}
-        />
+        <PostCard workspaceId={workspaceId} post={item.post} people={people} me={me} role={role} />
       ) : (
         <PictureCard workspaceId={workspaceId} picture={item.picture} people={people} />
       )}
     </li>
   );
+  const othersHere = items.some((item) =>
+    item.kind === 'post' ? item.post.authorId !== me : item.picture.authorId !== me,
+  );
 
+  if (feed.isPending) return <FeedSkeleton />;
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:px-6">
-      <h1 className="text-balance text-lg font-semibold tracking-tight text-content">Feed</h1>
-      <p className="mt-1 text-sm text-muted">
-        What the team has been sharing. It ends where you last caught up.
-      </p>
-      <FeedTop
-        workspaceId={workspaceId}
-        me={myId}
-        members={memberList}
-        people={people}
-        checkedIn={feed.data ? (feed.data.pages[0]?.checkedInThisWeek ?? false) : true}
-      />
-
-      {feed.isPending ? (
-        <FeedSkeleton />
-      ) : (
-        <ul className="mt-6 space-y-4">
-          {fresh.map(card)}
+    <>
+      <ul className="mt-4 space-y-4">
+        {scope === 'following' && !othersHere ? (
           <li>
-            <CaughtUp first={neverSeen && items.length === 0} />
+            <FollowingEmpty
+              workspaceId={workspaceId}
+              me={me}
+              members={members}
+              followingAnyone={following.size > 0}
+            />
           </li>
-          {showEarlier ? earlier.map(card) : null}
-        </ul>
-      )}
-
+        ) : null}
+        {fresh.map(card)}
+        <li>
+          <CaughtUp first={neverSeen && items.length === 0} />
+        </li>
+        {showEarlier ? earlier.map(card) : null}
+      </ul>
       {more ? (
         <div className="mt-4 flex justify-center">
           <button
@@ -138,41 +150,102 @@ export function FeedView({ workspaceId }: { workspaceId: string }) {
           </button>
         </div>
       ) : null}
-    </div>
+    </>
   );
 }
 
-/**
- * Above the posts: the team's stories, this week's check-in, the day's
- * Different shots, the week's celebrations, how the projects are doing,
- * and the composer, each only for those who may use it. A well done
- * starts a post in the composer, for its author to change or send.
- */
-function FeedTop({
-  workspaceId,
-  me,
-  members,
-  people,
-  checkedIn,
-}: {
-  workspaceId: string;
-  me: string | null;
-  members: Member[];
-  people: ReadonlyMap<string, Member>;
-  checkedIn: boolean;
-}) {
+export function FeedView({ workspaceId }: { workspaceId: string }) {
   const { role } = useWorkspaceRole();
+  const myId = useMyId();
+  const { list: members, people } = usePeople(workspaceId);
   const stories = useStories();
+  const [tab, setTab] = useFeedTab(workspaceId);
+  const [listed, setListed] = useState<boolean | null>(null);
+  // Opened straight on Highlights, no list has said yet whether you checked in.
+  const asked = useQuery({
+    queryKey: [...feedKey(workspaceId), 'check-in'],
+    queryFn: () =>
+      call(contracts['feed.list'], { params: { workspaceId }, query: { scope: 'following' } }),
+    enabled: tab === 'highlights' && listed === null,
+  });
+  const checkedIn = listed ?? asked.data?.checkedInThisWeek ?? true;
+  const [draft, setDraft] = useState<{ words: string; at: number } | null>(null);
   const mayPost = role ? can(role, 'post:create') : false;
   const mayReadWork = role ? can(role, 'issue:read') : false;
-  const [draft, setDraft] = useState<{ words: string; at: number } | null>(null);
+
   return (
-    <>
+    <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:px-6">
+      <h1 className="text-balance text-lg font-semibold tracking-tight text-content">Feed</h1>
+      <p className="mt-1 text-sm text-muted">
+        What the team has been sharing. It ends where you last caught up.
+      </p>
       {stories?.enabled ? (
         <div className="mt-4 overflow-hidden rounded-xl border border-line bg-raised">
           <StoriesStrip members={members} />
         </div>
       ) : null}
+      {mayPost ? (
+        <div className="mt-4">
+          <PostComposer workspaceId={workspaceId} draft={draft} />
+        </div>
+      ) : null}
+
+      <FeedTabs tab={tab} onChange={setTab} waiting={mayPost && !checkedIn} />
+      <section id={panelId(tab)} role="tabpanel" aria-labelledby={tabId(tab)}>
+        {tab === 'highlights' ? (
+          <Highlights
+            workspaceId={workspaceId}
+            me={myId}
+            people={people}
+            mayPost={mayPost}
+            mayReadWork={mayReadWork}
+            checkedIn={checkedIn}
+            onWellDone={(words) => {
+              // The composer sits above the tabs: the well done waits there.
+              setDraft({ words, at: Date.now() });
+              setTab('everyone');
+            }}
+          />
+        ) : (
+          <FeedList
+            key={tab}
+            workspaceId={workspaceId}
+            scope={tab}
+            me={myId}
+            members={members}
+            people={people}
+            onCheckedIn={setListed}
+          />
+        )}
+      </section>
+    </div>
+  );
+}
+
+/**
+ * Highlights: this week's check-in, the day's Different shots, the week's
+ * celebrations and how the projects are doing, each for those who may use
+ * it, gathered here rather than stacked above every post.
+ */
+function Highlights({
+  workspaceId,
+  me,
+  people,
+  mayPost,
+  mayReadWork,
+  checkedIn,
+  onWellDone,
+}: {
+  workspaceId: string;
+  me: string | null;
+  people: ReadonlyMap<string, Member>;
+  mayPost: boolean;
+  mayReadWork: boolean;
+  checkedIn: boolean;
+  onWellDone: (words: string) => void;
+}) {
+  return (
+    <div className="mt-2">
       {mayPost && !checkedIn ? <CheckIn workspaceId={workspaceId} /> : null}
       <ShotsStack people={people} />
       {mayReadWork ? (
@@ -180,16 +253,11 @@ function FeedTop({
           workspaceId={workspaceId}
           me={me}
           people={people}
-          onWellDone={mayPost ? (words) => setDraft({ words, at: Date.now() }) : undefined}
+          onWellDone={mayPost ? onWellDone : undefined}
         />
       ) : null}
       {mayReadWork ? <ProjectHealthCards workspaceId={workspaceId} /> : null}
-      {mayPost ? (
-        <div className="mt-4">
-          <PostComposer workspaceId={workspaceId} draft={draft} />
-        </div>
-      ) : null}
-    </>
+    </div>
   );
 }
 

@@ -11,6 +11,7 @@ import { BASE_URL, call } from '../../lib/api.ts';
 import { describeEvent } from '../../lib/audit-events.ts';
 import { formatDateTime } from '../../lib/i18n/format.ts';
 import { channelHref, issueHref } from '../../lib/links.ts';
+import { FollowButton, MuteButton } from '../feed/follow-button.tsx';
 import { StoryRing } from '../stories/story-ring.tsx';
 import { ProfileEditor } from './profile-editor.tsx';
 import { type ProfileData, profileKey } from './profile-model.ts';
@@ -55,6 +56,17 @@ export function ProfileView({ workspaceId, userId }: { workspaceId: string; user
           >
             Edit profile
           </button>
+        ) : null}
+        {!mine && me.data ? (
+          <div className="mb-1 flex gap-2">
+            <FollowButton
+              workspaceId={workspaceId}
+              userId={person.userId}
+              name={person.name}
+              size="md"
+            />
+            <MuteButton workspaceId={workspaceId} userId={person.userId} name={person.name} />
+          </div>
         ) : null}
       </div>
 

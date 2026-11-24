@@ -16,6 +16,9 @@ import { contract, timestamp } from './contract.ts';
  */
 
 const postParams = workspaceParams.extend({ postId: z.string() });
+const personParams = workspaceParams.extend({ userId: z.string() });
+
+const FEED_SCOPES = ['everyone', 'following'] as const;
 export const reaction = z.enum(POST_REACTIONS);
 
 const image = z.object({ url: z.string(), width: z.number().int(), height: z.number().int() });
@@ -73,7 +76,11 @@ export const feedContracts = {
     summary:
       'The feed, newest first: posts and pictures from rooms, a page at a time; `seenAt` is where you last caught up.',
     params: workspaceParams,
-    query: z.object({ before: z.string().max(80).optional() }),
+    query: z.object({
+      before: z.string().max(80).optional(),
+      /** Everyone, less anyone you muted; or only the people you follow, and you. */
+      scope: z.enum(FEED_SCOPES).default('everyone'),
+    }),
     response: z.object({
       items: z.array(feedItem),
       seenAt: timestamp.nullable(),
@@ -155,6 +162,45 @@ export const feedContracts = {
     path: '/workspaces/:workspaceId/post-comments/:commentId',
     summary: 'Take down your comment, or as an admin, any.',
     params: workspaceParams.extend({ commentId: z.string() }),
+    status: 204,
+    response: null,
+  }),
+  'follows.list': contract({
+    method: 'GET',
+    path: '/workspaces/:workspaceId/follows',
+    summary: 'Whom you follow and whom you muted here: yours alone to see.',
+    params: workspaceParams,
+    response: z.object({ following: z.array(uuid), muted: z.array(uuid) }),
+  }),
+  'follows.follow': contract({
+    method: 'PUT',
+    path: '/workspaces/:workspaceId/follows/:userId',
+    summary: 'Follow someone here, so the Following feed shows their posts.',
+    params: personParams,
+    status: 204,
+    response: null,
+  }),
+  'follows.unfollow': contract({
+    method: 'DELETE',
+    path: '/workspaces/:workspaceId/follows/:userId',
+    summary: 'Stop following someone here.',
+    params: personParams,
+    status: 204,
+    response: null,
+  }),
+  'follows.mute': contract({
+    method: 'PUT',
+    path: '/workspaces/:workspaceId/mutes/:userId',
+    summary: 'Hide someone’s posts from your Everyone feed. Nobody is told.',
+    params: personParams,
+    status: 204,
+    response: null,
+  }),
+  'follows.unmute': contract({
+    method: 'DELETE',
+    path: '/workspaces/:workspaceId/mutes/:userId',
+    summary: 'Show someone’s posts on your Everyone feed again.',
+    params: personParams,
     status: 204,
     response: null,
   }),
