@@ -95,7 +95,7 @@ export function SearchBox({
           setOpen(false);
           router.push(searchHref(workspaceId, input));
         }}
-        placeholder="Search issues, docs and comments…"
+        placeholder="Search issues, docs, chat and spaces…"
         aria-label="Search this workspace"
         className={`w-full text-ellipsis rounded-md border border-line bg-surface py-2 pl-9 ${trailing ? 'pr-16' : 'pr-3'} text-sm text-content outline-none transition placeholder:text-faint focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60 [&::-webkit-search-cancel-button]:hidden`}
       />

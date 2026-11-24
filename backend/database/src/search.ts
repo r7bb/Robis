@@ -196,8 +196,10 @@ export async function searchWorkspace(
 
     union all
 
+    -- The excerpt is the body where it matches, else the title, so the
+    -- words found are always the ones marked.
     select 'thread', t.id::text, t.title,
-           coalesce(nullif(t.body, ''), t.title),
+           case when to_tsvector('english', t.body) @@ q.query then t.body else t.title end,
            ts_rank(t.search_vector, q.query) * 0.8,
            null, null, null, t.id::text
       from space_threads t, q
@@ -222,7 +224,8 @@ export async function searchWorkspace(
 
     -- A meeting called off is not an answer to anything.
     select 'meeting', mt.id::text, mt.title,
-           coalesce(nullif(mt.agenda, ''), mt.title),
+           case when to_tsvector('english', coalesce(mt.agenda, '')) @@ q.query
+                then mt.agenda else mt.title end,
            ts_rank(mt.search_vector, q.query) * 0.7,
            null, null, null, null
       from meetings mt, q
