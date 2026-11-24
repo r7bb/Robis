@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'The demo board arrives with a cycle planned',
+    brief:
+      'A new demo workspace plans its unfinished work in a two-week cycle from the day it is made, so the board opens with the cycle’s progress and days left.',
+    summary:
+      'Making a demo workspace now also plans a cycle, Relaunch, part one, of fourteen days from that day on the maker’s own calendar, with every issue not yet done in it. The board then opens with the cycle bar showing nothing done of the planned work and the days left, and Only this cycle to narrow to it.',
+    checked:
+      'The demo test now finds the cycle with the unfinished issues in it and none done. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Cycles: plan a board’s work in stretches of days',
     brief:
       'A board can plan cycles, such as two weeks at a time; an issue is planned for one, the board shows the current cycle’s progress and days left, and Only this cycle narrows the board to it.',

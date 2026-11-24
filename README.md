@@ -204,6 +204,9 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **The demo board arrives with a cycle planned.** A new demo workspace
+  plans its unfinished work in a two-week cycle from the day it is made, so
+  the board opens with the cycle’s progress and days left.
 - **Cycles: plan a board’s work in stretches of days.** A board can plan
   cycles, such as two weeks at a time; an issue is planned for one, the
   board shows the current cycle’s progress and days left, and Only this
@@ -212,10 +215,6 @@ no write lost and nothing done twice.
   with the team’s update on its board, one issue waiting on another, a
   weekly repeat and last week’s meeting notes with follow-ups; and the
   demo’s people react to chat and write the odd project update.
-- **Sapha answers: who has an issue, and how it stands.** Ask the palette
-  “who has REL-4?”, “status of REL-4” or “how’s REL-4 going?” and Sapha
-  answers there: its status, who has it, when it is due, its priority, and
-  what it waits on.
 
 <!-- latest:end -->
 

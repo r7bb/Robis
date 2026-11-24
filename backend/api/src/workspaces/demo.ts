@@ -1,9 +1,11 @@
 import {
   type AuditActor,
   channels,
+  cycles,
   type Database,
   documents,
   issueBlocks,
+  issues,
   meetings,
   projects,
   projectUpdates,
@@ -14,8 +16,15 @@ import {
   workspaceMembers,
   workspaces,
 } from '@robis/database';
-import { canonicalZone, DEMO_WORKSPACE, demoMeetingStart, nextRunAfter } from '@robis/shared';
-import { and, asc, eq, sql } from 'drizzle-orm';
+import {
+  addDays,
+  canonicalZone,
+  DEMO_WORKSPACE,
+  demoMeetingStart,
+  nextRunAfter,
+  wallOf,
+} from '@robis/shared';
+import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import { insertMeeting } from '../meetings/create.ts';
 import { fileIssue } from '../routes/issues.ts';
 import { insertProject } from '../routes/projects.ts';
@@ -71,6 +80,37 @@ async function fillBoard(tx: Tx, actor: AuditActor, owner: Owner, workspaceId: s
   return { projectId: project.id, ids };
 }
 
+/** Two weeks from today on the maker's clock, with the work not yet done in it. */
+async function planDemoCycle(
+  tx: Tx,
+  owner: Owner,
+  workspaceId: string,
+  board: Awaited<ReturnType<typeof fillBoard>>,
+  zone: string,
+  now: Date,
+) {
+  const today = wallOf(now, zone);
+  const day = (wall: { year: number; month: number; day: number }) =>
+    `${wall.year}-${String(wall.month).padStart(2, '0')}-${String(wall.day).padStart(2, '0')}`;
+  const [cycle] = await tx
+    .insert(cycles)
+    .values({
+      workspaceId,
+      projectId: board.projectId,
+      name: DEMO_WORKSPACE.cycle.name,
+      startsOn: day(today),
+      endsOn: day(addDays(today, DEMO_WORKSPACE.cycle.days - 1)),
+      createdBy: owner.id,
+    })
+    .returning({ id: cycles.id });
+  const planned = DEMO_WORKSPACE.issues
+    .filter((issue) => issue.status !== 'DONE')
+    .flatMap((issue) => board.ids.get(issue.title) ?? []);
+  if (planned.length > 0) {
+    await tx.update(issues).set({ cycleId: cycle!.id }).where(inArray(issues.id, planned));
+  }
+}
+
 /**
  * The board as a team would have it after a while: its own word on how it
  * is going, one issue waiting on another, and a weekly check filed for it.
@@ -114,12 +154,13 @@ async function fillBoardExtras(
     nextRunAt: nextRunAfter(schedule, now),
     createdBy: owner.id,
   });
+  await planDemoCycle(tx, owner, workspaceId, board, zone, now);
   await recordAudit(tx, actor, {
     workspaceId,
     entityType: 'project',
     entityId: board.projectId,
     eventType: 'project.demo_filled',
-    payload: { update: true, blocks: blocks.length, repeats: 1 },
+    payload: { update: true, blocks: blocks.length, repeats: 1, cycles: 1 },
   });
 }
 

@@ -97,6 +97,14 @@ describe('the demo workspace', () => {
       }),
     ]);
 
+    const planned = (
+      await request(`${base}/projects/${made.projectId}/cycles`, { actor: owner })
+    ).json();
+    const notDone = DEMO_WORKSPACE.issues.filter((issue) => issue.status !== 'DONE').length;
+    expect(planned.cycles).toEqual([
+      expect.objectContaining({ name: DEMO_WORKSPACE.cycle.name, total: notDone, done: 0 }),
+    ]);
+
     const meetings = (await request(`${base}/meetings`, { actor: owner })).json();
     const notes = (
       await request(`${base}/meetings/${meetings.meetings[0].id}/notes`, { actor: owner })

@@ -72,6 +72,8 @@ This is a demo document. Edit it freely, or open it in a second window and type 
       blocker: 'Set up redirects from the old addresses',
     },
   ],
+  /** The board's work planned in a two-week cycle from the day the demo is made. */
+  cycle: { name: 'Relaunch, part one', days: 14 },
   /** An issue filed every week, as a team would. */
   repeat: {
     title: 'Weekly check of the site on small phones',
