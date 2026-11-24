@@ -5,6 +5,7 @@ import * as schema from './schema.ts';
 export * from './account-trail.ts';
 export * from './agent-changes.ts';
 export * from './agent-runs.ts';
+export * from './assist-jobs.ts';
 export * from './audit.ts';
 export * from './audit-checkpoints.ts';
 export * from './audit-keys.ts';

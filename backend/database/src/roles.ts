@@ -225,6 +225,8 @@ export const GATEWAY_GRANTS: TableGrants = {
  */
 export const WORKER_GRANTS: TableGrants = {
   jobs: ['select', 'insert', 'update', 'delete'],
+  // Assistance (D3): read what to ask, write back the answer and clear the ask.
+  assist_requests: ['select', 'update'],
   users: ['select'],
   // As the gateway's: no mail or push from a workspace that requires
   // two-factor to someone without it (C4).

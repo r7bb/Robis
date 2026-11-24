@@ -5,7 +5,7 @@
  * The seeded teammates (not the owner, whose account is yours) sign in
  * with the demo password and stay present over live sockets, so they show
  * as here. Two agents join them: Scout, the workspace's triage agent, and
- * Saphi, its Different shots agent. Every so often one of them does
+ * Sapha, its Different shots agent. Every so often one of them does
  * something a teammate would: says a line in a channel, posts to the Feed,
  * reacts or comments, comments on an issue, moves one along, or files one.
  * The words are written lines picked at random (scripts/demo/content.ts);
@@ -43,7 +43,7 @@ const PEOPLE = [
 /** `formerly`: names it went by, so a renamed agent is found and renamed, not made twice. */
 const AGENTS: { name: string; triage: boolean; shots: boolean; formerly?: string[] }[] = [
   { name: 'Scout', triage: true, shots: false },
-  { name: 'Saphi', triage: false, shots: true, formerly: ['Muse', 'RoRo', 'Wren'] },
+  { name: 'Sapha', triage: false, shots: true, formerly: ['Muse', 'RoRo', 'Wren', 'Saphi'] },
 ];
 
 const log = (line: string) =>

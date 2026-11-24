@@ -132,6 +132,9 @@ services:
       AUDIT_HMAC_KEYS: stack:cm9iaXMtc3RhY2stYXVkaXQta2V5LW5vdC1hLXNlY3JldA==
       ML_SERVICE_URL: http://ml:8000
       ML_SERVICE_TOKEN: robis-stack-ml-token
+      # Assistance (D3), off without a key: the same one the worker uses.
+      SUMMARY_API_KEY: ${SUMMARY_API_KEY:-}
+      SUMMARY_MODEL: ${SUMMARY_MODEL:-}
       # Web push (C3), only when the shell running compose has keys (made
       # with `bun run push:keys`); empty leaves it off. Never written here.
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}

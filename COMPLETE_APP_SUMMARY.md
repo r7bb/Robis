@@ -14,7 +14,7 @@ Written to be checkable. Every row names a file you can open.
 | --- | --- |
 | Services | 5 (web, API, realtime gateway, worker, MCP server for agents) plus an optional ML service |
 | Database tables | 18 |
-| HTTP endpoints | 212 |
+| HTTP endpoints | 218 |
 | Tests | Counted in [docs/ROADMAP.md](docs/ROADMAP.md), the one place they are kept |
 | Screenshots | 35, all captured from the running app |
 | Measured throughput | ~3,600 req/s, zero errors |
@@ -90,7 +90,8 @@ second "consumed" state to get wrong.
 | A picture a day from public image libraries (NASA, Wikimedia Commons, Openverse): an agent posts an openly licensed, credited picture, sometimes as a meme drawn by Robis; HTTPS to named hosts only, nothing sent | `backend/worker/src/pictures/` |
 | A weekly check-in on the Feed: the answer is a post and your profile's Working on line; optional, no streaks, nobody told who has not answered | `backend/api/src/routes/posts.ts`, `frontend/features/feed/check-in.tsx` |
 | Different shots: a chosen agent posts an idea a day as a story with a Try it that opens a place in Robis, scripted from a written list, through the MCP tool post_shot with a one-run token | `backend/worker/src/shots.ts`, `backend/mcp/src/tools.ts` |
-| Today: your overdue, due-today and this-week issues, today's meetings, what is in progress, mentions waiting and a few to pick up next, in one calm page first in the sidebar | `backend/api/src/routes/today.ts`, `frontend/features/today/` |
+| Your day at the top of the feed: what is overdue and due today for you in this workspace, and how many more this week; the home shows the same across workspaces | `backend/api/src/routes/today.ts`, `frontend/features/feed/your-day.tsx` |
+| Assistance, off by default: Summarise a thread or channel with each point linked to its sources, Draft agenda from the issues a meeting names, Make an issue from a chat message; needs the server's provider key and an admin's switch; marked as generated; saved only by a person's button; each ask a short-lived request the worker answers and clears | `backend/api/src/routes/assist.ts`, `backend/worker/src/assist-job.ts`, `frontend/features/assist/` |
 | Who is where: faces beside each board and document in the sidebar for whoever has it open, and agents able to edit documents live from a server with their token (never from a browser) | `frontend/features/workspace/here-stack.tsx`, `backend/realtime/src/gateway.ts` |
 | A feed in two tabs: Following (only the people and spaces you follow, and you, newest first) and Everyone (the workspace less anyone you muted, with the check-in, Different shots, celebrations and project health above the posts), under a Here now strip of who is online, on which board, and the agents at work; follow from a post, a profile, the People page or an empty Following tab; follow a space and its new threads come to Following (whoever starts a space follows it); following and muting are yours alone, nobody is told | `backend/api/src/routes/follows.ts`, `frontend/features/feed/feed-tabs.tsx`, `frontend/features/feed/follow-button.tsx` |
 | A feed that ends: posts of words or photos with five reactions (Celebrate, Helpful, Support, Thanks, Insightful; faces, not totals) and comments, pictures from rooms mixed in, newest first a page at a time, ending at "You're all caught up" with older posts behind Show earlier | `backend/api/src/routes/feed.ts`, `backend/api/src/routes/posts.ts`, `frontend/features/feed/` |

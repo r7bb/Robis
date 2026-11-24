@@ -1,5 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
+import { ISSUE_PRIORITIES } from '@robis/shared';
 import { log } from '@robis/telemetry/log';
+import { z } from 'zod';
+import { type Assistant, keepAgenda, keepDraft, keepPoints, PROMPTS, quoted } from './assist.ts';
 import type { Summarizer } from './triage.ts';
 
 /**
@@ -91,5 +95,103 @@ export function providerSummarizer(options: {
       }
       return null;
     }
+  };
+}
+
+/**
+ * Assistance (D3) through the same provider: each call asks for a fixed
+ * shape (structured output), so what comes back is data to check, never
+ * free text to trust, and `assist.ts` checks it. A refusal, an unparsable
+ * answer or any failure is no answer: the page says so and nothing changes.
+ */
+const ASSIST_MAX_TOKENS = 4096;
+const MAX_SNIPPET_CHARS = 1_000;
+const MAX_SNIPPETS = 150;
+
+const SummaryShape = z.object({
+  points: z.array(z.object({ text: z.string(), sources: z.array(z.string()) })),
+});
+const AgendaShape = z.object({
+  items: z.array(z.object({ text: z.string(), issueIds: z.array(z.string()) })),
+});
+const DraftShape = z.object({ title: z.string(), priority: z.enum(ISSUE_PRIORITIES) });
+
+export function providerAssistant(options: {
+  apiKey: string;
+  model?: string;
+  /** For tests: a stand-in with the same `messages.parse`. */
+  client?: MessagesClient;
+}): Assistant {
+  const client: MessagesClient =
+    options.client ?? new Anthropic({ apiKey: options.apiKey, timeout: 30_000, maxRetries: 1 });
+  const model = options.model ?? DEFAULT_SUMMARY_MODEL;
+
+  async function ask<T>(
+    what: string,
+    system: string,
+    content: string,
+    shape: z.ZodType<T>,
+  ): Promise<T | null> {
+    try {
+      const response = await client.messages.parse({
+        model,
+        max_tokens: ASSIST_MAX_TOKENS,
+        output_config: { effort: 'low', format: zodOutputFormat(shape) },
+        system,
+        messages: [{ role: 'user', content }],
+      });
+      if (response.stop_reason === 'refusal') return null;
+      return (response.parsed_output as T | null) ?? null;
+    } catch (error) {
+      if (error instanceof Anthropic.APIError) {
+        log.warn(`assist ${what}: the provider answered ${error.status}; nothing made`);
+      } else {
+        log.warn(`assist ${what}: ${error instanceof Error ? error.name : 'unknown error'}`);
+      }
+      return null;
+    }
+  }
+
+  return {
+    async summarise(subject, snippets) {
+      const given = snippets.slice(-MAX_SNIPPETS);
+      const body = given
+        .map(
+          (s) =>
+            `<message id="${quoted(s.id, 64)}" author="${quoted(s.author, 80)}">${quoted(s.text, MAX_SNIPPET_CHARS)}</message>`,
+        )
+        .join('\n');
+      const answer = await ask(
+        'summary',
+        PROMPTS.summarise,
+        `<conversation subject="${quoted(subject, 200)}">\n${body}\n</conversation>`,
+        SummaryShape,
+      );
+      return answer ? keepPoints(answer.points, new Set(given.map((s) => s.id))) : null;
+    },
+    async agenda(meeting, issues) {
+      const body = issues
+        .map(
+          (i) =>
+            `<issue id="${i.id}" key="${quoted(i.key, 20)}" status="${i.status}"><title>${quoted(i.title, 300)}</title><description>${quoted(i.description ?? '', MAX_SNIPPET_CHARS)}</description></issue>`,
+        )
+        .join('\n');
+      const answer = await ask(
+        'agenda',
+        PROMPTS.agenda,
+        `<meeting title="${quoted(meeting, 200)}">\n${body}\n</meeting>`,
+        AgendaShape,
+      );
+      return answer ? keepAgenda(answer.items, new Set(issues.map((i) => i.id))) : null;
+    },
+    async draftIssue(message) {
+      const answer = await ask(
+        'issue',
+        PROMPTS.draftIssue,
+        `<message>${quoted(message, MAX_SNIPPET_CHARS * 2)}</message>`,
+        DraftShape,
+      );
+      return answer ? keepDraft(answer) : null;
+    },
   };
 }

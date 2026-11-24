@@ -19,7 +19,7 @@ way.
 `{ "error": "<code>", "message": "<words for people>" }`. A stranger to a
 workspace gets 404, never 403, so its existence is not given away.
 
-201 routes.
+207 routes.
 
 ## activity
 
@@ -97,6 +97,54 @@ Undo an agent's change: put a field back, or remove a comment it wrote; refused 
 
 - Answers: 200
 - Name: `agents.undoChange`
+
+## assist
+
+### `GET /workspaces/{workspaceId}/assist`
+
+Whether assistance is on here: turned on by an admin, and given a key by whoever runs the server.
+
+- Answers: 200
+- Name: `assist.status`
+
+### `PUT /workspaces/{workspaceId}/assist`
+
+Turn assistance on or off for this workspace (admins).
+
+- Body: `enabled` (required)
+- Answers: 200
+- Name: `assist.configure`
+
+### `POST /workspaces/{workspaceId}/assist/agenda`
+
+A draft agenda for a meeting from the issues its title and agenda name by key, for its organiser to use or not.
+
+- Body: `meetingId` (required)
+- Answers: 201
+- Name: `assist.agenda`
+
+### `POST /workspaces/{workspaceId}/assist/issue`
+
+A suggested title and priority for turning a chat message into an issue.
+
+- Body: `messageId` (required)
+- Answers: 201
+- Name: `assist.issue`
+
+### `GET /workspaces/{workspaceId}/assist/requests/{requestId}`
+
+An ask’s answer once the worker has it: pending, done with the checked result, or failed. Only whoever asked can read it.
+
+- Answers: 200
+- Name: `assist.result`
+
+### `POST /workspaces/{workspaceId}/assist/summary`
+
+A summary of an issue’s comments or a channel’s recent messages, each point linked to what it came from.
+
+- Body: `kind` (required), `id` (required)
+- Answers: 201
+- Name: `assist.summary`
 
 ## attachments
 

@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./assist": "./src/assist.ts",
+    "./assist-job": "./src/assist-job.ts",
+    "./assist-provider": "./src/summary-provider.ts",
     "./audit-stream": "./src/audit-stream.ts",
     "./handlers": "./src/handlers.ts",
     "./heartbeat": "./src/heartbeat.ts",

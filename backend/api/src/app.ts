@@ -26,6 +26,7 @@ import { accountDeletionRoutes } from './routes/account-deletion.ts';
 import { accountEventRoutes } from './routes/account-events.ts';
 import { agentUndoRoutes } from './routes/agent-undo.ts';
 import { agentRoutes } from './routes/agents.ts';
+import { assistRoutes } from './routes/assist.ts';
 import { attachmentRoutes } from './routes/attachments.ts';
 import { auditRoutes } from './routes/audit.ts';
 import { authRoutes } from './routes/auth.ts';
@@ -353,6 +354,7 @@ export function buildApp({
   app.register(spaceRoutes, { db });
   app.register(followRoutes, { db });
   app.register(todayRoutes, { db });
+  app.register(assistRoutes, { db, keyed: env.SUMMARY_API_KEY !== '' });
   app.register(insightRoutes, { db, operators: operatorsFrom(env.HEALTH_OPERATORS) });
   app.register(calendarRoutes, { db, webOrigin: env.WEB_ORIGIN });
   app.register(calendarImportRoutes, { db });

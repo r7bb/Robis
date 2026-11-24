@@ -24,6 +24,7 @@ import { PostComposer } from './post-composer.tsx';
 import { ProjectHealthCards } from './project-health.tsx';
 import { ShotsStack } from './shots-stack.tsx';
 import { ThreadCard } from './thread-card.tsx';
+import { YourDay } from './your-day.tsx';
 
 /**
  * The feed (Phase 2c): the team's stories along the top, then what has
@@ -214,7 +215,8 @@ export function FeedView({ workspaceId }: { workspaceId: string }) {
 }
 
 /**
- * What is happening, above the posts on Everyone: this week's check-in, the
+ * What is happening, above the posts on Everyone: your day (what is overdue
+ * and due today), this week's check-in, the
  * day's Different shots, the week's celebrations and how the projects are
  * doing, each for those who may use it.
  */
@@ -237,6 +239,7 @@ function Highlights({
 }) {
   return (
     <div className="mt-2">
+      {mayReadWork ? <YourDay workspaceId={workspaceId} /> : null}
       {mayPost && !checkedIn ? <CheckIn workspaceId={workspaceId} /> : null}
       <ShotsStack people={people} />
       {mayReadWork ? (

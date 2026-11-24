@@ -1026,7 +1026,7 @@ describe('an agent on the socket', () => {
     const made = await request(`/workspaces/${workspaceId}/agents`, {
       method: 'POST',
       actor: owner,
-      payload: { name: 'Saphi', role: 'MEMBER' },
+      payload: { name: 'Sapha', role: 'MEMBER' },
     });
     if (made.statusCode !== 201) throw new Error(`agent: ${made.statusCode} ${made.body}`);
     const { agent, token } = made.json();

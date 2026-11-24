@@ -6,7 +6,6 @@ import type { MessageKey } from './en.ts';
  * anyone relies on it.
  */
 export const es: Record<MessageKey, string> = {
-  'nav.today': 'Hoy',
   'nav.feed': 'Novedades',
   'nav.spaces': 'Espacios',
   'nav.meetings': 'Reuniones',

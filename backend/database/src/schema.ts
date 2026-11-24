@@ -510,6 +510,13 @@ export const workspaces = pgTable(
      */
     storiesEnabled: boolean('stories_enabled').notNull().default(true),
     /**
+     * Assistance (D3): summaries, draft agendas and issue drafts from the
+     * optional language-model provider. Off until an admin turns it on, and
+     * it needs the server's key as well; until both, nothing written here
+     * is sent anywhere.
+     */
+    assistEnabled: boolean('assist_enabled').notNull().default(false),
+    /**
      * A demo workspace (C5): made with example work already in it, to look
      * around and throw away. Labelled as one wherever it is shown; otherwise
      * an ordinary workspace, deleted the ordinary way.
@@ -1006,6 +1013,34 @@ export const feedMutes = pgTable(
     primaryKey({ columns: [t.workspaceId, t.userId, t.mutedId] }),
     check('feed_mutes_not_self', sql`${t.userId} <> ${t.mutedId}`),
   ],
+);
+
+/**
+ * One ask for assistance (D3), kept only while it is answered: the API
+ * writes what to ask, the worker (the only part that talks to the
+ * language-model provider) asks it and writes back the checked answer, and
+ * clears what was asked. Rows older than a day are deleted.
+ */
+export const assistRequests = pgTable(
+  'assist_requests',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    kind: text('kind', { enum: ['summary', 'agenda', 'issue'] }).notNull(),
+    /** What to ask: emptied once answered. */
+    input: jsonb('input'),
+    status: text('status', { enum: ['pending', 'done', 'failed'] })
+      .notNull()
+      .default('pending'),
+    result: jsonb('result'),
+    createdAt: createdAt(),
+  },
+  (t) => [index('assist_requests_user_created_idx').on(t.userId, t.createdAt)],
 );
 
 /** A space: a topic within the workspace, where threads are started. */

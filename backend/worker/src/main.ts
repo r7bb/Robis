@@ -1,4 +1,5 @@
 import {
+  ASSIST_JOB,
   AUTOMATION_JOB,
   createDatabase,
   type EnqueueOptions,
@@ -15,6 +16,7 @@ import { TRIAGE_JOB } from '@robis/shared';
 import { loadConfig, portFrom } from '@robis/shared/config';
 import { startTracingFromEnv } from '@robis/telemetry';
 import { log, setLogService } from '@robis/telemetry/log';
+import { assistHandler } from './assist-job.ts';
 import { auditStreamConfig, httpSink, streamAuditEvents } from './audit-stream.ts';
 import { handlers } from './handlers.ts';
 import { DEFAULT_HEARTBEAT_FILE, heartbeat } from './heartbeat.ts';
@@ -25,7 +27,7 @@ import { checkVapidKeys, pushHandlers, vapidFromEnv } from './push.ts';
 import { Runner } from './runner.ts';
 import { SHOTS_INTERVAL_MS, SHOTS_JOB, shotsHandler } from './shots.ts';
 import { storagePurgeHandler, workerStorage } from './storage-purge.ts';
-import { providerSummarizer } from './summary-provider.ts';
+import { providerAssistant, providerSummarizer } from './summary-provider.ts';
 import { triageHandler } from './triage.ts';
 
 // Before anything else, and failing closed: see `loadConfig`. The origin is
@@ -141,6 +143,13 @@ const summaryKey = process.env.SUMMARY_API_KEY;
 const summarize = summaryKey
   ? providerSummarizer({ apiKey: summaryKey, model: process.env.SUMMARY_MODEL || undefined })
   : undefined;
+// Assistance (D3): asks the API queued, answered here, the one place that
+// talks to the provider; without a key each ask fails at once.
+handlers[ASSIST_JOB] = assistHandler(
+  summaryKey
+    ? providerAssistant({ apiKey: summaryKey, model: process.env.SUMMARY_MODEL || undefined })
+    : undefined,
+);
 if (mcpUrl) {
   handlers[TRIAGE_JOB] = triageHandler({ mcpUrl, summarize });
   // Different shots (Phase 2c): an idea a day from each workspace's chosen

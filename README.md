@@ -204,6 +204,11 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Assistance you can turn on: summaries, draft agendas and issues from
+  chat.** With a provider key on the server and an admin switching it on, a
+  long thread or busy channel gets a Summarise button, a meeting a Draft
+  agenda, and a chat message Make an issue; all marked as generated and
+  saved nowhere until someone uses them.
 - **Today, faces on every board and document, and agents writing beside
   you.** A Today page gathers what is yours to do; the sidebar shows who has
   each board and document open; and an agent can now edit a document live
@@ -212,9 +217,6 @@ no write lost and nothing done twice.
   feed opens on who is here now and the agents at work; Everyone again shows
   the check-in, the day’s shots, celebrations and project health above the
   posts; and in the demo, two teammates write in the same document at once.
-- **Follow a space, and its new threads come to Following.** Follow a space
-  from its page and every new question, idea or tip there shows in your
-  Following tab as one line that opens the thread.
 
 <!-- latest:end -->
 

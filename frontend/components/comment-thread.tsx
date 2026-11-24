@@ -3,6 +3,7 @@
 import { contracts, splitMentions } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type ClipboardEvent, type FormEvent, useEffect, useState } from 'react';
+import { Summarise } from '../features/assist/summarise.tsx';
 import { type Attachment, uploadable } from '../features/issues/attachments.tsx';
 import { BASE_URL, type CommentMention, call } from '../lib/api.ts';
 import { formatDateTime } from '../lib/i18n/format.ts';
@@ -13,6 +14,9 @@ import { DeleteButton } from './delete-button.tsx';
 import { EmptyView } from './empty-view.tsx';
 import { Avatar } from './ui/avatar.tsx';
 import { AgentBadge } from './ui/primitives.tsx';
+
+/** A thread this long is worth a summary (D3), where assistance is on. */
+const SUMMARY_FROM = 3;
 
 /** Comments have no title, so the dialog quotes the opening of the body. */
 function preview(body: string): string {
@@ -155,13 +159,29 @@ export function CommentThread({
 
   return (
     <section className="mt-12">
-      <h2 className="text-sm font-medium uppercase tracking-wide text-faint">
-        Comments{items.length > 0 && <span className="ml-2 text-faint">{items.length}</span>}
-      </h2>
+      <div className="flex items-center gap-3">
+        <h2 className="text-sm font-medium uppercase tracking-wide text-faint">
+          Comments{items.length > 0 && <span className="ml-2 text-faint">{items.length}</span>}
+        </h2>
+        {items.length >= SUMMARY_FROM ? (
+          <span className="ml-auto">
+            <Summarise
+              workspaceId={workspaceId}
+              kind="issue"
+              id={issueId}
+              sourceHref={(source) => (source === issueId ? '#' : `#comment-${source}`)}
+            />
+          </span>
+        ) : null}
+      </div>
 
       <ul className="mt-3 space-y-3">
         {items.map((comment) => (
-          <li key={comment.id} className="rounded-lg border border-line bg-raised p-4">
+          <li
+            key={comment.id}
+            id={`comment-${comment.id}`}
+            className="scroll-mt-16 rounded-lg border border-line bg-raised p-4"
+          >
             {/* Centred, not on the baseline: the Agent badge's own box moved
                 an agent's line, and the time with it, out of step with the rest. */}
             <div className="flex items-center justify-between gap-3">

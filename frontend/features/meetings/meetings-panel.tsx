@@ -6,6 +6,7 @@ import { EmptyView } from '../../components/empty-view.tsx';
 import { Button, InlineError, Pill } from '../../components/ui/primitives.tsx';
 import { ApiError, type Member } from '../../lib/api.ts';
 import { formatDay, formatTime, formatUntil } from '../../lib/time.ts';
+import { DraftAgenda } from '../assist/draft-agenda.tsx';
 import { ImportCalendar } from './import-calendar.tsx';
 import { ScheduleDialog } from './schedule-dialog.tsx';
 import type { Meeting, MeetingAnswer } from './types.ts';
@@ -25,12 +26,14 @@ const RESPONSES: { value: MeetingAnswer; label: string }[] = [
 ];
 
 function MeetingCard({
+  workspaceId,
   meeting,
   currentUserId,
   canCancel,
   onRespond,
   onCancel,
 }: {
+  workspaceId?: string;
   meeting: Meeting;
   currentUserId: string | null;
   canCancel: boolean;
@@ -67,6 +70,9 @@ function MeetingCard({
         {meeting.organizerName ? `${meeting.organizerName} · ` : ''}
         {accepted} of {meeting.attendees.length} going
       </p>
+      {canCancel && workspaceId ? (
+        <DraftAgenda workspaceId={workspaceId} meetingId={meeting.id} />
+      ) : null}
 
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
         {meeting.joinUrl ? (
@@ -167,6 +173,7 @@ export function MeetingsPanel({
           {meetings.map((meeting) => (
             <li key={meeting.id}>
               <MeetingCard
+                workspaceId={workspaceId}
                 meeting={meeting}
                 currentUserId={currentUserId}
                 canCancel={

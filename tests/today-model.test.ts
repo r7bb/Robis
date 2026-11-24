@@ -1,8 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
   addDaysTo,
-  dayLine,
-  greeting,
   groupToday,
   type MyIssue,
   NEXT_SHOWN,
@@ -44,19 +42,7 @@ describe('the day', () => {
     expect(groups.next[0]?.key).toBe('A-4');
   });
 
-  test('says the day in words, and something kind when there is nothing', () => {
-    const empty = groupToday([], '2026-11-24');
-    expect(dayLine(empty, 0)).toBe('Nothing due today. A good day to get ahead.');
-    const busy = groupToday(
-      [issue('A-1', { dueOn: '2026-11-01' }), issue('A-2', { dueOn: '2026-11-24' })],
-      '2026-11-24',
-    );
-    expect(dayLine(busy, 2)).toBe('1 overdue, 1 due today, 2 meetings');
-    expect([greeting(8), greeting(13), greeting(20)]).toEqual([
-      'Good morning',
-      'Good afternoon',
-      'Good evening',
-    ]);
+  test('counts the week across a year end', () => {
     expect(addDaysTo('2026-12-28', 7)).toBe('2027-01-04');
   });
 });

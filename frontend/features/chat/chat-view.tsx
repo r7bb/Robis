@@ -4,6 +4,7 @@ import type { Avatar as AvatarRef } from '@robis/shared';
 import { can, type Role } from '@robis/shared';
 import { ApiError } from '../../lib/api.ts';
 import { useOnline } from '../../lib/use-online.ts';
+import { Summarise } from '../assist/summarise.tsx';
 import type { ChatDraft } from '../workspace/chat-controls.tsx';
 import { Composer } from './composer.tsx';
 import { MessageList } from './message-list.tsx';
@@ -15,6 +16,9 @@ import {
   useSendMessage,
   useSendPicture,
 } from './use-chat.ts';
+
+/** A channel this busy is worth a summary (D3), where assistance is on. */
+const CHANNEL_SUMMARY_FROM = 10;
 
 /** Turn a thrown value into something worth showing a person. */
 function messageFor(error: unknown): string | null {
@@ -74,6 +78,16 @@ export function ChatView({
           </h2>
 
           {channel?.topic ? <p className="truncate text-xs text-faint">{channel.topic}</p> : null}
+          {channel && messages.length >= CHANNEL_SUMMARY_FROM ? (
+            <span className="ml-auto shrink-0">
+              <Summarise
+                workspaceId={workspaceId}
+                kind="channel"
+                id={channel.id}
+                sourceHref={(source) => `#message-${source}`}
+              />
+            </span>
+          ) : null}
         </header>
       ) : null}
 

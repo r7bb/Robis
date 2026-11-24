@@ -83,6 +83,13 @@ const envSchema = z.object({
    * product than one that simply has no hints.
    */
   ML_SERVICE_URL: z.string().default(''),
+  /**
+   * The optional language-model provider for assistance (D3), the same key
+   * the worker's triage summary uses. Empty, the default: assistance is
+   * off everywhere and nothing anyone wrote is sent anywhere.
+   */
+  SUMMARY_API_KEY: z.string().default(''),
+  SUMMARY_MODEL: z.string().default(''),
   ML_SERVICE_TOKEN: z.string().default(''),
   /**
    * Where uploads are kept: `local` disk under MEDIA_DIR, or `s3` for any

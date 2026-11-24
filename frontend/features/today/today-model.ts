@@ -1,9 +1,10 @@
 import type { contracts, ResponseOf } from '@robis/shared';
 
 /**
- * Today's groups, pure so they are tested without a browser: what is
+ * Your day's groups, pure so they are tested without a browser: what is
  * overdue, due today, due this week, in progress with no day, and the next
- * few to pick up. Each issue appears once, in the first group it fits.
+ * few to pick up. Each issue appears once, in the first group it fits. The
+ * feed's Your day card shows the first three.
  */
 
 export type MyIssue = ResponseOf<(typeof contracts)['today.mine']>['issues'][number];
@@ -39,21 +40,4 @@ export function groupToday(issues: readonly MyIssue[], today: string): TodayGrou
     else if (groups.next.length < NEXT_SHOWN) groups.next.push(issue);
   }
   return groups;
-}
-
-/** "Good morning", "Good afternoon" or "Good evening", by the viewer's clock. */
-export function greeting(hour: number): string {
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
-}
-
-/** One line on the day, counting what needs doing. */
-export function dayLine(groups: TodayGroups, meetings: number): string {
-  const parts = [
-    groups.overdue.length ? `${groups.overdue.length} overdue` : '',
-    groups.today.length ? `${groups.today.length} due today` : '',
-    meetings ? `${meetings} ${meetings === 1 ? 'meeting' : 'meetings'}` : '',
-  ].filter(Boolean);
-  return parts.length ? parts.join(', ') : 'Nothing due today. A good day to get ahead.';
 }

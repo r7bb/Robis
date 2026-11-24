@@ -6,6 +6,11 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Assistance you can turn on: summaries, draft agendas and issues from
+  chat** (2026-11-24). With a provider key on the server and an admin
+  switching it on, a long thread or busy channel gets a Summarise button, a
+  meeting a Draft agenda, and a chat message Make an issue; all marked as
+  generated and saved nowhere until someone uses them.
 - **Today, faces on every board and document, and agents writing beside
   you** (2026-11-24). A Today page gathers what is yours to do; the sidebar
   shows who has each board and document open; and an agent can now edit a

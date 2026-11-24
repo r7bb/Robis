@@ -244,7 +244,6 @@ function MoreLinks({ workspaceId }: { workspaceId: string }) {
   const pathname = usePathname();
   const { t } = useT();
   const links = [
-    { href: `/workspaces/${workspaceId}/today`, label: t('nav.today') },
     { href: `/workspaces/${workspaceId}/feed`, label: t('nav.feed') },
     { href: `/workspaces/${workspaceId}/spaces`, label: t('nav.spaces') },
     { href: `/workspaces/${workspaceId}/meetings`, label: t('nav.meetings') },

@@ -1,6 +1,6 @@
 /**
  * Two teammates writing in one document at once (demo:life): every few
- * minutes two of the demo's people (or one of them and Saphi, the ideas
+ * minutes two of the demo's people (or one of them and Sapha, the ideas
  * agent, with its own token) open the same sample document over the
  * realtime socket, as a browser does, show their cursors, and type a line
  * each, a few characters at a time, so anyone watching sees both carets

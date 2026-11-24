@@ -16,6 +16,7 @@ import { loadEnv } from '@robis/api/env';
 import { resetRateLimits } from '@robis/api/rate-limit';
 import type { SimilarIssue, Suggestions, TriageSuggestion } from '@robis/api/suggestions';
 import {
+  ASSIST_JOB,
   createDatabase,
   type Database,
   DEFAULT_RUNTIME_ROLE,
@@ -34,6 +35,8 @@ import { runMigrations } from '@robis/database/migrate';
 import { MemoryMailer } from '@robis/mailer';
 import { TERMS_VERSION } from '@robis/shared';
 import { localDiskStorage } from '@robis/storage';
+import type { AgendaItem, Assistant, IssueDraft, SummaryPoint } from '@robis/worker/assist';
+import { assistHandler } from '@robis/worker/assist-job';
 import { mailHandlers } from '@robis/worker/mail';
 import { Runner } from '@robis/worker/runner';
 import { and, eq, isNull, sql } from 'drizzle-orm';
@@ -201,6 +204,44 @@ export function breakSuggestions() {
   suggestionCalls.length = 0;
 }
 
+/**
+ * The language-model provider for assistance (D3): never the real one, so
+ * the suite spends nothing and reaches no network. A test sets what it
+ * answers and reads what it was given; `null` stands for no answer.
+ */
+export const assistCalls: { kind: keyof Assistant; input: unknown }[] = [];
+let assistAnswers: {
+  summarise: SummaryPoint[] | null;
+  agenda: AgendaItem[] | null;
+  draftIssue: IssueDraft | null;
+} = { summarise: [], agenda: [], draftIssue: null };
+
+export function setAssist(answers: Partial<typeof assistAnswers>) {
+  assistAnswers = { summarise: [], agenda: [], draftIssue: null, ...answers };
+  assistCalls.length = 0;
+}
+
+/** Answer the asks waiting, as the worker would, with the stand-in provider. */
+export async function runAssist() {
+  const { workerDb } = await getHarness();
+  await new Runner({ db: workerDb, handlers: { [ASSIST_JOB]: assistHandler(assistStub) } }).tick();
+}
+
+const assistStub: Assistant = {
+  async summarise(subject, snippets) {
+    assistCalls.push({ kind: 'summarise', input: { subject, snippets } });
+    return assistAnswers.summarise;
+  },
+  async agenda(meeting, issues) {
+    assistCalls.push({ kind: 'agenda', input: { meeting, issues } });
+    return assistAnswers.agenda;
+  },
+  async draftIssue(message) {
+    assistCalls.push({ kind: 'draftIssue', input: { message } });
+    return assistAnswers.draftIssue;
+  },
+};
+
 /** Built once and shared; each test isolates itself with `resetDatabase`. */
 /**
  * What the database said when it refused: every message in the error's
@@ -295,6 +336,9 @@ export async function getHarness() {
     VAPID_PUBLIC_KEY: TEST_PUSH_PUBLIC_KEY,
     // Two-factor sign-in is on (C4), with a key made for the tests alone.
     TWO_FACTOR_KEY: TEST_TWO_FACTOR_KEY,
+    // Assistance (D3) is keyed, so its routes answer; the worker's half runs
+    // with the stand-in below and never reaches a provider.
+    SUMMARY_API_KEY: 'test-only-not-a-key',
     // The server's health is shown to these addresses only (Phase 6).
     HEALTH_OPERATORS: `ops@robis.test, @${TEST_OPERATOR_DOMAIN}`,
   } as NodeJS.ProcessEnv);

@@ -8,7 +8,6 @@
  */
 export const en = {
   // The workspace's sidebar.
-  'nav.today': 'Today',
   'nav.feed': 'Feed',
   'nav.spaces': 'Spaces',
   'nav.meetings': 'Meetings',

@@ -46,6 +46,26 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-24',
     area: 'Product',
+    title: 'Assistance you can turn on: summaries, draft agendas and issues from chat',
+    brief:
+      'With a provider key on the server and an admin switching it on, a long thread or busy channel gets a Summarise button, a meeting a Draft agenda, and a chat message Make an issue; all marked as generated and saved nowhere until someone uses them.',
+    summary:
+      'Assistance (D3) runs through the same optional language-model port as the triage summary, and stays off until both the server has a key and an admin turns it on under People; until then every ask answers not found, exactly as before, and nothing written in the workspace is sent anywhere. Summarise, on an issue with three or more comments and a channel with ten or more messages, gives at most eight points, each with numbered links to the comments or messages it came from. Draft agenda, for whoever may change a meeting, reads the issues its title and agenda name by key (like REL-12) and proposes items; Use as agenda is the only way it is saved. Make an issue, beside a chat message, suggests a title and priority for the person to change, picks a board, and creates nothing until Create. An ask is a short-lived request the worker answers, the one part of Robis that talks to the provider; what was asked is cleared once answered, and asks are deleted after a day. Each call asks for a fixed shape back, and what returns is checked: a point may cite only what it was given, an item only the named issues, a priority only one Robis has. Thirty asks an hour per person, and each is a paid call on the server’s key. Separately, the feed now opens Everyone with Your day, what is overdue and due today for you here, so the Today page is folded into the feed and the home; and the demo’s ideas agent is now called Sapha.',
+    checked:
+      'Seven tests with a stand-in provider, the worker’s half run as it runs in the stack: off until an admin turns it on (members cannot), a summary citing only the comments it was given and readable only by whoever asked, failing plainly when nothing comes back, what was asked cleared once answered, another workspace’s issue not found, an agenda from keys named in any case with a refusal when none are named, the output checks, and the real provider’s code with a stand-in client, where a refusal is no answer, a forged source is dropped and quoted text cannot close its tag. No paid call was made. The full suite, lint, typecheck, knip and docs:links.',
+    feature: {
+      name: 'Assistance',
+      where: 'People, Assistance (admins), then Summarise, Draft agenda and Make an issue',
+      layers: [
+        'Screen: a switch for admins, and Summarise, Draft agenda and Make an issue where it is on, each marked as generated',
+        'API: six endpoints, the asks not found until the server has a key and the workspace has turned it on, each answered by the worker',
+        'Provider: structured answers from the optional language-model port, checked before anything is shown',
+      ],
+    },
+  },
+  {
+    date: '2026-11-24',
+    area: 'Product',
     title: 'Today, faces on every board and document, and agents writing beside you',
     brief:
       'A Today page gathers what is yours to do; the sidebar shows who has each board and document open; and an agent can now edit a document live with its own caret, as the demo’s Saphi does.',

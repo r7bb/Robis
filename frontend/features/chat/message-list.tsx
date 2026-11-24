@@ -8,6 +8,7 @@ import { Avatar } from '../../components/ui/avatar.tsx';
 import { BASE_URL } from '../../lib/api.ts';
 import { personHref } from '../../lib/links.ts';
 import { formatDaySeparator, formatExact, formatTime, isSameDay } from '../../lib/time.ts';
+import { IssueFromMessage } from '../assist/issue-from-message.tsx';
 import { StoryRing } from '../stories/story-ring.tsx';
 import { MessageBody } from './message-body.tsx';
 import type { ChatMessage } from './types.ts';
@@ -114,7 +115,7 @@ export function MessageList({
             const newDay = !previous || !isSameDay(previous.createdAt, message.createdAt);
 
             return (
-              <li key={message.id}>
+              <li key={message.id} id={`message-${message.id}`} className="scroll-mt-16">
                 {newDay ? <DaySeparator at={message.createdAt} /> : null}
 
                 <MessageRow
@@ -165,7 +166,7 @@ function MessageRow({
 }) {
   return (
     <div
-      className={`group flex gap-3 rounded-md px-2 hover:bg-surface/60 ${grouped ? 'py-0.5' : 'pt-2 pb-0.5'}`}
+      className={`group flex flex-wrap gap-3 rounded-md px-2 hover:bg-surface/60 ${grouped ? 'py-0.5' : 'pt-2 pb-0.5'}`}
     >
       {grouped ? (
         // Keeps the text aligned with the ungrouped rows above it, and shows
@@ -216,6 +217,7 @@ function MessageRow({
         {message.image ? <MessagePicture image={message.image} by={message.authorName} /> : null}
       </div>
 
+      {message.body ? <IssueFromMessage workspaceId={workspaceId} messageId={message.id} /> : null}
       {deletable ? (
         <button
           type="button"
