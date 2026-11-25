@@ -720,6 +720,12 @@ export const issues = pgTable(
     }),
     /** The cycle it is planned for, one of its own board's; none when unplanned. */
     cycleId: uuid('cycle_id').references((): AnyPgColumn => cycles.id, { onDelete: 'set null' }),
+    /**
+     * When it joined the cycle it is in, so work added mid-cycle can be told
+     * from what was planned; null when unplanned, or in a cycle since before
+     * this was kept. Kept by the database trigger `issues_cycle_added_at`.
+     */
+    cycleAddedAt: timestamp('cycle_added_at', { withTimezone: true }),
     /** The release it is part of, from any board, or null; removing the release clears it. */
     releaseId: uuid('release_id').references(() => releases.id, { onDelete: 'set null' }),
     createdBy: uuid('created_by')

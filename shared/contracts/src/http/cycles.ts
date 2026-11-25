@@ -23,6 +23,8 @@ const cycle = z.object({
   done: z.number().int().nonnegative(),
   canceled: z.number().int().nonnegative(),
   inProgress: z.number().int().nonnegative(),
+  /** How many of its issues were put in after its first day: work added mid-cycle. */
+  added: z.number().int().nonnegative(),
 });
 
 const fields = {

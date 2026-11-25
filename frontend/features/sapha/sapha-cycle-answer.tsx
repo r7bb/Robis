@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { call } from '../../lib/api.ts';
 import { localToday } from '../../lib/due-date.ts';
 import { boardHref, issueHref } from '../../lib/links.ts';
-import { daysLeftLine } from '../cycles/cycle-days.ts';
+import { addedLine, daysLeftLine } from '../cycles/cycle-days.ts';
 import { cyclesOn } from './cycle-answer-model.ts';
 
 const UNDER_WAY = new Set(['IN_PROGRESS', 'IN_REVIEW']);
@@ -61,6 +61,7 @@ export function CycleAnswer({
             </p>
             <p className="text-sm text-muted">
               {cycle.done} of {counted} done · {daysLeftLine(today, cycle.endsOn)}
+              {addedLine(cycle.added)}
               {left > 0 ? ` · ${left} still open` : ''}
             </p>
             {cycle.open.length > 0 ? (

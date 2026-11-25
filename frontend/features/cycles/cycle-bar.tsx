@@ -6,7 +6,7 @@ import { type FormEvent, useState } from 'react';
 import { call } from '../../lib/api.ts';
 import { localToday } from '../../lib/due-date.ts';
 import { BurnUpChart } from './burn-up-chart.tsx';
-import { addDays, daysLeftLine, firstFreeDay } from './cycle-days.ts';
+import { addDays, addedLine, daysLeftLine, firstFreeDay } from './cycle-days.ts';
 import { LeftOverLine } from './left-over-line.tsx';
 import { currentCycle, cyclesKey, useCycles } from './use-cycles.ts';
 
@@ -106,6 +106,7 @@ function CycleProgress({
           {running ? daysLeftLine(today, cycle.endsOn) : `starts ${cycle.startsOn}`}
           {' · '}
           {cycle.done} of {counted} done
+          {running ? addedLine(cycle.added) : ''}
         </span>
         <span className="flex gap-1">
           {running ? (

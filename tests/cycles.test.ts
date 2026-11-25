@@ -1,4 +1,6 @@
 import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
+import { issues } from '@robis/database';
+import { eq } from 'drizzle-orm';
 import {
   type Actor,
   addMember,
@@ -6,6 +8,7 @@ import {
   createActor,
   createProject,
   createWorkspace,
+  getHarness,
   request,
   resetDatabase,
 } from './harness.ts';
@@ -109,6 +112,80 @@ const NEXT_TWO_WEEKS = { name: 'Cycle 2', startsOn: '2026-12-07', endsOn: '2026-
 
 const rollover = (actor: Actor, ws: string, fromId: string, toCycleId: string) =>
   request(`${ws}/cycles/${fromId}/rollover`, { method: 'POST', actor, payload: { toCycleId } });
+
+describe('scope added mid-cycle', () => {
+  const addedAt = async (issueId: string) => {
+    const { ownerDb } = await getHarness();
+    const [row] = await ownerDb
+      .select({ at: issues.cycleAddedAt })
+      .from(issues)
+      .where(eq(issues.id, issueId));
+    return row!.at;
+  };
+  const backdate = async (issueId: string, at: string) => {
+    const { ownerDb } = await getHarness();
+    await ownerDb
+      .update(issues)
+      .set({ cycleAddedAt: new Date(at) })
+      .where(eq(issues.id, issueId));
+  };
+  const counted = async (actor: Actor, ws: string, projectId: string) =>
+    (await request(`${ws}/projects/${projectId}/cycles`, { actor })).json().cycles[0];
+
+  test('issues put in after its first day, on its own calendar, are counted as added', async () => {
+    const { owner, project, ws, file } = await board();
+    const cycle = (
+      await plan(owner, ws, project.id, { ...TWO_WEEKS, timeZone: 'Europe/London' })
+    ).json().cycle;
+    const [late, early, edge] = [await file('Late'), await file('Early'), await file('Edge')];
+    for (const issue of [late, early, edge]) await put(owner, ws, issue.id, cycle.id);
+    // Within its first day in London, and the first moment after it.
+    await backdate(early.id, '2026-11-23T23:59:00Z');
+    await backdate(edge.id, '2026-11-24T00:00:00Z');
+    expect(await counted(owner, ws, project.id)).toMatchObject({ total: 3, added: 2 });
+  });
+
+  test('stamped when an issue joins, cleared when it leaves, stamped again on return', async () => {
+    const { owner, project, ws, file } = await board();
+    const cycle = (await plan(owner, ws, project.id, TWO_WEEKS)).json().cycle;
+    const issue = await file('Wanders');
+    expect(await addedAt(issue.id)).toBeNull();
+    await put(owner, ws, issue.id, cycle.id);
+    expect(await addedAt(issue.id)).toBeInstanceOf(Date);
+    await backdate(issue.id, '2026-11-23T09:00:00Z');
+    // Another edit keeps when it joined.
+    await request(`${ws}/issues/${issue.id}`, {
+      method: 'PATCH',
+      actor: owner,
+      payload: { title: 'Still wanders' },
+    });
+    expect((await addedAt(issue.id))?.toISOString()).toBe('2026-11-23T09:00:00.000Z');
+    expect(await counted(owner, ws, project.id)).toMatchObject({ added: 0 });
+    await put(owner, ws, issue.id, null);
+    expect(await addedAt(issue.id)).toBeNull();
+    await put(owner, ws, issue.id, cycle.id);
+    expect(await counted(owner, ws, project.id)).toMatchObject({ added: 1 });
+  });
+  test('left-over work moved into a cycle under way counts as added; removing a cycle clears it', async () => {
+    const { owner, project, ws, file } = await board();
+    const earlier = (
+      await plan(owner, ws, project.id, {
+        name: 'Cycle 0',
+        startsOn: '2026-11-09',
+        endsOn: '2026-11-22',
+      })
+    ).json().cycle;
+    const running = (await plan(owner, ws, project.id, TWO_WEEKS)).json().cycle;
+    const issue = await file('Left over');
+    await put(owner, ws, issue.id, earlier.id);
+    expect((await rollover(owner, ws, earlier.id, running.id)).statusCode).toBe(200);
+    const cycles = (await request(`${ws}/projects/${project.id}/cycles`, { actor: owner })).json()
+      .cycles as { id: string; added: number }[];
+    expect(cycles.find((c) => c.id === running.id)?.added).toBe(1);
+    await request(`${ws}/cycles/${running.id}`, { method: 'DELETE', actor: owner });
+    expect(await addedAt(issue.id)).toBeNull();
+  });
+});
 
 describe('moving a cycle’s unfinished issues on', () => {
   test('moves what is not done or canceled, and leaves the rest where they were', async () => {

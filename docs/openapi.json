@@ -9090,6 +9090,11 @@
                             "minimum": 0,
                             "maximum": 9007199254740991
                           },
+                          "added": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
                           "projectName": {
                             "type": "string"
                           },
@@ -9143,6 +9148,7 @@
                           "done",
                           "canceled",
                           "inProgress",
+                          "added",
                           "projectName",
                           "projectKey",
                           "open"
@@ -9238,6 +9244,11 @@
                             "type": "integer",
                             "minimum": 0,
                             "maximum": 9007199254740991
+                          },
+                          "added": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
                           }
                         },
                         "required": [
@@ -9249,7 +9260,8 @@
                           "total",
                           "done",
                           "canceled",
-                          "inProgress"
+                          "inProgress",
+                          "added"
                         ],
                         "additionalProperties": false
                       }
@@ -9375,6 +9387,11 @@
                           "type": "integer",
                           "minimum": 0,
                           "maximum": 9007199254740991
+                        },
+                        "added": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
                         }
                       },
                       "required": [
@@ -9386,7 +9403,8 @@
                         "total",
                         "done",
                         "canceled",
-                        "inProgress"
+                        "inProgress",
+                        "added"
                       ],
                       "additionalProperties": false
                     }
@@ -9504,6 +9522,11 @@
                           "type": "integer",
                           "minimum": 0,
                           "maximum": 9007199254740991
+                        },
+                        "added": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
                         }
                       },
                       "required": [
@@ -9515,7 +9538,8 @@
                         "total",
                         "done",
                         "canceled",
-                        "inProgress"
+                        "inProgress",
+                        "added"
                       ],
                       "additionalProperties": false
                     }
@@ -9660,6 +9684,11 @@
                           "type": "integer",
                           "minimum": 0,
                           "maximum": 9007199254740991
+                        },
+                        "added": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
                         }
                       },
                       "required": [
@@ -9671,7 +9700,8 @@
                         "total",
                         "done",
                         "canceled",
-                        "inProgress"
+                        "inProgress",
+                        "added"
                       ],
                       "additionalProperties": false
                     }

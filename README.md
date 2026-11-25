@@ -204,15 +204,15 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **See how much was added to a cycle after it began.** The cycle bar and
+  Sapha’s cycle answer now say how many issues were added mid-cycle, after
+  its first day.
 - **Plan a cycle on a board opens after the ones already planned.** The
   board’s Plan a cycle form now starts its days after the cycle running
   there, as Sapha does, and they can still be changed.
 - **Ask Sapha to make a board.** Create a board called Summer party from the
   event template: Sapha proposes it, and Do it makes the board with its
   starter issues.
-- **Start any new board from a template.** New board in the sidebar now
-  offers Software, Event planning and Coursework, each with five starter
-  issues, as well as an empty board.
 
 <!-- latest:end -->
 

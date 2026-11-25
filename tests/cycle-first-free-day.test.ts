@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { firstFreeDay } from '@robis/web/features/cycles/cycle-days.ts';
+import { addedLine, firstFreeDay } from '@robis/web/features/cycles/cycle-days.ts';
 
 /**
  * Where a cycle Sapha plans begins: today when no cycle runs now or later,
@@ -25,5 +25,12 @@ describe('the first day no cycle covers', () => {
 
   test('after the last one planned, whatever order they come in', () => {
     expect(firstFreeDay([ends('2027-01-10'), ends('2026-12-02')], TODAY)).toBe('2027-01-11');
+  });
+});
+
+describe('work added mid-cycle, as said beside the count', () => {
+  test('nothing when none was added, else how many', () => {
+    expect(addedLine(0)).toBe('');
+    expect(addedLine(3)).toBe(' · 3 added mid-cycle');
   });
 });

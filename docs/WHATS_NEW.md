@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **See how much was added to a cycle after it began** (2026-11-25). The
+  cycle bar and Sapha’s cycle answer now say how many issues were added
+  mid-cycle, after its first day.
 - **Plan a cycle on a board opens after the ones already planned**
   (2026-11-25). The board’s Plan a cycle form now starts its days after the
   cycle running there, as Sapha does, and they can still be changed.

@@ -18,4 +18,6 @@ export const CYCLE_COUNTS = {
   done: sql<number>`(count(${issues.id}) filter (where ${issues.status} = 'DONE'))::int`,
   canceled: sql<number>`(count(${issues.id}) filter (where ${issues.status} = 'CANCELED'))::int`,
   inProgress: sql<number>`(count(${issues.id}) filter (where ${issues.status} in ('IN_PROGRESS', 'IN_REVIEW')))::int`,
+  // Put in after the cycle's first day, on its own calendar: planning on day one is not scope added.
+  added: sql<number>`(count(${issues.id}) filter (where ${issues.cycleAddedAt} >= ((${cycles.startsOn} + 1)::timestamp at time zone ${cycles.timeZone})))::int`,
 };

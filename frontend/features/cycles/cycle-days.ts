@@ -30,3 +30,8 @@ export function firstFreeDay(cycles: readonly { endsOn: string }[], today: strin
   );
   return last >= today ? addDays(last, 1) : today;
 }
+
+/** " · 3 added mid-cycle", or nothing when no work was added after its first day. */
+export function addedLine(added: number): string {
+  return added > 0 ? ` · ${added} added mid-cycle` : '';
+}

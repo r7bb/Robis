@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
     area: 'Product',
+    title: 'See how much was added to a cycle after it began',
+    brief:
+      'The cycle bar and Sapha’s cycle answer now say how many issues were added mid-cycle, after its first day.',
+    summary:
+      'A cycle that keeps growing is hard to finish, and the count of done out of planned hides that. Each issue now remembers when it joined its cycle, kept by the database whichever way it was moved, cleared when it leaves and set again if it comes back. The cycle bar and Sapha’s answer to how the cycle is going add, for example, 2 added mid-cycle: issues put in after the cycle’s first day, on the cycle’s own calendar, so planning on day one does not count. Issues already in a cycle before today count as planned from the start. Left-over work moved into a cycle that is already under way counts as added, as it does grow that cycle, and moving a cycle’s first day changes what counts as after it.',
+    checked:
+      'Three new tests against the database: the first day read on the cycle’s calendar to the minute; the moment kept through other edits, cleared on leaving and stamped again on return; and left-over work moved into a cycle under way counted, with removing the cycle clearing it. One of the line beside the count. In the browser: a cycle three days in, with two issues put in, read 0 of 2 done · 2 added mid-cycle. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-25',
+    area: 'Product',
     title: 'Plan a cycle on a board opens after the ones already planned',
     brief:
       'The board’s Plan a cycle form now starts its days after the cycle running there, as Sapha does, and they can still be changed.',
