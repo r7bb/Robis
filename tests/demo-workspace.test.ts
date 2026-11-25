@@ -107,8 +107,17 @@ describe('the demo workspace', () => {
       await request(`${base}/projects/${made.projectId}/cycles`, { actor: owner })
     ).json();
     const notDone = DEMO_WORKSPACE.issues.filter((issue) => issue.status !== 'DONE').length;
+    const done = DEMO_WORKSPACE.issues.length - notDone;
     expect(planned.cycles).toEqual([
+      expect.objectContaining({ name: DEMO_WORKSPACE.cycle.previous.name, total: done, done }),
       expect.objectContaining({ name: DEMO_WORKSPACE.cycle.name, total: notDone, done: 0 }),
+    ]);
+    // The two weeks just ended, all done: the Feed says well done.
+    const cleared = (await request(`${base}/feed/celebrations`, { actor: owner }))
+      .json()
+      .celebrations.filter((c: { kind: string }) => c.kind === 'cycle_cleared');
+    expect(cleared).toEqual([
+      expect.objectContaining({ cycleName: DEMO_WORKSPACE.cycle.previous.name, count: done }),
     ]);
 
     const templates = (await request(`${base}/issue-templates`, { actor: owner })).json();

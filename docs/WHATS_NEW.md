@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **The demo has a cycle cleared to celebrate** (2026-11-25). A new demo
+  workspace now has the two weeks just ended, Groundwork, with all its work
+  done, so its Feed opens with a cycle cleared and a well done to send.
 - **A cycle is only cleared when it really was** (2026-11-25). A cycle whose
   unfinished work was moved on, or finished late, is no longer celebrated as
   cleared, and the burn-up never shows more done than planned.

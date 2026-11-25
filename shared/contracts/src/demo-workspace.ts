@@ -17,6 +17,7 @@ export const DEMO_WORKSPACE = {
   issues: [
     { title: 'Agree what the new home page must say', priority: 'HIGH', status: 'DONE' },
     { title: 'Collect screenshots of the old site', priority: 'LOW', status: 'DONE' },
+    { title: 'Choose the new typeface', priority: 'LOW', status: 'DONE' },
     { title: 'Draft the new navigation', priority: 'HIGH', status: 'IN_REVIEW' },
     { title: 'Write copy for the pricing page', priority: 'MEDIUM', status: 'IN_PROGRESS' },
     { title: 'Fix the contact form on small phones', priority: 'URGENT', status: 'IN_PROGRESS' },
@@ -72,8 +73,12 @@ This is a demo document. Edit it freely, or open it in a second window and type 
       blocker: 'Set up redirects from the old addresses',
     },
   ],
-  /** The board's work planned in a two-week cycle from the day the demo is made. */
-  cycle: { name: 'Relaunch, part one', days: 14 },
+  /**
+   * The board's work planned in a two-week cycle from the day the demo is
+   * made, and before it the two weeks just ended, with the work done then
+   * all done in it, so the Feed has a cycle cleared to celebrate.
+   */
+  cycle: { name: 'Relaunch, part one', days: 14, previous: { name: 'Groundwork', days: 14 } },
   /** A template for the board's bugs, to file from. */
   template: {
     name: 'Bug report',

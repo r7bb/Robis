@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
     area: 'Product',
+    title: 'The demo has a cycle cleared to celebrate',
+    brief:
+      'A new demo workspace now has the two weeks just ended, Groundwork, with all its work done, so its Feed opens with a cycle cleared and a well done to send.',
+    summary:
+      'The demo workspace showed the cycle running now but nothing before it. It now also has Groundwork, the two weeks that ended yesterday on the maker’s clock, holding the work already done, all of it finished within those weeks, and a third piece of finished work, Choose the new typeface, so the Feed’s new celebration for a cycle cleared appears from the first visit.',
+    checked:
+      'The demo workspace test now also checks both cycles and the celebration. In the browser: a new demo’s Feed read Website relaunch cleared Groundwork: all 3 done. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-25',
+    area: 'Product',
     title: 'A cycle is only cleared when it really was',
     brief:
       'A cycle whose unfinished work was moved on, or finished late, is no longer celebrated as cleared, and the burn-up never shows more done than planned.',

@@ -82,7 +82,17 @@ async function fillBoard(tx: Tx, actor: AuditActor, owner: Owner, workspaceId: s
   return { projectId: project.id, ids };
 }
 
-/** Two weeks from today on the maker's clock, with the work not yet done in it. */
+const dayOf = (wall: { year: number; month: number; day: number }) =>
+  `${wall.year}-${String(wall.month).padStart(2, '0')}-${String(wall.day).padStart(2, '0')}`;
+
+/** Days back from the maker's today to the middle of the cycle just ended. */
+const PAST_CYCLE_MIDDLE_DAYS = 7;
+
+/**
+ * Two weeks from today on the maker's clock, with the work not yet done in
+ * it; and the two weeks just ended, with the work already done, all of it
+ * finished within them.
+ */
 async function planDemoCycle(
   tx: Tx,
   owner: Owner,
@@ -92,25 +102,38 @@ async function planDemoCycle(
   now: Date,
 ) {
   const today = wallOf(now, zone);
-  const day = (wall: { year: number; month: number; day: number }) =>
-    `${wall.year}-${String(wall.month).padStart(2, '0')}-${String(wall.day).padStart(2, '0')}`;
-  const [cycle] = await tx
-    .insert(cycles)
-    .values({
-      workspaceId,
-      projectId: board.projectId,
-      name: DEMO_WORKSPACE.cycle.name,
-      startsOn: day(today),
-      endsOn: day(addDays(today, DEMO_WORKSPACE.cycle.days - 1)),
-      timeZone: zone,
-      createdBy: owner.id,
-    })
-    .returning({ id: cycles.id });
-  const planned = DEMO_WORKSPACE.issues
-    .filter((issue) => issue.status !== 'DONE')
-    .flatMap((issue) => board.ids.get(issue.title) ?? []);
+  const plan = (name: string, from: number, days: number) =>
+    tx
+      .insert(cycles)
+      .values({
+        workspaceId,
+        projectId: board.projectId,
+        name,
+        startsOn: dayOf(addDays(today, from)),
+        endsOn: dayOf(addDays(today, from + days - 1)),
+        timeZone: zone,
+        createdBy: owner.id,
+      })
+      .returning({ id: cycles.id })
+      .then(([row]) => row!.id);
+  const { previous } = DEMO_WORKSPACE.cycle;
+  const past = await plan(previous.name, -previous.days, previous.days);
+  const current = await plan(DEMO_WORKSPACE.cycle.name, 0, DEMO_WORKSPACE.cycle.days);
+  const idsOf = (done: boolean) =>
+    DEMO_WORKSPACE.issues
+      .filter((issue) => (issue.status === 'DONE') === done)
+      .flatMap((issue) => board.ids.get(issue.title) ?? []);
+  const finished = idsOf(true);
+  if (finished.length > 0) {
+    const doneAt = new Date(now.getTime() - PAST_CYCLE_MIDDLE_DAYS * 86_400_000);
+    await tx
+      .update(issues)
+      .set({ cycleId: past, completedAt: doneAt })
+      .where(inArray(issues.id, finished));
+  }
+  const planned = idsOf(false);
   if (planned.length > 0) {
-    await tx.update(issues).set({ cycleId: cycle!.id }).where(inArray(issues.id, planned));
+    await tx.update(issues).set({ cycleId: current }).where(inArray(issues.id, planned));
   }
 }
 
