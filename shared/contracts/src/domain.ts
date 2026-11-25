@@ -42,6 +42,7 @@ export const NOTIFICATION_KINDS = [
   'space_reply',
   'space_answer',
   'cycle_ending',
+  'release_due',
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 

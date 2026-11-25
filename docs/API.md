@@ -1617,7 +1617,7 @@ The workspace’s releases: those still to ship by the day they are aimed at, th
 
 Plan a release: a name and, if it has one, the day it is aimed at.
 
-- Body: `name` (required), `targetOn`
+- Body: `name` (required), `targetOn`, `timeZone`
 - Answers: 201
 - Name: `releases.create`
 

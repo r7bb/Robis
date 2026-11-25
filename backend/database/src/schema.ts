@@ -665,6 +665,8 @@ export const releases = pgTable(
       .references(() => workspaces.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
     targetOn: date('target_on', { mode: 'string' }),
+    /** The planner's IANA zone: whose calendar its day is, for the day-before notice. */
+    timeZone: text('time_zone').notNull().default('UTC'),
     shippedAt: timestamp('shipped_at', { withTimezone: true }),
     notes: text('notes'),
     createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
@@ -1878,7 +1880,7 @@ export const notificationSettings = pgTable(
     primaryKey({ columns: [t.userId, t.kind, t.channel] }),
     check(
       'notification_settings_kind',
-      sql`${t.kind} in ('mention', 'assignment', 'issue_comment', 'meeting', 'nudge', 'space_reply', 'space_answer', 'cycle_ending')`,
+      sql`${t.kind} in ('mention', 'assignment', 'issue_comment', 'meeting', 'nudge', 'space_reply', 'space_answer', 'cycle_ending', 'release_due')`,
     ),
     check('notification_settings_channel', sql`${t.channel} in ('in_app', 'email', 'push')`),
   ],

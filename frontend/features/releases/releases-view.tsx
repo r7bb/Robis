@@ -293,7 +293,11 @@ function NewRelease({ workspaceId }: { workspaceId: string }) {
     mutationFn: () =>
       call(contracts['releases.create'], {
         params: { workspaceId },
-        body: { name: name.trim(), targetOn: targetOn || null },
+        body: {
+          name: name.trim(),
+          targetOn: targetOn || null,
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
       }),
     onSuccess: () => {
       setName('');

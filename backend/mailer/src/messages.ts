@@ -300,6 +300,8 @@ export function notificationLine(item: NotificationLine): string {
       return `${c.actor} marked your reply as the answer to ${c.title || 'a question'}`;
     case 'cycle_ending':
       return `${c.title || 'A cycle'} ends tomorrow${said(c.body)}`;
+    case 'release_due':
+      return `${c.title || 'A release'} is due tomorrow${said(c.body)}`;
     default:
       return `${c.actor} mentioned you on ${issue}${said(c.excerpt)}`;
   }

@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
     area: 'Product',
+    title: 'A notice the day before a release is due',
+    brief:
+      'The day before a release’s day, everyone with an issue still open in it, on any board, hears that it is due tomorrow and how many of theirs are open.',
+    summary:
+      'A release now keeps the zone of whoever planned it, so its day is that calendar’s. From nine in the morning there on the day before, each person with an issue still open in it, on whichever board, gets one notice: Version 2.0 is due tomorrow, 2 of your issues are still open in it. It sits under Priority in the inbox and opens Releases. A release already shipped, or with no day set, tells nobody, and a release moved to a later day is told again before the new one. It follows the person’s notification settings, with Releases due to turn it off, and comes by mail and push where those are on. The timing and the question of who has work open are shared with the notice before a cycle ends.',
+    checked:
+      'Three tests: two issues on two boards telling their assignee once, with someone whose issue is done told nothing, and the link and mail line; nothing before nine where it was planned, nor from a shipped release or one with no day; the morning coming first in Tokyo, and a release moved later told again. The cycle notice, notification settings, mail text, inbox tab and service role tests. In the stack, a release planned in New York due tomorrow put one entry under Priority, Version 2.0 is due tomorrow, opening Releases. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-25',
+    area: 'Product',
     title: 'Narrow a board to a release',
     brief:
       'A board’s filters now include Release, and each board named on the Releases page opens that board narrowed to the release.',

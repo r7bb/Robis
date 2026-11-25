@@ -78,6 +78,9 @@ function linkOf(webOrigin: string, row: Row, payload: Record<string, unknown>): 
   ) {
     return `${webOrigin}/workspaces/${row.workspaceId}/projects/${payload.projectId}?cycle=${payload.cycleId}`;
   }
+  if (row.workspaceId && typeof payload.releaseId === 'string') {
+    return `${webOrigin}/workspaces/${row.workspaceId}/releases`;
+  }
   if (row.kind === 'nudge' && typeof payload.nudge === 'string') {
     return `${webOrigin}/guide/${payload.nudge}`;
   }

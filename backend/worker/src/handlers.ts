@@ -23,6 +23,7 @@ import {
 import { CYCLE_ENDING_JOB, runCycleEndingScan } from './cycle-ending.ts';
 import { notifyHandlers } from './notify.ts';
 import { scanNudges } from './nudges.ts';
+import { RELEASE_DUE_JOB, runReleaseDueScan } from './release-due.ts';
 import type { Handlers } from './runner.ts';
 import { webhookHandlers } from './webhook.ts';
 import { workspaceWebhookHandlers } from './workspace-webhook.ts';
@@ -86,6 +87,11 @@ export const runCycleEnding = async (_payload: unknown, { db }: { db: Database }
   await runCycleEndingScan(db);
 };
 
+/** Tell people with work open in a release due tomorrow. Runs hourly. */
+export const runReleaseDue = async (_payload: unknown, { db }: { db: Database }) => {
+  await runReleaseDueScan(db);
+};
+
 /** Delete stories past their 24 hours, and queue their files (B2). */
 export const runStoryExpiry = async (_payload: unknown, { db }: { db: Database }) => {
   await expireStories(db);
@@ -103,4 +109,5 @@ export const handlers: Handlers = {
   'digests.scan': runDigestScan,
   [STORY_EXPIRY_JOB]: runStoryExpiry,
   [CYCLE_ENDING_JOB]: runCycleEnding,
+  [RELEASE_DUE_JOB]: runReleaseDue,
 };

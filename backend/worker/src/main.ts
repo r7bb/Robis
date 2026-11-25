@@ -27,6 +27,7 @@ import { mailHandlers } from './mail.ts';
 import { serveWorkerMetrics, workerMetrics } from './metrics.ts';
 import { PICTURES_INTERVAL_MS, PICTURES_JOB, picturesHandler } from './pictures/job.ts';
 import { checkVapidKeys, pushHandlers, vapidFromEnv } from './push.ts';
+import { RELEASE_DUE_JOB } from './release-due.ts';
 import { Runner } from './runner.ts';
 import { SHOTS_INTERVAL_MS, SHOTS_JOB, shotsHandler } from './shots.ts';
 import { storagePurgeHandler, workerStorage } from './storage-purge.ts';
@@ -106,6 +107,8 @@ async function scheduleMaintenance() {
     { kind: STORY_EXPIRY_JOB, delayMs: STORY_EXPIRY_INTERVAL_MS },
     // Hourly, so a cycle's day-before notice goes out within the hour of nine there.
     { kind: CYCLE_ENDING_JOB, delayMs: HOUR_MS },
+    // And a release's, the day before its day.
+    { kind: RELEASE_DUE_JOB, delayMs: HOUR_MS },
   ]);
   if (dropped > 0) log.info(`maintenance: dropped ${dropped} repeated waiting jobs`);
 }
@@ -197,6 +200,7 @@ reschedule('agents.judge', HOUR_MS);
 reschedule('digests.scan', HOUR_MS);
 reschedule(STORY_EXPIRY_JOB, STORY_EXPIRY_INTERVAL_MS);
 reschedule(CYCLE_ENDING_JOB, HOUR_MS);
+reschedule(RELEASE_DUE_JOB, HOUR_MS);
 
 await scheduleMaintenance();
 

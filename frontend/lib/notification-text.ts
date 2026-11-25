@@ -21,6 +21,7 @@ type Item = {
     replyId?: string;
     cycleId?: string;
     projectId?: string;
+    releaseId?: string;
     channelId?: string;
     messageId?: string;
   };
@@ -107,6 +108,7 @@ export function notificationHref(item: Item): string {
     const reply = payload.replyId ? `#reply-${payload.replyId}` : '';
     return `/workspaces/${workspaceId}/spaces/threads/${payload.threadId}${reply}`;
   }
+  if (payload.releaseId && workspaceId) return `/workspaces/${workspaceId}/releases`;
   if (payload.cycleId && payload.projectId && workspaceId) {
     return boardHref(workspaceId, payload.projectId, { filter: { cycleId: payload.cycleId } });
   }

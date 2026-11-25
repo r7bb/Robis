@@ -11296,6 +11296,9 @@
                               "projectId": {
                                 "type": "string"
                               },
+                              "releaseId": {
+                                "type": "string"
+                              },
                               "title": {
                                 "type": "string"
                               },
@@ -13156,6 +13159,10 @@
                         "type": "null"
                       }
                     ]
+                  },
+                  "timeZone": {
+                    "type": "string",
+                    "maxLength": 64
                   }
                 },
                 "required": [
@@ -13645,7 +13652,8 @@
                               "nudge",
                               "space_reply",
                               "space_answer",
-                              "cycle_ending"
+                              "cycle_ending",
+                              "release_due"
                             ]
                           },
                           "channels": {
@@ -13709,7 +13717,8 @@
                       "nudge",
                       "space_reply",
                       "space_answer",
-                      "cycle_ending"
+                      "cycle_ending",
+                      "release_due"
                     ]
                   },
                   "channel": {
@@ -13757,7 +13766,8 @@
                               "nudge",
                               "space_reply",
                               "space_answer",
-                              "cycle_ending"
+                              "cycle_ending",
+                              "release_due"
                             ]
                           },
                           "channels": {
@@ -13847,7 +13857,8 @@
                           "nudge",
                           "space_reply",
                           "space_answer",
-                          "cycle_ending"
+                          "cycle_ending",
+                          "release_due"
                         ]
                       }
                     }
@@ -13910,7 +13921,8 @@
                           "nudge",
                           "space_reply",
                           "space_answer",
-                          "cycle_ending"
+                          "cycle_ending",
+                          "release_due"
                         ]
                       }
                     }

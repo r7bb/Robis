@@ -129,6 +129,7 @@ async function planDemoRelease(
     .values({
       workspaceId,
       name: DEMO_WORKSPACE.release.name,
+      timeZone: zone,
       targetOn: `${aimed.year}-${String(aimed.month).padStart(2, '0')}-${String(aimed.day).padStart(2, '0')}`,
       createdBy: owner.id,
     })

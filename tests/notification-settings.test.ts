@@ -34,6 +34,7 @@ const KINDS = [
   'space_reply',
   'space_answer',
   'cycle_ending',
+  'release_due',
 ];
 
 async function settingsOf(actor: Actor) {

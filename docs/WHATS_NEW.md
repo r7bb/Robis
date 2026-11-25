@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **A notice the day before a release is due** (2026-11-25). The day before
+  a release’s day, everyone with an issue still open in it, on any board,
+  hears that it is due tomorrow and how many of theirs are open.
 - **Narrow a board to a release** (2026-11-25). A board’s filters now
   include Release, and each board named on the Releases page opens that
   board narrowed to the release.

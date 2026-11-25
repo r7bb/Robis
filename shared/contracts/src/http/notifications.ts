@@ -28,6 +28,8 @@ const payload = z.looseObject({
   /** A cycle about to end, and its board. */
   cycleId: z.string().optional(),
   projectId: z.string().optional(),
+  /** A release due tomorrow. */
+  releaseId: z.string().optional(),
   /** Nudges, the thread a space notification is about, and a cycle's name. */
   title: z.string().optional(),
   body: z.string().optional(),

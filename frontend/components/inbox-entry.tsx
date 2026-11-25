@@ -51,6 +51,14 @@ function headlineFor(item: NotificationItem) {
     );
   }
 
+  if (item.kind === 'release_due') {
+    return (
+      <>
+        <span className="font-medium">{item.payload.title ?? 'A release'}</span> is due tomorrow
+      </>
+    );
+  }
+
   if (item.kind === 'export') {
     return (
       <>
@@ -88,7 +96,7 @@ function headlineFor(item: NotificationItem) {
 function bodyFor(item: NotificationItem): string | undefined {
   if (item.kind === 'invitation') return 'Accept or decline it on your workspaces page.';
   if (item.kind === 'export') return 'Download it once, from the People page.';
-  return item.kind === 'nudge' || item.kind === 'cycle_ending'
+  return item.kind === 'nudge' || item.kind === 'cycle_ending' || item.kind === 'release_due'
     ? item.payload.body
     : describeNotification(item).body;
 }

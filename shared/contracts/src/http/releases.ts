@@ -51,6 +51,8 @@ export const releaseContracts = {
     body: z.object({
       name: z.string().trim().min(1).max(80),
       targetOn: dueDateSchema.nullable().optional(),
+      /** The planner's zone, whose calendar its day is; UTC when not known. */
+      timeZone: z.string().max(64).optional(),
     }),
     status: 201,
     response: z.object({ release }),

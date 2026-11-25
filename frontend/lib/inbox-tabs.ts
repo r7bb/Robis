@@ -23,8 +23,9 @@ const PRIORITY_KINDS: ReadonlySet<string> = new Set([
   'meeting',
   // You asked to be reminded, so it asks something of you.
   'reminder',
-  // Work of yours is open in a cycle that ends tomorrow.
+  // Work of yours is open in a cycle that ends, or a release due, tomorrow.
   'cycle_ending',
+  'release_due',
 ]);
 
 export function inboxTabOf(kind: string): InboxTab {

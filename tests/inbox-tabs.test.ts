@@ -4,7 +4,14 @@ import { inboxTabOf, splitInbox } from '@robis/web/lib/inbox-tabs.ts';
 
 describe('the inbox in two', () => {
   test('what asks something of you is Priority', () => {
-    for (const kind of ['mention', 'assignment', 'invitation', 'meeting', 'cycle_ending']) {
+    for (const kind of [
+      'mention',
+      'assignment',
+      'invitation',
+      'meeting',
+      'cycle_ending',
+      'release_due',
+    ]) {
       expect(inboxTabOf(kind)).toBe('priority');
     }
   });

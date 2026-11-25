@@ -25,4 +25,8 @@ export const NOTIFICATION_KIND_NAMES: Record<NotificationKind, { name: string; w
     name: 'Cycles ending',
     when: 'The day before a cycle ends, while issues of yours in it are still open.',
   },
+  release_due: {
+    name: 'Releases due',
+    when: 'The day before a release is due, while issues of yours in it are still open.',
+  },
 };

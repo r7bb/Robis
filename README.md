@@ -204,15 +204,15 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **A notice the day before a release is due.** The day before a release’s
+  day, everyone with an issue still open in it, on any board, hears that it
+  is due tomorrow and how many of theirs are open.
 - **Narrow a board to a release.** A board’s filters now include Release,
   and each board named on the Releases page opens that board narrowed to the
   release.
 - **Shipping and removing ask first.** Ship it on a release now asks once
   more, since shipping cannot be undone, and removing a release or a
   template asks before it goes for everyone.
-- **Ask Sapha how the release is going.** Type “how is the release going” or
-  “what’s left for the release Version 2” in the command palette, and Sapha
-  answers there with done of planned, its day and what is still open.
 
 <!-- latest:end -->
 

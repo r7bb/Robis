@@ -42,6 +42,15 @@ describe('a line of a digest', () => {
     ).toBe('Relaunch ends tomorrow: 2 of your issues are still open on Web.');
     expect(
       notificationLine({
+        kind: 'release_due',
+        actor: null,
+        link: 'x',
+        title: 'Version 2.0',
+        body: 'One of your issues is still open in it.',
+      }),
+    ).toBe('Version 2.0 is due tomorrow: One of your issues is still open in it.');
+    expect(
+      notificationLine({
         kind: 'nudge',
         actor: null,
         title: 'Try a document',

@@ -1,5 +1,5 @@
 import { type Database, type Executor, issues, projects, releases } from '@robis/database';
-import { can, contracts, isUuid, releaseNotes } from '@robis/shared';
+import { can, canonicalZone, contracts, isUuid, releaseNotes } from '@robis/shared';
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { serve } from '../contract.ts';
@@ -99,6 +99,7 @@ export async function releaseRoutes(app: FastifyInstance, opts: { db: Database }
           workspaceId,
           name: body.name,
           targetOn: body.targetOn ?? null,
+          timeZone: canonicalZone(body.timeZone ?? 'UTC') ?? 'UTC',
           createdBy: currentUser(request).id,
         })
         .returning({ id: releases.id });
