@@ -40,6 +40,8 @@ function actionFor(intent: SaphaIntent): Action | undefined {
     case 'unassign':
     case 'plan':
     case 'unplan':
+    case 'newCycle':
+    case 'newRelease':
       return 'editIssue';
     case 'create':
     case 'template':

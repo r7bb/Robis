@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
     area: 'Product',
+    title: 'Ask Sapha to plan a cycle or a release',
+    brief:
+      'Type “plan a two week cycle on Web” or “plan a release Version 3 for friday”, and Sapha plans it once you say Do it.',
+    summary:
+      'Sapha now plans cycles and releases. Plan a cycle, plan a two week cycle on Web or start a 10-day sprint plans one on the board named (or the only one) from today, on your own calendar, named after the cycles already there; two weeks unless said otherwise. Plan a release Version 3 for friday, or plan a release called Relaunch 2, plans a release with the day read in words on your clock, or no day. Each shows what it will do on Sapha’s card and waits for Do it, and is done through the same routes as the board and the Releases page, so the same rules hold, such as a cycle being at most eight weeks.',
+    checked:
+      'Three tests of the ways these are read, a day in words read on this clock, and the sentences said back. In the browser, plan a two week cycle on Web planned Cycle 1 from today to thirteen days on, and plan a release Version 3 for friday planned it aimed at Friday 27 November. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-25',
+    area: 'Product',
     title: 'Ask Sapha to put an issue in a cycle or a release',
     brief:
       'Type “put REL-4 in the current cycle”, “add WEB-3 to the release Version 2.0” or “take REL-4 out of the release”, and Sapha does it once you say Do it.',

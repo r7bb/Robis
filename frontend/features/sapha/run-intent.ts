@@ -3,6 +3,7 @@ import { call } from '../../lib/api.ts';
 import { localToday } from '../../lib/due-date.ts';
 import { issueHref } from '../../lib/links.ts';
 import { searchHref } from '../../lib/search-links.ts';
+import { addDays } from '../cycles/cycle-days.ts';
 import { currentCycle } from '../cycles/use-cycles.ts';
 import { releaseAsked } from './release-answer-model.ts';
 import { findBoard, findNamed, findPerson, findTemplate } from './resolve.ts';
@@ -132,6 +133,39 @@ async function plan(workspaceId: string, intent: Extract<Change, { kind: 'plan' 
   );
 }
 
+/** The viewer's own zone: whose calendar a cycle or release planned here keeps. */
+const here = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+async function newCycle(workspaceId: string, intent: Extract<Change, { kind: 'newCycle' }>) {
+  const { projects } = await call(contracts['projects.list'], { params: { workspaceId } });
+  const board = findBoard(projects, intent.board);
+  if (!board.ok) throw new Error(board.reason);
+  const params = { workspaceId, projectId: board.value.id };
+  const { cycles } = await call(contracts['cycles.list'], { params });
+  const today = localToday();
+  const { cycle } = await call(contracts['cycles.create'], {
+    params,
+    body: {
+      name: `Cycle ${cycles.length + 1}`,
+      startsOn: today,
+      endsOn: addDays(today, intent.days - 1),
+      timeZone: here(),
+    },
+  });
+  return {
+    said: `${cycle.name} is planned on ${board.value.name}, to ${cycle.endsOn}.`,
+    href: `/workspaces/${workspaceId}/projects/${board.value.id}`,
+  };
+}
+
+async function newRelease(workspaceId: string, intent: Extract<Change, { kind: 'newRelease' }>) {
+  await call(contracts['releases.create'], {
+    params: { workspaceId },
+    body: { name: intent.name, targetOn: intent.targetOn, timeZone: here() },
+  });
+  return { said: `${intent.name} is planned.`, href: `/workspaces/${workspaceId}/releases` };
+}
+
 async function remind(workspaceId: string, intent: Extract<Change, { kind: 'remind' }>) {
   const issue = await issueByKey(workspaceId, intent.issueKey);
   await call(contracts['reminders.create'], {
@@ -175,6 +209,10 @@ export function runIntent(workspaceId: string, intent: Change, myId: string | nu
       return fileFromTemplate(workspaceId, intent);
     case 'plan':
       return plan(workspaceId, intent);
+    case 'newCycle':
+      return newCycle(workspaceId, intent);
+    case 'newRelease':
+      return newRelease(workspaceId, intent);
     case 'unplan':
       return changeIssue(
         workspaceId,
