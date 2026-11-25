@@ -1,6 +1,6 @@
 'use client';
 
-import { can, contracts, type Role, type ThemeId } from '@robis/shared';
+import { can, contracts, type Role, TEMPLATE_DETAILS, type ThemeId } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -11,6 +11,12 @@ import { SectionLabel } from '../../components/ui/primitives.tsx';
 import { ApiError, call } from '../../lib/api.ts';
 import { useT } from '../../lib/i18n/locale-context.tsx';
 import { boardHref } from '../../lib/links.ts';
+import {
+  BOARD_STARTS,
+  type BoardStart,
+  boardStartLabel,
+  newBoardBody,
+} from '../../lib/new-board.ts';
 import { useOverlay } from '../../lib/use-overlay.ts';
 import { useMyId } from '../../lib/use-people.ts';
 import { HereStack } from './here-stack.tsx';
@@ -34,6 +40,8 @@ function AddableSection({
   canAdd,
   pending,
   onAdd,
+  onOpen,
+  extra,
   children,
 }: {
   title: string;
@@ -42,12 +50,22 @@ function AddableSection({
   pending: boolean;
   /** Resolves once made; a refusal keeps the field open with its reason. */
   onAdd: (name: string) => Promise<unknown>;
+  /** Called each time the form opens, to start any choices afresh. */
+  onOpen?: () => void;
+  /** More to choose under the name, such as how a board begins. */
+  extra?: ReactNode;
   children: ReactNode;
 }) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const plus = useRef<HTMLButtonElement>(null);
+  const field = useRef<HTMLInputElement>(null);
+
+  function open() {
+    onOpen?.();
+    setAdding(true);
+  }
 
   function stop() {
     setAdding(false);
@@ -58,7 +76,9 @@ function AddableSection({
   async function submit(event: FormEvent) {
     event.preventDefault();
     const trimmed = name.trim();
-    if (!trimmed || pending) return;
+    if (pending) return;
+    // Enter from a choice below, with no name yet, goes back to the name.
+    if (!trimmed) return field.current?.focus();
     try {
       await onAdd(trimmed);
       setName('');
@@ -77,7 +97,7 @@ function AddableSection({
             <button
               ref={plus}
               type="button"
-              onClick={() => (adding ? stop() : setAdding(true))}
+              onClick={() => (adding ? stop() : open())}
               aria-expanded={adding}
               aria-label={adding ? 'Cancel' : addLabel}
               className="rounded px-1 text-sm leading-none text-faint transition-colors hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
@@ -90,18 +110,22 @@ function AddableSection({
         {title}
       </SectionLabel>
       {adding ? (
-        <form onSubmit={submit}>
+        <form
+          onSubmit={submit}
+          onKeyDown={(event) => {
+            if (event.key !== 'Escape') return;
+            // Only the form closes, not the drawer around it.
+            event.preventDefault();
+            stop();
+          }}
+          className="space-y-1.5"
+        >
           <input
+            ref={field}
             // biome-ignore lint/a11y/noAutofocus: opened by the + just pressed, to type into
             autoFocus
             value={name}
             onChange={(event) => setName(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key !== 'Escape') return;
-              // Only the field closes, not the drawer around it.
-              event.preventDefault();
-              stop();
-            }}
             name={addLabel}
             autoComplete="off"
             aria-label={addLabel}
@@ -109,8 +133,9 @@ function AddableSection({
             placeholder={`${addLabel}, then Enter…`}
             className="w-full rounded-md border border-line bg-surface px-2 py-1 text-sm text-content placeholder:text-faint focus:border-accent-soft focus:outline-none"
           />
+          {extra}
           {error ? (
-            <p role="alert" className="mt-1 px-1 text-xs text-danger-soft">
+            <p role="alert" className="px-1 text-xs text-danger-soft">
               {error}
             </p>
           ) : null}
@@ -136,9 +161,13 @@ function Boards({
     queryKey: ['projects', workspaceId],
     queryFn: () => call(contracts['projects.list'], { params: { workspaceId } }),
   });
+  const [start, setStart] = useState<BoardStart>('blank');
   const create = useMutation({
     mutationFn: (name: string) =>
-      call(contracts['projects.create'], { params: { workspaceId }, body: { name } }),
+      call(contracts['projects.create'], {
+        params: { workspaceId },
+        body: newBoardBody(name, start),
+      }),
     onSuccess: async ({ project }) => {
       await queryClient.invalidateQueries({ queryKey: ['projects', workspaceId] });
       router.push(boardHref(workspaceId, project.id));
@@ -155,6 +184,8 @@ function Boards({
       canAdd={role !== undefined && can(role, 'project:create')}
       pending={create.isPending}
       onAdd={(name) => create.mutateAsync(name)}
+      onOpen={() => setStart('blank')}
+      extra={<BoardStartChoice value={start} onChange={setStart} disabled={create.isPending} />}
     >
       <ul className="space-y-px">
         {rows.map((project) => (
@@ -178,6 +209,50 @@ function Boards({
         <p className="px-2 text-xs text-faint">{t('nav.noBoards')}</p>
       ) : null}
     </AddableSection>
+  );
+}
+
+/**
+ * How a new board begins: empty, or with a built-in template's starter
+ * issues. Native radios, so arrow keys move between them; the one chosen
+ * says what it brings.
+ */
+function BoardStartChoice({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: BoardStart;
+  onChange: (start: BoardStart) => void;
+  disabled: boolean;
+}) {
+  return (
+    <fieldset disabled={disabled} className="space-y-1 px-0.5 disabled:opacity-60">
+      <legend className="sr-only">Start it with</legend>
+      <div className="flex flex-wrap gap-1">
+        {BOARD_STARTS.map((start) => (
+          <label
+            key={start}
+            className="cursor-pointer rounded-full border border-line px-2 py-1 text-[11px] text-muted transition-colors hover:text-content has-[:checked]:border-accent-soft has-[:checked]:bg-accent/15 has-[:checked]:text-content has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent-soft"
+          >
+            <input
+              type="radio"
+              name="board-start"
+              value={start}
+              checked={value === start}
+              onChange={() => onChange(start)}
+              className="sr-only"
+            />
+            {boardStartLabel(start)}
+          </label>
+        ))}
+      </div>
+      <p className="px-1 text-[11px] text-faint">
+        {value === 'blank'
+          ? 'An empty board.'
+          : `${TEMPLATE_DETAILS[value].description} ${TEMPLATE_DETAILS[value].issues.length} starter issues.`}
+      </p>
+    </fieldset>
   );
 }
 

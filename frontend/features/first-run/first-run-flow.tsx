@@ -3,7 +3,6 @@
 import {
   contracts,
   PROJECT_TEMPLATES,
-  type ProjectTemplate,
   TEMPLATE_DETAILS,
   THEME_IDS,
   THEMES,
@@ -14,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 import { MyInvitations } from '../../components/my-invitations.tsx';
 import { ApiError, call } from '../../lib/api.ts';
+import { type BoardStart, newBoardBody } from '../../lib/new-board.ts';
 import { useRequireAvatar } from '../../lib/use-require-avatar.ts';
 
 /**
@@ -55,7 +55,7 @@ export function FirstRunFlow() {
   const [username, setUsername] = useState('');
   const [invited, setInvited] = useState<string[]>([]);
   const [projectName, setProjectName] = useState('First project');
-  const [template, setTemplate] = useState<ProjectTemplate | 'blank'>('software');
+  const [template, setTemplate] = useState<BoardStart>('software');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -112,7 +112,7 @@ export function FirstRunFlow() {
     void run(async () => {
       const made = await call(contracts['projects.create'], {
         params: { workspaceId: workspaceId! },
-        body: { name: projectName.trim(), ...(template === 'blank' ? {} : { template }) },
+        body: newBoardBody(projectName, template),
       });
       router.replace(`/workspaces/${workspaceId}/projects/${made.project.id}`);
     });

@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Start any new board from a template** (2026-11-25). New board in the
+  sidebar now offers Software, Event planning and Coursework, each with five
+  starter issues, as well as an empty board.
 - **A cycle Sapha plans starts after the ones already planned**
   (2026-11-25). Plan a two week cycle on Web now starts the day after the
   cycle running there, rather than on top of it.

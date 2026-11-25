@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
     area: 'Product',
+    title: 'Start any new board from a template',
+    brief:
+      'New board in the sidebar now offers Software, Event planning and Coursework, each with five starter issues, as well as an empty board.',
+    summary:
+      'The built-in board templates were only offered when making the first board of a workspace. The + beside Boards in the sidebar now offers them too: a row of choices under the name, Empty first, with a line saying what the one chosen brings. Arrow keys move between them, Enter makes the board (or goes back to the name when there is none yet), and Escape closes the form from the name or from a choice. Each time the form opens it starts at Empty.',
+    checked:
+      'Four new tests of the body a new board is made with, the same from first run and the sidebar, and that every choice makes one the API accepts. In the browser: picking Event planning made a board with its five starter issues, the form opened at Empty again after, Enter with no name went back to the name, and Escape from a choice closed the form. The a11y, phone and keyboard journeys, the full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-25',
+    area: 'Product',
     title: 'A cycle Sapha plans starts after the ones already planned',
     brief:
       'Plan a two week cycle on Web now starts the day after the cycle running there, rather than on top of it.',
