@@ -123,6 +123,33 @@ export async function releaseRoutes(app: FastifyInstance, opts: { db: Database }
 
   serve(
     app,
+    contracts['releases.update'],
+    { preHandler: [requireAuth, requireMembership(db, 'issue:update')] },
+    async (request, { params: { releaseId }, body }) => {
+      const { workspaceId } = currentMembership(request);
+      const release = await releaseIn(request, releaseId);
+      // Only while still to ship: what shipped keeps the name and day its notes give.
+      const [changed] = await db
+        .update(releases)
+        .set({
+          ...(body.name !== undefined ? { name: body.name } : {}),
+          ...(body.targetOn !== undefined ? { targetOn: body.targetOn } : {}),
+        })
+        .where(and(eq(releases.id, release.id), sql`${releases.shippedAt} is null`))
+        .returning({ id: releases.id });
+      if (!changed) {
+        throw ApiError.badRequest(
+          'That release has shipped; it keeps its name and day',
+          'release_shipped',
+        );
+      }
+      const [after] = await withCounts(workspaceId, release.id);
+      return { release: after! };
+    },
+  );
+
+  serve(
+    app,
     contracts['releases.ship'],
     { preHandler: [requireAuth, requireMembership(db, 'issue:update')] },
     async (request, { params: { releaseId } }) => {

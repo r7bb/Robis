@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Rename a release or move its day** (2026-11-25). A release still to ship
+  can now be renamed, or its day moved or cleared, from Rename or move its
+  day on the Releases page.
 - **Confirmations that keyboards and screen readers can follow**
   (2026-11-25). Ship it and removing a template now move focus to the safe
   answer and say the question aloud, Escape cancels only the question, and

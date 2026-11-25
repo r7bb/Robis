@@ -1,9 +1,7 @@
 import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
-import { releases } from '@robis/database';
 import { notificationLine } from '@robis/mailer';
 import { notificationHref } from '@robis/web/lib/notification-text.ts';
 import { runReleaseDueScan } from '@robis/worker/release-due';
-import { eq } from 'drizzle-orm';
 import {
   type Actor,
   addMember,
@@ -117,15 +115,17 @@ describe('telling people a release is due tomorrow', () => {
   });
 
   test('in Tokyo the morning comes first; a release moved later is told again', async () => {
-    const { ana, web, plan, file } = await team();
+    const { ana, ws, web, plan, file } = await team();
     const tokyo = await plan({ targetOn: '2026-11-25', timeZone: 'Asia/Tokyo' });
     await file(web.id, tokyo.id, ana);
     await scan(new Date('2026-11-24T01:00:00Z'));
     expect(await inbox(ana)).toHaveLength(1);
 
-    // Moved later without the API, which has no way yet to move a release's day.
-    const { db } = await getHarness();
-    await db.update(releases).set({ targetOn: '2026-11-27' }).where(eq(releases.id, tokyo.id));
+    await request(`${ws}/releases/${tokyo.id}`, {
+      method: 'PATCH',
+      actor: ana,
+      payload: { targetOn: '2026-11-27' },
+    });
     await scan(new Date('2026-11-26T01:00:00Z'));
     expect(await inbox(ana)).toHaveLength(2);
   });

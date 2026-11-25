@@ -188,6 +188,7 @@ function ReleaseDetail({
         <p className="text-xs text-faint">Nothing in it yet.</p>
       ) : null}
       {release.notes ? <ReleaseNotes notes={release.notes} /> : null}
+      {canShip ? <EditRelease workspaceId={workspaceId} release={release} /> : null}
       <div className="flex items-center justify-end gap-2">
         {failed ? (
           <p role="alert" className="mr-auto text-xs text-danger-soft">
@@ -262,6 +263,89 @@ function ShipButton({ name, onShip, busy }: { name: string; onShip: () => void; 
         </button>
       </span>
     </fieldset>
+  );
+}
+
+/** Rename a release still to ship, or move or clear its day. */
+function EditRelease({ workspaceId, release }: { workspaceId: string; release: Release }) {
+  const queryClient = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(release.name);
+  const [targetOn, setTargetOn] = useState(release.targetOn ?? '');
+  const save = useMutation({
+    mutationFn: () =>
+      call(contracts['releases.update'], {
+        params: { workspaceId, releaseId: release.id },
+        body: { name: name.trim(), targetOn: targetOn || null },
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: releasesKey(workspaceId) });
+      setEditing(false);
+    },
+  });
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    if (name.trim()) save.mutate();
+  }
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          setName(release.name);
+          setTargetOn(release.targetOn ?? '');
+          setEditing(true);
+        }}
+        className="rounded px-1 text-xs text-muted hover:text-content"
+      >
+        Rename or move its day
+      </button>
+    );
+  }
+  return (
+    <form
+      onSubmit={submit}
+      aria-label={`Change ${release.name}`}
+      className="flex flex-wrap items-center gap-2"
+    >
+      <input
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+        aria-label="Release name"
+        name="release-name"
+        autoComplete="off"
+        maxLength={80}
+        className={`${FIELD} min-w-0 flex-1`}
+      />
+      <input
+        type="date"
+        value={targetOn}
+        onChange={(event) => setTargetOn(event.target.value)}
+        aria-label="Aimed at"
+        className={FIELD}
+      />
+      <button
+        type="button"
+        onClick={() => setEditing(false)}
+        className="text-xs text-faint hover:text-content"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        disabled={!name.trim() || save.isPending}
+        className="whitespace-nowrap rounded-md bg-accent px-3 py-1 text-xs font-medium text-accent-contrast hover:bg-accent-hover disabled:opacity-50"
+      >
+        Save
+      </button>
+      {save.isError ? (
+        <p role="alert" className="basis-full text-xs text-danger-soft">
+          {(save.error as Error).message}
+        </p>
+      ) : null}
+    </form>
   );
 }
 

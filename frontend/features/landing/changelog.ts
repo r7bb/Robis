@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
     area: 'Product',
+    title: 'Rename a release or move its day',
+    brief:
+      'A release still to ship can now be renamed, or its day moved or cleared, from Rename or move its day on the Releases page.',
+    summary:
+      'Opened on the Releases page, a release still to ship now offers Rename or move its day: a new name, a new day, or no day at all. Moving the day moves the notice before it too, which comes again before the new day. Once a release has shipped, its name and day are what its notes say and stay as they are. Guests do not change releases.',
+    checked:
+      'A test through the API: a release renamed and its day moved and cleared, a guest refused, and a shipped release refused. The release-due test now moves its release through this route rather than the database. In the browser, Version 2.0 renamed to Version 2.1. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-25',
+    area: 'Product',
     title: 'Confirmations that keyboards and screen readers can follow',
     brief:
       'Ship it and removing a template now move focus to the safe answer and say the question aloud, Escape cancels only the question, and Sapha leaves ordinary words about releases to search.',

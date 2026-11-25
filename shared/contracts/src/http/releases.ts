@@ -64,6 +64,20 @@ export const releaseContracts = {
     params: releaseParams,
     response: z.object({ release, issues: z.array(releaseIssue) }),
   }),
+  'releases.update': contract({
+    method: 'PATCH',
+    path: '/workspaces/:workspaceId/releases/:releaseId',
+    summary: 'Rename a release or move its day, until it ships.',
+    params: releaseParams,
+    body: z
+      .object({
+        name: z.string().trim().min(1).max(80),
+        targetOn: dueDateSchema.nullable(),
+      })
+      .partial()
+      .refine((v) => Object.keys(v).length > 0, 'No fields to update'),
+    response: z.object({ release }),
+  }),
   'releases.ship': contract({
     method: 'POST',
     path: '/workspaces/:workspaceId/releases/:releaseId/ship',

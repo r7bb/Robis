@@ -14,7 +14,7 @@ Written to be checkable. Every row names a file you can open.
 | --- | --- |
 | Services | 5 (web, API, realtime gateway, worker, MCP server for agents) plus an optional ML service |
 | Database tables | 18 |
-| HTTP endpoints | 261 |
+| HTTP endpoints | 262 |
 | Tests | Counted in [docs/ROADMAP.md](docs/ROADMAP.md), the one place they are kept |
 | Screenshots | 35, all captured from the running app |
 | Measured throughput | ~3,600 req/s, zero errors |
@@ -218,7 +218,7 @@ JavaScript.
 | Project updates: a short written status marked on track, at risk or off track, above the board and on the feed's project card | `backend/api/src/routes/project-updates.ts`, `frontend/features/projects/` |
 | Cycles: a board's work planned in stretches of days, issues put in one of their own board's, progress and days left on the board, and a cycle filter | `backend/api/src/routes/cycles.ts`, `frontend/features/cycles/` |
 | Sapha on releases: "how is the release going" or "what's left for the release Version 2" answered in the palette for the release named, else the next to ship: done of planned, its day, and the first five issues still open | `shared/contracts/src/sapha.ts`, `frontend/features/sapha/sapha-release-answer.tsx` |
-| Releases: versions of the work gathered from any board, aimed at a day, with done of planned; an issue's Release field takes one not yet shipped; Ship it stamps a release once and keeps notes written from its done issues, by board; a board can be narrowed to one release, and each board name on the Releases page opens it so | `backend/api/src/routes/releases.ts`, `shared/contracts/src/releases.ts`, `frontend/features/releases/` |
+| Releases: versions of the work gathered from any board, aimed at a day, with done of planned; an issue's Release field takes one not yet shipped; Ship it stamps a release once and keeps notes written from its done issues, by board; a board can be narrowed to one release, and each board name on the Releases page opens it so; a release still to ship can be renamed or its day moved | `backend/api/src/routes/releases.ts`, `shared/contracts/src/releases.ts`, `frontend/features/releases/` |
 | Issue templates: a starting point for a kind of issue (title, description, priority, labels) kept for the workspace, saved from any issue and filed onto any board from Templates, its labels set in the same transaction; a label removed since is left off; whoever made one or an admin removes it | `backend/api/src/routes/issue-templates.ts`, `frontend/features/templates/` |
 | Cycle burn-up: on the cycle bar, Chart draws done by the end of each day so far, from when each issue was last moved to done on the person's own calendar, against a dashed even pace to all of it by the last day; hover names a day, screen readers get a sentence and every day | `backend/api/src/routes/cycle-burnup.ts`, `shared/contracts/src/burn-up.ts`, `frontend/features/cycles/burn-up-chart.tsx` |
 | Release due notice: the day before a release's day, from nine on its planner's clock, each person with an issue still open in it, on any board, is told once for that day, under Priority, linking to Releases; a shipped release or one with no day tells nobody; shares its timing and who-has-open-work query with the cycle notice | `backend/worker/src/release-due.ts`, `backend/worker/src/day-before.ts` |

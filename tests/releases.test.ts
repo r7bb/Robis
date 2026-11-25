@@ -225,3 +225,32 @@ describe('release notes', () => {
     );
   });
 });
+
+describe('changing a release', () => {
+  test('its name and day, until it ships; a guest cannot', async () => {
+    const { owner, workspace, ws, make } = await setUp();
+    const release = (await make(owner, { name: 'Version 2.0', targetOn: '2026-12-15' })).json()
+      .release;
+    const change = (actor: Actor, body: Record<string, unknown>) =>
+      request(`${ws}/releases/${release.id}`, { method: 'PATCH', actor, payload: body });
+
+    const moved = await change(owner, { name: 'Version 2.1', targetOn: '2026-12-22' });
+    expect(moved.statusCode).toBe(200);
+    expect(moved.json().release).toMatchObject({ name: 'Version 2.1', targetOn: '2026-12-22' });
+    const cleared = await change(owner, { targetOn: null });
+    expect(cleared.json().release.targetOn).toBeNull();
+
+    const guest = await createActor('Guest');
+    await addMember(owner, workspace.id, guest, 'GUEST');
+    expect((await change(guest, { name: 'Nope' })).statusCode).toBe(403);
+
+    await request(`${ws}/releases/${release.id}/ship`, {
+      method: 'POST',
+      actor: owner,
+      payload: {},
+    });
+    const late = await change(owner, { name: 'Too late' });
+    expect(late.statusCode).toBe(400);
+    expect(late.json().error).toBe('release_shipped');
+  });
+});

@@ -19,7 +19,7 @@ way.
 `{ "error": "<code>", "message": "<words for people>" }`. A stranger to a
 workspace gets 404, never 403, so its existence is not given away.
 
-250 routes.
+251 routes.
 
 ## activity
 
@@ -1634,6 +1634,14 @@ One release with its issues from every board, by board and number.
 
 - Answers: 200
 - Name: `releases.get`
+
+### `PATCH /workspaces/{workspaceId}/releases/{releaseId}`
+
+Rename a release or move its day, until it ships.
+
+- Body: `name`, `targetOn`
+- Answers: 200
+- Name: `releases.update`
 
 ### `POST /workspaces/{workspaceId}/releases/{releaseId}/ship`
 
