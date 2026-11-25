@@ -2,7 +2,7 @@ import { contracts, type SaphaIntent } from '@robis/shared';
 import { call } from '../../lib/api.ts';
 import { issueHref } from '../../lib/links.ts';
 import { searchHref } from '../../lib/search-links.ts';
-import { findBoard, findPerson } from './resolve.ts';
+import { findBoard, findPerson, findTemplate } from './resolve.ts';
 
 /**
  * Doing what a person said yes to (Sapha, tier 0): each change goes through
@@ -65,6 +65,28 @@ async function create(workspaceId: string, intent: Extract<Change, { kind: 'crea
   return { said: `Made it on ${board.value.name}.`, href: issueHref(workspaceId, issue.id) };
 }
 
+async function fileFromTemplate(
+  workspaceId: string,
+  intent: Extract<Change, { kind: 'template' }>,
+) {
+  const [{ templates }, { projects }] = await Promise.all([
+    call(contracts['issueTemplates.list'], { params: { workspaceId } }),
+    call(contracts['projects.list'], { params: { workspaceId } }),
+  ]);
+  const template = findTemplate(templates, intent.template);
+  if (!template.ok) throw new Error(template.reason);
+  const board = findBoard(projects, intent.board);
+  if (!board.ok) throw new Error(board.reason);
+  const { issue } = await call(contracts['issueTemplates.file'], {
+    params: { workspaceId, templateId: template.value.id },
+    body: { projectId: board.value.id, ...(intent.title ? { title: intent.title } : {}) },
+  });
+  return {
+    said: `Filed ${issue.key} from ${template.value.name} on ${board.value.name}.`,
+    href: issueHref(workspaceId, issue.id),
+  };
+}
+
 async function remind(workspaceId: string, intent: Extract<Change, { kind: 'remind' }>) {
   const issue = await issueByKey(workspaceId, intent.issueKey);
   await call(contracts['reminders.create'], {
@@ -104,6 +126,8 @@ export function runIntent(workspaceId: string, intent: Change, myId: string | nu
       return assign(workspaceId, intent, myId);
     case 'create':
       return create(workspaceId, intent);
+    case 'template':
+      return fileFromTemplate(workspaceId, intent);
     case 'remind':
       return remind(workspaceId, intent);
     case 'schedule':

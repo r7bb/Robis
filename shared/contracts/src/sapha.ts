@@ -20,6 +20,8 @@ export type SaphaIntent =
   | { kind: 'unassign'; issueKey: string }
   | { kind: 'due'; issueKey: string; dueOn: string | null }
   | { kind: 'create'; title: string; board: string | null }
+  /** A new issue from a template, by the template's name, with its own title or one given. */
+  | { kind: 'template'; template: string; title: string | null; board: string | null }
   | { kind: 'remind'; issueKey: string; at: Date }
   | { kind: 'schedule'; title: string; at: Date }
   | { kind: 'open'; issueKey: string }
@@ -167,16 +169,35 @@ function making(text: string, original: string, now: Date): SaphaIntent | null {
     return { kind: 'schedule', title, at: found.at };
   }
   // A new issue: its title as typed, and a board only after a quoted title.
-  m = /^(?:new|create|add|file)(?: an?)? issue:? (.+)$/i.exec(
-    original.trim().replace(/^(hey |hi |ok )?sapha[,:]?\s*/i, ''),
-  );
+  m = /^(?:new|create|add|file)(?: an?)? issue:? (.+)$/i.exec(asSaid(original));
   if (m) {
-    const rest = m[1]!.trim();
-    const quoted = /^["“](.+?)["”](?:\s+(?:on|in)\s+(?:the\s+)?(.+?)(?:\s+board)?)?$/.exec(rest);
-    if (quoted) return { kind: 'create', title: quoted[1]!, board: quoted[2] ?? null };
-    return { kind: 'create', title: rest.replace(/[.!]+$/, ''), board: null };
+    const { title, board } = titleAndBoard(m[1]!);
+    return { kind: 'create', title, board };
   }
   return null;
+}
+
+/** The request as typed, without a greeting to Sapha. */
+const asSaid = (original: string) => original.trim().replace(/^(hey |hi |ok )?sapha[,:]?\s*/i, '');
+
+/** A title as typed; a board only after a quoted one ("Tidy settings" on Web). */
+function titleAndBoard(rest: string): { title: string; board: string | null } {
+  const trimmed = rest.trim();
+  const quoted = /^["“](.+?)["”](?:\s+(?:on|in)\s+(?:the\s+)?(.+?)(?:\s+board)?)?$/.exec(trimmed);
+  if (quoted) return { title: quoted[1]!, board: quoted[2] ?? null };
+  return { title: trimmed.replace(/[.!?]+$/, ''), board: null };
+}
+
+const TEMPLATE_REQUEST =
+  /^(?:use|file from|file with|from)\s+(?:the\s+)?(.+?)\s+template(?:(?:\s+for|:)\s*(.+))?$/i;
+
+/** "Use the bug report template for Login loops": the template by name, and the title. */
+function fromTemplate(original: string): SaphaIntent | null {
+  const m = TEMPLATE_REQUEST.exec(asSaid(original).replace(/[.!?]+$/, ''));
+  if (!m) return null;
+  const template = m[1]!.trim();
+  if (!m[2]?.trim()) return { kind: 'template', template, title: null, board: null };
+  return { kind: 'template', template, ...titleAndBoard(m[2]) };
 }
 
 const CYCLE = '(?:cycle|sprint)';
@@ -240,7 +261,12 @@ function looking(text: string, request: string): SaphaIntent | null {
 export function interpret(request: string, now: Date = new Date()): SaphaIntent | null {
   const text = normalise(request);
   if (!text) return null;
-  return issueChange(text, request, now) ?? making(text, request, now) ?? looking(text, request);
+  return (
+    issueChange(text, request, now) ??
+    fromTemplate(request) ??
+    making(text, request, now) ??
+    looking(text, request)
+  );
 }
 
 const STATUS_NAMES: Record<IssueStatus, string> = {
@@ -287,6 +313,10 @@ export function describeIntent(intent: SaphaIntent, _now: Date = new Date()): st
         : `Clear the due date on ${intent.issueKey}`;
     case 'create':
       return `Create the issue “${intent.title}”${intent.board ? ` on ${intent.board}` : ''}`;
+    case 'template': {
+      const what = intent.title ? `File “${intent.title}”` : 'File';
+      return `${what} from the ${intent.template} template${intent.board ? ` on ${intent.board}` : ''}`;
+    }
     case 'remind':
       return `Remind you about ${intent.issueKey}, ${dateLine(intent.at, true)}`;
     case 'schedule':
@@ -318,6 +348,7 @@ export const SAPHA_KINDS = [
   'unassign',
   'due',
   'create',
+  'template',
   'remind',
   'schedule',
   'open',
@@ -352,6 +383,8 @@ export const saphaPartsSchema = z.object({
   when: z.string().nullable(),
   query: z.string().nullable(),
   place: z.enum(SAPHA_PLACES).nullable(),
+  /** A template's name, as said, to file a new issue from. */
+  template: z.string().nullable().optional(),
 });
 export type SaphaParts = z.infer<typeof saphaPartsSchema>;
 
@@ -399,6 +432,15 @@ function issueIntent(parts: SaphaParts, issueKey: string, now: Date): SaphaInten
   }
 }
 
+/** A new issue, plain or from a template, from the provider's parts; null when they do not hold. */
+function newIssueFromParts(parts: SaphaParts): SaphaIntent | null {
+  const title = words(parts.title, 200);
+  const board = words(parts.board, 80);
+  if (parts.kind === 'create') return title ? { kind: 'create', title, board } : null;
+  const template = words(parts.template ?? null, 60);
+  return template ? { kind: 'template', template, title, board } : null;
+}
+
 /** An intent from the provider's parts, checked as tier 0's are; null when they do not hold. */
 export function intentFromParts(parts: SaphaParts, now: Date = new Date()): SaphaIntent | null {
   const issueKey = keyOf(parts);
@@ -406,11 +448,8 @@ export function intentFromParts(parts: SaphaParts, now: Date = new Date()): Saph
     const change = issueIntent(parts, issueKey, now);
     if (change) return change;
   }
+  if (parts.kind === 'create' || parts.kind === 'template') return newIssueFromParts(parts);
   switch (parts.kind) {
-    case 'create': {
-      const title = words(parts.title, 200);
-      return title ? { kind: 'create', title, board: words(parts.board, 80) } : null;
-    }
     case 'schedule': {
       const title = words(parts.title, 200);
       const at = parts.when ? parseWhen(parts.when, now) : null;

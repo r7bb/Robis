@@ -55,3 +55,25 @@ export function findBoard(boards: readonly Board[], said: string | null): Found<
     open.find((board) => fold(board.name).startsWith(name));
   return match ? { ok: true, value: match } : { ok: false, reason: `No board called ${said}.` };
 }
+
+/**
+ * A template by its name, or the start of one only it has; several that
+ * start the same, or none, is a question back.
+ */
+export function findTemplate<T extends { name: string }>(
+  templates: readonly T[],
+  said: string,
+): Found<T> {
+  const name = fold(said);
+  const exact = templates.find((template) => fold(template.name) === name);
+  if (exact) return { ok: true, value: exact };
+  const starting = templates.filter((template) => fold(template.name).startsWith(name));
+  if (starting.length === 1) return { ok: true, value: starting[0]! };
+  if (starting.length > 1) {
+    return {
+      ok: false,
+      reason: `More than one template starts with ${said}: ${starting.map((t) => t.name).join(', ')}. Say more of its name.`,
+    };
+  }
+  return { ok: false, reason: `No template called ${said}. Save one from an issue first.` };
+}

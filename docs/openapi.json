@@ -23148,6 +23148,7 @@
                                         "unassign",
                                         "due",
                                         "create",
+                                        "template",
                                         "remind",
                                         "schedule",
                                         "open",
@@ -23245,6 +23246,12 @@
                                         {
                                           "type": "null"
                                         }
+                                      ]
+                                    },
+                                    "template": {
+                                      "type": [
+                                        "string",
+                                        "null"
                                       ]
                                     }
                                   },

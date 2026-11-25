@@ -119,7 +119,7 @@ export const PROMPTS = {
     'You read one request typed into a work tracker’s command bar into the parts of one action.',
     'Actions: status (move an issue to TODO, IN_PROGRESS, IN_REVIEW, DONE or CANCELED), priority,',
     'assign (to a person by name, or "me"), unassign, due (a due day; no when clears it), create (a new issue',
-    'with a title, on a board if one is named), remind (about an issue, at a time), schedule (a meeting with a',
+    'with a title, on a board if one is named), template (a new issue from a template: the template’s name as template, the issue’s title if said), remind (about an issue, at a time), schedule (a meeting with a',
     'title, at a time), open (an issue), blockers (what an issue waits on), about (who has an issue and how',
     'it stands), cycle (how the cycle running now is going, on a board if one is named), release (how a release is going, its name as the title if one is said), search (a query), go (to day,',
     'calendar, feed, spaces or meetings).',

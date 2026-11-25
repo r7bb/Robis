@@ -40,6 +40,7 @@ function actionFor(intent: SaphaIntent): Action | undefined {
     case 'unassign':
       return 'editIssue';
     case 'create':
+    case 'template':
       return 'newIssue';
     default:
       return undefined;

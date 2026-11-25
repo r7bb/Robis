@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { findBoard, findPerson } from '@robis/web/features/sapha/resolve.ts';
+import { findBoard, findPerson, findTemplate } from '@robis/web/features/sapha/resolve.ts';
 
 /** Who and where Sapha takes a request to mean: one match, or a question back. */
 
@@ -51,5 +51,29 @@ describe('finding a board', () => {
     expect(findBoard(boards, null)).toMatchObject({ ok: false });
     expect(findBoard(boards, 'Old site')).toMatchObject({ ok: false });
     expect(findBoard([], null)).toEqual({ ok: false, reason: 'There is no board here yet.' });
+  });
+});
+
+describe('finding a template', () => {
+  const templates = [
+    { id: 't1', name: 'Bug report' },
+    { id: 't2', name: 'Bug triage' },
+    { id: 't3', name: 'Weekly check' },
+  ];
+  test('by its name, or the start of one only it has', () => {
+    expect(findTemplate(templates, 'bug report')).toMatchObject({ ok: true, value: { id: 't1' } });
+    expect(findTemplate(templates, 'weekly')).toMatchObject({ ok: true, value: { id: 't3' } });
+  });
+
+  test('two that start the same, or none, is a question back', () => {
+    expect(findTemplate(templates, 'bug')).toEqual({
+      ok: false,
+      reason:
+        'More than one template starts with bug: Bug report, Bug triage. Say more of its name.',
+    });
+    expect(findTemplate(templates, 'release')).toEqual({
+      ok: false,
+      reason: 'No template called release. Save one from an issue first.',
+    });
   });
 });

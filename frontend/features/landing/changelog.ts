@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
     area: 'Product',
+    title: 'Ask Sapha to file from a template',
+    brief:
+      'Type “use the bug report template for Login loops” in the command palette, and Sapha files it from that template, with its description, priority and labels, once you say Do it.',
+    summary:
+      'Sapha now reads requests to file from a template: use the bug report template for Login loops, from the Bug report template: Crash on save, or just use the weekly check template for the template’s own title. As with any change, it shows what it will do on its card and waits for Do it. It finds the template by its name, or the start of a name only one has, and asks back when two start alike or none matches; the board is the only one open, or the one named after a quoted title, as in for "Crash on save" on Web. The issue is filed through the same route as Templates on a board, as the person asking, so their role decides. With assistance on, the assistant can read such a request too, the template’s name coming back as its own part.',
+    checked:
+      'Three tests of the ways the request is read, said back, kept waiting for a yes and taken from the assistant’s parts (none without a template’s name), and two of finding a template by name. In the browser, the request showed File “Login loops on Safari” from the bug report template on the card, and Do it filed WEB-1 at the template’s high priority. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-25',
+    area: 'Product',
     title: 'Rename a release or move its day',
     brief:
       'A release still to ship can now be renamed, or its day moved or cleared, from Rename or move its day on the Releases page.',

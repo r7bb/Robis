@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { describeIntent, intentFromParts, interpret } from '@robis/shared';
+import { describeIntent, intentFromParts, interpret, LOOKING_INTENTS } from '@robis/shared';
 
 /**
  * Sapha, tier 0: plain requests read into one of a few intents, with no
@@ -157,6 +157,68 @@ describe('saying what it will do', () => {
     const looks = ['open REL-4', 'find vpn', 'my day'];
     for (const text of changes) expect(read(text)?.kind).toMatch(/status|create|remind/);
     for (const text of looks) expect(read(text)?.kind).toMatch(/open|search|go/);
+  });
+});
+
+describe('filing from a template', () => {
+  test('by the template’s name, with a title, and a board when the title is quoted', () => {
+    expect(read('use the bug report template for Login loops on Safari')).toEqual({
+      kind: 'template',
+      template: 'bug report',
+      title: 'Login loops on Safari',
+      board: null,
+    });
+    expect(read('from the Bug report template: Crash on save')).toEqual({
+      kind: 'template',
+      template: 'Bug report',
+      title: 'Crash on save',
+      board: null,
+    });
+    expect(read('use the bug report template for "Crash on save" on Web')).toEqual({
+      kind: 'template',
+      template: 'bug report',
+      title: 'Crash on save',
+      board: 'Web',
+    });
+    expect(read('use the weekly check template')).toEqual({
+      kind: 'template',
+      template: 'weekly check',
+      title: null,
+      board: null,
+    });
+  });
+
+  test('said back, and a change that waits for a yes', () => {
+    expect(describeIntent(read('use the bug report template for Login loops')!, NOW)).toBe(
+      'File “Login loops” from the bug report template',
+    );
+    expect(describeIntent(read('use the weekly check template')!, NOW)).toBe(
+      'File from the weekly check template',
+    );
+    expect(LOOKING_INTENTS.has('template')).toBe(false);
+  });
+
+  test('from the provider’s parts, the template’s name its own part', () => {
+    const parts = {
+      kind: 'template' as const,
+      issueKey: null,
+      status: null,
+      priority: null,
+      person: null,
+      title: 'Crash on save',
+      board: null,
+      when: null,
+      query: null,
+      place: null,
+      template: ' Bug report ',
+    };
+    expect(intentFromParts(parts, NOW)).toEqual({
+      kind: 'template',
+      template: 'Bug report',
+      title: 'Crash on save',
+      board: null,
+    });
+    expect(intentFromParts({ ...parts, template: null }, NOW)).toBeNull();
   });
 });
 

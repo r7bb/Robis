@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Ask Sapha to file from a template** (2026-11-25). Type “use the bug
+  report template for Login loops” in the command palette, and Sapha files
+  it from that template, with its description, priority and labels, once you
+  say Do it.
 - **Rename a release or move its day** (2026-11-25). A release still to ship
   can now be renamed, or its day moved or cleared, from Rename or move its
   day on the Releases page.
