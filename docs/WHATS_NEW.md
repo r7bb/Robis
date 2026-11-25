@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **A cycle Sapha plans starts after the ones already planned**
+  (2026-11-25). Plan a two week cycle on Web now starts the day after the
+  cycle running there, rather than on top of it.
 - **Sapha’s assistant plans cycles and releases too** (2026-11-25). With the
   assistant on, requests in your own words can put an issue in a cycle or
   release, take it out, or plan a cycle or a release.

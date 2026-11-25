@@ -241,8 +241,12 @@ describe('planning a cycle or a release', () => {
 
   test('said back, and changes that wait for a yes', () => {
     const at = (text: string) => describeIntent(read(text)!, NOW);
-    expect(at('plan a two week cycle on Web')).toBe('Plan a 14-day cycle on Web, from today');
-    expect(at('plan a cycle')).toBe('Plan a 14-day cycle, from today');
+    expect(at('plan a two week cycle on Web')).toBe(
+      'Plan a 14-day cycle on Web, from today or after the cycles already planned',
+    );
+    expect(at('plan a cycle')).toBe(
+      'Plan a 14-day cycle, from today or after the cycles already planned',
+    );
     expect(at('plan a release Version 3 for friday')).toBe(
       'Plan the release “Version 3”, aimed at Fri 27 Nov',
     );

@@ -18,3 +18,15 @@ export function daysLeftLine(today: string, endsOn: string): string {
   if (left <= 0) return 'ends today';
   return `${left} ${left === 1 ? 'day' : 'days'} left`;
 }
+
+/**
+ * The first day from `today` no cycle covers: today, or the day after the
+ * last cycle planned that has not ended, so a new one never overlaps.
+ */
+export function firstFreeDay(cycles: readonly { endsOn: string }[], today: string): string {
+  const last = cycles.reduce(
+    (latest, cycle) => (cycle.endsOn > latest ? cycle.endsOn : latest),
+    '',
+  );
+  return last >= today ? addDays(last, 1) : today;
+}

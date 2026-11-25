@@ -407,7 +407,7 @@ function describeMaking(
     case 'template':
       return `${intent.title ? `File “${intent.title}”` : 'File'} from the ${intent.template} template${on}`;
     case 'newCycle':
-      return `Plan a ${intent.days}-day cycle${on}, from today`;
+      return `Plan a ${intent.days}-day cycle${on}, from today or after the cycles already planned`;
     case 'newRelease':
       return `Plan the release “${intent.name}”${
         intent.targetOn ? `, aimed at ${dateLine(new Date(`${intent.targetOn}T12:00`), false)}` : ''

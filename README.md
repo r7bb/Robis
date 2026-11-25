@@ -204,6 +204,9 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **A cycle Sapha plans starts after the ones already planned.** Plan a two
+  week cycle on Web now starts the day after the cycle running there, rather
+  than on top of it.
 - **Sapha’s assistant plans cycles and releases too.** With the assistant
   on, requests in your own words can put an issue in a cycle or release,
   take it out, or plan a cycle or a release.
@@ -211,9 +214,6 @@ no write lost and nothing done twice.
   in cycle 3 now finds Cycle 3, a release can be called Launch for
   customers, polite words reach Sapha, and talk of release notes stays a
   search.
-- **Ask Sapha to plan a cycle or a release.** Type “plan a two week cycle on
-  Web” or “plan a release Version 3 for friday”, and Sapha plans it once you
-  say Do it.
 
 <!-- latest:end -->
 

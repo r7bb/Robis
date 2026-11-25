@@ -45,6 +45,17 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
+    area: 'Product',
+    title: 'A cycle Sapha plans starts after the ones already planned',
+    brief:
+      'Plan a two week cycle on Web now starts the day after the cycle running there, rather than on top of it.',
+    summary:
+      'Asking Sapha to plan a cycle used to start it today, even with a cycle already running on that board, so two cycles could cover the same days. It now starts on the first day no cycle covers: today when the board has none running or planned, else the day after the last one planned. The card says so before Do it, and the answer after names both days.',
+    checked:
+      'Four new tests of the first day no cycle covers: no cycles, only past ones, one running now, one ending today, and several in any order. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-25',
     area: 'ML',
     title: 'Sapha’s assistant plans cycles and releases too',
     brief:

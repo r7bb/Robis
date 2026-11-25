@@ -3,7 +3,7 @@ import { call } from '../../lib/api.ts';
 import { localToday } from '../../lib/due-date.ts';
 import { issueHref } from '../../lib/links.ts';
 import { searchHref } from '../../lib/search-links.ts';
-import { addDays } from '../cycles/cycle-days.ts';
+import { addDays, firstFreeDay } from '../cycles/cycle-days.ts';
 import { currentCycle } from '../cycles/use-cycles.ts';
 import { releaseAsked } from './release-answer-model.ts';
 import { findBoard, findNamed, findPerson, findTemplate } from './resolve.ts';
@@ -146,18 +146,19 @@ async function newCycle(workspaceId: string, intent: Extract<Change, { kind: 'ne
   if (!board.ok) throw new Error(board.reason);
   const params = { workspaceId, projectId: board.value.id };
   const { cycles } = await call(contracts['cycles.list'], { params });
-  const today = localToday();
+  // Today, or after the cycles already planned, so the new one never lands on top of one.
+  const startsOn = firstFreeDay(cycles, localToday());
   const { cycle } = await call(contracts['cycles.create'], {
     params,
     body: {
       name: `Cycle ${cycles.length + 1}`,
-      startsOn: today,
-      endsOn: addDays(today, intent.days - 1),
+      startsOn,
+      endsOn: addDays(startsOn, intent.days - 1),
       timeZone: here(),
     },
   });
   return {
-    said: `${cycle.name} is planned on ${board.value.name}, to ${cycle.endsOn}.`,
+    said: `${cycle.name} is planned on ${board.value.name}, ${cycle.startsOn} to ${cycle.endsOn}.`,
     href: `/workspaces/${workspaceId}/projects/${board.value.id}`,
   };
 }
