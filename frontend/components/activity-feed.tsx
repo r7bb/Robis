@@ -4,7 +4,8 @@ import { contracts } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import { call } from '../lib/api.ts';
 import { describeEvent } from '../lib/audit-events.ts';
-import { formatDateTime, formatRelativeTime } from '../lib/i18n/format.ts';
+import { formatDateTime } from '../lib/i18n/format.ts';
+import { ago } from '../lib/time.ts';
 import { AgentBadge, RuleBadge } from './ui/primitives.tsx';
 
 /**
@@ -20,31 +21,6 @@ import { AgentBadge, RuleBadge } from './ui/primitives.tsx';
  * happened even after the issue is deleted or the title changes, so it records
  * what the values were at the time rather than pointing at what they are now.
  */
-
-/** Relative time, because "3 hours ago" is what a feed is read for. */
-export function ago(iso: string): string {
-  const seconds = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
-
-  const steps: [number, Intl.RelativeTimeFormatUnit][] = [
-    [60, 'second'],
-    [60, 'minute'],
-    [24, 'hour'],
-    [7, 'day'],
-    [4.345, 'week'],
-    [12, 'month'],
-  ];
-
-  let value = seconds;
-  let unit: Intl.RelativeTimeFormatUnit = 'second';
-
-  for (const [size, next] of steps) {
-    if (value < size) break;
-    value /= size;
-    unit = next;
-  }
-
-  return formatRelativeTime(-Math.floor(value), unit);
-}
 
 export function ActivityFeed({ workspaceId }: { workspaceId: string }) {
   const activity = useQuery({

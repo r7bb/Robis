@@ -204,15 +204,15 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **How long ago reads true again.** Times like 5 minutes ago on the Feed,
+  in Spaces and on the security page were shown one unit too small, such as
+  5 seconds ago; they now read as they should.
 - **The burn-up shows a cycle growing.** When work is added to a cycle after
   its first day, its burn-up chart now draws what was planned by each day as
   grey steps, so growth is seen beside progress.
 - **Cycle days read as days, in your language.** Sapha’s answer after
   planning a cycle and a cycle that has not started yet now say Sun 6 Dec
   rather than 2026-12-06.
-- **Sapha points out work carried from earlier cycles.** Asked how the cycle
-  is going, Sapha now marks open issues carried on from earlier cycles, such
-  as 2nd cycle, and lists them right after work under way.
 
 <!-- latest:end -->
 

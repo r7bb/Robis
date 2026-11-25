@@ -1,10 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { ago } from '../../components/activity-feed.tsx';
 import { Avatar } from '../../components/ui/avatar.tsx';
 import type { Member } from '../../lib/api.ts';
 import { threadHref } from '../../lib/links.ts';
+import { ago } from '../../lib/time.ts';
 import { KINDS } from '../spaces/spaces-model.ts';
 import type { FeedItem } from './feed-model.ts';
 

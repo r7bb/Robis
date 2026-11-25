@@ -3,11 +3,11 @@
 import { contracts } from '@robis/shared';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { ago } from '../../components/activity-feed.tsx';
 import { Button, InlineError } from '../../components/ui/primitives.tsx';
 import { type AuditEvent, call } from '../../lib/api.ts';
 import { describeEvent } from '../../lib/audit-events.ts';
 import { formatDateTime } from '../../lib/i18n/format.ts';
+import { ago } from '../../lib/time.ts';
 import { ChainStatus } from './chain-status.tsx';
 
 /**

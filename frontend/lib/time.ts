@@ -8,7 +8,7 @@
  * "14:05" is a mismatch React will complain about, loudly and rightly.
  */
 
-import { dateFormat } from './i18n/format.ts';
+import { dateFormat, formatRelativeTime } from './i18n/format.ts';
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -121,4 +121,29 @@ export function toLocalInputValue(date: Date): string {
     `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
     `T${pad(date.getHours())}:${pad(date.getMinutes())}`
   );
+}
+
+/** Each unit, and how many of it make the next. */
+const AGO_UNITS: readonly [Intl.RelativeTimeFormatUnit, number][] = [
+  ['second', 60],
+  ['minute', 60],
+  ['hour', 24],
+  ['day', 7],
+  ['week', 4.345],
+  ['month', 12],
+  ['year', Number.POSITIVE_INFINITY],
+];
+
+/**
+ * "5 minutes ago", "yesterday", "last week": how long ago, in words, for a
+ * feed. Each amount is said in its own unit; a moment slightly ahead, from
+ * a clock out of step, is now.
+ */
+export function ago(value: string | Date, now: number = Date.now()): string {
+  let amount = Math.max(0, (now - new Date(value).getTime()) / 1000);
+  for (const [unit, size] of AGO_UNITS) {
+    if (amount < size) return formatRelativeTime(-Math.floor(amount), unit);
+    amount /= size;
+  }
+  return formatRelativeTime(-Math.floor(amount), 'year');
 }

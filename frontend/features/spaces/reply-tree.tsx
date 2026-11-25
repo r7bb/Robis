@@ -3,9 +3,9 @@
 import { contracts, SPACE_REPLY_MAX_LENGTH } from '@robis/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, type KeyboardEvent, useState } from 'react';
-import { ago } from '../../components/activity-feed.tsx';
 import { Avatar } from '../../components/ui/avatar.tsx';
 import { ApiError, call, type Member } from '../../lib/api.ts';
+import { ago } from '../../lib/time.ts';
 import type { Reaction } from '../feed/feed-model.ts';
 import { ReactionBar } from '../feed/reaction-bar.tsx';
 import { descendants, type ReplyNode, threadKey } from './spaces-model.ts';

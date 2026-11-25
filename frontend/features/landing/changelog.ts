@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
     area: 'Product',
+    title: 'How long ago reads true again',
+    brief:
+      'Times like 5 minutes ago on the Feed, in Spaces and on the security page were shown one unit too small, such as 5 seconds ago; they now read as they should.',
+    summary:
+      'Checking a new Feed card turned up a slip in how long ago things happened: each amount was named by the unit before it, so five minutes read as five seconds, two hours as two minutes and yesterday as an hour ago. It touched posts, threads and replies on the Feed and in Spaces, celebrations, profiles, account activity and the security page. The words are now worked out by one tested helper, in the reader’s language, and a moment slightly ahead from a clock out of step reads as now.',
+    checked:
+      'Two new tests: seconds, minutes, hours, yesterday, days, last week and last year each in its own unit, and a moment slightly ahead read as now. In the browser: a celebration from 31 hours before read yesterday, where it had read 1 hour ago. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-25',
+    area: 'Product',
     title: 'The burn-up shows a cycle growing',
     brief:
       'When work is added to a cycle after its first day, its burn-up chart now draws what was planned by each day as grey steps, so growth is seen beside progress.',

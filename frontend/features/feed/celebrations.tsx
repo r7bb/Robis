@@ -3,9 +3,9 @@
 import { contracts } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { ago } from '../../components/activity-feed.tsx';
 import { Avatar } from '../../components/ui/avatar.tsx';
 import { call, type Member } from '../../lib/api.ts';
+import { ago } from '../../lib/time.ts';
 import {
   CELEBRATIONS_SHOWN,
   type Celebration,

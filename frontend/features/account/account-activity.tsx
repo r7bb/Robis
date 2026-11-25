@@ -2,9 +2,9 @@
 
 import { contracts, type ResponseOf } from '@robis/shared';
 import { useInfiniteQuery, useMutation } from '@tanstack/react-query';
-import { ago } from '../../components/activity-feed.tsx';
 import { call } from '../../lib/api.ts';
 import { formatDateTime } from '../../lib/i18n/format.ts';
+import { ago } from '../../lib/time.ts';
 
 type AccountChain = ResponseOf<(typeof contracts)['auth.verifyEvents']>;
 

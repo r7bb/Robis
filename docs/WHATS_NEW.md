@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **How long ago reads true again** (2026-11-25). Times like 5 minutes ago
+  on the Feed, in Spaces and on the security page were shown one unit too
+  small, such as 5 seconds ago; they now read as they should.
 - **The burn-up shows a cycle growing** (2026-11-25). When work is added to
   a cycle after its first day, its burn-up chart now draws what was planned
   by each day as grey steps, so growth is seen beside progress.

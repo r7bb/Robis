@@ -2,9 +2,9 @@
 
 import { useRouter } from 'next/navigation';
 import { type KeyboardEvent, type PointerEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { ago } from '../../components/activity-feed.tsx';
 import { Avatar } from '../../components/ui/avatar.tsx';
 import type { Member } from '../../lib/api.ts';
+import { ago } from '../../lib/time.ts';
 import { useStories } from '../stories/stories-context.tsx';
 import { type Story, TONE_BACKGROUNDS } from '../stories/story-model.ts';
 import {
