@@ -6,7 +6,7 @@ import { type FormEvent, useState } from 'react';
 import { call } from '../../lib/api.ts';
 import { localToday } from '../../lib/due-date.ts';
 import { BurnUpChart } from './burn-up-chart.tsx';
-import { addDays, daysLeftLine } from './cycle-days.ts';
+import { addDays, daysLeftLine, firstFreeDay } from './cycle-days.ts';
 import { LeftOverLine } from './left-over-line.tsx';
 import { currentCycle, cyclesKey, useCycles } from './use-cycles.ts';
 
@@ -63,7 +63,7 @@ export function CycleBar({
           <PlanCycle
             workspaceId={workspaceId}
             projectId={projectId}
-            today={today}
+            firstDay={firstFreeDay(cycles.data?.cycles ?? [], today)}
             count={cycles.data?.cycles.length ?? 0}
             onDone={() => setPlanning(false)}
           />
@@ -139,20 +139,21 @@ function CycleProgress({
 function PlanCycle({
   workspaceId,
   projectId,
-  today,
+  firstDay,
   count,
   onDone,
 }: {
   workspaceId: string;
   projectId: string;
-  today: string;
+  /** The first day no cycle covers, which the new one starts on unless changed. */
+  firstDay: string;
   count: number;
   onDone: () => void;
 }) {
   const queryClient = useQueryClient();
   const [name, setName] = useState(`Cycle ${count + 1}`);
-  const [startsOn, setStartsOn] = useState(today);
-  const [endsOn, setEndsOn] = useState(addDays(today, DEFAULT_DAYS - 1));
+  const [startsOn, setStartsOn] = useState(firstDay);
+  const [endsOn, setEndsOn] = useState(addDays(firstDay, DEFAULT_DAYS - 1));
   const plan = useMutation({
     mutationFn: () =>
       call(contracts['cycles.create'], {

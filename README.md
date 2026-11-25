@@ -204,15 +204,15 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Plan a cycle on a board opens after the ones already planned.** The
+  board’s Plan a cycle form now starts its days after the cycle running
+  there, as Sapha does, and they can still be changed.
 - **Ask Sapha to make a board.** Create a board called Summer party from the
   event template: Sapha proposes it, and Do it makes the board with its
   starter issues.
 - **Start any new board from a template.** New board in the sidebar now
   offers Software, Event planning and Coursework, each with five starter
   issues, as well as an empty board.
-- **A cycle Sapha plans starts after the ones already planned.** Plan a two
-  week cycle on Web now starts the day after the cycle running there, rather
-  than on top of it.
 
 <!-- latest:end -->
 

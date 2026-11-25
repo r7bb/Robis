@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Plan a cycle on a board opens after the ones already planned**
+  (2026-11-25). The board’s Plan a cycle form now starts its days after the
+  cycle running there, as Sapha does, and they can still be changed.
 - **Ask Sapha to make a board** (2026-11-25). Create a board called Summer
   party from the event template: Sapha proposes it, and Do it makes the
   board with its starter issues.

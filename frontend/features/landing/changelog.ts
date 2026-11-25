@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
     area: 'Product',
+    title: 'Plan a cycle on a board opens after the ones already planned',
+    brief:
+      'The board’s Plan a cycle form now starts its days after the cycle running there, as Sapha does, and they can still be changed.',
+    summary:
+      'Plan a cycle on a board’s cycle bar used to start the new cycle today, even with one already running, so the two would cover the same days unless the dates were changed by hand. It now opens on the first day no cycle covers, the same day Sapha plans from, two weeks long. Both days can still be changed before planning it.',
+    checked:
+      'In the browser: with a cycle running to 5 December, the form opened starting 6 December. The first free day is covered by the tests added with Sapha’s change. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-25',
+    area: 'Product',
     title: 'Ask Sapha to make a board',
     brief:
       'Create a board called Summer party from the event template: Sapha proposes it, and Do it makes the board with its starter issues.',
