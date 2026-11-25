@@ -204,15 +204,15 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Planning a cycle says when its days overlap another.** The board’s Plan
+  a cycle form now says, as the days are chosen, when they share days with a
+  cycle already planned, naming it and its days.
 - **The demo has a cycle cleared to celebrate.** A new demo workspace now
   has the two weeks just ended, Groundwork, with all its work done, so its
   Feed opens with a cycle cleared and a well done to send.
 - **A cycle is only cleared when it really was.** A cycle whose unfinished
   work was moved on, or finished late, is no longer celebrated as cleared,
   and the burn-up never shows more done than planned.
-- **The Feed celebrates a cycle cleared.** When a cycle ends with every
-  planned issue done, the Feed now says so, such as Web cleared Relaunch:
-  all 8 done, with a well done to send.
 
 <!-- latest:end -->
 

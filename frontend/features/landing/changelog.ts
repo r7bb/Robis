@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
     area: 'Product',
+    title: 'Planning a cycle says when its days overlap another',
+    brief:
+      'The board’s Plan a cycle form now says, as the days are chosen, when they share days with a cycle already planned, naming it and its days.',
+    summary:
+      'Plan a cycle opens on the first free day, but its days can be changed to anything. When the days chosen share any with a cycle already planned on the board, the form now says so under the fields, such as Shares days with Relaunch (Mon 23 Nov to Sat 5 Dec); they would run at the same time. It is a note, not a refusal: two cycles at once can be meant, and the board still allows them.',
+    checked:
+      'Two new tests: which cycles share days, ends included, and how that is said. In the browser: no note on the first free day, and the note once the start was moved into the running cycle. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-25',
+    area: 'Product',
     title: 'The demo has a cycle cleared to celebrate',
     brief:
       'A new demo workspace now has the two weeks just ended, Groundwork, with all its work done, so its Feed opens with a cycle cleared and a well done to send.',

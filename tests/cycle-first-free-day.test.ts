@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'bun:test';
-import { addedLine, carriedChip, firstFreeDay } from '@robis/web/features/cycles/cycle-days.ts';
+import {
+  addedLine,
+  carriedChip,
+  firstFreeDay,
+  overlapLine,
+  overlapping,
+} from '@robis/web/features/cycles/cycle-days.ts';
+import { setFormatLocale } from '@robis/web/lib/i18n/format.ts';
 
 /**
  * Where a cycle Sapha plans begins: today when no cycle runs now or later,
@@ -44,5 +51,30 @@ describe('how long an unfinished issue has been carried, as its card says', () =
     expect(carriedChip(3, false)).toBe('4th cycle');
     expect(carriedChip(10, false)).toBe('11th cycle');
     expect(carriedChip(20, false)).toBe('21st cycle');
+  });
+});
+
+describe('days that overlap a cycle already planned', () => {
+  const planned = [
+    { name: 'One', startsOn: '2026-11-09', endsOn: '2026-11-22' },
+    { name: 'Two', startsOn: '2026-11-23', endsOn: '2026-12-06' },
+  ];
+
+  test('the cycles sharing any day, ends included', () => {
+    expect(overlapping(planned, '2026-12-07', '2026-12-20')).toEqual([]);
+    expect(overlapping(planned, '2026-12-06', '2026-12-20').map((c) => c.name)).toEqual(['Two']);
+    expect(overlapping(planned, '2026-11-20', '2026-11-24').map((c) => c.name)).toEqual([
+      'One',
+      'Two',
+    ]);
+  });
+
+  test('said with each one’s days, or nothing when none overlap', () => {
+    setFormatLocale('en', ['en-GB']);
+    expect(overlapLine([])).toBeNull();
+    expect(overlapLine([planned[1]!])).toBe(
+      'Shares days with Two (Mon 23 Nov to Sun 6 Dec); they would run at the same time.',
+    );
+    setFormatLocale('en', []);
   });
 });

@@ -1,3 +1,5 @@
+import { dayLine } from '../../lib/i18n/format.ts';
+
 const DAY_MS = 86_400_000;
 
 /** A calendar day moved on by `days`: "2026-11-24" and 3 is "2026-11-27". */
@@ -50,4 +52,24 @@ function ordinal(n: number): string {
  */
 export function carriedChip(carriedOver: number, finished: boolean): string | null {
   return carriedOver > 0 && !finished ? `${ordinal(carriedOver + 1)} cycle` : null;
+}
+
+type Span = { name: string; startsOn: string; endsOn: string };
+
+/** The cycles sharing any day with `startsOn`..`endsOn`, both ends included. */
+export function overlapping<T extends Span>(
+  cycles: readonly T[],
+  startsOn: string,
+  endsOn: string,
+): T[] {
+  return cycles.filter((cycle) => cycle.startsOn <= endsOn && startsOn <= cycle.endsOn);
+}
+
+/** "Shares days with Two (Mon 23 Nov to Sun 6 Dec); they would run at the same time.", or null. */
+export function overlapLine(found: readonly Span[]): string | null {
+  if (found.length === 0) return null;
+  const named = found
+    .map((cycle) => `${cycle.name} (${dayLine(cycle.startsOn)} to ${dayLine(cycle.endsOn)})`)
+    .join(' and ');
+  return `Shares days with ${named}; they would run at the same time.`;
 }

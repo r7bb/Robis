@@ -7,9 +7,16 @@ import { call } from '../../lib/api.ts';
 import { localToday } from '../../lib/due-date.ts';
 import { dayLine } from '../../lib/i18n/format.ts';
 import { BurnUpChart } from './burn-up-chart.tsx';
-import { addDays, addedLine, daysLeftLine, firstFreeDay } from './cycle-days.ts';
+import {
+  addDays,
+  addedLine,
+  daysLeftLine,
+  firstFreeDay,
+  overlapLine,
+  overlapping,
+} from './cycle-days.ts';
 import { LeftOverLine } from './left-over-line.tsx';
-import { currentCycle, cyclesKey, useCycles } from './use-cycles.ts';
+import { type Cycle, currentCycle, cyclesKey, useCycles } from './use-cycles.ts';
 
 /** A new cycle is this long unless changed. */
 const DEFAULT_DAYS = 14;
@@ -65,6 +72,7 @@ export function CycleBar({
             workspaceId={workspaceId}
             projectId={projectId}
             firstDay={firstFreeDay(cycles.data?.cycles ?? [], today)}
+            planned={cycles.data?.cycles ?? []}
             count={cycles.data?.cycles.length ?? 0}
             onDone={() => setPlanning(false)}
           />
@@ -142,6 +150,7 @@ function PlanCycle({
   workspaceId,
   projectId,
   firstDay,
+  planned,
   count,
   onDone,
 }: {
@@ -149,6 +158,8 @@ function PlanCycle({
   projectId: string;
   /** The first day no cycle covers, which the new one starts on unless changed. */
   firstDay: string;
+  /** The board's cycles, to say so when the days chosen share some with one. */
+  planned: readonly Cycle[];
   count: number;
   onDone: () => void;
 }) {
@@ -177,6 +188,7 @@ function PlanCycle({
     event.preventDefault();
     if (name.trim()) plan.mutate();
   }
+  const overlap = overlapLine(overlapping(planned, startsOn, endsOn));
 
   const field =
     'rounded-md border border-line bg-surface px-2 py-1 text-xs text-content outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60';
@@ -217,6 +229,11 @@ function PlanCycle({
       <button type="button" onClick={onDone} className="text-xs text-faint hover:text-content">
         Cancel
       </button>
+      {overlap ? (
+        <p role="status" className="basis-full text-xs text-amber-200">
+          {overlap}
+        </p>
+      ) : null}
       {plan.isError ? (
         <p role="alert" className="basis-full text-xs text-danger-soft">
           {(plan.error as Error).message}
