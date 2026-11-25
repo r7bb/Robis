@@ -122,6 +122,15 @@ export function BoardFilters({
           onChange={(v) => onChange(withField(filter, 'cycleId', v))}
         />
       ) : null}
+      {cycleOptions.length > 0 ? (
+        <FilterSelect
+          label="Carried"
+          any="Any work"
+          value={filter.carried}
+          options={CARRIED_OPTIONS}
+          onChange={(v) => onChange(withField(filter, 'carried', v))}
+        />
+      ) : null}
       {releaseOptions.length > 0 ? (
         <FilterSelect
           label="Release"
@@ -139,6 +148,9 @@ export function BoardFilters({
     </fieldset>
   );
 }
+
+/** Work moved on from an earlier cycle unfinished: what keeps slipping. */
+const CARRIED_OPTIONS: Option[] = [{ value: 'yes', label: 'Carried over' }];
 
 function FilterSelect({
   label,

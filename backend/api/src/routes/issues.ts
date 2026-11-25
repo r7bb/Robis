@@ -27,7 +27,7 @@ import {
   type TriageJob,
   type UpdateIssueInput,
 } from '@robis/shared';
-import { and, asc, desc, eq, inArray, type SQL, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, type SQL, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { serve, shape } from '../contract.ts';
 import { ApiError } from '../errors.ts';
@@ -203,6 +203,7 @@ function listFilters(
   if (query.priority) filters.push(eq(issues.priority, query.priority));
   if (query.cycleId) filters.push(eq(issues.cycleId, query.cycleId));
   if (query.releaseId) filters.push(eq(issues.releaseId, query.releaseId));
+  if (query.carried) filters.push(gt(issues.carriedOver, 0));
   if (query.labelId) {
     filters.push(
       inArray(

@@ -273,6 +273,8 @@ export const boardFilterSchema = z.object({
   cycleId: uuid.optional(),
   /** Only issues in this release. */
   releaseId: uuid.optional(),
+  /** Only unfinished-then-moved work: issues carried on from an earlier cycle. */
+  carried: z.enum(['yes']).optional(),
 });
 export type BoardFilter = z.infer<typeof boardFilterSchema>;
 

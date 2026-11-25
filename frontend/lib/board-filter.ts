@@ -20,6 +20,7 @@ const URL_KEYS = {
   labelId: 'label',
   cycleId: 'cycle',
   releaseId: 'release',
+  carried: 'carried',
 } as const satisfies Record<keyof BoardFilter, string>;
 
 type Field = keyof typeof URL_KEYS;
@@ -73,15 +74,24 @@ type Card = {
   labelIds?: readonly string[];
   cycleId?: string | null;
   releaseId?: string | null;
+  carriedOver?: number;
+};
+
+/** Each field's test of a card, for a filter that sets it. */
+const TESTS: { [F in Field]: (card: Card, value: NonNullable<BoardFilter[F]>) => boolean } = {
+  status: (card, value) => card.status === value,
+  priority: (card, value) => card.priority === value,
+  assigneeId: (card, value) => card.assigneeId === value,
+  labelId: (card, value) => (card.labelIds ?? []).includes(value),
+  cycleId: (card, value) => card.cycleId === value,
+  releaseId: (card, value) => card.releaseId === value,
+  carried: (card) => (card.carriedOver ?? 0) > 0,
 };
 
 /** Whether a card passes the filter; every set field must match. */
 export function matchesFilter(card: Card, filter: BoardFilter): boolean {
-  if (filter.status && card.status !== filter.status) return false;
-  if (filter.priority && card.priority !== filter.priority) return false;
-  if (filter.assigneeId && card.assigneeId !== filter.assigneeId) return false;
-  if (filter.labelId && !(card.labelIds ?? []).includes(filter.labelId)) return false;
-  if (filter.cycleId && card.cycleId !== filter.cycleId) return false;
-  if (filter.releaseId && card.releaseId !== filter.releaseId) return false;
-  return true;
+  return FIELDS.every((field) => {
+    const value = filter[field];
+    return value === undefined || (TESTS[field] as (c: Card, v: string) => boolean)(card, value);
+  });
 }

@@ -218,6 +218,11 @@ describe('how many cycles an issue has been carried through', () => {
     const listed = (await request(`${ws}/projects/${project.id}/issues`, { actor: owner })).json()
       .issues as { id: string; carriedOver: number }[];
     expect(listed.find((row) => row.id === issue.id)?.carriedOver).toBe(2);
+    await file('Fresh');
+    const carriedOnly = (
+      await request(`${ws}/projects/${project.id}/issues?carried=yes`, { actor: owner })
+    ).json().issues as { id: string }[];
+    expect(carriedOnly.map((row) => row.id)).toEqual([issue.id]);
   });
 
   test('not when it was finished, nor when it left and came back', async () => {

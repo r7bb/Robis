@@ -1538,7 +1538,7 @@ Import the issues of a Robis workspace export, with their labels and comments, i
 
 A page of a project's issues, newest first, with a cursor for the next.
 
-- Query: `status`, `assigneeId`, `priority`, `labelId`, `cycleId`, `releaseId`, `limit`, `cursor`
+- Query: `status`, `assigneeId`, `priority`, `labelId`, `cycleId`, `releaseId`, `carried`, `limit`, `cursor`
 - Answers: 200
 - Name: `issues.list`
 

@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Filter a board to the work that keeps slipping** (2026-11-25). Boards
+  with cycles have a new Carried over filter, showing only the work moved on
+  unfinished from an earlier cycle, to talk through what keeps slipping.
 - **Planning a cycle says when its days overlap another** (2026-11-25). The
   board’s Plan a cycle form now says, as the days are chosen, when they
   share days with a cycle already planned, naming it and its days.

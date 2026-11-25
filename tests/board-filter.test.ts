@@ -84,3 +84,15 @@ describe('the release filter', () => {
     expect(matchesFilter({ ...card, releaseId: null }, filter)).toBe(false);
   });
 });
+
+describe('the carried-over filter', () => {
+  test('kept in the URL as carried, and only work carried from an earlier cycle passes', () => {
+    const filter = { carried: 'yes' as const };
+    expect(filterToQuery(filter)).toBe('carried=yes');
+    expect(filterFromParams(new URLSearchParams('carried=yes'))).toEqual(filter);
+    expect(filterFromParams(new URLSearchParams('carried=maybe'))).toEqual({});
+    expect(matchesFilter({ ...card, carriedOver: 2 }, filter)).toBe(true);
+    expect(matchesFilter({ ...card, carriedOver: 0 }, filter)).toBe(false);
+    expect(matchesFilter(card, filter)).toBe(false);
+  });
+});

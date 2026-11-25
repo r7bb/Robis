@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
     area: 'Product',
+    title: 'Filter a board to the work that keeps slipping',
+    brief:
+      'Boards with cycles have a new Carried over filter, showing only the work moved on unfinished from an earlier cycle, to talk through what keeps slipping.',
+    summary:
+      'Cards already say when work has been carried from cycle to cycle. A board with cycles now has a Carried filter beside Cycle: choose Carried over to see only that work. Like the other filters it lives in the link, so the board can be shared filtered, works offline, can be kept as a saved view, and the issues list in the API takes carried=yes too.',
+    checked:
+      'Two new tests: the filter kept in the link and letting only carried cards through, and the API listing only carried issues. In the browser: choosing Carried over left only the carried issue, with carried=yes in the link. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-25',
+    area: 'Product',
     title: 'Planning a cycle says when its days overlap another',
     brief:
       'The board’s Plan a cycle form now says, as the days are chosen, when they share days with a cycle already planned, naming it and its days.',
