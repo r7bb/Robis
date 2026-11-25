@@ -23153,6 +23153,7 @@
                                         "unplan",
                                         "newCycle",
                                         "newRelease",
+                                        "newBoard",
                                         "remind",
                                         "schedule",
                                         "open",

@@ -1,7 +1,8 @@
-import { contracts, type SaphaIntent } from '@robis/shared';
+import { contracts, type SaphaIntent, TEMPLATE_DETAILS } from '@robis/shared';
 import { call } from '../../lib/api.ts';
 import { localToday } from '../../lib/due-date.ts';
-import { issueHref } from '../../lib/links.ts';
+import { boardHref, issueHref } from '../../lib/links.ts';
+import { newBoardBody } from '../../lib/new-board.ts';
 import { searchHref } from '../../lib/search-links.ts';
 import { addDays, firstFreeDay } from '../cycles/cycle-days.ts';
 import { currentCycle } from '../cycles/use-cycles.ts';
@@ -171,6 +172,17 @@ async function newRelease(workspaceId: string, intent: Extract<Change, { kind: '
   return { said: `${intent.name} is planned.`, href: `/workspaces/${workspaceId}/releases` };
 }
 
+async function newBoard(workspaceId: string, intent: Extract<Change, { kind: 'newBoard' }>) {
+  const { project } = await call(contracts['projects.create'], {
+    params: { workspaceId },
+    body: newBoardBody(intent.name, intent.template ?? 'blank'),
+  });
+  const starters = intent.template
+    ? `, with ${TEMPLATE_DETAILS[intent.template].issues.length} starter issues`
+    : '';
+  return { said: `${project.name} is made${starters}.`, href: boardHref(workspaceId, project.id) };
+}
+
 async function remind(workspaceId: string, intent: Extract<Change, { kind: 'remind' }>) {
   const issue = await issueByKey(workspaceId, intent.issueKey);
   await call(contracts['reminders.create'], {
@@ -218,6 +230,8 @@ export function runIntent(workspaceId: string, intent: Change, myId: string | nu
       return newCycle(workspaceId, intent);
     case 'newRelease':
       return newRelease(workspaceId, intent);
+    case 'newBoard':
+      return newBoard(workspaceId, intent);
     case 'unplan':
       return changeIssue(
         workspaceId,

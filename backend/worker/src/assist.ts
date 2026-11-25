@@ -122,6 +122,7 @@ export const PROMPTS = {
     'with a title, on a board if one is named), template (a new issue from a template: the template’s name as template, the issue’s title if said),',
     'plan (put an issue, by its key, into its cycle or a release: into is cycle or release, a cycle’s or release’s name said as the title), unplan (take an issue, by its key, out of its cycle or release: into says which),',
     'newCycle (plan a new cycle from today: its length in days if one is said, so two weeks is 14, on a board if one is named), newRelease (plan a new release, with no issue: its name as the title, the day it is aimed at as when),',
+    'newBoard (make a new board, also called a project: its name as the title, and template only when software, event planning or coursework is said; a request for a board is always newBoard, never template, which files an issue),',
     'remind (about an issue, at a time), schedule (a meeting with a',
     'title, at a time), open (an issue), blockers (what an issue waits on), about (who has an issue and how',
     'it stands), cycle (how the cycle running now is going, on a board if one is named), release (how a release is going, its name as the title if one is said), search (a query), go (to day,',

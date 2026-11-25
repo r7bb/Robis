@@ -14,6 +14,8 @@ export const ACTIONS = {
   editIssue: 'issue:update',
   deleteIssue: 'issue:delete',
   openBoard: 'project:read',
+  /** Make a board: the sidebar's New board, or asking Sapha for one. */
+  newBoard: 'project:create',
   /** Keep the board's filter as a saved view. */
   saveView: 'project:update',
 } as const satisfies Record<string, Permission>;

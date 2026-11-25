@@ -471,6 +471,88 @@ describe('asking how the cycle is going', () => {
   });
 });
 
+describe('making a board', () => {
+  test('a name as typed, empty unless a built-in template is named', () => {
+    expect(read('create a board called Summer party')).toEqual({
+      kind: 'newBoard',
+      name: 'Summer party',
+      template: null,
+    });
+    expect(read('make a new project Launch')).toEqual({
+      kind: 'newBoard',
+      name: 'Launch',
+      template: null,
+    });
+    expect(read('Sapha, start a board named “Year 2 maths”')).toEqual({
+      kind: 'newBoard',
+      name: 'Year 2 maths',
+      template: null,
+    });
+  });
+
+  test('a template by its id or its label, with or without the word template', () => {
+    expect(read('create a board Summer party from the event template')).toEqual({
+      kind: 'newBoard',
+      name: 'Summer party',
+      template: 'event',
+    });
+    expect(read('new board Launch with the software template')).toMatchObject({
+      template: 'software',
+    });
+    expect(read('make a board Gala using event planning')).toMatchObject({
+      name: 'Gala',
+      template: 'event',
+    });
+    expect(read('create a project Thesis from coursework')).toMatchObject({
+      template: 'coursework',
+    });
+  });
+
+  test('a name holding with or from, quoted or not, stays whole', () => {
+    expect(read('create a board called Bread with butter')).toEqual({
+      kind: 'newBoard',
+      name: 'Bread with butter',
+      template: null,
+    });
+    expect(read('create a board "Fish from Leeds" with the software template')).toEqual({
+      kind: 'newBoard',
+      name: 'Fish from Leeds',
+      template: 'software',
+    });
+  });
+
+  test('a template that is not built in, a plan or brief, filler words or no name is left alone', () => {
+    for (const text of [
+      'create a board Launch from the marketing template',
+      'create a project plan',
+      'make a project brief',
+      'create a project plan for Q3',
+      'make a project update for the team',
+      'new project template for Login loops',
+      'new board',
+      'create a project template',
+      'create a project from the event template',
+      'create a board on Web',
+      'create a board for Q4 planning',
+      'create a board called',
+      `create a board called ${'x'.repeat(81)}`,
+      `create a board "${'x'.repeat(81)}"`,
+    ]) {
+      expect(read(text)?.kind).not.toBe('newBoard');
+    }
+  });
+
+  test('proposed, not done at once, and said as it will be made', () => {
+    expect(LOOKING_INTENTS.has('newBoard')).toBe(false);
+    expect(describeIntent({ kind: 'newBoard', name: 'Summer party', template: 'event' }, NOW)).toBe(
+      'Create the board “Summer party”, with the Event planning starter issues',
+    );
+    expect(describeIntent({ kind: 'newBoard', name: 'Launch', template: null }, NOW)).toBe(
+      'Create the board “Launch”',
+    );
+  });
+});
+
 describe('tier 1: parts from the provider', () => {
   const none = {
     kind: 'none' as const,
@@ -572,5 +654,30 @@ describe('tier 1: parts from the provider', () => {
     expect(
       intentFromParts({ ...none, kind: 'newRelease', title: 'Version 3', when: 'someday' }, NOW),
     ).toBeNull();
+  });
+
+  test('a new board by its name, with a built-in template by id or label', () => {
+    expect(
+      intentFromParts(
+        { ...none, kind: 'newBoard', title: 'Gala', template: 'Event planning' },
+        NOW,
+      ),
+    ).toEqual({ kind: 'newBoard', name: 'Gala', template: 'event' });
+    expect(intentFromParts({ ...none, kind: 'newBoard', title: 'Gala' }, NOW)).toEqual({
+      kind: 'newBoard',
+      name: 'Gala',
+      template: null,
+    });
+  });
+
+  test('a board with no name, or a template that is not built in, is nothing', () => {
+    expect(intentFromParts({ ...none, kind: 'newBoard', template: 'event' }, NOW)).toBeNull();
+    expect(
+      intentFromParts({ ...none, kind: 'newBoard', title: 'Gala', template: 'marketing' }, NOW),
+    ).toBeNull();
+    expect(intentFromParts({ ...none, kind: 'newBoard', title: 'x'.repeat(81) }, NOW)).toBeNull();
+    expect(intentFromParts({ ...none, kind: 'newBoard', title: '“Gala”' }, NOW)).toMatchObject({
+      name: 'Gala',
+    });
   });
 });

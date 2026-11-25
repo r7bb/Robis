@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
     area: 'Product',
+    title: 'Ask Sapha to make a board',
+    brief:
+      'Create a board called Summer party from the event template: Sapha proposes it, and Do it makes the board with its starter issues.',
+    summary:
+      'Sapha now reads requests for a new board, such as create a board called Summer party, make a new project Launch, or new board Gala using event planning. A built-in template (Software, Event planning or Coursework) can be named by its name or its label, and a name holding with or from, such as Bread with butter, stays whole. The card says what will be made, and nothing happens until Do it, which makes the board through the same route as New board in the sidebar, so only those allowed to make boards are offered it. A template that is not built in, and ordinary words such as create a project plan, are left to search. With the workspace assistant on, other wordings reach it too, checked the same way.',
+    checked:
+      'Seven new tests: reading a name and a template by name or label, names holding with or from, what is left alone (plans, briefs, filler words, names past 80 characters), the card’s sentence, and the assistant’s parts. In the browser: the request made Summer party with its five starter issues, and plan a two week cycle on Web began the day after the cycle running there. The full suite, lint, typecheck, knip and docs:links. No paid model was called.',
+  },
+  {
+    date: '2026-11-25',
+    area: 'Product',
     title: 'Start any new board from a template',
     brief:
       'New board in the sidebar now offers Software, Event planning and Coursework, each with five starter issues, as well as an empty board.',

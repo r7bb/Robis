@@ -204,15 +204,15 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Ask Sapha to make a board.** Create a board called Summer party from the
+  event template: Sapha proposes it, and Do it makes the board with its
+  starter issues.
 - **Start any new board from a template.** New board in the sidebar now
   offers Software, Event planning and Coursework, each with five starter
   issues, as well as an empty board.
 - **A cycle Sapha plans starts after the ones already planned.** Plan a two
   week cycle on Web now starts the day after the cycle running there, rather
   than on top of it.
-- **Sapha’s assistant plans cycles and releases too.** With the assistant
-  on, requests in your own words can put an issue in a cycle or release,
-  take it out, or plan a cycle or a release.
 
 <!-- latest:end -->
 

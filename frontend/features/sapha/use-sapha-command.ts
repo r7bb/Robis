@@ -46,6 +46,8 @@ function actionFor(intent: SaphaIntent): Action | undefined {
     case 'create':
     case 'template':
       return 'newIssue';
+    case 'newBoard':
+      return 'newBoard';
     default:
       return undefined;
   }

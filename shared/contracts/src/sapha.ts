@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { IssuePriority, IssueStatus } from './domain.ts';
 import { CYCLE_DAYS_MAX } from './http/cycles.ts';
+import { PROJECT_TEMPLATES, type ProjectTemplate, TEMPLATE_DETAILS } from './project-templates.ts';
 import { parseWhen } from './when.ts';
 
 /**
@@ -27,6 +28,8 @@ export type SaphaIntent =
   | { kind: 'newCycle'; days: number; board: string | null }
   /** Plan a release by name, aimed at a day or none. */
   | { kind: 'newRelease'; name: string; targetOn: string | null }
+  /** Make a board by name, empty or with a built-in template's starter issues. */
+  | { kind: 'newBoard'; name: string; template: ProjectTemplate | null }
   /** Take an issue out of its cycle or release. */
   | { kind: 'unplan'; issueKey: string; from: 'cycle' | 'release' }
   /** A new issue from a template, by the template's name, with its own title or one given. */
@@ -185,6 +188,89 @@ function newRelease(text: string, request: string, now: Date): SaphaIntent | nul
 
 /** Words that follow "release" in ordinary talk, never a release's name. */
 const NOT_A_RELEASE = new Set(['notes', 'note', 'candidate', 'candidates', 'checklist']);
+
+const NEW_BOARD =
+  /^(?:create|make|start|add|new)(?: a| an)?(?: new)? (?:board|project)(?: called| named)? (.+)$/;
+/** A quoted name, and a template after it when one is said. */
+const QUOTED_BOARD =
+  /^["“](.+?)["”](?:\s+(?:from|with|using)\s+(?:the\s+)?(.+?)(?:\s+template)?)?$/i;
+/** A template said at the end of an unquoted name. */
+const BOARD_TEMPLATE_TAIL = /^(.+?)\s+(?:from|with|using)\s+(?:the\s+)?(.+?)(?:\s+template)?$/i;
+/** The longest board name the API takes. */
+const BOARD_NAME_MAX = 80;
+
+/** First words that make the rest ordinary talk, never a board's name. */
+const NOT_A_BOARD = new Set([
+  'plan',
+  'plans',
+  'brief',
+  'update',
+  'updates',
+  'report',
+  'proposal',
+  'timeline',
+  'roadmap',
+  'review',
+  'template',
+  'templates',
+  'on',
+  'for',
+  'in',
+  'from',
+  'with',
+  'using',
+  'called',
+  'named',
+]);
+
+/** A built-in template by its id or its label, any case; null when none is. */
+function builtInTemplate(said: string): ProjectTemplate | null {
+  const words = said.trim().toLowerCase();
+  return (
+    PROJECT_TEMPLATES.find(
+      (id) => id === words || TEMPLATE_DETAILS[id].label.toLowerCase() === words,
+    ) ?? null
+  );
+}
+
+/** A board name a person would mean, within what the API takes; null when it is not. */
+function boardName(said: string): string | null {
+  const name = said.trim();
+  const first = name.split(/\s+/)[0]!.toLowerCase();
+  if (!name || name.length > BOARD_NAME_MAX || NOT_A_BOARD.has(first)) return null;
+  return name;
+}
+
+/** The name and template from the words after "board", as typed; null when they do not hold. */
+function boardParts(rest: string): SaphaIntent | null {
+  const quoted = QUOTED_BOARD.exec(rest);
+  if (quoted) {
+    const template = quoted[2] ? builtInTemplate(quoted[2]) : null;
+    const name = quoted[1]!.trim();
+    if ((quoted[2] && !template) || !name || name.length > BOARD_NAME_MAX) return null;
+    return { kind: 'newBoard', name, template };
+  }
+  // A tail names a template only when it is a built-in one; else it is part of the name.
+  const tail = BOARD_TEMPLATE_TAIL.exec(rest);
+  const template = tail ? builtInTemplate(tail[2]!) : null;
+  if (tail && template) {
+    const name = boardName(tail[1]!);
+    return name ? { kind: 'newBoard', name, template } : null;
+  }
+  if (/\stemplate$/i.test(rest)) return null;
+  const name = boardName(rest);
+  return name ? { kind: 'newBoard', name, template: null } : null;
+}
+
+/**
+ * "Create a board called Summer party from the event template": the name as
+ * typed, and a built-in template when one is named. A template that is not
+ * built in leaves the whole request alone rather than folding it into a name.
+ */
+function newBoard(text: string, request: string): SaphaIntent | null {
+  const m = NEW_BOARD.exec(text);
+  return m ? boardParts(asTyped(request, m[1]!)) : null;
+}
 
 /** Into a cycle or release, or out of one; null when the words are not that. */
 function planning(text: string, request: string): SaphaIntent | null {
@@ -353,6 +439,7 @@ export function interpret(request: string, now: Date = new Date()): SaphaIntent 
     planning(text, request) ??
     newCycle(text, request) ??
     newRelease(text, request, now) ??
+    newBoard(text, request) ??
     issueChange(text, request, now) ??
     fromTemplate(text, request) ??
     making(text, request, now) ??
@@ -437,6 +524,12 @@ export function describeIntent(intent: SaphaIntent, _now: Date = new Date()): st
     case 'newCycle':
     case 'newRelease':
       return describeMaking(intent);
+    case 'newBoard':
+      return `Create the board “${intent.name}”${
+        intent.template
+          ? `, with the ${TEMPLATE_DETAILS[intent.template].label} starter issues`
+          : ''
+      }`;
     case 'remind':
       return `Remind you about ${intent.issueKey}, ${dateLine(intent.at, true)}`;
     case 'schedule':
@@ -473,6 +566,7 @@ export const SAPHA_KINDS = [
   'unplan',
   'newCycle',
   'newRelease',
+  'newBoard',
   'remind',
   'schedule',
   'open',
@@ -607,9 +701,22 @@ export function intentFromParts(parts: SaphaParts, now: Date = new Date()): Saph
   return elsewhereFromParts(parts, now);
 }
 
-/** A meeting, a search, a place, or a question about a cycle or release. */
+/** A new board by name, with a built-in template when one is said; null when they do not hold. */
+function boardFromParts(parts: SaphaParts): SaphaIntent | null {
+  const said = parts.title?.trim().replace(/^["“]|["”]$/g, '') ?? '';
+  const name = said.length <= BOARD_NAME_MAX ? words(said, BOARD_NAME_MAX) : null;
+  if (!name) return null;
+  const asked = words(parts.template ?? null, 60);
+  if (!asked) return { kind: 'newBoard', name, template: null };
+  const template = builtInTemplate(asked.replace(/ template$/i, ''));
+  return template ? { kind: 'newBoard', name, template } : null;
+}
+
+/** A board, a meeting, a search, a place, or a question about a cycle or release. */
 function elsewhereFromParts(parts: SaphaParts, now: Date): SaphaIntent | null {
   switch (parts.kind) {
+    case 'newBoard':
+      return boardFromParts(parts);
     case 'schedule': {
       const title = words(parts.title, 200);
       const at = parts.when ? parseWhen(parts.when, now) : null;

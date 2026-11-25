@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Ask Sapha to make a board** (2026-11-25). Create a board called Summer
+  party from the event template: Sapha proposes it, and Do it makes the
+  board with its starter issues.
 - **Start any new board from a template** (2026-11-25). New board in the
   sidebar now offers Software, Event planning and Coursework, each with five
   starter issues, as well as an empty board.
