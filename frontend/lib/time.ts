@@ -137,10 +137,12 @@ const AGO_UNITS: readonly [Intl.RelativeTimeFormatUnit, number][] = [
 /**
  * "5 minutes ago", "yesterday", "last week": how long ago, in words, for a
  * feed. Each amount is said in its own unit; a moment slightly ahead, from
- * a clock out of step, is now.
+ * a clock out of step, is now; one that does not read as a moment is nothing.
  */
 export function ago(value: string | Date, now: number = Date.now()): string {
-  let amount = Math.max(0, (now - new Date(value).getTime()) / 1000);
+  const then = new Date(value).getTime();
+  if (!Number.isFinite(then)) return '';
+  let amount = Math.max(0, (now - then) / 1000);
   for (const [unit, size] of AGO_UNITS) {
     if (amount < size) return formatRelativeTime(-Math.floor(amount), unit);
     amount /= size;

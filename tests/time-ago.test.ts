@@ -25,6 +25,10 @@ describe('how long ago', () => {
     expect(ago(before(400 * 86_400), NOW)).toBe('last year');
   });
 
+  test('a moment that does not read as one says nothing, rather than failing', () => {
+    expect(ago('not a date', NOW)).toBe('');
+  });
+
   test('a moment slightly ahead, from a clock out of step, is now', () => {
     setFormatLocale('en', ['en-GB']);
     expect(ago(new Date(NOW + 5000).toISOString(), NOW)).toBe('now');

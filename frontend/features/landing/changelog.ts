@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
     area: 'Product',
+    title: 'A cycle is only cleared when it really was',
+    brief:
+      'A cycle whose unfinished work was moved on, or finished late, is no longer celebrated as cleared, and the burn-up never shows more done than planned.',
+    summary:
+      'A review of the evening’s cycle work found two slips. A cycle could be celebrated as cleared after its unfinished issues were moved to the next one, since only what was left in it was counted. Each cycle now counts the issues that left it unfinished, kept by the database whichever way they were moved, and a cycle is cleared only when none did and every issue was done by its last day. And an issue already done before it joined a cycle made its burn-up say more done than planned on a day; what was planned by each day now includes work done by then. A time that does not read as one now shows nothing rather than failing.',
+    checked:
+      'Three new tests: a cycle emptied of its open work, or finished late, is not celebrated; an issue done before it joined counts as planned from when it was done; a time that does not read as one shows nothing. A check that removing a cycle with open work still succeeds. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-25',
+    area: 'Product',
     title: 'The Feed celebrates a cycle cleared',
     brief:
       'When a cycle ends with every planned issue done, the Feed now says so, such as Web cleared Relaunch: all 8 done, with a well done to send.',

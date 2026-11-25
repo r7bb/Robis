@@ -204,15 +204,15 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **A cycle is only cleared when it really was.** A cycle whose unfinished
+  work was moved on, or finished late, is no longer celebrated as cleared,
+  and the burn-up never shows more done than planned.
 - **The Feed celebrates a cycle cleared.** When a cycle ends with every
   planned issue done, the Feed now says so, such as Web cleared Relaunch:
   all 8 done, with a well done to send.
 - **How long ago reads true again.** Times like 5 minutes ago on the Feed,
   in Spaces and on the security page were shown one unit too small, such as
   5 seconds ago; they now read as they should.
-- **The burn-up shows a cycle growing.** When work is added to a cycle after
-  its first day, its burn-up chart now draws what was planned by each day as
-  grey steps, so growth is seen beside progress.
 
 <!-- latest:end -->
 

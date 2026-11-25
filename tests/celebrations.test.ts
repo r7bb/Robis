@@ -175,6 +175,14 @@ describe('a cycle cleared', () => {
           actor: owner,
           payload: { cycleId: made.id },
         });
+        // Done on the cycle's first day, so within it.
+        if (i < done) {
+          const { ownerDb } = await getHarness();
+          await ownerDb
+            .update(issues)
+            .set({ completedAt: new Date(`${startsOn}T12:00:00Z`) })
+            .where(eq(issues.id, issue.id));
+        }
       }
     };
     await cycle('Relaunch', day(-10), day(-2), 3);
@@ -189,6 +197,64 @@ describe('a cycle cleared', () => {
     expect(cleared.map((c) => [c.cycleName, c.projectName, c.count, c.userId])).toEqual([
       ['Relaunch', 'Web', 3, null],
     ]);
+  });
+  test('not when unfinished work was moved on, nor when the last of it was done after the end', async () => {
+    const owner = await createActor('Owner');
+    const workspace = await createWorkspace(owner);
+    const project = await createProject(owner, workspace.id, 'Web');
+    const ws = `/workspaces/${workspace.id}`;
+    const plan = async (name: string, startsOn: string, endsOn: string) =>
+      (
+        await request(`${ws}/projects/${project.id}/cycles`, {
+          method: 'POST',
+          actor: owner,
+          payload: { name, startsOn, endsOn },
+        })
+      ).json().cycle as { id: string };
+    const file = async (cycleId: string, status: string) => {
+      const { issue } = (
+        await request(`${ws}/projects/${project.id}/issues`, {
+          method: 'POST',
+          actor: owner,
+          payload: { title: 'Piece', status },
+        })
+      ).json();
+      await request(`${ws}/issues/${issue.id}`, {
+        method: 'PATCH',
+        actor: owner,
+        payload: { cycleId },
+      });
+      if (status === 'DONE') {
+        const { ownerDb } = await getHarness();
+        await ownerDb
+          .update(issues)
+          .set({ completedAt: new Date(`${day(-9)}T12:00:00Z`) })
+          .where(eq(issues.id, issue.id));
+      }
+      return issue.id as string;
+    };
+    const emptied = await plan('Emptied', day(-10), day(-2));
+    const late = await plan('Late', day(-10), day(-2));
+    const next = await plan('Next', day(-1), day(12));
+    for (let i = 0; i < 3; i++) {
+      await file(emptied.id, 'DONE');
+      await file(late.id, 'DONE');
+    }
+    await file(emptied.id, 'TODO');
+    await request(`${ws}/cycles/${emptied.id}/rollover`, {
+      method: 'POST',
+      actor: owner,
+      payload: { toCycleId: next.id },
+    });
+    const finishedLate = await file(late.id, 'DONE');
+    const { ownerDb } = await getHarness();
+    await ownerDb
+      .update(issues)
+      .set({ completedAt: new Date() })
+      .where(eq(issues.id, finishedLate));
+
+    const kinds = (await celebrationsFor(owner, workspace.id)).map((c) => c.kind);
+    expect(kinds).not.toContain('cycle_cleared');
   });
 });
 

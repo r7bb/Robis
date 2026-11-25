@@ -82,16 +82,18 @@ export async function cycleBurnUpRoutes(app: FastifyInstance, opts: { db: Databa
 
       const today = todayIn(zone);
       const days = { startsOn: cycle.startsOn, endsOn: cycle.endsOn, today };
+      const done = burnUp({ ...days, finished });
       return {
         startsOn: cycle.startsOn,
         endsOn: cycle.endsOn,
         today,
         planned,
-        done: burnUp({ ...days, finished }),
+        done,
+        // Work done before it joined counts as planned from when it was done.
         scope: burnUp({
           ...days,
           finished: joined.map((row) => ({ day: row.day ?? '', count: row.count })),
-        }),
+        }).map((planned, i) => Math.max(planned, done[i] ?? 0)),
       };
     },
   );

@@ -129,7 +129,8 @@ async function issueMilestones(db: Database, workspaceId: string, since: Date) {
 /**
  * Cycles on active boards whose last day ended in (since, now], on each
  * cycle's own calendar, with how many of their issues were planned
- * (canceled left out) and done.
+ * (canceled left out), how many were done by its end, and how many left it
+ * unfinished.
  */
 async function endedCycles(db: Database, workspaceId: string, since: Date, now: Date) {
   const endedAt = sql<string>`((${cycles.endsOn} + 1)::timestamp at time zone ${cycles.timeZone})`;
@@ -140,7 +141,8 @@ async function endedCycles(db: Database, workspaceId: string, since: Date, now: 
       projectId: projects.id,
       projectName: projects.name,
       counted: sql<number>`(count(${issues.id}) filter (where ${issues.status} <> 'CANCELED'))::int`,
-      done: sql<number>`(count(${issues.id}) filter (where ${issues.status} = 'DONE'))::int`,
+      done: sql<number>`(count(${issues.id}) filter (where ${issues.status} = 'DONE' and ${issues.completedAt} <= ${endedAt}))::int`,
+      leftUnfinished: cycles.leftUnfinished,
       endedAt,
     })
     .from(cycles)

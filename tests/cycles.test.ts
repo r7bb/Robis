@@ -386,6 +386,30 @@ describe('a cycle’s burn-up', () => {
     expect(answer.json()).toMatchObject({ planned: 3, scope: [1, 2, 3] });
   });
 
+  test('work done before it joined counts as planned from when it was done', async () => {
+    const { owner, project, ws, file } = await board();
+    const cycle = (
+      await plan(owner, ws, project.id, { name: 'Now', startsOn: dayFrom(-2), endsOn: dayFrom(9) })
+    ).json().cycle;
+    const issue = await file('Already done');
+    await request(`${ws}/issues/${issue.id}`, {
+      method: 'PATCH',
+      actor: owner,
+      payload: { status: 'DONE' },
+    });
+    const { ownerDb } = await getHarness();
+    await ownerDb
+      .update(issues)
+      .set({ completedAt: new Date(`${dayFrom(-2)}T12:00:00Z`) })
+      .where(eq(issues.id, issue.id));
+    await put(owner, ws, issue.id, cycle.id);
+    const answer = (
+      await request(`${ws}/cycles/${cycle.id}/burnup?timeZone=UTC`, { actor: owner })
+    ).json();
+    expect(answer.done).toEqual([1, 1, 1]);
+    expect(answer.scope).toEqual([1, 1, 1]);
+  });
+
   test('a zone it does not know is refused; a stranger finds no cycle', async () => {
     const { owner, project, ws } = await board();
     const cycle = (await plan(owner, ws, project.id, TWO_WEEKS)).json().cycle;

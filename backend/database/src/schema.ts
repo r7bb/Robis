@@ -800,6 +800,12 @@ export const cycles = pgTable(
      * tomorrow" is said at a sensible hour there.
      */
     timeZone: text('time_zone').notNull().default('UTC'),
+    /**
+     * How many issues left it unfinished, moved on or taken out, so a cycle
+     * emptied of its open work is never taken for one that was cleared.
+     * Kept by the trigger `cycles_left_unfinished`.
+     */
+    leftUnfinished: integer('left_unfinished').notNull().default(0),
     createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
     createdAt: createdAt(),
   },

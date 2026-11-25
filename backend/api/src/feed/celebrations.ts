@@ -155,8 +155,9 @@ export function finishedProjects(
 }
 
 /**
- * A cycle whose last day ended this week with every planned issue done
- * (canceled ones left out), and enough of them to be worth one.
+ * A cycle whose last day ended this week with every planned issue done by
+ * then (canceled ones left out), none moved on or taken out unfinished, and
+ * enough of them to be worth one.
  */
 export function clearedCycles(
   rows: readonly {
@@ -166,15 +167,15 @@ export function clearedCycles(
     projectName: string;
     counted: number;
     done: number;
+    leftUnfinished: number;
     endedAt: Date | string;
   }[],
   since: Date,
 ): Celebration[] {
   return rows.flatMap((cycle) => {
     const endedAt = new Date(cycle.endedAt);
-    if (cycle.counted < FINISHED_MIN_DONE || cycle.done < cycle.counted || endedAt < since) {
-      return [];
-    }
+    const cleared = cycle.done >= cycle.counted && cycle.leftUnfinished === 0;
+    if (!cleared || cycle.counted < FINISHED_MIN_DONE || endedAt < since) return [];
     return [
       {
         id: celebrationId('cycle_cleared', cycle.id),

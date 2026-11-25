@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **A cycle is only cleared when it really was** (2026-11-25). A cycle whose
+  unfinished work was moved on, or finished late, is no longer celebrated as
+  cleared, and the burn-up never shows more done than planned.
 - **The Feed celebrates a cycle cleared** (2026-11-25). When a cycle ends
   with every planned issue done, the Feed now says so, such as Web cleared
   Relaunch: all 8 done, with a well done to send.
