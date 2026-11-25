@@ -7,6 +7,7 @@
  * issues, labelled as a demo, with its document and channel beside it.
  */
 
+import { DEMO_WORKSPACE } from '@robis/shared';
 import { press, typeText, WAIT_MS, waitUntil } from '../smoke/browser-input.ts';
 import { WEB } from '../smoke/browser-session.ts';
 import type { Checks } from './checks.ts';
@@ -83,7 +84,10 @@ export async function demoWorkspaceJourney(checks: Checks, port: number) {
     await page.eval(`${button}.click()`);
     checks.check(
       'one click from the first run opens a board of example issues',
-      await waitUntil(page, `document.querySelectorAll('[data-card]').length === 8`),
+      await waitUntil(
+        page,
+        `document.querySelectorAll('[data-card]').length === ${DEMO_WORKSPACE.issues.length}`,
+      ),
     );
     checks.check(
       'labelled as a demo',
