@@ -44,6 +44,17 @@ export type Entry = {
 
 export const CHANGELOG: readonly Entry[] = [
   {
+    date: '2026-11-25',
+    area: 'Product',
+    title: 'Narrow a board to a release',
+    brief:
+      'A board’s filters now include Release, and each board named on the Releases page opens that board narrowed to the release.',
+    summary:
+      'Release joins status, priority, person, label and cycle among a board’s filters, so a board can show only its part of a release. Like the others it is kept in the address, so the view survives a reload, works offline and can be shared or saved as a view. On the Releases page, the board named beside each issue now opens that board narrowed to the release. The list of a board’s issues says which release each is in.',
+    checked:
+      'A test through the API: a board narrowed to a release lists only its own issue in that release, saying so, not another board’s or one outside it. A test of the filter in the address and on a card. In the browser, App from the Releases page opened the App board with only its two issues in the release. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
     date: '2026-11-24',
     area: 'Product',
     title: 'Shipping and removing ask first',

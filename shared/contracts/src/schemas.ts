@@ -271,6 +271,8 @@ export const boardFilterSchema = z.object({
   labelId: uuid.optional(),
   /** Only issues planned for this cycle. */
   cycleId: uuid.optional(),
+  /** Only issues in this release. */
+  releaseId: uuid.optional(),
 });
 export type BoardFilter = z.infer<typeof boardFilterSchema>;
 

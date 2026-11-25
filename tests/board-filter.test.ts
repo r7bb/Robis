@@ -73,3 +73,14 @@ describe('which cards a filter lets through', () => {
     expect(matchesFilter(offline, { labelId: LABEL })).toBe(false);
   });
 });
+
+describe('the release filter', () => {
+  const RELEASE = '7c2d1e0f-1a2b-4c3d-8e4f-5a6b7c8d9e0f';
+  test('kept in the URL as release, and only a card in that release passes', () => {
+    const filter = { releaseId: RELEASE };
+    expect(filterToQuery(filter)).toBe(`release=${RELEASE}`);
+    expect(filterFromParams(new URLSearchParams(`release=${RELEASE}`))).toEqual(filter);
+    expect(matchesFilter({ ...card, releaseId: RELEASE }, filter)).toBe(true);
+    expect(matchesFilter({ ...card, releaseId: null }, filter)).toBe(false);
+  });
+});

@@ -7,7 +7,7 @@ import { type FormEvent, useState } from 'react';
 import { DeleteButton } from '../../components/delete-button.tsx';
 import { call } from '../../lib/api.ts';
 import { dateFormat } from '../../lib/i18n/format.ts';
-import { issueHref } from '../../lib/links.ts';
+import { boardHref, issueHref } from '../../lib/links.ts';
 import { useMyId } from '../../lib/use-people.ts';
 import { type Release, releasesKey, useReleases } from './use-releases.ts';
 
@@ -103,14 +103,17 @@ function ReleaseRow({
 
 function ReleaseIssues({
   workspaceId,
+  releaseId,
   issues,
 }: {
   workspaceId: string;
+  releaseId: string;
   issues: readonly {
     id: string;
     key: string;
     title: string;
     status: string;
+    projectId: string;
     projectName: string;
   }[];
 }) {
@@ -129,7 +132,12 @@ function ReleaseIssues({
             <span className="mr-1.5 font-mono text-xs text-faint">{issue.key}</span>
             {issue.title}
           </Link>
-          <span className="ml-auto shrink-0 text-[11px] text-faint">{issue.projectName}</span>
+          <Link
+            href={boardHref(workspaceId, issue.projectId, { filter: { releaseId } })}
+            className="ml-auto shrink-0 text-[11px] text-faint hover:text-content hover:underline"
+          >
+            {issue.projectName}
+          </Link>
         </li>
       ))}
     </ul>
@@ -173,7 +181,9 @@ function ReleaseDetail({
 
   return (
     <div className="space-y-3 border-t border-line px-4 py-3">
-      {issues.length > 0 ? <ReleaseIssues workspaceId={workspaceId} issues={issues} /> : null}
+      {issues.length > 0 ? (
+        <ReleaseIssues workspaceId={workspaceId} releaseId={release.id} issues={issues} />
+      ) : null}
       {detail.isSuccess && issues.length === 0 ? (
         <p className="text-xs text-faint">Nothing in it yet.</p>
       ) : null}

@@ -15,6 +15,7 @@ import { priorityLabel, statusLabel } from '../../components/ui/badges.tsx';
 import { call } from '../../lib/api.ts';
 import { isFiltered, sameFilter, withField } from '../../lib/board-filter.ts';
 import { useCycles } from '../cycles/use-cycles.ts';
+import { useReleases } from '../releases/use-releases.ts';
 
 /**
  * The board's filter bar (C1): narrow by status, priority, assignee and
@@ -67,6 +68,11 @@ export function BoardFilters({
     value: c.id,
     label: c.name,
   }));
+  const releases = useReleases(workspaceId);
+  const releaseOptions: Option[] = (releases.data?.releases ?? []).map((r) => ({
+    value: r.id,
+    label: r.name,
+  }));
 
   return (
     <fieldset className="mt-6 flex flex-wrap items-center gap-2">
@@ -114,6 +120,15 @@ export function BoardFilters({
           value={filter.cycleId}
           options={cycleOptions}
           onChange={(v) => onChange(withField(filter, 'cycleId', v))}
+        />
+      ) : null}
+      {releaseOptions.length > 0 ? (
+        <FilterSelect
+          label="Release"
+          any="Any release"
+          value={filter.releaseId}
+          options={releaseOptions}
+          onChange={(v) => onChange(withField(filter, 'releaseId', v))}
         />
       ) : null}
       {isFiltered(filter) && (

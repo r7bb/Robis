@@ -19,6 +19,7 @@ const URL_KEYS = {
   assigneeId: 'assignee',
   labelId: 'label',
   cycleId: 'cycle',
+  releaseId: 'release',
 } as const satisfies Record<keyof BoardFilter, string>;
 
 type Field = keyof typeof URL_KEYS;
@@ -71,6 +72,7 @@ type Card = {
   assigneeId: string | null;
   labelIds?: readonly string[];
   cycleId?: string | null;
+  releaseId?: string | null;
 };
 
 /** Whether a card passes the filter; every set field must match. */
@@ -80,5 +82,6 @@ export function matchesFilter(card: Card, filter: BoardFilter): boolean {
   if (filter.assigneeId && card.assigneeId !== filter.assigneeId) return false;
   if (filter.labelId && !(card.labelIds ?? []).includes(filter.labelId)) return false;
   if (filter.cycleId && card.cycleId !== filter.cycleId) return false;
+  if (filter.releaseId && card.releaseId !== filter.releaseId) return false;
   return true;
 }

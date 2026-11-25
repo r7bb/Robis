@@ -202,6 +202,7 @@ function listFilters(
   if (query.assigneeId) filters.push(eq(issues.assigneeId, query.assigneeId));
   if (query.priority) filters.push(eq(issues.priority, query.priority));
   if (query.cycleId) filters.push(eq(issues.cycleId, query.cycleId));
+  if (query.releaseId) filters.push(eq(issues.releaseId, query.releaseId));
   if (query.labelId) {
     filters.push(
       inArray(
@@ -307,6 +308,7 @@ export async function issueRoutes(
           dueOn: issues.dueOn,
           parentId: issues.parentId,
           cycleId: issues.cycleId,
+          releaseId: issues.releaseId,
           assigneeName: users.name,
           createdAt: issues.createdAt,
           updatedAt: issues.updatedAt,

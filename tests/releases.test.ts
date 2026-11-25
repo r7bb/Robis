@@ -180,6 +180,21 @@ describe('releases', () => {
   });
 });
 
+describe('a board narrowed to a release', () => {
+  test('lists only that board’s issues in the release, each saying its release', async () => {
+    const { owner, web, app, ws, make, file, put } = await setUp();
+    const release = (await make(owner, { name: 'Version 2.0' })).json().release;
+    const inIt = await file(web.id, 'In it');
+    await file(web.id, 'Not in it');
+    await put(inIt.id, release.id);
+    await put((await file(app.id, 'Other board')).id, release.id);
+    const listed = (
+      await request(`${ws}/projects/${web.id}/issues?releaseId=${release.id}`, { actor: owner })
+    ).json().issues as { id: string; releaseId: string | null }[];
+    expect(listed).toEqual([expect.objectContaining({ id: inIt.id, releaseId: release.id })]);
+  });
+});
+
 describe('release notes', () => {
   test('what was done, by board, with the day it shipped', () => {
     const notes = releaseNotes({

@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Narrow a board to a release** (2026-11-25). A board’s filters now
+  include Release, and each board named on the Releases page opens that
+  board narrowed to the release.
 - **Shipping and removing ask first** (2026-11-24). Ship it on a release now
   asks once more, since shipping cannot be undone, and removing a release or
   a template asks before it goes for everyone.

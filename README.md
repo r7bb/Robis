@@ -204,15 +204,15 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Narrow a board to a release.** A board’s filters now include Release,
+  and each board named on the Releases page opens that board narrowed to the
+  release.
 - **Shipping and removing ask first.** Ship it on a release now asks once
   more, since shipping cannot be undone, and removing a release or a
   template asks before it goes for everyone.
 - **Ask Sapha how the release is going.** Type “how is the release going” or
   “what’s left for the release Version 2” in the command palette, and Sapha
   answers there with done of planned, its day and what is still open.
-- **The demo arrives with a template and a release.** A new demo workspace
-  now keeps a Bug report template to file from, and a release three weeks
-  out carrying four of the board’s issues.
 
 <!-- latest:end -->
 

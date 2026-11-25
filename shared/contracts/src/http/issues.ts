@@ -106,6 +106,7 @@ export const issueContracts = {
             dueOn: true,
             parentId: true,
             cycleId: true,
+            releaseId: true,
             createdAt: true,
             updatedAt: true,
           })
