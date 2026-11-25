@@ -187,6 +187,72 @@ describe('scope added mid-cycle', () => {
   });
 });
 
+describe('how many cycles an issue has been carried through', () => {
+  const carried = async (actor: Actor, ws: string, issueId: string) =>
+    (await request(`${ws}/issues/${issueId}`, { actor })).json().issue.carriedOver as number;
+  const cycleOf = (
+    actor: Actor,
+    ws: string,
+    projectId: string,
+    name: string,
+    startsOn: string,
+    endsOn: string,
+  ) =>
+    plan(actor, ws, projectId, { name, startsOn, endsOn }).then(
+      (r) => r.json().cycle as { id: string },
+    );
+
+  test('each move straight from one cycle to another while unfinished adds one', async () => {
+    const { owner, project, ws, file } = await board();
+    const first = await cycleOf(owner, ws, project.id, 'One', '2026-11-09', '2026-11-22');
+    const second = await cycleOf(owner, ws, project.id, 'Two', '2026-11-23', '2026-12-06');
+    const third = await cycleOf(owner, ws, project.id, 'Three', '2026-12-07', '2026-12-20');
+    const issue = await file('Stubborn');
+    expect(await carried(owner, ws, issue.id)).toBe(0);
+    await put(owner, ws, issue.id, first.id);
+    expect(await carried(owner, ws, issue.id)).toBe(0);
+    await rollover(owner, ws, first.id, second.id);
+    expect(await carried(owner, ws, issue.id)).toBe(1);
+    await put(owner, ws, issue.id, third.id);
+    expect(await carried(owner, ws, issue.id)).toBe(2);
+    const listed = (await request(`${ws}/projects/${project.id}/issues`, { actor: owner })).json()
+      .issues as { id: string; carriedOver: number }[];
+    expect(listed.find((row) => row.id === issue.id)?.carriedOver).toBe(2);
+  });
+
+  test('not when it was finished, nor when it left and came back', async () => {
+    const { owner, project, ws, file } = await board();
+    const first = await cycleOf(owner, ws, project.id, 'One', '2026-11-09', '2026-11-22');
+    const second = await cycleOf(owner, ws, project.id, 'Two', '2026-11-23', '2026-12-06');
+    const [done, wanders] = [await file('Done'), await file('Wanders')];
+    for (const issue of [done, wanders]) await put(owner, ws, issue.id, first.id);
+    await request(`${ws}/issues/${done.id}`, {
+      method: 'PATCH',
+      actor: owner,
+      payload: { status: 'DONE' },
+    });
+    await put(owner, ws, done.id, second.id);
+    await put(owner, ws, wanders.id, null);
+    await put(owner, ws, wanders.id, second.id);
+    expect(await carried(owner, ws, done.id)).toBe(0);
+    expect(await carried(owner, ws, wanders.id)).toBe(0);
+  });
+
+  test('not when one edit finishes it and moves it together', async () => {
+    const { owner, project, ws, file } = await board();
+    const first = await cycleOf(owner, ws, project.id, 'One', '2026-11-09', '2026-11-22');
+    const second = await cycleOf(owner, ws, project.id, 'Two', '2026-11-23', '2026-12-06');
+    const issue = await file('Wrapped up');
+    await put(owner, ws, issue.id, first.id);
+    await request(`${ws}/issues/${issue.id}`, {
+      method: 'PATCH',
+      actor: owner,
+      payload: { status: 'DONE', cycleId: second.id },
+    });
+    expect(await carried(owner, ws, issue.id)).toBe(0);
+  });
+});
+
 describe('moving a cycle’s unfinished issues on', () => {
   test('moves what is not done or canceled, and leaves the rest where they were', async () => {
     const { owner, project, ws, file } = await board();

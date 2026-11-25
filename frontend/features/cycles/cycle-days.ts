@@ -35,3 +35,19 @@ export function firstFreeDay(cycles: readonly { endsOn: string }[], today: strin
 export function addedLine(added: number): string {
   return added > 0 ? ` · ${added} added mid-cycle` : '';
 }
+
+const ORDINAL_ENDS = ['th', 'st', 'nd', 'rd'];
+
+/** "2nd", "11th", "21st". */
+function ordinal(n: number): string {
+  const teen = n % 100 >= 11 && n % 100 <= 13;
+  return `${n}${teen ? 'th' : (ORDINAL_ENDS[n % 10] ?? 'th')}`;
+}
+
+/**
+ * "3rd cycle" on the card of an unfinished issue carried on from earlier
+ * cycles; nothing in its first cycle, or once finished.
+ */
+export function carriedChip(carriedOver: number, finished: boolean): string | null {
+  return carriedOver > 0 && !finished ? `${ordinal(carriedOver + 1)} cycle` : null;
+}

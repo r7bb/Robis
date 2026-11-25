@@ -309,6 +309,7 @@ export async function issueRoutes(
           parentId: issues.parentId,
           cycleId: issues.cycleId,
           releaseId: issues.releaseId,
+          carriedOver: issues.carriedOver,
           assigneeName: users.name,
           createdAt: issues.createdAt,
           updatedAt: issues.updatedAt,

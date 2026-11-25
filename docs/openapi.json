@@ -5146,6 +5146,12 @@
                               }
                             ]
                           },
+                          "carriedOver": {
+                            "default": 0,
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
                           "createdAt": {
                             "anyOf": [
                               {
@@ -5201,6 +5207,7 @@
                           "parentId",
                           "cycleId",
                           "releaseId",
+                          "carriedOver",
                           "createdAt",
                           "updatedAt",
                           "assigneeName",
@@ -5473,6 +5480,12 @@
                             }
                           ]
                         },
+                        "carriedOver": {
+                          "default": 0,
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
                         "createdBy": {
                           "type": "string",
                           "format": "uuid",
@@ -5522,6 +5535,7 @@
                         "parentId",
                         "cycleId",
                         "releaseId",
+                        "carriedOver",
                         "createdBy",
                         "createdAt",
                         "updatedAt"
@@ -5699,6 +5713,12 @@
                             }
                           ]
                         },
+                        "carriedOver": {
+                          "default": 0,
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
                         "createdBy": {
                           "type": "string",
                           "format": "uuid",
@@ -5832,6 +5852,7 @@
                         "parentId",
                         "cycleId",
                         "releaseId",
+                        "carriedOver",
                         "createdBy",
                         "createdAt",
                         "updatedAt",
@@ -6123,6 +6144,12 @@
                             }
                           ]
                         },
+                        "carriedOver": {
+                          "default": 0,
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
                         "createdBy": {
                           "type": "string",
                           "format": "uuid",
@@ -6172,6 +6199,7 @@
                         "parentId",
                         "cycleId",
                         "releaseId",
+                        "carriedOver",
                         "createdBy",
                         "createdAt",
                         "updatedAt"

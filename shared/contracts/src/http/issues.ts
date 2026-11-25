@@ -42,6 +42,8 @@ const issue = z.object({
   cycleId: uuid.nullable().default(null),
   /** The release it is part of, or null. */
   releaseId: uuid.nullable().default(null),
+  /** How many times it was carried straight on from one cycle to another unfinished. */
+  carriedOver: z.number().int().nonnegative().default(0),
   createdBy: uuid,
   createdAt: timestamp,
   updatedAt: timestamp,
@@ -107,6 +109,7 @@ export const issueContracts = {
             parentId: true,
             cycleId: true,
             releaseId: true,
+            carriedOver: true,
             createdAt: true,
             updatedAt: true,
           })

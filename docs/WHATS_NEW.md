@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Cards show work carried from cycle to cycle** (2026-11-25). An
+  unfinished issue moved on from earlier cycles now shows which cycle it is
+  in, such as 3rd cycle, on its card.
 - **See how much was added to a cycle after it began** (2026-11-25). The
   cycle bar and Sapha’s cycle answer now say how many issues were added
   mid-cycle, after its first day.

@@ -36,6 +36,7 @@ import { useMemberAvatars } from '../../lib/use-member-avatars.ts';
 import { useOfflineBoard } from '../../lib/use-offline-board.ts';
 import { useCommands, useOpenPalette } from '../command/command-provider.tsx';
 import { CycleBar } from '../cycles/cycle-bar.tsx';
+import { carriedChip } from '../cycles/cycle-days.ts';
 import { DuplicateHints } from '../issues/duplicate-hints.tsx';
 import { usePeek } from '../issues/issue-peek.tsx';
 import { PriorityHint } from '../issues/priority-hint.tsx';
@@ -583,6 +584,7 @@ function CardFooter({
     status: string;
     assigneeName?: string | null;
     assigneeId?: string | null;
+    carriedOver?: number;
   };
   labels: ReadonlyMap<string, { name: string; colour: string }>;
   avatars: ReadonlyMap<string, AvatarRef>;
@@ -593,8 +595,11 @@ function CardFooter({
     const label = labels.get(id);
     return label ? [{ id, ...label }] : [];
   });
-  if (shown.length === 0 && !issue.dueOn && !issue.assigneeName && !blocked) return null;
   const finished = issue.status === 'DONE' || issue.status === 'CANCELED';
+  const carried = carriedChip(issue.carriedOver ?? 0, finished);
+  if (shown.length === 0 && !issue.dueOn && !issue.assigneeName && !blocked && !carried) {
+    return null;
+  }
 
   return (
     <div className="mt-2 flex min-h-6 items-center justify-between gap-2">
@@ -606,12 +611,12 @@ function CardFooter({
             ))}
           </span>
         ) : null}
-        {issue.dueOn ? <DueChip dueOn={issue.dueOn} finished={finished} /> : null}
-        {blocked && !finished ? (
-          <span className="rounded-full border border-rose-400/40 bg-rose-400/10 px-1.5 py-0.5 text-[10px] font-medium text-rose-300">
-            Blocked
-          </span>
-        ) : null}
+        <CardChips
+          dueOn={issue.dueOn ?? null}
+          finished={finished}
+          carriedOver={issue.carriedOver ?? 0}
+          blocked={blocked}
+        />
       </span>
       {issue.assigneeName ? (
         <span title={issue.assigneeName} className="shrink-0">
@@ -625,6 +630,39 @@ function CardFooter({
         </span>
       ) : null}
     </div>
+  );
+}
+
+/** The small words on a card: when it is due, how long it has been carried, and whether it waits. */
+function CardChips({
+  dueOn,
+  finished,
+  carriedOver,
+  blocked,
+}: {
+  dueOn: string | null;
+  finished: boolean;
+  carriedOver: number;
+  blocked: boolean;
+}) {
+  const carried = carriedChip(carriedOver, finished);
+  return (
+    <>
+      {dueOn ? <DueChip dueOn={dueOn} finished={finished} /> : null}
+      {carried ? (
+        <span
+          title={`Carried on unfinished from ${carriedOver} earlier ${carriedOver === 1 ? 'cycle' : 'cycles'}`}
+          className="rounded-full border border-amber-400/40 bg-amber-400/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-200"
+        >
+          {carried}
+        </span>
+      ) : null}
+      {blocked && !finished ? (
+        <span className="rounded-full border border-rose-400/40 bg-rose-400/10 px-1.5 py-0.5 text-[10px] font-medium text-rose-300">
+          Blocked
+        </span>
+      ) : null}
+    </>
   );
 }
 

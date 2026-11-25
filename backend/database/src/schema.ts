@@ -726,6 +726,12 @@ export const issues = pgTable(
      * this was kept. Kept by the database trigger `issues_cycle_added_at`.
      */
     cycleAddedAt: timestamp('cycle_added_at', { withTimezone: true }),
+    /**
+     * How many times it was moved straight from one cycle to another while
+     * unfinished: left over, and carried on. Kept by the trigger
+     * `issues_cycle_added_at`.
+     */
+    carriedOver: integer('carried_over').notNull().default(0),
     /** The release it is part of, from any board, or null; removing the release clears it. */
     releaseId: uuid('release_id').references(() => releases.id, { onDelete: 'set null' }),
     createdBy: uuid('created_by')

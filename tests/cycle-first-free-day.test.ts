@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { addedLine, firstFreeDay } from '@robis/web/features/cycles/cycle-days.ts';
+import { addedLine, carriedChip, firstFreeDay } from '@robis/web/features/cycles/cycle-days.ts';
 
 /**
  * Where a cycle Sapha plans begins: today when no cycle runs now or later,
@@ -32,5 +32,17 @@ describe('work added mid-cycle, as said beside the count', () => {
   test('nothing when none was added, else how many', () => {
     expect(addedLine(0)).toBe('');
     expect(addedLine(3)).toBe(' · 3 added mid-cycle');
+  });
+});
+
+describe('how long an unfinished issue has been carried, as its card says', () => {
+  test('nothing in its first cycle or once finished, else which cycle it is in', () => {
+    expect(carriedChip(0, false)).toBeNull();
+    expect(carriedChip(2, true)).toBeNull();
+    expect(carriedChip(1, false)).toBe('2nd cycle');
+    expect(carriedChip(2, false)).toBe('3rd cycle');
+    expect(carriedChip(3, false)).toBe('4th cycle');
+    expect(carriedChip(10, false)).toBe('11th cycle');
+    expect(carriedChip(20, false)).toBe('21st cycle');
   });
 });

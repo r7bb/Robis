@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
     area: 'Product',
+    title: 'Cards show work carried from cycle to cycle',
+    brief:
+      'An unfinished issue moved on from earlier cycles now shows which cycle it is in, such as 3rd cycle, on its card.',
+    summary:
+      'Work that keeps moving to the next cycle is often stuck, too big or no longer wanted, and it was easy to miss among fresh work. Each issue now counts how many times it was moved straight from one cycle to another while unfinished, whether by moving left-over work on or by hand, kept by the database whichever way it was moved. Its card on the board shows a small 2nd cycle, 3rd cycle and so on. Leaving a cycle and coming back later, or moving once done or canceled, does not count, and finished cards show nothing.',
+    checked:
+      'Three new tests against the database: moves by rollover and by hand counted; moves when finished, after leaving a cycle, or in the same edit that finishes it not counted; one of the card’s words (2nd, 3rd, 11th, 21st). In the browser: an issue moved through three cycles showed 3rd cycle, and fresh work showed nothing. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-25',
+    area: 'Product',
     title: 'See how much was added to a cycle after it began',
     brief:
       'The cycle bar and Sapha’s cycle answer now say how many issues were added mid-cycle, after its first day.',
