@@ -9756,7 +9756,7 @@
     "/workspaces/{workspaceId}/cycles/{cycleId}/burnup": {
       "get": {
         "operationId": "cycles.burnup",
-        "summary": "How many of a cycle’s issues were done by the end of each of its days so far, on the asker’s calendar, out of how many are planned (canceled ones left out).",
+        "summary": "How many of a cycle’s issues were done, and how many were planned, by the end of each of its days so far, on the asker’s calendar, out of how many are planned now (canceled ones left out).",
         "parameters": [
           {
             "name": "workspaceId",
@@ -9816,6 +9816,14 @@
                         "minimum": 0,
                         "maximum": 9007199254740991
                       }
+                    },
+                    "scope": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      }
                     }
                   },
                   "required": [
@@ -9823,7 +9831,8 @@
                     "endsOn",
                     "today",
                     "planned",
-                    "done"
+                    "done",
+                    "scope"
                   ],
                   "additionalProperties": false
                 }

@@ -610,7 +610,7 @@ Rename a cycle or move its days.
 
 ### `GET /workspaces/{workspaceId}/cycles/{cycleId}/burnup`
 
-How many of a cycle’s issues were done by the end of each of its days so far, on the asker’s calendar, out of how many are planned (canceled ones left out).
+How many of a cycle’s issues were done, and how many were planned, by the end of each of its days so far, on the asker’s calendar, out of how many are planned now (canceled ones left out).
 
 - Query: `timeZone`
 - Answers: 200

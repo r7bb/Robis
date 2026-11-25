@@ -23,3 +23,8 @@ export function burnUpLine(done: readonly number[], planned: number, days: numbe
   const now = done[day - 1] ?? 0;
   return `${now} of ${planned} done after day ${day} of ${days}; an even pace would have ${said(pace)}.`;
 }
+
+/** Whether work was added after the first day, so the planned line is worth drawing. */
+export function scopeGrew(scope: readonly number[]): boolean {
+  return scope.length > 0 && (scope.at(-1) ?? 0) > (scope[0] ?? 0);
+}

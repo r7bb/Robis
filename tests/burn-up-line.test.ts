@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { burnUpLine, cycleLength } from '@robis/web/features/cycles/burn-up-model.ts';
+import { burnUpLine, cycleLength, scopeGrew } from '@robis/web/features/cycles/burn-up-model.ts';
 
 /** How a cycle's burn-up is said, for its name and caption. */
 
@@ -17,5 +17,14 @@ describe('the burn-up in words', () => {
   test('a cycle’s length counts both ends', () => {
     expect(cycleLength('2026-11-23', '2026-12-06')).toBe(14);
     expect(cycleLength('2026-11-24', '2026-11-24')).toBe(1);
+  });
+});
+
+describe('whether the planned line is drawn', () => {
+  test('only when work was added after the first day', () => {
+    expect(scopeGrew([])).toBe(false);
+    expect(scopeGrew([4, 4, 4])).toBe(false);
+    expect(scopeGrew([4, 5, 5])).toBe(true);
+    expect(scopeGrew([0, 0, 3])).toBe(true);
   });
 });

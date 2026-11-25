@@ -103,7 +103,7 @@ export const cycleContracts = {
     method: 'GET',
     path: '/workspaces/:workspaceId/cycles/:cycleId/burnup',
     summary:
-      'How many of a cycle’s issues were done by the end of each of its days so far, on the asker’s calendar, out of how many are planned (canceled ones left out).',
+      'How many of a cycle’s issues were done, and how many were planned, by the end of each of its days so far, on the asker’s calendar, out of how many are planned now (canceled ones left out).',
     params: workspaceParams.extend({ cycleId: z.string() }),
     query: z.object({ timeZone: z.string().max(64).optional() }),
     response: z.object({
@@ -112,6 +112,8 @@ export const cycleContracts = {
       today: z.string(),
       planned: z.number().int().nonnegative(),
       done: z.array(z.number().int().nonnegative()),
+      /** What was planned by the end of each of those days: grows as work is added mid-cycle. */
+      scope: z.array(z.number().int().nonnegative()),
     }),
   }),
   'cycles.remove': contract({

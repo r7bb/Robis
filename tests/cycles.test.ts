@@ -365,7 +365,25 @@ describe('a cycle’s burn-up', () => {
       today: dayFrom(0),
       planned: 3,
       done: [0, 0, 2],
+      scope: [0, 0, 3],
     });
+  });
+
+  test('what was planned by the end of each day, growing as work joins', async () => {
+    const { owner, project, ws, file } = await board();
+    const cycle = (
+      await plan(owner, ws, project.id, { name: 'Now', startsOn: dayFrom(-2), endsOn: dayFrom(9) })
+    ).json().cycle;
+    const [early, middle, late] = [await file('Early'), await file('Middle'), await file('Late')];
+    for (const issue of [early, middle, late]) await put(owner, ws, issue.id, cycle.id);
+    const { ownerDb } = await getHarness();
+    const joined = (issueId: string, at: Date | null) =>
+      ownerDb.update(issues).set({ cycleAddedAt: at }).where(eq(issues.id, issueId));
+    // Planned before this was kept, then one on its second day.
+    await joined(early.id, null);
+    await joined(middle.id, new Date(`${dayFrom(-1)}T12:00:00Z`));
+    const answer = await request(`${ws}/cycles/${cycle.id}/burnup?timeZone=UTC`, { actor: owner });
+    expect(answer.json()).toMatchObject({ planned: 3, scope: [1, 2, 3] });
   });
 
   test('a zone it does not know is refused; a stranger finds no cycle', async () => {

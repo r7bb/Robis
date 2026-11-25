@@ -204,15 +204,15 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **The burn-up shows a cycle growing.** When work is added to a cycle after
+  its first day, its burn-up chart now draws what was planned by each day as
+  grey steps, so growth is seen beside progress.
 - **Cycle days read as days, in your language.** Sapha’s answer after
   planning a cycle and a cycle that has not started yet now say Sun 6 Dec
   rather than 2026-12-06.
 - **Sapha points out work carried from earlier cycles.** Asked how the cycle
   is going, Sapha now marks open issues carried on from earlier cycles, such
   as 2nd cycle, and lists them right after work under way.
-- **Cards show work carried from cycle to cycle.** An unfinished issue moved
-  on from earlier cycles now shows which cycle it is in, such as 3rd cycle,
-  on its card.
 
 <!-- latest:end -->
 

@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
     area: 'Product',
+    title: 'The burn-up shows a cycle growing',
+    brief:
+      'When work is added to a cycle after its first day, its burn-up chart now draws what was planned by each day as grey steps, so growth is seen beside progress.',
+    summary:
+      'A burn-up that only compares done with what is planned now hides a cycle that kept growing: the planned line sits at today’s total from the first day. The chart now also draws, in quiet grey steps, how much was planned by the end of each day so far, from when each issue joined the cycle. It only appears when work was added after the first day, so a cycle that kept to its plan looks as it did. Hovering a day, and the list read to screen readers, say done out of what was planned that day.',
+    checked:
+      'Two new tests of the burn-up’s planned-by-day counts (work put in on its third day, and work joining across days with one planned before this was kept), and one of when the grey steps are drawn. In the browser: a cycle four days in, with three issues put in today, showed the step on day four. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-25',
+    area: 'Product',
     title: 'Cycle days read as days, in your language',
     brief:
       'Sapha’s answer after planning a cycle and a cycle that has not started yet now say Sun 6 Dec rather than 2026-12-06.',

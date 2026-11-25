@@ -63,13 +63,35 @@ export async function cycleBurnUpRoutes(app: FastifyInstance, opts: { db: Databa
         // twice would be two to Postgres.
         .groupBy(sql`1`);
 
+      // When each issue still in it joined, by local day; one in it since
+      // before this was kept counts from the cycle's first day.
+      const joinedDay = sql<
+        string | null
+      >`to_char(${issues.cycleAddedAt} at time zone ${zone}::text, 'YYYY-MM-DD')`;
+      const joined = await db
+        .select({ day: joinedDay, count: sql<number>`count(*)::int` })
+        .from(issues)
+        .where(
+          and(
+            eq(issues.workspaceId, workspaceId),
+            eq(issues.cycleId, cycleId),
+            ne(issues.status, 'CANCELED'),
+          ),
+        )
+        .groupBy(sql`1`);
+
       const today = todayIn(zone);
+      const days = { startsOn: cycle.startsOn, endsOn: cycle.endsOn, today };
       return {
         startsOn: cycle.startsOn,
         endsOn: cycle.endsOn,
         today,
         planned,
-        done: burnUp({ startsOn: cycle.startsOn, endsOn: cycle.endsOn, today, finished }),
+        done: burnUp({ ...days, finished }),
+        scope: burnUp({
+          ...days,
+          finished: joined.map((row) => ({ day: row.day ?? '', count: row.count })),
+        }),
       };
     },
   );

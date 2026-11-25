@@ -4,8 +4,8 @@ import { contracts, evenPace } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { call } from '../../lib/api.ts';
-import { dateFormat } from '../../lib/i18n/format.ts';
-import { burnUpLine, cycleLength } from './burn-up-model.ts';
+import { dayLine } from '../../lib/i18n/format.ts';
+import { burnUpLine, cycleLength, scopeGrew } from './burn-up-model.ts';
 import { addDays } from './cycle-days.ts';
 
 const WIDTH = 320;
@@ -13,16 +13,14 @@ const HEIGHT = 72;
 /** Room above the top line, so the last marker is not clipped. */
 const HEAD = 6;
 
-const dayName = (day: string) =>
-  dateFormat({ weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(`${day}T12:00`));
-
 /** The browser's own zone, so a day ends where the person is. */
 const zone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 /**
  * A cycle's burn-up: done by the end of each day so far, in the accent,
  * against a quiet dashed line of an even pace to all of it by the last
- * day. One series and a reference line named in the caption, so no legend.
+ * day. When work was added after the first day, a quiet grey line shows
+ * what was planned by each day. The caption names each line, so no legend.
  * Hovering a day says its count; screen readers get the sentence and then
  * every day in a list.
  */
@@ -39,10 +37,12 @@ export function BurnUpChart({ workspaceId, cycleId }: { workspaceId: string; cyc
   if (!burn.data) {
     return <div aria-hidden="true" className="mt-2 h-[72px] animate-pulse rounded bg-surface" />;
   }
-  const { startsOn, endsOn, planned, done } = burn.data;
+  const { startsOn, endsOn, planned, done, scope } = burn.data;
   const days = cycleLength(startsOn, endsOn);
   const pace = evenPace(planned, days);
-  const top = Math.max(1, planned, ...done);
+  const growing = scopeGrew(scope);
+  const top = Math.max(1, planned, ...done, ...scope);
+  const plannedOn = (i: number) => scope[i] ?? planned;
   const x = (i: number) => ((i + 1) / days) * WIDTH;
   const y = (n: number) => HEAD + (1 - n / top) * (HEIGHT - HEAD);
   const line = burnUpLine(done, planned, days);
@@ -76,6 +76,19 @@ export function BurnUpChart({ workspaceId, cycleId }: { workspaceId: string; cyc
             vectorEffect="non-scaling-stroke"
             className="stroke-faint"
           />
+          {growing ? (
+            <polyline
+              // Steps: work joins at a moment, so the count jumps rather than slopes.
+              points={scope
+                .flatMap((n, i) => [`${i === 0 ? 0 : x(i - 1)},${y(n)}`, `${x(i)},${y(n)}`])
+                .join(' ')}
+              fill="none"
+              strokeWidth={1.5}
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+              className="stroke-muted"
+            />
+          ) : null}
           {done.length > 0 ? (
             <polyline
               points={[`0,${y(0)}`, ...done.map((n, i) => `${x(i)},${y(n)}`)].join(' ')}
@@ -115,15 +128,17 @@ export function BurnUpChart({ workspaceId, cycleId }: { workspaceId: string; cyc
         <span>
           {hovered === null
             ? line
-            : `${dayName(addDays(startsOn, hovered))}: ${done[hovered]} of ${planned} done`}
+            : `${dayLine(addDays(startsOn, hovered))}: ${done[hovered]} of ${plannedOn(hovered)} done`}
         </span>
-        <span aria-hidden="true">Dashed: an even pace</span>
+        <span aria-hidden="true">
+          Dashed: an even pace{growing ? ' · Grey steps: planned by then' : ''}
+        </span>
       </figcaption>
       <ul className="sr-only">
         {done.map((n, i) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: a day's position is its identity
           <li key={i}>
-            {dayName(addDays(startsOn, i))}: {n} done
+            {dayLine(addDays(startsOn, i))}: {n} done of {plannedOn(i)} planned
           </li>
         ))}
       </ul>
