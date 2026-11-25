@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
     area: 'Product',
+    title: 'Ask Sapha what keeps slipping',
+    brief:
+      'What keeps slipping, or what is stuck on Web, now has Sapha list the open work carried on from earlier cycles in each running cycle, with a link to all of it.',
+    summary:
+      'Sapha now answers what keeps slipping, what has been carried over and what is stuck, on every board with a cycle running or on the one named. For each running cycle it says how many open issues were carried on from earlier cycles, lists the first few with which cycle each is in, and links to the board filtered to that cycle’s carried work. When nothing was carried, it says every open issue is in its first cycle. For now this is read from plain wording only; the assistant path does not ask it yet.',
+    checked:
+      'Two new tests of reading the question, with and without a board, and of how it is said; the running cycles now count their carried open issues. In the browser: what keeps slipping answered Two on Web: 1 issue carried on from earlier cycles, with Stubborn bug, 2nd cycle, and a link to the board with cycle and carried set. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-25',
+    area: 'Product',
     title: 'Filter a board to the work that keeps slipping',
     brief:
       'Boards with cycles have a new Carried over filter, showing only the work moved on unfinished from an earlier cycle, to talk through what keeps slipping.',

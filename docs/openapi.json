@@ -9147,6 +9147,12 @@
                             "minimum": 0,
                             "maximum": 9007199254740991
                           },
+                          "carried": {
+                            "default": 0,
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
                           "added": {
                             "type": "integer",
                             "minimum": 0,
@@ -9212,6 +9218,7 @@
                           "done",
                           "canceled",
                           "inProgress",
+                          "carried",
                           "added",
                           "projectName",
                           "projectKey",
@@ -9309,6 +9316,12 @@
                             "minimum": 0,
                             "maximum": 9007199254740991
                           },
+                          "carried": {
+                            "default": 0,
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
                           "added": {
                             "type": "integer",
                             "minimum": 0,
@@ -9325,6 +9338,7 @@
                           "done",
                           "canceled",
                           "inProgress",
+                          "carried",
                           "added"
                         ],
                         "additionalProperties": false
@@ -9452,6 +9466,12 @@
                           "minimum": 0,
                           "maximum": 9007199254740991
                         },
+                        "carried": {
+                          "default": 0,
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
                         "added": {
                           "type": "integer",
                           "minimum": 0,
@@ -9468,6 +9488,7 @@
                         "done",
                         "canceled",
                         "inProgress",
+                        "carried",
                         "added"
                       ],
                       "additionalProperties": false
@@ -9587,6 +9608,12 @@
                           "minimum": 0,
                           "maximum": 9007199254740991
                         },
+                        "carried": {
+                          "default": 0,
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
                         "added": {
                           "type": "integer",
                           "minimum": 0,
@@ -9603,6 +9630,7 @@
                         "done",
                         "canceled",
                         "inProgress",
+                        "carried",
                         "added"
                       ],
                       "additionalProperties": false
@@ -9749,6 +9777,12 @@
                           "minimum": 0,
                           "maximum": 9007199254740991
                         },
+                        "carried": {
+                          "default": 0,
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
                         "added": {
                           "type": "integer",
                           "minimum": 0,
@@ -9765,6 +9799,7 @@
                         "done",
                         "canceled",
                         "inProgress",
+                        "carried",
                         "added"
                       ],
                       "additionalProperties": false

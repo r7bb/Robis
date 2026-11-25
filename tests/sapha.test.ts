@@ -420,6 +420,27 @@ describe('asking how a release is going', () => {
   });
 });
 
+describe('asking what keeps slipping', () => {
+  test('in the running cycles, or on the board named', () => {
+    expect(read('what keeps slipping')).toEqual({ kind: 'cycle', board: null, slipping: true });
+    expect(read("what's been carried over on the Web board")).toEqual({
+      kind: 'cycle',
+      board: 'Web',
+      slipping: true,
+    });
+    expect(read('what is stuck in Web')).toEqual({ kind: 'cycle', board: 'Web', slipping: true });
+  });
+
+  test('said as a question, and answered here, not proposed', () => {
+    expect(describeIntent({ kind: 'cycle', board: 'Web', slipping: true }, NOW)).toBe(
+      'What keeps slipping on Web',
+    );
+    expect(describeIntent({ kind: 'cycle', board: null, slipping: true }, NOW)).toBe(
+      'What keeps slipping',
+    );
+  });
+});
+
 describe('asking how the cycle is going', () => {
   test('in the ways people ask, on one board when named, as typed', () => {
     for (const text of [

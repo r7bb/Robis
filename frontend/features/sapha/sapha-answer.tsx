@@ -80,7 +80,12 @@ export function SaphaAnswer({
     >
       <p className="text-[11px] font-medium uppercase tracking-wide text-faint">Sapha</p>
       {question.kind === 'cycle' ? (
-        <CycleAnswer workspaceId={workspaceId} board={question.board} onClose={onClose} />
+        <CycleAnswer
+          workspaceId={workspaceId}
+          board={question.board}
+          slipping={question.slipping === true}
+          onClose={onClose}
+        />
       ) : question.kind === 'release' ? (
         <ReleaseAnswer workspaceId={workspaceId} name={question.name} onClose={onClose} />
       ) : (

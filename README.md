@@ -204,15 +204,15 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Ask Sapha what keeps slipping.** What keeps slipping, or what is stuck
+  on Web, now has Sapha list the open work carried on from earlier cycles in
+  each running cycle, with a link to all of it.
 - **Filter a board to the work that keeps slipping.** Boards with cycles
   have a new Carried over filter, showing only the work moved on unfinished
   from an earlier cycle, to talk through what keeps slipping.
 - **Planning a cycle says when its days overlap another.** The board’s Plan
   a cycle form now says, as the days are chosen, when they share days with a
   cycle already planned, naming it and its days.
-- **The demo has a cycle cleared to celebrate.** A new demo workspace now
-  has the two weeks just ended, Groundwork, with all its work done, so its
-  Feed opens with a cycle cleared and a well done to send.
 
 <!-- latest:end -->
 

@@ -19,6 +19,7 @@ const cycle = (id: string, startsOn: string, endsOn: string, counts: Partial<Cyc
     canceled: 0,
     inProgress: 0,
     added: 0,
+    carried: 0,
     ...counts,
   }) satisfies Cycle;
 

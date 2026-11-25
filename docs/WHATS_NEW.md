@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Ask Sapha what keeps slipping** (2026-11-25). What keeps slipping, or
+  what is stuck on Web, now has Sapha list the open work carried on from
+  earlier cycles in each running cycle, with a link to all of it.
 - **Filter a board to the work that keeps slipping** (2026-11-25). Boards
   with cycles have a new Carried over filter, showing only the work moved on
   unfinished from an earlier cycle, to talk through what keeps slipping.

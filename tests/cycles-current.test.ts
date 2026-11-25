@@ -69,6 +69,7 @@ describe('the cycles running today', () => {
       title: string;
       carriedOver: number;
     }[];
+    expect((await current(TODAY)).json().cycles[0].carried).toBe(1);
     expect(open.map((issue) => [issue.title, issue.carriedOver])).toEqual([
       ['Under way', 0],
       ['Stuck', 1],

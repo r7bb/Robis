@@ -1,6 +1,6 @@
 'use client';
 
-import { contracts } from '@robis/shared';
+import { contracts, type ResponseOf } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { call } from '../../lib/api.ts';
@@ -14,15 +14,18 @@ const UNDER_WAY = new Set(['IN_PROGRESS', 'IN_REVIEW']);
 /**
  * How the cycle running now is going, on the board named or on each board
  * with one: done of planned, the days left, and the first few issues still
- * open, work under way marked, each a link.
+ * open, work under way marked, each a link. Asked what keeps slipping, it
+ * says instead how much was carried on from earlier cycles.
  */
 export function CycleAnswer({
   workspaceId,
   board,
+  slipping = false,
   onClose,
 }: {
   workspaceId: string;
   board: string | null;
+  slipping?: boolean;
   onClose: () => void;
 }) {
   const today = localToday();
@@ -40,6 +43,9 @@ export function CycleAnswer({
     );
   }
   const found = cyclesOn(answer.data.cycles, board);
+  if (slipping && found.length > 0) {
+    return <SlippingAnswer workspaceId={workspaceId} cycles={found} onClose={onClose} />;
+  }
   if (found.length === 0) {
     return (
       <p role="status" className="text-base text-content">
@@ -98,6 +104,77 @@ export function CycleAnswer({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+type RunningCycle = ResponseOf<(typeof contracts)['cycles.current']>['cycles'][number];
+
+/**
+ * What keeps slipping in each running cycle: how many of its open issues were
+ * carried on from earlier ones, the first few of them, and the board filtered
+ * to all of them.
+ */
+function SlippingAnswer({
+  workspaceId,
+  cycles,
+  onClose,
+}: {
+  workspaceId: string;
+  cycles: readonly RunningCycle[];
+  onClose: () => void;
+}) {
+  if (cycles.every((cycle) => cycle.carried === 0)) {
+    return (
+      <p role="status" className="text-base text-content">
+        Nothing has been carried on from an earlier cycle. Every open issue is in its first.
+      </p>
+    );
+  }
+  return (
+    <div role="status" className="space-y-4">
+      {cycles
+        .filter((cycle) => cycle.carried > 0)
+        .map((cycle) => (
+          <div key={cycle.id} className="space-y-1.5">
+            <p className="text-base text-content">
+              {cycle.name}
+              <span className="text-sm text-faint"> on {cycle.projectName}</span>
+            </p>
+            <p className="text-sm text-muted">
+              {cycle.carried} {cycle.carried === 1 ? 'issue' : 'issues'} carried on from earlier
+              cycles
+            </p>
+            <ul className="space-y-1">
+              {cycle.open
+                .filter((issue) => issue.carriedOver > 0)
+                .map((issue) => (
+                  <li key={issue.id} className="text-sm">
+                    <Link
+                      href={issueHref(workspaceId, issue.id)}
+                      onClick={onClose}
+                      className="text-content hover:underline"
+                    >
+                      <span className="mr-1.5 font-mono text-xs text-faint">{issue.key}</span>
+                      {issue.title}
+                      <span className="ml-1.5 text-xs text-amber-300">
+                        {carriedChip(issue.carriedOver, false)}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+            </ul>
+            <Link
+              href={boardHref(workspaceId, cycle.projectId, {
+                filter: { cycleId: cycle.id, carried: 'yes' },
+              })}
+              onClick={onClose}
+              className="inline-block text-sm text-accent-soft hover:underline"
+            >
+              Show all carried work
+            </Link>
+          </div>
+        ))}
     </div>
   );
 }

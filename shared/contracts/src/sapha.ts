@@ -42,7 +42,7 @@ export type SaphaIntent =
   /** A question: who has an issue and how it stands, answered in the palette. */
   | { kind: 'about'; issueKey: string }
   /** How the cycle running now is going, on one board when named. */
-  | { kind: 'cycle'; board: string | null }
+  | { kind: 'cycle'; board: string | null; slipping?: true }
   /** How a release is going: the one named, else the next to ship. */
   | { kind: 'release'; name: string | null }
   | { kind: 'search'; query: string }
@@ -394,8 +394,17 @@ const RELEASE_QUESTION = new RegExp(
 /** Words after "for" that mean the asker's own boards, not one named. */
 const EVERY_BOARD = /^(?:me|us|my team|our team|the team|everyone)$/;
 
+/** What keeps slipping: work carried on from earlier cycles, on a board if one is named. */
+const SLIPPING_QUESTION =
+  /^what(?:'s| is| has)? (?:keeps |been |kept )?(?:slipping|stuck|carried(?: over| on)?)(?: (?:on|in|for) (?:the )?(.+?)(?: board)?)?$/;
+
 /** A question about how a release or the cycle is going, or null. */
 function planQuestion(text: string, request: string): SaphaIntent | null {
+  const slipping = SLIPPING_QUESTION.exec(text);
+  if (slipping) {
+    const named = slipping[1] && !EVERY_BOARD.test(slipping[1]) ? slipping[1] : null;
+    return { kind: 'cycle', board: named ? asTyped(request, named) : null, slipping: true };
+  }
   const release = RELEASE_QUESTION.exec(text);
   if (release) {
     const named = release[1] ?? release[2] ?? release[3];
@@ -502,6 +511,14 @@ function describeMaking(
   }
 }
 
+/** A question about the cycle, or about what keeps slipping in it, in a sentence. */
+function cycleQuestionLine(intent: Extract<SaphaIntent, { kind: 'cycle' }>): string {
+  if (intent.slipping) {
+    return intent.board ? `What keeps slipping on ${intent.board}` : 'What keeps slipping';
+  }
+  return intent.board ? `How the cycle on ${intent.board} is going` : 'How the cycles are going';
+}
+
 /** What Sapha will do, in a sentence a person checks before saying yes. */
 export function describeIntent(intent: SaphaIntent, _now: Date = new Date()): string {
   switch (intent.kind) {
@@ -541,9 +558,7 @@ export function describeIntent(intent: SaphaIntent, _now: Date = new Date()): st
     case 'about':
       return `How ${intent.issueKey} stands`;
     case 'cycle':
-      return intent.board
-        ? `How the cycle on ${intent.board} is going`
-        : 'How the cycles are going';
+      return cycleQuestionLine(intent);
     case 'release':
       return intent.name ? `How ${intent.name} is going` : 'How the next release is going';
     case 'search':
