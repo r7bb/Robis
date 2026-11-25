@@ -1,8 +1,11 @@
 import { contracts, type SaphaIntent } from '@robis/shared';
 import { call } from '../../lib/api.ts';
+import { localToday } from '../../lib/due-date.ts';
 import { issueHref } from '../../lib/links.ts';
 import { searchHref } from '../../lib/search-links.ts';
-import { findBoard, findPerson, findTemplate } from './resolve.ts';
+import { currentCycle } from '../cycles/use-cycles.ts';
+import { releaseAsked } from './release-answer-model.ts';
+import { findBoard, findNamed, findPerson, findTemplate } from './resolve.ts';
 
 /**
  * Doing what a person said yes to (Sapha, tier 0): each change goes through
@@ -87,6 +90,48 @@ async function fileFromTemplate(
   };
 }
 
+/** The cycle an issue goes in: one of its board's by name, else the running or next one. */
+async function cycleFor(workspaceId: string, projectId: string, name: string | null) {
+  const { cycles } = await call(contracts['cycles.list'], { params: { workspaceId, projectId } });
+  if (name) {
+    const found = findNamed(cycles, name, 'cycle on its board');
+    if (!found.ok) throw new Error(found.reason);
+    return found.value;
+  }
+  const cycle = currentCycle(cycles, localToday());
+  if (!cycle) throw new Error('Its board has no cycle running or planned. Plan one on the board.');
+  return cycle;
+}
+
+/** The release an issue goes in: one still to ship by name, else the next. */
+async function releaseFor(workspaceId: string, name: string | null) {
+  const { releases } = await call(contracts['releases.list'], { params: { workspaceId } });
+  const open = releases.filter((release) => !release.shippedAt);
+  if (name) {
+    const found = findNamed(open, name, 'release still to ship');
+    if (!found.ok) throw new Error(found.reason);
+    return found.value;
+  }
+  const next = releaseAsked(open, null);
+  if (!next) throw new Error('No release is waiting to ship. Plan one on Releases.');
+  return next;
+}
+
+async function plan(workspaceId: string, intent: Extract<Change, { kind: 'plan' }>) {
+  const issue = await issueByKey(workspaceId, intent.issueKey);
+  const target =
+    intent.into === 'cycle'
+      ? await cycleFor(workspaceId, issue.projectId, intent.name)
+      : await releaseFor(workspaceId, intent.name);
+  const body = intent.into === 'cycle' ? { cycleId: target.id } : { releaseId: target.id };
+  return changeIssue(
+    workspaceId,
+    intent.issueKey,
+    body,
+    `${intent.issueKey} is in ${target.name}.`,
+  );
+}
+
 async function remind(workspaceId: string, intent: Extract<Change, { kind: 'remind' }>) {
   const issue = await issueByKey(workspaceId, intent.issueKey);
   await call(contracts['reminders.create'], {
@@ -128,6 +173,15 @@ export function runIntent(workspaceId: string, intent: Change, myId: string | nu
       return create(workspaceId, intent);
     case 'template':
       return fileFromTemplate(workspaceId, intent);
+    case 'plan':
+      return plan(workspaceId, intent);
+    case 'unplan':
+      return changeIssue(
+        workspaceId,
+        intent.issueKey,
+        intent.from === 'cycle' ? { cycleId: null } : { releaseId: null },
+        `${intent.issueKey} is out of its ${intent.from}.`,
+      );
     case 'remind':
       return remind(workspaceId, intent);
     case 'schedule':

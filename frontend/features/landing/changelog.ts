@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
     area: 'Product',
+    title: 'Ask Sapha to put an issue in a cycle or a release',
+    brief:
+      'Type “put REL-4 in the current cycle”, “add WEB-3 to the release Version 2.0” or “take REL-4 out of the release”, and Sapha does it once you say Do it.',
+    summary:
+      'Sapha now plans issues. Put REL-4 in the current cycle puts it in its board’s cycle running today, or the next one planned; put REL-4 in cycle Relaunch, part one picks one of its board’s by name. Add WEB-3 to the next release, or to the release Version 2.0, puts it in the next release still to ship or one by name. Take REL-4 out of the cycle, or of the release, takes it out again. Each shows what it will do on Sapha’s card first and is done through the issue’s own update, as the person asking, so a shipped release still refuses it. When a name matches two, or none, Sapha asks back; move REL-4 to done still moves it to done.',
+    checked:
+      'Two tests of the ways it is read and said back, with a status still read as a status. In the browser, put WEB-1 in the current cycle answered WEB-1 is in Relaunch, and add WEB-1 to the next release answered WEB-1 is in Version 2.0, and the issue then held both. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-25',
+    area: 'Product',
     title: 'Ask Sapha to file from a template',
     brief:
       'Type “use the bug report template for Login loops” in the command palette, and Sapha files it from that template, with its description, priority and labels, once you say Do it.',

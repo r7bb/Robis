@@ -160,6 +160,61 @@ describe('saying what it will do', () => {
   });
 });
 
+describe('putting an issue in a cycle or a release', () => {
+  test('the current cycle, the next release, or one by name, as typed', () => {
+    expect(read('put REL-4 in the current cycle')).toEqual({
+      kind: 'plan',
+      issueKey: 'REL-4',
+      into: 'cycle',
+      name: null,
+    });
+    expect(read('add rel-4 to the sprint')).toEqual({
+      kind: 'plan',
+      issueKey: 'REL-4',
+      into: 'cycle',
+      name: null,
+    });
+    expect(read('add WEB-3 to the next release')).toEqual({
+      kind: 'plan',
+      issueKey: 'WEB-3',
+      into: 'release',
+      name: null,
+    });
+    expect(read('move WEB-3 to the release Version 2.0')).toEqual({
+      kind: 'plan',
+      issueKey: 'WEB-3',
+      into: 'release',
+      name: 'Version 2.0',
+    });
+    expect(read('put REL-4 in cycle Relaunch, part one')).toEqual({
+      kind: 'plan',
+      issueKey: 'REL-4',
+      into: 'cycle',
+      name: 'Relaunch, part one',
+    });
+  });
+
+  test('taken out again, and said back; a status still reads as a status', () => {
+    expect(read('take REL-4 out of the release')).toEqual({
+      kind: 'unplan',
+      issueKey: 'REL-4',
+      from: 'release',
+    });
+    expect(read('remove REL-4 from the cycle')).toEqual({
+      kind: 'unplan',
+      issueKey: 'REL-4',
+      from: 'cycle',
+    });
+    const at = (text: string) => describeIntent(read(text)!, NOW);
+    expect(at('put REL-4 in the current cycle')).toBe('Put REL-4 in the current cycle');
+    expect(at('add WEB-3 to the next release')).toBe('Put WEB-3 in the next release');
+    expect(at('move WEB-3 to the release Version 2.0')).toBe('Put WEB-3 in Version 2.0');
+    expect(at('take REL-4 out of the release')).toBe('Take REL-4 out of its release');
+    expect(read('move REL-4 to done')).toMatchObject({ kind: 'status', status: 'DONE' });
+    expect(LOOKING_INTENTS.has('plan')).toBe(false);
+  });
+});
+
 describe('filing from a template', () => {
   test('by the template’s name, with a title, and a board when the title is quoted', () => {
     expect(read('use the bug report template for Login loops on Safari')).toEqual({

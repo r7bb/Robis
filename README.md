@@ -204,16 +204,15 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Ask Sapha to put an issue in a cycle or a release.** Type “put REL-4 in
+  the current cycle”, “add WEB-3 to the release Version 2.0” or “take REL-4
+  out of the release”, and Sapha does it once you say Do it.
 - **Ask Sapha to file from a template.** Type “use the bug report template
   for Login loops” in the command palette, and Sapha files it from that
   template, with its description, priority and labels, once you say Do it.
 - **Rename a release or move its day.** A release still to ship can now be
   renamed, or its day moved or cleared, from Rename or move its day on the
   Releases page.
-- **Confirmations that keyboards and screen readers can follow.** Ship it
-  and removing a template now move focus to the safe answer and say the
-  question aloud, Escape cancels only the question, and Sapha leaves
-  ordinary words about releases to search.
 
 <!-- latest:end -->
 

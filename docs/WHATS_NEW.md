@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Ask Sapha to put an issue in a cycle or a release** (2026-11-25). Type
+  “put REL-4 in the current cycle”, “add WEB-3 to the release Version 2.0”
+  or “take REL-4 out of the release”, and Sapha does it once you say Do it.
 - **Ask Sapha to file from a template** (2026-11-25). Type “use the bug
   report template for Login loops” in the command palette, and Sapha files
   it from that template, with its description, priority and labels, once you

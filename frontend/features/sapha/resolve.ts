@@ -57,23 +57,35 @@ export function findBoard(boards: readonly Board[], said: string | null): Found<
 }
 
 /**
- * A template by its name, or the start of one only it has; several that
- * start the same, or none, is a question back.
+ * One of `noun`s by its name, or the start of a name only one has; several
+ * that start the same, or none, is a question back.
  */
-export function findTemplate<T extends { name: string }>(
-  templates: readonly T[],
+export function findNamed<T extends { name: string }>(
+  items: readonly T[],
   said: string,
+  noun: string,
 ): Found<T> {
   const name = fold(said);
-  const exact = templates.find((template) => fold(template.name) === name);
+  const exact = items.find((item) => fold(item.name) === name);
   if (exact) return { ok: true, value: exact };
-  const starting = templates.filter((template) => fold(template.name).startsWith(name));
+  const starting = items.filter((item) => fold(item.name).startsWith(name));
   if (starting.length === 1) return { ok: true, value: starting[0]! };
   if (starting.length > 1) {
     return {
       ok: false,
-      reason: `More than one template starts with ${said}: ${starting.map((t) => t.name).join(', ')}. Say more of its name.`,
+      reason: `More than one ${noun} starts with ${said}: ${starting.map((t) => t.name).join(', ')}. Say more of its name.`,
     };
   }
-  return { ok: false, reason: `No template called ${said}. Save one from an issue first.` };
+  return { ok: false, reason: `No ${noun} called ${said}.` };
+}
+
+/** A template by its name, as `findNamed` finds one; none points at where they come from. */
+export function findTemplate<T extends { name: string }>(
+  templates: readonly T[],
+  said: string,
+): Found<T> {
+  const found = findNamed(templates, said, 'template');
+  return found.ok || found.reason.startsWith('More')
+    ? found
+    : { ok: false, reason: `No template called ${said}. Save one from an issue first.` };
 }

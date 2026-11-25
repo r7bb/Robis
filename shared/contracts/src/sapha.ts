@@ -20,6 +20,10 @@ export type SaphaIntent =
   | { kind: 'unassign'; issueKey: string }
   | { kind: 'due'; issueKey: string; dueOn: string | null }
   | { kind: 'create'; title: string; board: string | null }
+  /** Put an issue in its board's current cycle or a named one, or the next release or a named one. */
+  | { kind: 'plan'; issueKey: string; into: 'cycle' | 'release'; name: string | null }
+  /** Take an issue out of its cycle or release. */
+  | { kind: 'unplan'; issueKey: string; from: 'cycle' | 'release' }
   /** A new issue from a template, by the template's name, with its own title or one given. */
   | { kind: 'template'; template: string; title: string | null; board: string | null }
   | { kind: 'remind'; issueKey: string; at: Date }
@@ -123,6 +127,33 @@ function titleThenTime(words: string, now: Date): { title: string; at: Date } | 
     if (at) return { title: tokens.slice(0, split).join(' '), at };
   }
   return null;
+}
+
+const PLAN_INTO = new RegExp(
+  `^(?:put|add|move|plan) ${KEY} (?:in|into|to|for) (?:the )?(?:(?:current|this|next) )?(cycle|sprint|release)(?: (.+))?$`,
+);
+const PLAN_OUT = new RegExp(
+  `^(?:take|remove|drop) ${KEY} (?:out of|from) (?:the |its )?(cycle|sprint|release)$`,
+);
+
+/** Into a cycle or release, or out of one; null when the words are not that. */
+function planning(text: string, request: string): SaphaIntent | null {
+  const into = PLAN_INTO.exec(text);
+  if (into) {
+    return {
+      kind: 'plan',
+      issueKey: key(into[1]!),
+      into: into[2] === 'release' ? 'release' : 'cycle',
+      name: into[3] ? asTyped(request, into[3]) : null,
+    };
+  }
+  const out = PLAN_OUT.exec(text);
+  if (!out) return null;
+  return {
+    kind: 'unplan',
+    issueKey: key(out[1]!),
+    from: out[2] === 'release' ? 'release' : 'cycle',
+  };
 }
 
 function issueChange(text: string, request: string, now: Date): SaphaIntent | null {
@@ -262,6 +293,7 @@ export function interpret(request: string, now: Date = new Date()): SaphaIntent 
   const text = normalise(request);
   if (!text) return null;
   return (
+    planning(text, request) ??
     issueChange(text, request, now) ??
     fromTemplate(request) ??
     making(text, request, now) ??
@@ -296,6 +328,25 @@ function dateLine(when: Date, withTime: boolean): string {
 
 const capital = (word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
 
+/** A new issue, or an issue put in or taken out of a cycle or release, in a sentence. */
+function describeMaking(
+  intent: Extract<SaphaIntent, { kind: 'create' | 'plan' | 'unplan' | 'template' }>,
+): string {
+  const on = 'board' in intent && intent.board ? ` on ${intent.board}` : '';
+  switch (intent.kind) {
+    case 'create':
+      return `Create the issue “${intent.title}”${on}`;
+    case 'plan':
+      return `Put ${intent.issueKey} in ${
+        intent.name ?? (intent.into === 'cycle' ? 'the current cycle' : 'the next release')
+      }`;
+    case 'unplan':
+      return `Take ${intent.issueKey} out of its ${intent.from}`;
+    case 'template':
+      return `${intent.title ? `File “${intent.title}”` : 'File'} from the ${intent.template} template${on}`;
+  }
+}
+
 /** What Sapha will do, in a sentence a person checks before saying yes. */
 export function describeIntent(intent: SaphaIntent, _now: Date = new Date()): string {
   switch (intent.kind) {
@@ -312,11 +363,10 @@ export function describeIntent(intent: SaphaIntent, _now: Date = new Date()): st
         ? `Make ${intent.issueKey} due ${dateLine(new Date(`${intent.dueOn}T12:00`), false)}`
         : `Clear the due date on ${intent.issueKey}`;
     case 'create':
-      return `Create the issue “${intent.title}”${intent.board ? ` on ${intent.board}` : ''}`;
-    case 'template': {
-      const what = intent.title ? `File “${intent.title}”` : 'File';
-      return `${what} from the ${intent.template} template${intent.board ? ` on ${intent.board}` : ''}`;
-    }
+    case 'plan':
+    case 'unplan':
+    case 'template':
+      return describeMaking(intent);
     case 'remind':
       return `Remind you about ${intent.issueKey}, ${dateLine(intent.at, true)}`;
     case 'schedule':

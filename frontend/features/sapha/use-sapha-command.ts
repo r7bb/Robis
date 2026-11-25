@@ -38,6 +38,8 @@ function actionFor(intent: SaphaIntent): Action | undefined {
     case 'due':
     case 'assign':
     case 'unassign':
+    case 'plan':
+    case 'unplan':
       return 'editIssue';
     case 'create':
     case 'template':
