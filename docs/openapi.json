@@ -23425,6 +23425,12 @@
                                         "number",
                                         "null"
                                       ]
+                                    },
+                                    "slipping": {
+                                      "type": [
+                                        "boolean",
+                                        "null"
+                                      ]
                                     }
                                   },
                                   "required": [

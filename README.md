@@ -204,15 +204,15 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Sapha’s assistant asks what keeps slipping too.** With the assistant on,
+  other wordings, such as which tickets keep rolling over on web, now reach
+  the answer about work carried from earlier cycles.
 - **Ask Sapha what keeps slipping.** What keeps slipping, or what is stuck
   on Web, now has Sapha list the open work carried on from earlier cycles in
   each running cycle, with a link to all of it.
 - **Filter a board to the work that keeps slipping.** Boards with cycles
   have a new Carried over filter, showing only the work moved on unfinished
   from an earlier cycle, to talk through what keeps slipping.
-- **Planning a cycle says when its days overlap another.** The board’s Plan
-  a cycle form now says, as the days are chosen, when they share days with a
-  cycle already planned, naming it and its days.
 
 <!-- latest:end -->
 

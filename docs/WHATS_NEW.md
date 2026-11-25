@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Sapha’s assistant asks what keeps slipping too** (2026-11-25). With the
+  assistant on, other wordings, such as which tickets keep rolling over on
+  web, now reach the answer about work carried from earlier cycles.
 - **Ask Sapha what keeps slipping** (2026-11-25). What keeps slipping, or
   what is stuck on Web, now has Sapha list the open work carried on from
   earlier cycles in each running cycle, with a link to all of it.

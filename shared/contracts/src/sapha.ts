@@ -622,6 +622,8 @@ export const saphaPartsSchema = z.object({
   into: z.enum(['cycle', 'release']).nullable().optional(),
   /** How many days a new cycle runs, when said. */
   days: z.number().nullable().optional(),
+  /** Asked what keeps slipping in the cycle, rather than how it is going. */
+  slipping: z.boolean().nullable().optional(),
 });
 export type SaphaParts = z.infer<typeof saphaPartsSchema>;
 
@@ -743,8 +745,10 @@ function elsewhereFromParts(parts: SaphaParts, now: Date): SaphaIntent | null {
     }
     case 'go':
       return parts.place ? { kind: 'go', place: parts.place } : null;
-    case 'cycle':
-      return { kind: 'cycle', board: words(parts.board, 80) };
+    case 'cycle': {
+      const board = words(parts.board, 80);
+      return parts.slipping ? { kind: 'cycle', board, slipping: true } : { kind: 'cycle', board };
+    }
     case 'release':
       return { kind: 'release', name: words(parts.title, 80) };
     default:

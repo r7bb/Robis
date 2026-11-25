@@ -701,4 +701,16 @@ describe('tier 1: parts from the provider', () => {
       name: 'Gala',
     });
   });
+
+  test('what keeps slipping, from the provider’s parts, on a board if named', () => {
+    expect(intentFromParts({ ...none, kind: 'cycle', slipping: true, board: 'Web' }, NOW)).toEqual({
+      kind: 'cycle',
+      board: 'Web',
+      slipping: true,
+    });
+    expect(intentFromParts({ ...none, kind: 'cycle', slipping: false }, NOW)).toEqual({
+      kind: 'cycle',
+      board: null,
+    });
+  });
 });

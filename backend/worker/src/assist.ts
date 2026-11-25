@@ -125,7 +125,7 @@ export const PROMPTS = {
     'newBoard (make a new board, also called a project: its name as the title, and template only when software, event planning or coursework is said; a request for a board is always newBoard, never template, which files an issue),',
     'remind (about an issue, at a time), schedule (a meeting with a',
     'title, at a time), open (an issue), blockers (what an issue waits on), about (who has an issue and how',
-    'it stands), cycle (how the cycle running now is going, on a board if one is named), release (how a release is going, its name as the title if one is said), search (a query), go (to day,',
+    'it stands), cycle (how the cycle running now is going, on a board if one is named; slipping true when asked what keeps slipping, is stuck or was carried over), release (how a release is going, its name as the title if one is said), search (a query), go (to day,',
     'calendar, feed, spaces or meetings).',
     'An issue is named by its key, like REL-12; never invent a key. Copy any time in the words it was said in,',
     'like "tomorrow 9am", never as a date. Leave a part null when the request does not say it.',

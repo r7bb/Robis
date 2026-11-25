@@ -45,12 +45,23 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
+    area: 'ML',
+    title: 'Sapha’s assistant asks what keeps slipping too',
+    brief:
+      'With the assistant on, other wordings, such as which tickets keep rolling over on web, now reach the answer about work carried from earlier cycles.',
+    summary:
+      'What keeps slipping was read from a few plain wordings only. With the workspace assistant on, other ways of asking now reach the same answer: the assistant only says that this is the question and which board, if any, and the answer is worked out here as before. Asking how the cycle is going is unchanged.',
+    checked:
+      'One new test of the assistant’s parts read into the question, with and without slipping. The full suite, lint, typecheck, knip and docs:links. No paid model was called; tests use a fake.',
+  },
+  {
+    date: '2026-11-25',
     area: 'Product',
     title: 'Ask Sapha what keeps slipping',
     brief:
       'What keeps slipping, or what is stuck on Web, now has Sapha list the open work carried on from earlier cycles in each running cycle, with a link to all of it.',
     summary:
-      'Sapha now answers what keeps slipping, what has been carried over and what is stuck, on every board with a cycle running or on the one named. For each running cycle it says how many open issues were carried on from earlier cycles, lists the first few with which cycle each is in, and links to the board filtered to that cycle’s carried work. When nothing was carried, it says every open issue is in its first cycle. For now this is read from plain wording only; the assistant path does not ask it yet.',
+      'Sapha now answers what keeps slipping, what has been carried over and what is stuck, on every board with a cycle running or on the one named. For each running cycle it says how many open issues were carried on from earlier cycles, lists the first few with which cycle each is in, and links to the board filtered to that cycle’s carried work. When nothing was carried, it says every open issue is in its first cycle.',
     checked:
       'Two new tests of reading the question, with and without a board, and of how it is said; the running cycles now count their carried open issues. In the browser: what keeps slipping answered Two on Web: 1 issue carried on from earlier cycles, with Stubborn bug, 2nd cycle, and a link to the board with cycle and carried set. The full suite, lint, typecheck, knip and docs:links.',
   },
