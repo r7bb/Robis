@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
     area: 'Product',
+    title: 'Sapha reads more of what is meant, and less of what is not',
+    brief:
+      'Put ABC-1 in cycle 3 now finds Cycle 3, a release can be called Launch for customers, polite words reach Sapha, and talk of release notes stays a search.',
+    summary:
+      'A review of Sapha’s new actions found a few misreadings, now fixed. Put ABC-1 in cycle 3 finds the cycle named Cycle 3 (and add WEB-3 to release 2 finds Release 2), as well as cycles named in full. Plan a release Launch for customers keeps the whole name when the words after for are not a day. A question mark at the end of a new issue’s title is kept. Please and okay before a template request no longer stop Sapha reading it. Add WEB-3 to release notes, plan release notes, create release candidate, use the template for x and plan a 0-day cycle are left to search rather than offered as changes. And shipping a release just after it was renamed now writes the new name in its notes.',
+    checked:
+      'Two new tests of what these readers leave alone and what they now read, and one of finding a cycle by the bare name or the name with its word before it. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-25',
+    area: 'Product',
     title: 'Ask Sapha to plan a cycle or a release',
     brief:
       'Type “plan a two week cycle on Web” or “plan a release Version 3 for friday”, and Sapha plans it once you say Do it.',

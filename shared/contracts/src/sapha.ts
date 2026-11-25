@@ -155,28 +155,40 @@ const CYCLE_DAYS_DEFAULT = 14;
 const NEW_CYCLE =
   /^(?:plan|start|create) (?:a |an )?(?:(\d+|one|two|three|four|five|six|seven|eight)[- ](day|week) )?(?:cycle|sprint)(?: on (?:the )?(.+?)(?: board)?)?$/;
 const NEW_RELEASE =
-  /^(?:plan|create) (?:a |the )?(?:new )?release (?:called |named )?(.+?)(?: (?:for|on|due) (.+))?$/;
+  /^(?:plan|create) (?:a |the )?(?:new )?release (?:called |named )?(.+?)(?: (for|on|due) (.+))?$/;
 
-/** A new cycle or release; null when the words are not that, or a day in them does not read. */
-function newPlans(text: string, request: string, now: Date): SaphaIntent | null {
+/** A new cycle of so many days; null when the words are not that. */
+function newCycle(text: string, request: string): SaphaIntent | null {
   const cycle = NEW_CYCLE.exec(text);
-  if (cycle) {
-    const count = cycle[1] ? (COUNTS[cycle[1]] ?? Number(cycle[1])) : null;
-    const days = count ? count * (cycle[2] === 'week' ? 7 : 1) : CYCLE_DAYS_DEFAULT;
-    return { kind: 'newCycle', days, board: cycle[3] ? asTyped(request, cycle[3]) : null };
-  }
-  const release = NEW_RELEASE.exec(text);
-  if (!release) return null;
-  const name = asTyped(request, release[1]!);
-  if (!release[2]) return { kind: 'newRelease', name, targetOn: null };
-  const when = parseWhen(release[2], now);
-  return when ? { kind: 'newRelease', name, targetOn: dayOf(when) } : null;
+  if (!cycle) return null;
+  const count = cycle[1] ? (COUNTS[cycle[1]] ?? Number(cycle[1])) : null;
+  if (count === 0) return null;
+  const days = count ? count * (cycle[2] === 'week' ? 7 : 1) : CYCLE_DAYS_DEFAULT;
+  return { kind: 'newCycle', days, board: cycle[3] ? asTyped(request, cycle[3]) : null };
 }
+
+/**
+ * A new release by name, with its day when the words after "for" read as
+ * one ("Launch for customers" is all name); null when the words are not that.
+ */
+function newRelease(text: string, request: string, now: Date): SaphaIntent | null {
+  const release = NEW_RELEASE.exec(text);
+  if (!release || NOT_A_RELEASE.has(release[1]!)) return null;
+  const when = release[3] ? parseWhen(release[3], now) : null;
+  if (when) {
+    return { kind: 'newRelease', name: asTyped(request, release[1]!), targetOn: dayOf(when) };
+  }
+  const said = release[3] ? `${release[1]} ${release[2]} ${release[3]}` : release[1]!;
+  return { kind: 'newRelease', name: asTyped(request, said), targetOn: null };
+}
+
+/** Words that follow "release" in ordinary talk, never a release's name. */
+const NOT_A_RELEASE = new Set(['notes', 'note', 'candidate', 'candidates', 'checklist']);
 
 /** Into a cycle or release, or out of one; null when the words are not that. */
 function planning(text: string, request: string): SaphaIntent | null {
   const into = PLAN_INTO.exec(text);
-  if (into) {
+  if (into && !(into[2] === 'release' && NOT_A_RELEASE.has(into[3] ?? ''))) {
     return {
       kind: 'plan',
       issueKey: key(into[1]!),
@@ -253,19 +265,26 @@ function titleAndBoard(rest: string): { title: string; board: string | null } {
   const trimmed = rest.trim();
   const quoted = /^["“](.+?)["”](?:\s+(?:on|in)\s+(?:the\s+)?(.+?)(?:\s+board)?)?$/.exec(trimmed);
   if (quoted) return { title: quoted[1]!, board: quoted[2] ?? null };
-  return { title: trimmed.replace(/[.!?]+$/, ''), board: null };
+  return { title: trimmed.replace(/[.!]+$/, ''), board: null };
 }
 
 const TEMPLATE_REQUEST =
-  /^(?:use|file from|file with|from)\s+(?:the\s+)?(.+?)\s+template(?:(?:\s+for|:)\s*(.+))?$/i;
+  /^(?:use|file from|file with|from) (?:the )?(.+?) template(?:(?: for|:) ?(.+))?$/;
 
-/** "Use the bug report template for Login loops": the template by name, and the title. */
-function fromTemplate(original: string): SaphaIntent | null {
-  const m = TEMPLATE_REQUEST.exec(asSaid(original).replace(/[.!?]+$/, ''));
-  if (!m) return null;
-  const template = m[1]!.trim();
+/** Words that are never a template's name, only how one is spoken of. */
+const NOT_A_TEMPLATE = new Set(['the', 'a', 'an', 'this', 'that']);
+
+/**
+ * "Use the bug report template for Login loops": the template by name, and
+ * the title. Read on the tidied words, as the other readers are, with the
+ * names put back as typed.
+ */
+function fromTemplate(text: string, request: string): SaphaIntent | null {
+  const m = TEMPLATE_REQUEST.exec(text);
+  if (!m || NOT_A_TEMPLATE.has(m[1]!)) return null;
+  const template = asTyped(request, m[1]!);
   if (!m[2]?.trim()) return { kind: 'template', template, title: null, board: null };
-  return { kind: 'template', template, ...titleAndBoard(m[2]) };
+  return { kind: 'template', template, ...titleAndBoard(asTyped(request, m[2])) };
 }
 
 const CYCLE = '(?:cycle|sprint)';
@@ -331,9 +350,10 @@ export function interpret(request: string, now: Date = new Date()): SaphaIntent 
   if (!text) return null;
   return (
     planning(text, request) ??
-    newPlans(text, request, now) ??
+    newCycle(text, request) ??
+    newRelease(text, request, now) ??
     issueChange(text, request, now) ??
-    fromTemplate(request) ??
+    fromTemplate(text, request) ??
     making(text, request, now) ??
     looking(text, request)
   );

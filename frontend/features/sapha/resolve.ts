@@ -58,9 +58,25 @@ export function findBoard(boards: readonly Board[], said: string | null): Found<
 
 /**
  * One of `noun`s by its name, or the start of a name only one has; several
- * that start the same, or none, is a question back.
+ * that start the same, or none, is a question back. Given several ways of
+ * saying it ("3", "cycle 3"), the first that finds one wins.
  */
 export function findNamed<T extends { name: string }>(
+  items: readonly T[],
+  said: string | readonly string[],
+  noun: string,
+): Found<T> {
+  const ways = typeof said === 'string' ? [said] : said;
+  let first: Found<T> | null = null;
+  for (const way of ways) {
+    const found = findNamedOnce(items, way, noun);
+    if (found.ok) return found;
+    first ??= found;
+  }
+  return first ?? { ok: false, reason: `No ${noun} named.` };
+}
+
+function findNamedOnce<T extends { name: string }>(
   items: readonly T[],
   said: string,
   noun: string,

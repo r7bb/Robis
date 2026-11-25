@@ -251,6 +251,41 @@ describe('planning a cycle or a release', () => {
   });
 });
 
+describe('what the planning and template readers leave alone', () => {
+  test('words about release notes or candidates, a template called “the”, a 0-day cycle', () => {
+    for (const text of [
+      'add WEB-3 to release notes',
+      'plan release notes',
+      'create release candidate',
+      'use the template for x',
+      'plan a 0-day cycle',
+    ]) {
+      const kind = read(text)?.kind;
+      expect(['plan', 'newRelease', 'template', 'newCycle']).not.toContain(kind);
+    }
+  });
+
+  test('a release name with for in it, a question mark kept, and polite words', () => {
+    expect(read('plan a release Launch for customers')).toEqual({
+      kind: 'newRelease',
+      name: 'Launch for customers',
+      targetOn: null,
+    });
+    expect(read('new issue why is login slow?')).toMatchObject({ title: 'why is login slow?' });
+    for (const text of [
+      'please use the bug report template for Login loops',
+      'okay sapha, use the bug report template for Login loops',
+    ]) {
+      expect(read(text)).toEqual({
+        kind: 'template',
+        template: 'bug report',
+        title: 'Login loops',
+        board: null,
+      });
+    }
+  });
+});
+
 describe('filing from a template', () => {
   test('by the template’s name, with a title, and a board when the title is quoted', () => {
     expect(read('use the bug report template for Login loops on Safari')).toEqual({

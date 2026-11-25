@@ -204,15 +204,16 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Sapha reads more of what is meant, and less of what is not.** Put ABC-1
+  in cycle 3 now finds Cycle 3, a release can be called Launch for
+  customers, polite words reach Sapha, and talk of release notes stays a
+  search.
 - **Ask Sapha to plan a cycle or a release.** Type “plan a two week cycle on
   Web” or “plan a release Version 3 for friday”, and Sapha plans it once you
   say Do it.
 - **Ask Sapha to put an issue in a cycle or a release.** Type “put REL-4 in
   the current cycle”, “add WEB-3 to the release Version 2.0” or “take REL-4
   out of the release”, and Sapha does it once you say Do it.
-- **Ask Sapha to file from a template.** Type “use the bug report template
-  for Login loops” in the command palette, and Sapha files it from that
-  template, with its description, priority and labels, once you say Do it.
 
 <!-- latest:end -->
 

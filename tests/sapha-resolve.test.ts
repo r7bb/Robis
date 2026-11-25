@@ -1,5 +1,10 @@
 import { describe, expect, test } from 'bun:test';
-import { findBoard, findPerson, findTemplate } from '@robis/web/features/sapha/resolve.ts';
+import {
+  findBoard,
+  findNamed,
+  findPerson,
+  findTemplate,
+} from '@robis/web/features/sapha/resolve.ts';
 
 /** Who and where Sapha takes a request to mean: one match, or a question back. */
 
@@ -74,6 +79,29 @@ describe('finding a template', () => {
     expect(findTemplate(templates, 'release')).toEqual({
       ok: false,
       reason: 'No template called release. Save one from an issue first.',
+    });
+  });
+});
+
+describe('finding a cycle or release by what was said of it', () => {
+  const cycles = [
+    { id: 'c1', name: 'Cycle 3' },
+    { id: 'c2', name: 'Relaunch, part one' },
+  ];
+  test('the bare name, or the name with the word said before it', () => {
+    expect(
+      findNamed(cycles, ['Relaunch, part one', 'cycle Relaunch, part one'], 'cycle'),
+    ).toMatchObject({
+      ok: true,
+      value: { id: 'c2' },
+    });
+    expect(findNamed(cycles, ['3', 'cycle 3', 'sprint 3'], 'cycle')).toMatchObject({
+      ok: true,
+      value: { id: 'c1' },
+    });
+    expect(findNamed(cycles, ['9', 'cycle 9'], 'cycle')).toEqual({
+      ok: false,
+      reason: 'No cycle called 9.',
     });
   });
 });

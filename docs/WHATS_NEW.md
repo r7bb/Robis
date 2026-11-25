@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Sapha reads more of what is meant, and less of what is not**
+  (2026-11-25). Put ABC-1 in cycle 3 now finds Cycle 3, a release can be
+  called Launch for customers, polite words reach Sapha, and talk of release
+  notes stays a search.
 - **Ask Sapha to plan a cycle or a release** (2026-11-25). Type “plan a two
   week cycle on Web” or “plan a release Version 3 for friday”, and Sapha
   plans it once you say Do it.

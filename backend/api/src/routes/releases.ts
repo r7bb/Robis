@@ -162,7 +162,7 @@ export async function releaseRoutes(app: FastifyInstance, opts: { db: Database }
         // Held first: an issue moving in or out waits, so the notes are what
         // was in it; and two ships at once ship it once.
         const [held] = await tx
-          .select({ shippedAt: releases.shippedAt })
+          .select({ name: releases.name, shippedAt: releases.shippedAt })
           .from(releases)
           .where(eq(releases.id, release.id))
           .for('update');
@@ -171,7 +171,8 @@ export async function releaseRoutes(app: FastifyInstance, opts: { db: Database }
         }
         const now = new Date();
         const notes = releaseNotes({
-          name: release.name,
+          // As held now: a rename just before shipping is the name the notes give.
+          name: held.name,
           shippedOn: now.toISOString().slice(0, 10),
           issues: await issuesOf(tx, workspaceId, release.id),
         });

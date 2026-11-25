@@ -95,7 +95,11 @@ async function fileFromTemplate(
 async function cycleFor(workspaceId: string, projectId: string, name: string | null) {
   const { cycles } = await call(contracts['cycles.list'], { params: { workspaceId, projectId } });
   if (name) {
-    const found = findNamed(cycles, name, 'cycle on its board');
+    const found = findNamed(
+      cycles,
+      [name, `cycle ${name}`, `sprint ${name}`],
+      'cycle on its board',
+    );
     if (!found.ok) throw new Error(found.reason);
     return found.value;
   }
@@ -109,7 +113,7 @@ async function releaseFor(workspaceId: string, name: string | null) {
   const { releases } = await call(contracts['releases.list'], { params: { workspaceId } });
   const open = releases.filter((release) => !release.shippedAt);
   if (name) {
-    const found = findNamed(open, name, 'release still to ship');
+    const found = findNamed(open, [name, `release ${name}`], 'release still to ship');
     if (!found.ok) throw new Error(found.reason);
     return found.value;
   }
