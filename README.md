@@ -204,15 +204,15 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Sapha points out work carried from earlier cycles.** Asked how the cycle
+  is going, Sapha now marks open issues carried on from earlier cycles, such
+  as 2nd cycle, and lists them right after work under way.
 - **Cards show work carried from cycle to cycle.** An unfinished issue moved
   on from earlier cycles now shows which cycle it is in, such as 3rd cycle,
   on its card.
 - **See how much was added to a cycle after it began.** The cycle bar and
   Sapha’s cycle answer now say how many issues were added mid-cycle, after
   its first day.
-- **Plan a cycle on a board opens after the ones already planned.** The
-  board’s Plan a cycle form now starts its days after the cycle running
-  there, as Sapha does, and they can still be changed.
 
 <!-- latest:end -->
 

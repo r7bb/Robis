@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Sapha points out work carried from earlier cycles** (2026-11-25). Asked
+  how the cycle is going, Sapha now marks open issues carried on from
+  earlier cycles, such as 2nd cycle, and lists them right after work under
+  way.
 - **Cards show work carried from cycle to cycle** (2026-11-25). An
   unfinished issue moved on from earlier cycles now shows which cycle it is
   in, such as 3rd cycle, on its card.

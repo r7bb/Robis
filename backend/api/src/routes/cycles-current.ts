@@ -1,6 +1,6 @@
 import { cycles, type Database, issues, projects } from '@robis/database';
 import { contracts } from '@robis/shared';
-import { and, asc, eq, gte, inArray, lte, notInArray, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, lte, notInArray, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { serve } from '../contract.ts';
 import { currentMembership, requireAuth, requireMembership } from '../plugins/authz.ts';
@@ -56,6 +56,7 @@ export async function currentCycleRoutes(app: FastifyInstance, opts: { db: Datab
           number: issues.number,
           title: issues.title,
           status: issues.status,
+          carriedOver: issues.carriedOver,
         })
         .from(issues)
         .where(
@@ -68,7 +69,7 @@ export async function currentCycleRoutes(app: FastifyInstance, opts: { db: Datab
             notInArray(issues.status, [...FINISHED]),
           ),
         )
-        .orderBy(UNDER_WAY_FIRST, asc(issues.number));
+        .orderBy(UNDER_WAY_FIRST, desc(issues.carriedOver), asc(issues.number));
 
       return {
         cycles: running.map((cycle) => ({
@@ -81,6 +82,7 @@ export async function currentCycleRoutes(app: FastifyInstance, opts: { db: Datab
               key: `${cycle.projectKey}-${issue.number}`,
               title: issue.title,
               status: issue.status,
+              carriedOver: issue.carriedOver,
             })),
         })),
       };

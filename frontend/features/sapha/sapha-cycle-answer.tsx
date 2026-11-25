@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { call } from '../../lib/api.ts';
 import { localToday } from '../../lib/due-date.ts';
 import { boardHref, issueHref } from '../../lib/links.ts';
-import { addedLine, daysLeftLine } from '../cycles/cycle-days.ts';
+import { addedLine, carriedChip, daysLeftLine } from '../cycles/cycle-days.ts';
 import { cyclesOn } from './cycle-answer-model.ts';
 
 const UNDER_WAY = new Set(['IN_PROGRESS', 'IN_REVIEW']);
@@ -77,6 +77,11 @@ export function CycleAnswer({
                       {issue.title}
                       {UNDER_WAY.has(issue.status) ? (
                         <span className="ml-1.5 text-xs text-faint">under way</span>
+                      ) : null}
+                      {issue.carriedOver > 0 ? (
+                        <span className="ml-1.5 text-xs text-amber-300">
+                          {carriedChip(issue.carriedOver, false)}
+                        </span>
                       ) : null}
                     </Link>
                   </li>

@@ -52,6 +52,30 @@ async function setUp() {
 }
 
 describe('the cycles running today', () => {
+  test('work carried from earlier cycles says so, and comes after work under way', async () => {
+    const { owner, ws, workspace, plan, file, current } = await setUp();
+    const web = await createProject(owner, workspace.id, 'Web');
+    const earlier = await plan(web.id, 'Earlier', '2026-11-02', '2026-11-15');
+    const running = await plan(web.id, 'Relaunch', '2026-11-16', '2026-11-29');
+    await file(web.id, 'Fresh', running.id);
+    const stuck = await file(web.id, 'Stuck', earlier.id);
+    await request(`${ws}/issues/${stuck.id}`, {
+      method: 'PATCH',
+      actor: owner,
+      payload: { cycleId: running.id },
+    });
+    await file(web.id, 'Under way', running.id, 'IN_PROGRESS');
+    const open = (await current(TODAY)).json().cycles[0].open as {
+      title: string;
+      carriedOver: number;
+    }[];
+    expect(open.map((issue) => [issue.title, issue.carriedOver])).toEqual([
+      ['Under way', 0],
+      ['Stuck', 1],
+      ['Fresh', 0],
+    ]);
+  });
+
   test('each board’s running cycle, its counts and what is left, under way first', async () => {
     const { owner, workspace, plan, file, current } = await setUp();
     const web = await createProject(owner, workspace.id, 'Web');

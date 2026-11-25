@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
     area: 'Product',
+    title: 'Sapha points out work carried from earlier cycles',
+    brief:
+      'Asked how the cycle is going, Sapha now marks open issues carried on from earlier cycles, such as 2nd cycle, and lists them right after work under way.',
+    summary:
+      'Sapha’s answer to how the cycle is going lists the first few issues still open. Issues carried on unfinished from earlier cycles are now marked with which cycle they are in, the same words their cards use, and come straight after work already under way, the most carried first, so what keeps slipping is seen before fresh work.',
+    checked:
+      'One new test of the running cycles’ open issues: under way first, then carried, then fresh, each with its count. In the browser: an issue moved on from one cycle read Stubborn bug, 2nd cycle in the answer. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-25',
+    area: 'Product',
     title: 'Cards show work carried from cycle to cycle',
     brief:
       'An unfinished issue moved on from earlier cycles now shows which cycle it is in, such as 3rd cycle, on its card.',

@@ -38,7 +38,14 @@ const runningCycle = cycle.extend({
   projectName: z.string(),
   projectKey: z.string(),
   open: z.array(
-    z.object({ id: uuid, key: z.string(), title: z.string(), status: z.enum(ISSUE_STATUSES) }),
+    z.object({
+      id: uuid,
+      key: z.string(),
+      title: z.string(),
+      status: z.enum(ISSUE_STATUSES),
+      /** How many cycles it was carried on from, unfinished. */
+      carriedOver: z.number().int().nonnegative().default(0),
+    }),
   ),
 });
 
