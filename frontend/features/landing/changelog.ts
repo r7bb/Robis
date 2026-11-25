@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
     area: 'Product',
+    title: 'Cycle days read as days, in your language',
+    brief:
+      'Sapha’s answer after planning a cycle and a cycle that has not started yet now say Sun 6 Dec rather than 2026-12-06.',
+    summary:
+      'An interface review of the evening’s screens found two places writing cycle days as raw dates: Sapha’s answer after planning a cycle, and the cycle bar for a cycle not yet started. Both now say the day with its weekday in the reader’s language, as releases already did, from one shared helper that the release screens use too.',
+    checked:
+      'One new test of the day in English and Spanish. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-25',
+    area: 'Product',
     title: 'Sapha points out work carried from earlier cycles',
     brief:
       'Asked how the cycle is going, Sapha now marks open issues carried on from earlier cycles, such as 2nd cycle, and lists them right after work under way.',

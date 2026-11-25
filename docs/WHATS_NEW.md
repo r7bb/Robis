@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Cycle days read as days, in your language** (2026-11-25). Sapha’s answer
+  after planning a cycle and a cycle that has not started yet now say Sun 6
+  Dec rather than 2026-12-06.
 - **Sapha points out work carried from earlier cycles** (2026-11-25). Asked
   how the cycle is going, Sapha now marks open issues carried on from
   earlier cycles, such as 2nd cycle, and lists them right after work under

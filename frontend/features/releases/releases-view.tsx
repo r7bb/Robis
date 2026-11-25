@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { DeleteButton } from '../../components/delete-button.tsx';
 import { call } from '../../lib/api.ts';
-import { dateFormat } from '../../lib/i18n/format.ts';
+import { dayLine } from '../../lib/i18n/format.ts';
 import { boardHref, issueHref } from '../../lib/links.ts';
 import { useMyId } from '../../lib/use-people.ts';
 import { type Release, releasesKey, useReleases } from './use-releases.ts';
@@ -14,13 +14,10 @@ import { type Release, releasesKey, useReleases } from './use-releases.ts';
 const FIELD =
   'rounded-md border border-line bg-surface px-2 py-1 text-sm text-content outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60';
 
-const dayName = (day: string) =>
-  dateFormat({ weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(`${day}T12:00`));
-
 /** "Aimed at Tue 15 Dec", "Shipped Tue 15 Dec", or "No day set". */
 function whenLine(release: Release): string {
-  if (release.shippedAt) return `Shipped ${dayName(release.shippedAt.slice(0, 10))}`;
-  return release.targetOn ? `Aimed at ${dayName(release.targetOn)}` : 'No day set';
+  if (release.shippedAt) return `Shipped ${dayLine(release.shippedAt.slice(0, 10))}`;
+  return release.targetOn ? `Aimed at ${dayLine(release.targetOn)}` : 'No day set';
 }
 
 /**

@@ -27,6 +27,13 @@ export function dateFormat(options: Intl.DateTimeFormatOptions): Intl.DateTimeFo
   return found;
 }
 
+/** A calendar day, "2026-12-06", said in the reader's language: "Sun 6 Dec". */
+export function dayLine(day: string): string {
+  return dateFormat({ weekday: 'short', day: 'numeric', month: 'short' }).format(
+    new Date(`${day}T12:00`),
+  );
+}
+
 function numberFormat(options: Intl.NumberFormatOptions = {}): Intl.NumberFormat {
   const key = `${activeTag}|${JSON.stringify(options)}`;
   let found = numberFormats.get(key);

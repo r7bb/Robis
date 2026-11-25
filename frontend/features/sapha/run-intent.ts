@@ -1,6 +1,7 @@
 import { contracts, type SaphaIntent, TEMPLATE_DETAILS } from '@robis/shared';
 import { call } from '../../lib/api.ts';
 import { localToday } from '../../lib/due-date.ts';
+import { dayLine } from '../../lib/i18n/format.ts';
 import { boardHref, issueHref } from '../../lib/links.ts';
 import { newBoardBody } from '../../lib/new-board.ts';
 import { searchHref } from '../../lib/search-links.ts';
@@ -159,7 +160,7 @@ async function newCycle(workspaceId: string, intent: Extract<Change, { kind: 'ne
     },
   });
   return {
-    said: `${cycle.name} is planned on ${board.value.name}, ${cycle.startsOn} to ${cycle.endsOn}.`,
+    said: `${cycle.name} is planned on ${board.value.name}, ${dayLine(cycle.startsOn)} to ${dayLine(cycle.endsOn)}.`,
     href: `/workspaces/${workspaceId}/projects/${board.value.id}`,
   };
 }

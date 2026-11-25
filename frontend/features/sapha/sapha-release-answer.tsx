@@ -4,7 +4,7 @@ import { contracts } from '@robis/shared';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { call } from '../../lib/api.ts';
-import { dateFormat } from '../../lib/i18n/format.ts';
+import { dayLine } from '../../lib/i18n/format.ts';
 import { issueHref } from '../../lib/links.ts';
 import { searchHref } from '../../lib/search-links.ts';
 import { useReleases } from '../releases/use-releases.ts';
@@ -14,9 +14,6 @@ import { releaseAsked } from './release-answer-model.ts';
 const OPEN_LISTED = 5;
 const UNDER_WAY = new Set(['IN_PROGRESS', 'IN_REVIEW']);
 const FINISHED = new Set(['DONE', 'CANCELED']);
-
-const dayName = (day: string) =>
-  dateFormat({ weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(`${day}T12:00`));
 
 /**
  * How a release is going, the one named or else the next to ship: done of
@@ -72,9 +69,9 @@ export function ReleaseAnswer({
     .filter((issue) => !FINISHED.has(issue.status))
     .sort((a, b) => Number(UNDER_WAY.has(b.status)) - Number(UNDER_WAY.has(a.status)));
   const when = asked.shippedAt
-    ? `shipped ${dayName(asked.shippedAt.slice(0, 10))}`
+    ? `shipped ${dayLine(asked.shippedAt.slice(0, 10))}`
     : asked.targetOn
-      ? `aimed at ${dayName(asked.targetOn)}`
+      ? `aimed at ${dayLine(asked.targetOn)}`
       : 'no day set';
 
   return (

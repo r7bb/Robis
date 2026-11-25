@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 import { dayLabel, weekTitle } from '@robis/web/features/calendar/week-model.ts';
-import { formatDate, formatNumber, setFormatLocale } from '@robis/web/lib/i18n/format.ts';
+import { dayLine, formatDate, formatNumber, setFormatLocale } from '@robis/web/lib/i18n/format.ts';
 import { formatTag, resolveLocale } from '@robis/web/lib/i18n/locales.ts';
 import { en, type MessageKey } from '@robis/web/lib/i18n/messages/en.ts';
 import { es } from '@robis/web/lib/i18n/messages/es.ts';
@@ -86,5 +86,12 @@ describe('dates and numbers in the viewer’s locale', () => {
 
     setFormatLocale('en', ['en-US']);
     expect(formatDate('2026-11-24T12:00:00Z')).toBe('Nov 24, 2026');
+  });
+
+  test('a calendar day said with its weekday, in the chosen locale', () => {
+    setFormatLocale('en', ['en-GB']);
+    expect(dayLine('2026-12-06')).toBe('Sun 6 Dec');
+    setFormatLocale('es', ['es-ES']);
+    expect(dayLine('2026-12-06')).toContain('dic');
   });
 });

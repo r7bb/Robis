@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { call } from '../../lib/api.ts';
 import { localToday } from '../../lib/due-date.ts';
+import { dayLine } from '../../lib/i18n/format.ts';
 import { BurnUpChart } from './burn-up-chart.tsx';
 import { addDays, addedLine, daysLeftLine, firstFreeDay } from './cycle-days.ts';
 import { LeftOverLine } from './left-over-line.tsx';
@@ -103,7 +104,7 @@ function CycleProgress({
       <div className="flex flex-wrap items-baseline justify-between gap-2 text-xs">
         <span className="font-medium text-content">{cycle.name}</span>
         <span className="text-faint">
-          {running ? daysLeftLine(today, cycle.endsOn) : `starts ${cycle.startsOn}`}
+          {running ? daysLeftLine(today, cycle.endsOn) : `starts ${dayLine(cycle.startsOn)}`}
           {' · '}
           {cycle.done} of {counted} done
           {running ? addedLine(cycle.added) : ''}
