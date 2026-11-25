@@ -1,0 +1,177 @@
+'use client';
+
+import { describeIntent, type SaphaTurn } from '@robis/shared';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import Link from 'next/link';
+import { useState } from 'react';
+import { issueHref } from '../../../lib/links.ts';
+import { useMyId } from '../../../lib/use-people.ts';
+import { runIntent } from '../run-intent.ts';
+import { type Change, changesOf, linkIssues } from './turn-model.ts';
+
+/**
+ * One turn in a conversation with Sapha: what was asked, or the answer with
+ * what Sapha looked at, its words (only issues it looked at linked) and a
+ * card for each change it proposes, made only on Do it, as the person.
+ */
+export function SaphaTurnView({
+  workspaceId,
+  turn,
+  onNavigate,
+}: {
+  workspaceId: string;
+  turn: SaphaTurn;
+  onNavigate: () => void;
+}) {
+  if (turn.role === 'person') {
+    return (
+      <li className="ml-8 rounded-lg bg-accent/15 px-3 py-2 text-sm text-content">
+        <p className="whitespace-pre-wrap break-words">{turn.text}</p>
+      </li>
+    );
+  }
+  if (turn.status === 'pending') {
+    return (
+      <li className="mr-8 text-sm text-faint" aria-busy="true">
+        Sapha is looking…
+      </li>
+    );
+  }
+  if (turn.status === 'failed') {
+    return <li className="mr-8 text-sm text-danger-soft">{turn.text}</li>;
+  }
+  const changes = changesOf(turn.proposals, new Date());
+  return (
+    <li className="mr-8 space-y-2">
+      {turn.steps.length > 0 ? (
+        <p className="text-[11px] text-faint">{turn.steps.join(' · ')}</p>
+      ) : null}
+      <p className="whitespace-pre-wrap break-words text-sm text-content">
+        {linkIssues(turn.text, turn.issues).map((segment, i) =>
+          'issue' in segment ? (
+            <Link
+              // biome-ignore lint/suspicious/noArrayIndexKey: a segment's place is its identity
+              key={i}
+              href={issueHref(workspaceId, segment.issue.id)}
+              onClick={onNavigate}
+              title={segment.issue.title}
+              className="font-medium text-accent-soft hover:underline"
+            >
+              {segment.text}
+            </Link>
+          ) : (
+            // biome-ignore lint/suspicious/noArrayIndexKey: a segment's place is its identity
+            <span key={i}>{segment.text}</span>
+          ),
+        )}
+      </p>
+      {changes.length > 0 ? (
+        <ul className="space-y-2">
+          {changes.map((change, i) => (
+            <ChangeCard
+              // biome-ignore lint/suspicious/noArrayIndexKey: a proposal's place is its identity
+              key={i}
+              workspaceId={workspaceId}
+              change={change}
+              doneKey={`${turn.id}.${i}`}
+              onNavigate={onNavigate}
+            />
+          ))}
+        </ul>
+      ) : null}
+    </li>
+  );
+}
+
+/** Which cards were done, kept in this browser only, so a reload does not offer one twice. */
+const DONE_KEY = 'robis.sapha.done';
+
+function wasDone(key: string): boolean {
+  try {
+    return localStorage.getItem(`${DONE_KEY}.${key}`) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function markDone(key: string) {
+  try {
+    localStorage.setItem(`${DONE_KEY}.${key}`, '1');
+  } catch {
+    // Private mode or full storage: the card may be offered again, nothing worse.
+  }
+}
+
+/** A change Sapha proposes: said in full, and made only on Do it. */
+function ChangeCard({
+  workspaceId,
+  change,
+  doneKey,
+  onNavigate,
+}: {
+  workspaceId: string;
+  change: Change;
+  /** This card, among every card Sapha has shown here. */
+  doneKey: string;
+  onNavigate: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const myId = useMyId();
+  const [declined, setDeclined] = useState(false);
+  const [doneBefore] = useState(() => wasDone(doneKey));
+  const run = useMutation({
+    mutationFn: () => runIntent(workspaceId, change, myId),
+    onSuccess: () => {
+      markDone(doneKey);
+      return queryClient.invalidateQueries();
+    },
+  });
+  if (doneBefore && !run.isSuccess) {
+    return <li className="text-xs text-faint">Done: {describeIntent(change)}</li>;
+  }
+  if (declined) {
+    return <li className="text-xs text-faint">Left as it was: {describeIntent(change)}</li>;
+  }
+  return (
+    <li className="rounded-lg border border-line bg-surface p-3">
+      <p className="text-sm text-content">{describeIntent(change)}</p>
+      {run.isSuccess ? (
+        <p role="status" className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
+          {run.data.said}
+          {run.data.href ? (
+            <Link
+              href={run.data.href}
+              onClick={onNavigate}
+              className="text-accent-soft hover:underline"
+            >
+              Open
+            </Link>
+          ) : null}
+        </p>
+      ) : (
+        <div className="mt-2 flex items-center gap-2">
+          <button
+            type="button"
+            disabled={run.isPending}
+            onClick={() => run.mutate()}
+            className="rounded-md bg-accent px-2.5 py-1 text-xs font-medium text-accent-contrast hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft disabled:opacity-50"
+          >
+            Do it
+          </button>
+          <button
+            type="button"
+            onClick={() => setDeclined(true)}
+            className="rounded px-1.5 py-1 text-xs text-faint hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+          >
+            Not now
+          </button>
+          {run.isError ? (
+            <p role="alert" className="text-xs text-danger-soft">
+              {(run.error as Error).message}
+            </p>
+          ) : null}
+        </div>
+      )}
+    </li>
+  );
+}

@@ -1248,6 +1248,57 @@ export const assistRequests = pgTable(
   (t) => [index('assist_requests_user_created_idx').on(t.userId, t.createdAt)],
 );
 
+/**
+ * A conversation with Sapha, the agent: one person's, in one workspace, and
+ * read by no one else. Kept 30 days from its last message, and cleared
+ * whenever its owner asks.
+ */
+export const saphaConversations = pgTable(
+  'sapha_conversations',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** The first thing asked, shortened: how the conversation is named in the list. */
+    title: text('title').notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index('sapha_conversations_user_updated_idx').on(t.workspaceId, t.userId, t.updatedAt)],
+);
+
+/**
+ * One turn in a conversation: what the person asked, or Sapha's answer with
+ * the steps it took, the changes it proposes (never made by it) and the
+ * issues it looked at, which alone its answer may link to.
+ */
+export const saphaMessages = pgTable(
+  'sapha_messages',
+  {
+    id: id(),
+    conversationId: uuid('conversation_id')
+      .notNull()
+      .references(() => saphaConversations.id, { onDelete: 'cascade' }),
+    role: text('role', { enum: ['person', 'sapha'] }).notNull(),
+    text: text('text').notNull().default(''),
+    status: text('status', { enum: ['pending', 'done', 'failed'] })
+      .notNull()
+      .default('done'),
+    /** What Sapha looked at, in order, said as a person would: "Looked at REL-4". */
+    steps: jsonb('steps').notNull().default(sql`'[]'::jsonb`),
+    /** Changes it proposes, as the parts of a Sapha intent, for the person to say yes to. */
+    proposals: jsonb('proposals').notNull().default(sql`'[]'::jsonb`),
+    /** The issues it looked at: id, key and title, the only ones its answer links. */
+    issues: jsonb('issues').notNull().default(sql`'[]'::jsonb`),
+    createdAt: createdAt(),
+  },
+  (t) => [index('sapha_messages_conversation_created_idx').on(t.conversationId, t.createdAt)],
+);
+
 /** A space: a topic within the workspace, where threads are started. */
 export const spaces = pgTable(
   'spaces',

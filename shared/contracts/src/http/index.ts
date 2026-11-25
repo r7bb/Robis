@@ -40,6 +40,7 @@ import { apiReference } from './reference.ts';
 import { releaseContracts } from './releases.ts';
 import { reminderContracts } from './reminders.ts';
 import { repeatContracts } from './repeats.ts';
+import { saphaChatContracts } from './sapha-chat.ts';
 import { savedViewContracts } from './saved-views.ts';
 import { spaceContracts } from './spaces.ts';
 import { storyContracts } from './stories.ts';
@@ -175,6 +176,7 @@ export const contracts = {
   ...spaceContracts,
   ...todayContracts,
   ...assistContracts,
+  ...saphaChatContracts,
   ...insightContracts,
   ...calendarContracts,
   ...automationContracts,

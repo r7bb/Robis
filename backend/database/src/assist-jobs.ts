@@ -9,6 +9,12 @@ import type { SaphaParts } from '@robis/shared';
 export const ASSIST_JOB = 'assist.ask';
 export type AssistJob = { requestId: string };
 
+/** Sapha, the agent: answer one pending turn of a conversation. */
+export const SAPHA_REPLY_JOB = 'sapha.reply';
+export type SaphaReplyJob = { messageId: string };
+/** Conversations past their 30 days, cleared hourly. */
+export const SAPHA_RETENTION_JOB = 'sapha.retention';
+
 export type AssistSnippet = { id: string; author: string; text: string };
 export type AssistIssue = {
   id: string;

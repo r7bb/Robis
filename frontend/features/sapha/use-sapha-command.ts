@@ -21,7 +21,7 @@ export type Proposal = Exclude<
 >;
 
 /** The intent as a question to answer here, or null when it is not one. */
-export function questionOf(intent: SaphaIntent): Question | null {
+function questionOf(intent: SaphaIntent): Question | null {
   return intent.kind === 'blockers' ||
     intent.kind === 'about' ||
     intent.kind === 'cycle' ||
@@ -58,7 +58,7 @@ function actionFor(intent: SaphaIntent): Action | undefined {
  * one command saying what it will do, understood here in the browser.
  * Looking goes at once; a change opens Sapha's card (`propose`) and waits
  * for a yes. Tier 1: when it does not read, and the workspace has turned
- * assistance on, Ask Sapha sends only the words typed to be read (`ask`).
+ * assistance on, Ask Sapha opens the agent's panel with the words typed (`ask`).
  */
 export function useSaphaCommand(
   workspaceId: string,
@@ -73,13 +73,27 @@ export function useSaphaCommand(
   const intent = interpret(query);
   const typed = query.trim();
   if (!intent) {
-    if (!available || typed.length < ASK_FROM) return [];
+    if (!available) return [];
+    // Nothing typed yet: the way to Sapha's panel, for anyone not using Ctrl J.
+    if (!typed) {
+      return [
+        {
+          id: 'sapha-talk',
+          title: 'Talk to Sapha',
+          group: 'Sapha',
+          hint: 'Ctrl J',
+          keepOpen: true,
+          run: () => ask(''),
+        },
+      ];
+    }
+    if (typed.length < ASK_FROM) return [];
     return [
       {
         id: 'sapha-ask',
         title: `Ask Sapha: “${typed}”`,
         group: 'Sapha',
-        hint: 'Uses the assistant',
+        hint: 'Looks it up and answers',
         keepOpen: true,
         run: () => ask(typed),
       },

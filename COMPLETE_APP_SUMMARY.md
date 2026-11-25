@@ -14,7 +14,7 @@ Written to be checkable. Every row names a file you can open.
 | --- | --- |
 | Services | 5 (web, API, realtime gateway, worker, MCP server for agents) plus an optional ML service |
 | Database tables | 18 |
-| HTTP endpoints | 262 |
+| HTTP endpoints | 268 |
 | Tests | Counted in [docs/ROADMAP.md](docs/ROADMAP.md), the one place they are kept |
 | Screenshots | 35, all captured from the running app |
 | Measured throughput | ~3,600 req/s, zero errors |
@@ -205,7 +205,8 @@ JavaScript.
 | Notification inbox with dedupe | `backend/api/src/routes/notifications.ts` |
 | Snooze and Remind me: an entry put off waits under Later and comes back unread; a reminder of an issue, message or thread is a snoozed note to yourself, pushed at its time; times in plain words | `backend/api/src/routes/reminders.ts`, `shared/contracts/src/when.ts`, `frontend/components/inbox-entry.tsx` |
 | Sapha in the command palette: plain requests read in the browser into a dozen intents (status, priority, assignee, due day, new issue, reminder, meeting, open, search, go), changes shown on a card and done as the person only after Do it | `shared/contracts/src/sapha.ts`, `frontend/features/sapha/` |
-| Ask Sapha (tier 1): where assistance is on, a request not read in the browser is read by the provider into one action's parts, checked in the browser and confirmed on the same card | `backend/worker/src/assist.ts`, `shared/contracts/src/sapha.ts`, `frontend/features/sapha/sapha-ask.tsx` |
+| Ask Sapha (tier 1): the provider reads a request into one action's parts, checked in the browser; still used by the assistant's reading of requests | `backend/worker/src/assist.ts`, `shared/contracts/src/sapha.ts` |
+| Sapha, the agent: a conversation in a side panel (Ctrl J, or Ask Sapha in the palette) where assistance is on; up to eight steps of read-only lookups as the asker (search, an issue with its comments and blockers, running cycles, releases, the asker's work, people), then an answer linking only issues it looked at; changes only proposed, each on a card made on Do it as the person; conversations the owner's alone, kept 30 days, cleared on request; 60 questions a day | `backend/api/src/routes/sapha-chat.ts`, `backend/worker/src/sapha-agent.ts`, `backend/worker/src/sapha-tools.ts`, `backend/worker/src/sapha-reply.ts`, `frontend/features/sapha/panel/` |
 | Sapha on cycles: "how is the cycle going" or "what is left in the sprint on Web" answered in the palette from the cycles running today on boards not archived, with done of planned, days left and the first five issues still open, work under way first | `backend/api/src/routes/cycles-current.ts`, `frontend/features/sapha/sapha-cycle-answer.tsx` |
 | Chat that keeps your place: unread counts per room, a New line, marking read while in view, and quick reactions on messages | `backend/api/src/routes/chat-reads.ts`, `frontend/features/chat/use-reads.ts`, `frontend/features/chat/message-reactions.tsx` |
 | Asked before? Up to five threads sharing two or more words with a draft title, answered first | `backend/api/src/spaces/similar.ts`, `frontend/features/spaces/asked-before.tsx` |

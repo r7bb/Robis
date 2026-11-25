@@ -24,6 +24,7 @@ export * from './rbac.ts';
 export * from './releases.ts';
 export * from './repeats.ts';
 export * from './sapha.ts';
+export * from './sapha-agent.ts';
 export * from './schemas.ts';
 export * from './scopes.ts';
 export * from './slug.ts';

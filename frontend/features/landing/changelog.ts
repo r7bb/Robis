@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
     area: 'ML',
+    title: 'Sapha is a full assistant now',
+    brief:
+      'Talk to Sapha in a side panel (Ctrl J): it looks things up as you in a few steps, answers with links to what it found, and proposes changes for you to approve.',
+    summary:
+      'Sapha used to read one request into one action. With assistance turned on for a workspace, it is now a conversation at the side of any page, opened with Ctrl J or Cmd J, or Ask Sapha in the command palette. For each question it can take up to eight steps of looking things up as you: searching issues, reading an issue with its comments and what it waits on, the running cycles, releases, your own work and the people here. It then answers in a few sentences, and only the issues it looked at become links. It cannot change anything itself: each change it suggests, several at once if asked, is a card with Do it, made through the same routes as your buttons and only if you say yes. Follow-up questions carry the conversation so far. Conversations are yours alone, kept 30 days from the last question and cleared whenever you choose, one or all; each person may ask 60 questions a day, and a card once done stays done in that browser. Requests typed plainly in the palette still work at once, with no assistant.',
+    checked:
+      'Twenty-four new tests with a scripted stand-in for the model, so nothing was paid for: each step a checked tool inside the asker’s workspace, another workspace’s issue not found, unknown tools and bad input said back, changes only proposed with bad ones refused, follow-ups carrying the conversation, the eight-step limit, failures said plainly, owner-only reading, assistance turned off mid-question, clearing and 30-day keeping, the daily limit, the provider’s messages, quoting and refusals, a few calls a step and five changes an answer, a broken step failing the turn rather than leaving it waiting, the last step still shown its tools but allowed none, and the panel’s links and cards. A security review and a model review found nothing critical; what the model review raised (the last step’s request, a turn left waiting, the shape of a proposal) is fixed and tested. In the browser, with the provider kept out of reach: Ctrl J opened the panel, the answer linked WEB-1, and Do it moved it to done. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-25',
+    area: 'ML',
     title: 'Sapha’s assistant asks what keeps slipping too',
     brief:
       'With the assistant on, other wordings, such as which tickets keep rolling over on web, now reach the answer about work carried from earlier cycles.',

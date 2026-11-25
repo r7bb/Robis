@@ -1,0 +1,75 @@
+import {
+  intentFromParts,
+  LOOKING_INTENTS,
+  type SaphaCited,
+  type SaphaIntent,
+  type SaphaParts,
+  type SaphaTurn,
+} from '@robis/shared';
+
+/**
+ * Sapha's panel, the parts with no browser (the agent): which keys in an
+ * answer become links, which proposals become cards, the shortcut, and
+ * whether an answer is still on its way. Pure, so tested on its own.
+ */
+
+/** A change Sapha may propose: anything but looking. */
+export type Change = Exclude<
+  SaphaIntent,
+  { kind: 'open' | 'search' | 'go' | 'blockers' | 'about' | 'cycle' | 'release' }
+>;
+
+export type Segment = { text: string } | { text: string; issue: SaphaCited };
+
+const KEY_IN_TEXT = /(?<![A-Za-z0-9])[A-Za-z][A-Za-z0-9]{0,9}-\d{1,9}(?![A-Za-z0-9])/g;
+
+/**
+ * An answer as plain words and links: a key becomes a link only when Sapha
+ * looked at that issue, so a key it made up, or one from a quoted comment,
+ * stays plain text.
+ */
+export function linkIssues(text: string, cited: readonly SaphaCited[]): Segment[] {
+  const byKey = new Map(cited.map((issue) => [issue.key.toUpperCase(), issue]));
+  const segments: Segment[] = [];
+  let at = 0;
+  for (const match of text.matchAll(KEY_IN_TEXT)) {
+    const issue = byKey.get(match[0].toUpperCase());
+    if (!issue) continue;
+    if (match.index > at) segments.push({ text: text.slice(at, match.index) });
+    segments.push({ text: match[0], issue });
+    at = match.index + match[0].length;
+  }
+  if (at < text.length) segments.push({ text: text.slice(at) });
+  return segments;
+}
+
+/** The proposals that still read as changes, worked out on this person's clock. */
+export function changesOf(proposals: readonly SaphaParts[], now: Date): Change[] {
+  return proposals.flatMap((parts) => {
+    const intent = intentFromParts(parts, now);
+    return intent && !LOOKING_INTENTS.has(intent.kind) ? [intent as Change] : [];
+  });
+}
+
+type KeyLike = {
+  key: string;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  altKey: boolean;
+  shiftKey: boolean;
+};
+
+/** Ctrl J or Cmd J: the panel, from anywhere in a workspace. */
+export function isSaphaShortcut(event: KeyLike): boolean {
+  return (
+    (event.ctrlKey || event.metaKey) &&
+    !event.altKey &&
+    !event.shiftKey &&
+    event.key.toLowerCase() === 'j'
+  );
+}
+
+/** Whether Sapha is still working out the last answer. */
+export function stillAnswering(turns: readonly SaphaTurn[]): boolean {
+  return turns.at(-1)?.status === 'pending';
+}

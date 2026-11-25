@@ -12,6 +12,7 @@ import {
   PROMPTS,
   quoted,
 } from './assist.ts';
+import type { AgentModel, AgentStep, AgentTool, AgentTurn } from './sapha-agent.ts';
 import type { Summarizer } from './triage.ts';
 
 /**
@@ -211,6 +212,123 @@ export function providerAssistant(options: {
         saphaPartsSchema,
       );
       return answer ? keepParts(answer) : null;
+    },
+  };
+}
+
+/** One step of Sapha's answer: room for a few sentences or several calls. */
+const AGENT_MAX_TOKENS = 2048;
+/** A step should not keep the person waiting long. */
+const AGENT_TIMEOUT_MS = 30_000;
+/** What one tool result may send back: enough to answer from. */
+const MAX_RESULT_CHARS = 8_000;
+
+type AgentBlocks = Anthropic.MessageParam['content'];
+
+/** The exchange as the provider's messages: alternating, each tool result quoted as data. */
+function agentMessages(turns: readonly AgentTurn[]): Anthropic.MessageParam[] {
+  const messages: Anthropic.MessageParam[] = [];
+  const add = (role: 'user' | 'assistant', content: Exclude<AgentBlocks, string>) => {
+    const last = messages.at(-1);
+    if (last?.role === role && Array.isArray(last.content)) last.content.push(...content);
+    else messages.push({ role, content: [...content] });
+  };
+  for (const turn of turns) {
+    if (turn.role === 'person') {
+      add('user', [
+        { type: 'text', text: `<request>${quoted(turn.text, MAX_REQUEST_CHARS * 4)}</request>` },
+      ]);
+    } else if (turn.role === 'sapha') {
+      add('assistant', [
+        ...(turn.text.trim() ? [{ type: 'text' as const, text: turn.text }] : []),
+        ...turn.calls.map((call) => ({
+          type: 'tool_use' as const,
+          id: call.id,
+          name: call.name,
+          input: (call.input ?? {}) as Record<string, unknown>,
+        })),
+      ]);
+    } else {
+      add(
+        'user',
+        turn.results.map((result) => ({
+          type: 'tool_result' as const,
+          tool_use_id: result.id,
+          content: `<data>${escaped(result.text, MAX_RESULT_CHARS)}</data>`,
+          is_error: result.isError,
+        })),
+      );
+    }
+  }
+  return messages;
+}
+
+/** One step's request: the exchange, and the tools, none callable on the last step. */
+function requestOf(
+  model: string,
+  system: string,
+  turns: readonly AgentTurn[],
+  tools: readonly AgentTool[],
+  final: boolean,
+): Anthropic.MessageCreateParamsNonStreaming {
+  return {
+    model,
+    max_tokens: AGENT_MAX_TOKENS,
+    system,
+    messages: agentMessages(turns),
+    ...(tools.length > 0
+      ? {
+          tools: tools.map((tool) => ({
+            name: tool.name,
+            description: tool.description,
+            input_schema: tool.inputSchema as Anthropic.Tool.InputSchema,
+          })),
+          // The last step: the tools stay, as the exchange holds calls to
+          // them, but none may be called.
+          ...(final ? { tool_choice: { type: 'none' as const } } : {}),
+        }
+      : {}),
+  };
+}
+
+/** What came back, as a step: words and calls, or nothing for a refusal. */
+function stepOf(response: Anthropic.Message): AgentStep | null {
+  if (response.stop_reason === 'refusal') return null;
+  const text = response.content
+    .flatMap((block) => (block.type === 'text' ? [block.text] : []))
+    .join('\n');
+  const calls = response.content.flatMap((block) =>
+    block.type === 'tool_use' ? [{ id: block.id, name: block.name, input: block.input }] : [],
+  );
+  return { text, calls, cut: response.stop_reason === 'max_tokens' && calls.length > 0 };
+}
+
+/**
+ * Sapha, the agent, on the provider: one step at a time, the loop and the
+ * tools on this side. A refusal or failure is no step; a call cut off by
+ * the token limit is marked, so none of that turn's calls is run.
+ */
+export function providerAgentModel(options: {
+  apiKey: string;
+  model?: string;
+  client?: MessagesClient;
+}): AgentModel {
+  const client: MessagesClient =
+    options.client ??
+    new Anthropic({ apiKey: options.apiKey, timeout: AGENT_TIMEOUT_MS, maxRetries: 1 });
+  const model = options.model ?? DEFAULT_SUMMARY_MODEL;
+  return {
+    async step({ system, turns, tools, final }) {
+      try {
+        return stepOf(await client.messages.create(requestOf(model, system, turns, tools, final)));
+      } catch (error) {
+        if (error instanceof Anthropic.APIError) {
+          log.warn(`sapha: the provider answered ${error.status}; no answer`);
+        } else {
+          log.warn(`sapha: ${error instanceof Error ? error.name : 'unknown error'}`);
+        }
+        return null;
+      }
     },
   };
 }

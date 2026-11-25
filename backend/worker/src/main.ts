@@ -7,6 +7,8 @@ import {
   hasPendingJob,
   listenForJobs,
   REPEATS_JOB,
+  SAPHA_REPLY_JOB,
+  SAPHA_RETENTION_JOB,
   STORAGE_PURGE_JOB,
   STORY_EXPIRY_INTERVAL_MS,
   STORY_EXPIRY_JOB,
@@ -29,9 +31,10 @@ import { PICTURES_INTERVAL_MS, PICTURES_JOB, picturesHandler } from './pictures/
 import { checkVapidKeys, pushHandlers, vapidFromEnv } from './push.ts';
 import { RELEASE_DUE_JOB } from './release-due.ts';
 import { Runner } from './runner.ts';
+import { saphaReplyHandler, saphaRetentionHandler } from './sapha-reply.ts';
 import { SHOTS_INTERVAL_MS, SHOTS_JOB, shotsHandler } from './shots.ts';
 import { storagePurgeHandler, workerStorage } from './storage-purge.ts';
-import { providerAssistant, providerSummarizer } from './summary-provider.ts';
+import { providerAgentModel, providerAssistant, providerSummarizer } from './summary-provider.ts';
 import { triageHandler } from './triage.ts';
 
 // Before anything else, and failing closed: see `loadConfig`. The origin is
@@ -109,6 +112,8 @@ async function scheduleMaintenance() {
     { kind: CYCLE_ENDING_JOB, delayMs: HOUR_MS },
     // And a release's, the day before its day.
     { kind: RELEASE_DUE_JOB, delayMs: HOUR_MS },
+    // Conversations with Sapha past their 30 days.
+    { kind: SAPHA_RETENTION_JOB, delayMs: HOUR_MS },
   ]);
   if (dropped > 0) log.info(`maintenance: dropped ${dropped} repeated waiting jobs`);
 }
@@ -163,6 +168,14 @@ handlers[ASSIST_JOB] = assistHandler(
     ? providerAssistant({ apiKey: summaryKey, model: process.env.SUMMARY_MODEL || undefined })
     : undefined,
 );
+// Sapha, the agent: a turn of a conversation, answered here in a few steps;
+// without a key each turn fails at once. Old conversations go hourly.
+handlers[SAPHA_REPLY_JOB] = saphaReplyHandler(
+  summaryKey
+    ? providerAgentModel({ apiKey: summaryKey, model: process.env.SUMMARY_MODEL || undefined })
+    : undefined,
+);
+handlers[SAPHA_RETENTION_JOB] = saphaRetentionHandler();
 if (mcpUrl) {
   handlers[TRIAGE_JOB] = triageHandler({ mcpUrl, summarize });
   // Different shots (Phase 2c): an idea a day from each workspace's chosen
@@ -201,6 +214,7 @@ reschedule('digests.scan', HOUR_MS);
 reschedule(STORY_EXPIRY_JOB, STORY_EXPIRY_INTERVAL_MS);
 reschedule(CYCLE_ENDING_JOB, HOUR_MS);
 reschedule(RELEASE_DUE_JOB, HOUR_MS);
+reschedule(SAPHA_RETENTION_JOB, HOUR_MS);
 
 await scheduleMaintenance();
 

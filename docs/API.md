@@ -19,7 +19,7 @@ way.
 `{ "error": "<code>", "message": "<words for people>" }`. A stranger to a
 workspace gets 404, never 403, so its existence is not given away.
 
-251 routes.
+257 routes.
 
 ## activity
 
@@ -1676,6 +1676,52 @@ Pause, resume or change a repeat; its next run is worked out again.
 - Body: `title`, `description`, `priority`, `assigneeId`, `cadence`, `weekday`, `monthDay`, `hour`, `timeZone`, `paused`
 - Answers: 200
 - Name: `repeats.update`
+
+## sapha
+
+### `DELETE /workspaces/{workspaceId}/sapha/conversations`
+
+Clear every conversation the asker has had with Sapha here, for good.
+
+- Answers: 204
+- Name: `sapha.forgetAll`
+
+### `GET /workspaces/{workspaceId}/sapha/conversations`
+
+The asker’s conversations with Sapha here, most recent first.
+
+- Answers: 200
+- Name: `sapha.conversations`
+
+### `POST /workspaces/{workspaceId}/sapha/conversations`
+
+Start a conversation with Sapha: what is asked, and the turn Sapha will answer, worked out by the worker.
+
+- Body: `text` (required)
+- Answers: 201
+- Name: `sapha.start`
+
+### `DELETE /workspaces/{workspaceId}/sapha/conversations/{conversationId}`
+
+Clear one conversation, for good.
+
+- Answers: 204
+- Name: `sapha.forget`
+
+### `GET /workspaces/{workspaceId}/sapha/conversations/{conversationId}`
+
+A conversation, oldest turn first: what was asked, and each answer with the steps Sapha took, the changes it proposes and the issues it looked at.
+
+- Answers: 200
+- Name: `sapha.conversation`
+
+### `POST /workspaces/{workspaceId}/sapha/conversations/{conversationId}/messages`
+
+Say more in a conversation; Sapha answers with what was said before in mind.
+
+- Body: `text` (required)
+- Answers: 201
+- Name: `sapha.say`
 
 ## search
 

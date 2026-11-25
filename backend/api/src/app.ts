@@ -78,6 +78,7 @@ import { pushKey, pushRoutes } from './routes/push.ts';
 import { releaseRoutes } from './routes/releases.ts';
 import { reminderRoutes } from './routes/reminders.ts';
 import { repeatRoutes } from './routes/repeats.ts';
+import { saphaChatRoutes } from './routes/sapha-chat.ts';
 import { savedViewRoutes } from './routes/saved-views.ts';
 import { searchRoutes } from './routes/search.ts';
 import { signupRoutes } from './routes/signup.ts';
@@ -383,6 +384,7 @@ export function buildApp({
   app.register(followRoutes, { db });
   app.register(todayRoutes, { db });
   app.register(assistRoutes, { db, keyed: env.SUMMARY_API_KEY !== '' });
+  app.register(saphaChatRoutes, { db, keyed: env.SUMMARY_API_KEY !== '' });
   app.register(insightRoutes, { db, operators: operatorsFrom(env.HEALTH_OPERATORS) });
   app.register(calendarRoutes, { db, webOrigin: env.WEB_ORIGIN });
   app.register(calendarImportRoutes, { db });

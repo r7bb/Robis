@@ -17,8 +17,8 @@ import {
   type Command,
   rankCommands,
 } from '../../lib/commands.ts';
+import { useOpenSapha } from '../sapha/panel/sapha-panel-provider.tsx';
 import { SaphaAnswer } from '../sapha/sapha-answer.tsx';
-import { SaphaAsk } from '../sapha/sapha-ask.tsx';
 import { SaphaCard } from '../sapha/sapha-card.tsx';
 import { type Proposal, type Question, useSaphaCommand } from '../sapha/use-sapha-command.ts';
 import { usePaletteSources } from './use-palette-sources.ts';
@@ -52,8 +52,12 @@ export function CommandPalette({
   const [active, setActive] = useState(0);
   // A change Sapha read, waiting for a yes in place of the list.
   const [proposal, setProposal] = useState<Proposal | null>(null);
-  // A request Sapha is asking the assistant to read (tier 1).
-  const [asking, setAsking] = useState<string | null>(null);
+  // A request the browser cannot read goes to Sapha, the agent, in its panel.
+  const openSapha = useOpenSapha();
+  const askSapha = (words: string) => {
+    onClose();
+    openSapha?.(words);
+  };
   // An issue Sapha is answering about, in place of the list.
   const [answering, setAnswering] = useState<Question | null>(null);
   const parent = stack.at(-1);
@@ -61,7 +65,7 @@ export function CommandPalette({
     workspaceId,
     parent ? '' : query,
     setProposal,
-    setAsking,
+    askSapha,
     setAnswering,
   );
 
@@ -188,19 +192,9 @@ export function CommandPalette({
 
       <SaphaPane
         workspaceId={workspaceId}
-        asking={asking}
         answering={answering}
         proposal={proposal}
-        onAsked={(intent) => {
-          setAsking(null);
-          setProposal(intent);
-        }}
-        onQuestion={(question) => {
-          setAsking(null);
-          setAnswering(question);
-        }}
         onBack={() => {
-          setAsking(null);
           setAnswering(null);
           setProposal(null);
         }}
@@ -393,24 +387,18 @@ function PaletteList({
   );
 }
 
-/** Sapha asking, or waiting for a yes, in place of the list; the list otherwise. */
+/** Sapha answering, or waiting for a yes, in place of the list; the list otherwise. */
 function SaphaPane({
   workspaceId,
-  asking,
   answering,
   proposal,
-  onAsked,
-  onQuestion,
   onBack,
   onClose,
   children,
 }: {
   workspaceId: string;
-  asking: string | null;
   answering: Question | null;
   proposal: Proposal | null;
-  onAsked: (intent: Proposal) => void;
-  onQuestion: (question: Question) => void;
   onBack: () => void;
   onClose: () => void;
   children: ReactNode;
@@ -425,18 +413,6 @@ function SaphaPane({
       <SaphaAnswer
         workspaceId={workspaceId}
         question={answering}
-        onBack={onBack}
-        onClose={onClose}
-      />
-    );
-  }
-  if (asking) {
-    return (
-      <SaphaAsk
-        workspaceId={workspaceId}
-        request={asking}
-        onIntent={onAsked}
-        onQuestion={onQuestion}
         onBack={onBack}
         onClose={onClose}
       />

@@ -27,6 +27,7 @@ import {
   ensureWorkerRole,
   MAIL_JOBS,
   pgErrorCode,
+  SAPHA_REPLY_JOB,
   settleAgentSteps,
   settleDeferredAccountEvents,
   users,
@@ -39,6 +40,8 @@ import type { AgendaItem, Assistant, IssueDraft, SummaryPoint } from '@robis/wor
 import { assistHandler } from '@robis/worker/assist-job';
 import { mailHandlers } from '@robis/worker/mail';
 import { Runner } from '@robis/worker/runner';
+import type { AgentModel, AgentStep, AgentTurn } from '@robis/worker/sapha-agent';
+import { saphaReplyHandler } from '@robis/worker/sapha-reply';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import postgres from 'postgres';
@@ -246,6 +249,37 @@ const assistStub: Assistant = {
     return assistAnswers.interpret;
   },
 };
+
+/**
+ * Sapha, the agent, in tests: a script of the model's steps, played in
+ * order, and what each step was sent. Never the real provider; `null` is a
+ * failed or refused step, and an empty script answers nothing.
+ */
+export const agentCalls: { turns: AgentTurn[]; tools: string[]; final: boolean }[] = [];
+let agentScript: (AgentStep | null | 'throw')[] = [];
+
+export function setAgent(script: (AgentStep | null | 'throw')[]) {
+  agentScript = [...script];
+  agentCalls.length = 0;
+}
+
+const agentStub: AgentModel = {
+  async step({ turns, tools, final }) {
+    agentCalls.push({ turns: structuredClone([...turns]), tools: tools.map((t) => t.name), final });
+    const next = agentScript.length > 0 ? agentScript.shift()! : null;
+    if (next === 'throw') throw new Error('the stand-in broke');
+    return next;
+  },
+};
+
+/** Answer the turns waiting, as the worker would, with the scripted model. */
+export async function runSapha() {
+  const { workerDb } = await getHarness();
+  await new Runner({
+    db: workerDb,
+    handlers: { [SAPHA_REPLY_JOB]: saphaReplyHandler(agentStub) },
+  }).tick();
+}
 
 /** Built once and shared; each test isolates itself with `resetDatabase`. */
 /**

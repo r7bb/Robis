@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Sapha is a full assistant now** (2026-11-25). Talk to Sapha in a side
+  panel (Ctrl J): it looks things up as you in a few steps, answers with
+  links to what it found, and proposes changes for you to approve.
 - **Sapha’s assistant asks what keeps slipping too** (2026-11-25). With the
   assistant on, other wordings, such as which tickets keep rolling over on
   web, now reach the answer about work carried from earlier cycles.
