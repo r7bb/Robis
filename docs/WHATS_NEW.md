@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Sapha’s assistant plans cycles and releases too** (2026-11-25). With the
+  assistant on, requests in your own words can put an issue in a cycle or
+  release, take it out, or plan a cycle or a release.
 - **Sapha reads more of what is meant, and less of what is not**
   (2026-11-25). Put ABC-1 in cycle 3 now finds Cycle 3, a release can be
   called Launch for customers, polite words reach Sapha, and talk of release

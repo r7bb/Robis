@@ -309,6 +309,17 @@ describe('Sapha, tier 1', () => {
     ]);
   });
 
+  test('planning parts come back whole: where, how many days', async () => {
+    const { owner, ws } = await team();
+    await turnOn(owner, ws);
+    const parts = { ...none, kind: 'newCycle' as const, board: 'Web', days: 10 };
+    setAssist({ interpret: parts });
+    const { body } = await answered(owner, ws, 'interpret', {
+      request: 'we need a ten day sprint on web',
+    });
+    expect(body).toEqual({ status: 'done', result: { kind: 'intent', parts } });
+  });
+
   test('off until turned on, and nothing back is said plainly', async () => {
     const { owner, ws } = await team();
     const off = await request(`${ws}/assist/interpret`, {
@@ -332,6 +343,8 @@ describe('Sapha, tier 1', () => {
     expect(keepParts(none)).toBeNull();
     expect(keepParts({ ...none, kind: 'status', status: 'SHIPPED' })).toBeNull();
     expect(keepParts({ kind: 'go' })).toBeNull();
+    expect(keepParts({ ...none, kind: 'plan', issueKey: 'REL-4', into: 'sprint' })).toBeNull();
+    expect(keepParts({ ...none, kind: 'newCycle', days: 'ten' })).toBeNull();
   });
 });
 

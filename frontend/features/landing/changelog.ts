@@ -45,6 +45,17 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
+    area: 'ML',
+    title: 'Sapha’s assistant plans cycles and releases too',
+    brief:
+      'With the assistant on, requests in your own words can put an issue in a cycle or release, take it out, or plan a cycle or a release.',
+    summary:
+      'Until now, putting an issue in a cycle or a release, taking it out, and planning a cycle or a release only worked when typed in the plain forms Sapha reads by itself. With the workspace assistant turned on, other wordings now reach them too, such as we need a ten day sprint on web. The assistant only names the parts: which issue, cycle or release, how many days, and the day in the words it was said in. Each part is checked here as plain requests are: a key must look like one, a cycle runs from 1 to 56 whole days (two weeks when none are said), a release needs a name, and a day that does not read as one is no answer rather than no day. The change is then shown on Sapha’s card and waits for Do it, as before. A plainly typed cycle longer than 56 days, such as plan a 9-week cycle, is no longer offered only to be refused on Do it.',
+    checked:
+      'Six new tests of reading these parts, two new cases of over-long cycles left alone and of what does not hold, one of planning parts coming back whole through the worker, and two more checks that the shape refuses a made-up place or a length in words. The full suite, lint, typecheck, knip and docs:links. No paid model was called; tests use a fake.',
+  },
+  {
+    date: '2026-11-25',
     area: 'Product',
     title: 'Sapha reads more of what is meant, and less of what is not',
     brief:

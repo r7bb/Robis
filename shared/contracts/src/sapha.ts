@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { IssuePriority, IssueStatus } from './domain.ts';
+import { CYCLE_DAYS_MAX } from './http/cycles.ts';
 import { parseWhen } from './when.ts';
 
 /**
@@ -162,8 +163,8 @@ function newCycle(text: string, request: string): SaphaIntent | null {
   const cycle = NEW_CYCLE.exec(text);
   if (!cycle) return null;
   const count = cycle[1] ? (COUNTS[cycle[1]] ?? Number(cycle[1])) : null;
-  if (count === 0) return null;
-  const days = count ? count * (cycle[2] === 'week' ? 7 : 1) : CYCLE_DAYS_DEFAULT;
+  const days = count === null ? CYCLE_DAYS_DEFAULT : count * (cycle[2] === 'week' ? 7 : 1);
+  if (days < 1 || days > CYCLE_DAYS_MAX) return null;
   return { kind: 'newCycle', days, board: cycle[3] ? asTyped(request, cycle[3]) : null };
 }
 
@@ -468,6 +469,10 @@ export const SAPHA_KINDS = [
   'due',
   'create',
   'template',
+  'plan',
+  'unplan',
+  'newCycle',
+  'newRelease',
   'remind',
   'schedule',
   'open',
@@ -504,6 +509,10 @@ export const saphaPartsSchema = z.object({
   place: z.enum(SAPHA_PLACES).nullable(),
   /** A template's name, as said, to file a new issue from. */
   template: z.string().nullable().optional(),
+  /** Where an issue is put, or taken out of: its cycle or its release. */
+  into: z.enum(['cycle', 'release']).nullable().optional(),
+  /** How many days a new cycle runs, when said. */
+  days: z.number().nullable().optional(),
 });
 export type SaphaParts = z.infer<typeof saphaPartsSchema>;
 
@@ -546,9 +555,33 @@ function issueIntent(parts: SaphaParts, issueKey: string, now: Date): SaphaInten
       return { kind: 'blockers', issueKey };
     case 'about':
       return { kind: 'about', issueKey };
+    case 'plan':
+    case 'unplan':
+      return movedFromParts(parts, issueKey);
     default:
       return null;
   }
+}
+
+/** An issue into a cycle or release, or out of one; null when where is not said. */
+function movedFromParts(parts: SaphaParts, issueKey: string): SaphaIntent | null {
+  if (!parts.into) return null;
+  if (parts.kind === 'unplan') return { kind: 'unplan', issueKey, from: parts.into };
+  return { kind: 'plan', issueKey, into: parts.into, name: words(parts.title, 80) };
+}
+
+/** A new cycle or release from the provider's parts; null when they do not hold. */
+function planningFromParts(parts: SaphaParts, now: Date): SaphaIntent | null {
+  if (parts.kind === 'newCycle') {
+    const days = parts.days ?? CYCLE_DAYS_DEFAULT;
+    const fits = Number.isInteger(days) && days >= 1 && days <= CYCLE_DAYS_MAX;
+    return fits ? { kind: 'newCycle', days, board: words(parts.board, 80) } : null;
+  }
+  const name = words(parts.title, 80);
+  if (!name) return null;
+  if (!parts.when) return { kind: 'newRelease', name, targetOn: null };
+  const when = parseWhen(parts.when, now);
+  return when ? { kind: 'newRelease', name, targetOn: dayOf(when) } : null;
 }
 
 /** A new issue, plain or from a template, from the provider's parts; null when they do not hold. */
@@ -568,6 +601,14 @@ export function intentFromParts(parts: SaphaParts, now: Date = new Date()): Saph
     if (change) return change;
   }
   if (parts.kind === 'create' || parts.kind === 'template') return newIssueFromParts(parts);
+  if (parts.kind === 'newCycle' || parts.kind === 'newRelease') {
+    return planningFromParts(parts, now);
+  }
+  return elsewhereFromParts(parts, now);
+}
+
+/** A meeting, a search, a place, or a question about a cycle or release. */
+function elsewhereFromParts(parts: SaphaParts, now: Date): SaphaIntent | null {
   switch (parts.kind) {
     case 'schedule': {
       const title = words(parts.title, 200);

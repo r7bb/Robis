@@ -252,13 +252,15 @@ describe('planning a cycle or a release', () => {
 });
 
 describe('what the planning and template readers leave alone', () => {
-  test('words about release notes or candidates, a template called “the”, a 0-day cycle', () => {
+  test('words about release notes or candidates, a template called “the”, a 0-day or 9-week cycle', () => {
     for (const text of [
       'add WEB-3 to release notes',
       'plan release notes',
       'create release candidate',
       'use the template for x',
       'plan a 0-day cycle',
+      'plan a 57-day cycle',
+      'plan a 9-week cycle',
     ]) {
       const kind = read(text)?.kind;
       expect(['plan', 'newRelease', 'template', 'newCycle']).not.toContain(kind);
@@ -508,5 +510,63 @@ describe('tier 1: parts from the provider', () => {
     ).toBeNull();
     expect(intentFromParts({ ...none, kind: 'create', title: '   ' }, NOW)).toBeNull();
     expect(intentFromParts(none, NOW)).toBeNull();
+  });
+
+  test('into a cycle or release and out again, by its name when one is said', () => {
+    expect(
+      intentFromParts(
+        { ...none, kind: 'plan', issueKey: 'web-3', into: 'release', title: ' Version 2.0 ' },
+        NOW,
+      ),
+    ).toEqual({ kind: 'plan', issueKey: 'WEB-3', into: 'release', name: 'Version 2.0' });
+    expect(
+      intentFromParts({ ...none, kind: 'plan', issueKey: 'REL-4', into: 'cycle' }, NOW),
+    ).toEqual({ kind: 'plan', issueKey: 'REL-4', into: 'cycle', name: null });
+    expect(
+      intentFromParts({ ...none, kind: 'unplan', issueKey: 'REL-4', into: 'release' }, NOW),
+    ).toEqual({ kind: 'unplan', issueKey: 'REL-4', from: 'release' });
+  });
+
+  test('planning without saying where, or without a key, is nothing', () => {
+    expect(intentFromParts({ ...none, kind: 'plan', issueKey: 'REL-4' }, NOW)).toBeNull();
+    expect(intentFromParts({ ...none, kind: 'unplan', issueKey: 'REL-4' }, NOW)).toBeNull();
+    expect(intentFromParts({ ...none, kind: 'plan', into: 'cycle' }, NOW)).toBeNull();
+  });
+
+  test('a new cycle runs the days said, two weeks when none are, on the board named', () => {
+    expect(intentFromParts({ ...none, kind: 'newCycle', days: 10, board: 'Web' }, NOW)).toEqual({
+      kind: 'newCycle',
+      days: 10,
+      board: 'Web',
+    });
+    expect(intentFromParts({ ...none, kind: 'newCycle' }, NOW)).toEqual({
+      kind: 'newCycle',
+      days: 14,
+      board: null,
+    });
+  });
+
+  test('a cycle of no days, part days or past eight weeks is nothing', () => {
+    for (const days of [0, -3, 2.5, 57]) {
+      expect(intentFromParts({ ...none, kind: 'newCycle', days }, NOW)).toBeNull();
+    }
+  });
+
+  test('a new release by its name, aimed at the day said on this clock', () => {
+    expect(
+      intentFromParts({ ...none, kind: 'newRelease', title: 'Version 3', when: 'friday' }, NOW),
+    ).toEqual({ kind: 'newRelease', name: 'Version 3', targetOn: '2026-11-27' });
+    expect(intentFromParts({ ...none, kind: 'newRelease', title: 'Version 3' }, NOW)).toEqual({
+      kind: 'newRelease',
+      name: 'Version 3',
+      targetOn: null,
+    });
+  });
+
+  test('a release with no name, or a day that does not read as one, is nothing', () => {
+    expect(intentFromParts({ ...none, kind: 'newRelease', when: 'friday' }, NOW)).toBeNull();
+    expect(
+      intentFromParts({ ...none, kind: 'newRelease', title: 'Version 3', when: 'someday' }, NOW),
+    ).toBeNull();
   });
 });

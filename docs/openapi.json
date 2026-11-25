@@ -23149,6 +23149,10 @@
                                         "due",
                                         "create",
                                         "template",
+                                        "plan",
+                                        "unplan",
+                                        "newCycle",
+                                        "newRelease",
                                         "remind",
                                         "schedule",
                                         "open",
@@ -23251,6 +23255,26 @@
                                     "template": {
                                       "type": [
                                         "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "into": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "enum": [
+                                            "cycle",
+                                            "release"
+                                          ]
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "days": {
+                                      "type": [
+                                        "number",
                                         "null"
                                       ]
                                     }
