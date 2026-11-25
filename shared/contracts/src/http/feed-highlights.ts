@@ -39,15 +39,16 @@ const projectHealth = z.object({
 
 /**
  * What a celebration is for: a project with every issue done, someone's
- * 10th (25th, 50th...) issue done, a year (or more) with the team, or a
- * new teammate. Only for people who have not turned celebrations off, and
- * never for agents.
+ * 10th (25th, 50th...) issue done, a year (or more) with the team, a new
+ * teammate, or a cycle that ended with everything planned done. Only for
+ * people who have not turned celebrations off, and never for agents.
  */
 export const CELEBRATION_KINDS = [
   'project_finished',
   'issues_done',
   'anniversary',
   'joined',
+  'cycle_cleared',
 ] as const;
 export type CelebrationKind = (typeof CELEBRATION_KINDS)[number];
 
@@ -60,6 +61,8 @@ const celebration = z.object({
   userId: uuid.nullable(),
   projectId: uuid.nullable(),
   projectName: z.string().nullable(),
+  /** The cycle cleared, for that kind; null otherwise. */
+  cycleName: z.string().nullable().default(null),
   /** Issues done, or years with the team; null where there is no number. */
   count: z.number().int().positive().nullable(),
   /** Who reacted, by id, for each reaction. */
@@ -86,7 +89,7 @@ export const feedHighlightContracts = {
     method: 'GET',
     path: '/workspaces/:workspaceId/feed/celebrations',
     summary:
-      'Milestones from the last seven days worth a well done: a project finished, an issue milestone, an anniversary, a new teammate. Never for anyone who turned celebrations off, nor for agents.',
+      'Milestones from the last seven days worth a well done: a project finished, a cycle cleared, an issue milestone, an anniversary, a new teammate. Never for anyone who turned celebrations off, nor for agents.',
     params: workspaceParams,
     response: z.object({ celebrations: z.array(celebration) }),
   }),

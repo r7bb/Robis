@@ -15,6 +15,7 @@ const base = {
   userId: '00000000-0000-4000-8000-000000000001',
   projectId: null,
   projectName: null,
+  cycleName: null,
 } as const;
 const of = (fields: Pick<Celebration, 'kind' | 'count'> & Partial<Celebration>): Celebration => ({
   ...base,
@@ -23,6 +24,18 @@ const of = (fields: Pick<Celebration, 'kind' | 'count'> & Partial<Celebration>):
 });
 
 describe('a celebration', () => {
+  test('a cycle cleared names the board and the cycle', () => {
+    const cleared = of({
+      kind: 'cycle_cleared',
+      count: 8,
+      userId: null,
+      projectName: 'Web',
+      cycleName: 'Relaunch',
+    });
+    expect(lineOf(cleared, 'Someone')).toBe('Web cleared Relaunch: all 8 done');
+    expect(wellDoneOf(cleared, 'Someone')).toBe('Relaunch is cleared. Well done, everyone!');
+  });
+
   test('each kind, as the card says it and as the well done starts', () => {
     const name = 'Mia Rossi';
     expect(lineOf(of({ kind: 'issues_done', count: 25 }), name)).toBe(

@@ -31,6 +31,8 @@ export function lineOf(celebration: Celebration, name: string): string {
       return `${name} joined the team this week`;
     case 'project_finished':
       return `${celebration.projectName ?? 'A project'} is done: every issue closed`;
+    case 'cycle_cleared':
+      return `${celebration.projectName ?? 'A board'} cleared ${celebration.cycleName ?? 'its cycle'}: all ${celebration.count} done`;
   }
 }
 
@@ -46,6 +48,8 @@ export function wellDoneOf(celebration: Celebration, name: string): string {
       return `Welcome to the team, ${first}!`;
     case 'project_finished':
       return `${celebration.projectName ?? 'The project'} is done. Well done, everyone!`;
+    case 'cycle_cleared':
+      return `${celebration.cycleName ?? 'The cycle'} is cleared. Well done, everyone!`;
   }
 }
 

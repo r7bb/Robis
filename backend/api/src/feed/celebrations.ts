@@ -26,6 +26,8 @@ export type Celebration = {
   projectId: string | null;
   projectName: string | null;
   count: number | null;
+  /** The cycle cleared, for that kind. */
+  cycleName?: string | null;
 };
 
 /**
@@ -147,6 +149,42 @@ export function finishedProjects(
         projectId: project.id,
         projectName: project.name,
         count: project.done,
+      },
+    ];
+  });
+}
+
+/**
+ * A cycle whose last day ended this week with every planned issue done
+ * (canceled ones left out), and enough of them to be worth one.
+ */
+export function clearedCycles(
+  rows: readonly {
+    id: string;
+    name: string;
+    projectId: string;
+    projectName: string;
+    counted: number;
+    done: number;
+    endedAt: Date | string;
+  }[],
+  since: Date,
+): Celebration[] {
+  return rows.flatMap((cycle) => {
+    const endedAt = new Date(cycle.endedAt);
+    if (cycle.counted < FINISHED_MIN_DONE || cycle.done < cycle.counted || endedAt < since) {
+      return [];
+    }
+    return [
+      {
+        id: celebrationId('cycle_cleared', cycle.id),
+        kind: 'cycle_cleared' as const,
+        at: endedAt,
+        userId: null,
+        projectId: cycle.projectId,
+        projectName: cycle.projectName,
+        count: cycle.done,
+        cycleName: cycle.name,
       },
     ];
   });

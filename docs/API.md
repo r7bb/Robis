@@ -727,7 +727,7 @@ The feed, newest first: posts and pictures from rooms, a page at a time; `seenAt
 
 ### `GET /workspaces/{workspaceId}/feed/celebrations`
 
-Milestones from the last seven days worth a well done: a project finished, an issue milestone, an anniversary, a new teammate. Never for anyone who turned celebrations off, nor for agents.
+Milestones from the last seven days worth a well done: a project finished, a cycle cleared, an issue milestone, an anniversary, a new teammate. Never for anyone who turned celebrations off, nor for agents.
 
 - Answers: 200
 - Name: `feed.celebrations`

@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **The Feed celebrates a cycle cleared** (2026-11-25). When a cycle ends
+  with every planned issue done, the Feed now says so, such as Web cleared
+  Relaunch: all 8 done, with a well done to send.
 - **How long ago reads true again** (2026-11-25). Times like 5 minutes ago
   on the Feed, in Spaces and on the security page were shown one unit too
   small, such as 5 seconds ago; they now read as they should.

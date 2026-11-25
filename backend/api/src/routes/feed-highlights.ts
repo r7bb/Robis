@@ -1,5 +1,6 @@
 import {
   celebrationReactions,
+  cycles,
   type Database,
   issues,
   projects,
@@ -15,6 +16,7 @@ import { serve } from '../contract.ts';
 import { ApiError } from '../errors.ts';
 import {
   CELEBRATION_DAYS,
+  clearedCycles,
   finishedProjects,
   ISSUE_MILESTONES,
   milestoneCelebrations,
@@ -124,13 +126,45 @@ async function issueMilestones(db: Database, workspaceId: string, since: Date) {
     );
 }
 
-/** This week's celebrations for the people who allow them, and finished projects. */
+/**
+ * Cycles on active boards whose last day ended in (since, now], on each
+ * cycle's own calendar, with how many of their issues were planned
+ * (canceled left out) and done.
+ */
+async function endedCycles(db: Database, workspaceId: string, since: Date, now: Date) {
+  const endedAt = sql<string>`((${cycles.endsOn} + 1)::timestamp at time zone ${cycles.timeZone})`;
+  return db
+    .select({
+      id: cycles.id,
+      name: cycles.name,
+      projectId: projects.id,
+      projectName: projects.name,
+      counted: sql<number>`(count(${issues.id}) filter (where ${issues.status} <> 'CANCELED'))::int`,
+      done: sql<number>`(count(${issues.id}) filter (where ${issues.status} = 'DONE'))::int`,
+      endedAt,
+    })
+    .from(cycles)
+    .innerJoin(projects, eq(projects.id, cycles.projectId))
+    .leftJoin(issues, eq(issues.cycleId, cycles.id))
+    .where(
+      and(
+        eq(cycles.workspaceId, workspaceId),
+        eq(projects.archived, false),
+        sql`${endedAt} > ${since.toISOString()}::timestamptz`,
+        sql`${endedAt} <= ${now.toISOString()}::timestamptz`,
+      ),
+    )
+    .groupBy(cycles.id, projects.id);
+}
+
+/** This week's celebrations for the people who allow them, finished projects and cleared cycles. */
 async function celebrationsOf(db: Database, workspaceId: string, now: Date) {
   const since = daysBefore(now, CELEBRATION_DAYS);
-  const [people, milestones, projectRows, [workspace]] = await Promise.all([
+  const [people, milestones, projectRows, cycleRows, [workspace]] = await Promise.all([
     celebratable(db, workspaceId),
     issueMilestones(db, workspaceId, since),
     projectStats(db, workspaceId, now, now.toISOString().slice(0, 10)),
+    endedCycles(db, workspaceId, since, now),
     db
       .select({ createdBy: workspaces.createdBy })
       .from(workspaces)
@@ -141,6 +175,7 @@ async function celebrationsOf(db: Database, workspaceId: string, now: Date) {
     ...milestoneCelebrations(milestones, allowed),
     ...peopleCelebrations(people, { since, now, creatorId: workspace?.createdBy ?? null }),
     ...finishedProjects(projectRows, since),
+    ...clearedCycles(cycleRows, since),
   ]);
 }
 

@@ -140,6 +140,58 @@ describe('what is celebrated', () => {
   });
 });
 
+describe('a cycle cleared', () => {
+  const day = (offset: number) => new Date(Date.now() + offset * DAY).toISOString().slice(0, 10);
+
+  test('every planned issue done in a cycle that ended this week; not with work open, long over, or still running', async () => {
+    const owner = await createActor('Owner');
+    const workspace = await createWorkspace(owner);
+    const project = await createProject(owner, workspace.id, 'Web');
+    const ws = `/workspaces/${workspace.id}`;
+    const cycle = async (
+      name: string,
+      startsOn: string,
+      endsOn: string,
+      done: number,
+      open = 0,
+    ) => {
+      const { cycle: made } = (
+        await request(`${ws}/projects/${project.id}/cycles`, {
+          method: 'POST',
+          actor: owner,
+          payload: { name, startsOn, endsOn },
+        })
+      ).json();
+      for (let i = 0; i < done + open; i++) {
+        const { issue } = (
+          await request(`${ws}/projects/${project.id}/issues`, {
+            method: 'POST',
+            actor: owner,
+            payload: { title: `${name} ${i}`, status: i < done ? 'DONE' : 'TODO' },
+          })
+        ).json();
+        await request(`${ws}/issues/${issue.id}`, {
+          method: 'PATCH',
+          actor: owner,
+          payload: { cycleId: made.id },
+        });
+      }
+    };
+    await cycle('Relaunch', day(-10), day(-2), 3);
+    await cycle('Half done', day(-10), day(-2), 3, 1);
+    await cycle('Long ago', day(-30), day(-20), 3);
+    await cycle('Running', day(-2), day(5), 3);
+    await cycle('Too small', day(-10), day(-2), 2);
+
+    const cleared = (await celebrationsFor(owner, workspace.id)).filter(
+      (c) => c.kind === 'cycle_cleared',
+    ) as (Celebration & { cycleName: string; projectName: string })[];
+    expect(cleared.map((c) => [c.cycleName, c.projectName, c.count, c.userId])).toEqual([
+      ['Relaunch', 'Web', 3, null],
+    ]);
+  });
+});
+
 describe('a personal opt-out', () => {
   test('off, and nothing celebrates them; their choice shows to them alone', async () => {
     const { owner, member, workspace } = await team();

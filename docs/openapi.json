@@ -20373,7 +20373,7 @@
     "/workspaces/{workspaceId}/feed/celebrations": {
       "get": {
         "operationId": "feed.celebrations",
-        "summary": "Milestones from the last seven days worth a well done: a project finished, an issue milestone, an anniversary, a new teammate. Never for anyone who turned celebrations off, nor for agents.",
+        "summary": "Milestones from the last seven days worth a well done: a project finished, a cycle cleared, an issue milestone, an anniversary, a new teammate. Never for anyone who turned celebrations off, nor for agents.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -20409,7 +20409,8 @@
                               "project_finished",
                               "issues_done",
                               "anniversary",
-                              "joined"
+                              "joined",
+                              "cycle_cleared"
                             ]
                           },
                           "at": {
@@ -20450,6 +20451,13 @@
                             ]
                           },
                           "projectName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "cycleName": {
+                            "default": null,
                             "type": [
                               "string",
                               "null"
@@ -20528,6 +20536,7 @@
                           "userId",
                           "projectId",
                           "projectName",
+                          "cycleName",
                           "count",
                           "reactions"
                         ],

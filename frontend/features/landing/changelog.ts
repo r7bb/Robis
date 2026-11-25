@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
     area: 'Product',
+    title: 'The Feed celebrates a cycle cleared',
+    brief:
+      'When a cycle ends with every planned issue done, the Feed now says so, such as Web cleared Relaunch: all 8 done, with a well done to send.',
+    summary:
+      'Finishing everything a cycle planned is worth a well done, as finishing a project already was. A cycle whose last day ended in the past week, on its own calendar, on a board that is not archived, with at least three issues planned (canceled ones left out) and every one of them done, now shows among the Feed’s celebrations, with reactions and a well done to start. Like the other celebrations it is worked out from the work when the Feed is read, and nothing is stored.',
+    checked:
+      'One new test against the database: a cleared cycle shows, and ones with work still open, long over, still running or with only two issues do not; one of the card’s words and its well done. In the browser: Web cleared Relaunch: all 3 done, yesterday. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-25',
+    area: 'Product',
     title: 'How long ago reads true again',
     brief:
       'Times like 5 minutes ago on the Feed, in Spaces and on the security page were shown one unit too small, such as 5 seconds ago; they now read as they should.',
