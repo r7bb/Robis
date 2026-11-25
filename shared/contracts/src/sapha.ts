@@ -184,8 +184,17 @@ const CYCLE_QUESTION = new RegExp(
   `^(?:how(?:'s| is) (?:the |this |our |my )?(?:current )?${CYCLE}(?: going| doing| looking)?|(?:what(?:'s| is) )?left in (?:the |this |our )?${CYCLE}|(?:the )?${CYCLE} (?:progress|status))(?: (?:on|for|in) (?:the )?(.+?))?(?: board)?$`,
 );
 
-const RELEASE_QUESTION =
-  /^(?:how(?:'s| is) (?:the |our )?(?:next )?release(?: (.+?))??(?: going| doing| looking)?|(?:what(?:'s| is) )?left (?:in|for) (?:the |our )?(?:next )?release(?: (.+))?|(?:the )?release (?:progress|status)(?: (?:for|of) (.+))?)$/;
+// A release is named only in a question's own shape ("how is release X
+// going", "release status for X"), so ordinary words about releases stay
+// searches.
+const RELEASE_QUESTION = new RegExp(
+  [
+    "^how(?:'s| is) (?:the |our )?(?:next )?release(?: going| doing| looking)?$",
+    "^how(?:'s| is) release (.+?) (?:going|doing|looking)$",
+    "^(?:what(?:'s| is) )?left (?:in|for) (?:the |our )?(?:next )?release(?: (.+))?$",
+    '^(?:the )?release (?:progress|status)(?: for (.+))?$',
+  ].join('|'),
+);
 
 /** Words after "for" that mean the asker's own boards, not one named. */
 const EVERY_BOARD = /^(?:me|us|my team|our team|the team|everyone)$/;

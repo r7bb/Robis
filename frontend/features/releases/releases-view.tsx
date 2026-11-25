@@ -3,7 +3,7 @@
 import { can, contracts, type Role } from '@robis/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { DeleteButton } from '../../components/delete-button.tsx';
 import { call } from '../../lib/api.ts';
 import { dateFormat } from '../../lib/i18n/format.ts';
@@ -221,6 +221,11 @@ function ReleaseDetail({
  */
 function ShipButton({ name, onShip, busy }: { name: string; onShip: () => void; busy: boolean }) {
   const [asking, setAsking] = useState(false);
+  const notYet = useRef<HTMLButtonElement>(null);
+  // The question replaces the button: focus goes to its safe answer, as a dialog's would.
+  useEffect(() => {
+    if (asking) notYet.current?.focus();
+  }, [asking]);
   if (!asking) {
     return (
       <button
@@ -235,11 +240,12 @@ function ShipButton({ name, onShip, busy }: { name: string; onShip: () => void; 
   return (
     <fieldset className="flex min-w-0 flex-wrap items-center justify-end gap-2">
       <legend className="sr-only">Ship {name}</legend>
-      <span className="min-w-0 flex-1 basis-60 text-right text-xs text-muted">
+      <span aria-live="polite" className="min-w-0 flex-1 basis-60 text-right text-xs text-muted">
         Ship {name} now? Its notes are written and it takes no more issues.
       </span>
       <span className="flex shrink-0 gap-2">
         <button
+          ref={notYet}
           type="button"
           onClick={() => setAsking(false)}
           className="whitespace-nowrap rounded-md px-2 py-1 text-xs text-faint hover:text-content"

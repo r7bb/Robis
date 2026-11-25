@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { call } from '../../lib/api.ts';
 import { dateFormat } from '../../lib/i18n/format.ts';
 import { issueHref } from '../../lib/links.ts';
+import { searchHref } from '../../lib/search-links.ts';
 import { useReleases } from '../releases/use-releases.ts';
 import { releaseAsked } from './release-answer-model.ts';
 
@@ -50,9 +51,20 @@ export function ReleaseAnswer({
   }
   if (!asked) {
     return (
-      <p role="status" className="text-base text-content">
-        {name ? `No release here is called ${name}.` : 'No release is waiting to ship.'}
-      </p>
+      <div role="status" className="space-y-1.5">
+        <p className="text-base text-content">
+          {name ? `No release here is called ${name}.` : 'No release is waiting to ship.'}
+        </p>
+        {name ? (
+          <Link
+            href={searchHref(workspaceId, name)}
+            onClick={onClose}
+            className="inline-block text-sm text-accent-soft hover:underline"
+          >
+            Search for “{name}” instead
+          </Link>
+        ) : null}
+      </div>
     );
   }
   const counted = asked.total - asked.canceled;

@@ -195,6 +195,16 @@ describe('asking how a release is going', () => {
     expect(read('find release notes')).toEqual({ kind: 'search', query: 'release notes' });
   });
 
+  test('a name only in a question’s own shape; ordinary words stay searches', () => {
+    for (const text of [
+      'how is release planning done',
+      'release status of the api',
+      'release candidate checklist',
+    ]) {
+      expect(read(text)?.kind).not.toBe('release');
+    }
+  });
+
   test('from the provider’s parts, the name as its title', () => {
     const parts = {
       kind: 'release' as const,

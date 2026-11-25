@@ -2,7 +2,7 @@
 
 import { can, contracts, type Role } from '@robis/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { call } from '../../lib/api.ts';
 import { useDropdown } from '../../lib/use-dropdown.ts';
 import { useMyId } from '../../lib/use-people.ts';
@@ -83,8 +83,6 @@ function TemplateList({
 }) {
   const me = useMyId();
   const queryClient = useQueryClient();
-  // Removing asks a second press: the template goes for everyone.
-  const [confirming, setConfirming] = useState<string | null>(null);
   const remove = useMutation({
     mutationFn: (templateId: string) =>
       call(contracts['issueTemplates.remove'], { params: { workspaceId, templateId } }),
@@ -115,28 +113,11 @@ function TemplateList({
               <span className="block truncate text-[11px] text-faint">{template.title}</span>
             </button>
             {admin || template.createdBy === me ? (
-              <button
-                type="button"
-                aria-label={
-                  confirming === template.id
-                    ? `Remove the template ${template.name} for everyone`
-                    : `Remove the template ${template.name}`
-                }
-                disabled={remove.isPending}
-                onClick={() =>
-                  confirming === template.id
-                    ? remove.mutate(template.id)
-                    : setConfirming(template.id)
-                }
-                onBlur={() => setConfirming(null)}
-                className={`shrink-0 rounded px-1.5 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-soft ${
-                  confirming === template.id
-                    ? 'font-medium text-danger-soft'
-                    : 'text-faint hover:text-danger-soft'
-                }`}
-              >
-                {confirming === template.id ? 'Remove for everyone?' : 'Remove'}
-              </button>
+              <RemoveTemplate
+                name={template.name}
+                busy={remove.isPending}
+                onRemove={() => remove.mutate(template.id)}
+              />
             ) : null}
           </li>
         ))}
@@ -226,5 +207,72 @@ function FileFromTemplate({
         </button>
       </div>
     </form>
+  );
+}
+
+/**
+ * Remove, asked twice: the template goes for everyone. The question says so
+ * aloud, focus goes to Keep, and Keep or Escape leaves it as it was.
+ */
+function RemoveTemplate({
+  name,
+  busy,
+  onRemove,
+}: {
+  name: string;
+  busy: boolean;
+  onRemove: () => void;
+}) {
+  const [asking, setAsking] = useState(false);
+  const keep = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (asking) keep.current?.focus();
+  }, [asking]);
+  // Escape leaves it as it was, closing only the question, not the panel around it.
+  const onEscape = (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key !== 'Escape') return;
+    // Marked handled, so the panel's own Escape leaves the panel open.
+    event.preventDefault();
+    setAsking(false);
+  };
+  if (!asking) {
+    return (
+      <button
+        type="button"
+        aria-label={`Remove the template ${name}`}
+        onClick={() => setAsking(true)}
+        className="shrink-0 rounded px-1.5 text-xs text-faint hover:text-danger-soft focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-soft"
+      >
+        Remove
+      </button>
+    );
+  }
+  return (
+    <span className="flex shrink-0 items-center gap-1.5">
+      <span aria-live="polite" className="text-[11px] text-muted">
+        Remove {name} for everyone?
+      </span>
+      <button
+        ref={keep}
+        type="button"
+        onClick={() => setAsking(false)}
+        onKeyDown={onEscape}
+        className="rounded px-1.5 text-xs text-faint hover:text-content focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-soft"
+      >
+        Keep
+      </button>
+      <button
+        type="button"
+        disabled={busy}
+        onKeyDown={onEscape}
+        onClick={() => {
+          onRemove();
+          setAsking(false);
+        }}
+        className="rounded px-1.5 text-xs font-medium text-danger-soft focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-soft disabled:opacity-50"
+      >
+        Remove
+      </button>
+    </span>
   );
 }

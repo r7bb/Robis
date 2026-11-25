@@ -46,6 +46,17 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-25',
     area: 'Product',
+    title: 'Confirmations that keyboards and screen readers can follow',
+    brief:
+      'Ship it and removing a template now move focus to the safe answer and say the question aloud, Escape cancels only the question, and Sapha leaves ordinary words about releases to search.',
+    summary:
+      'A review of the confirmations added yesterday found two that lost the keyboard’s place. Ship it now puts focus on Not yet when its question appears, and the question is announced. Removing a template now asks Remove Bug report for everyone? with Keep, focused, and Remove; Escape or Keep leaves it as it was, without closing the Templates panel around it. Sapha now reads a release’s name only in a question’s own shape, how is release Version 2 going or release status for Version 2, so searches like release status of the api or release candidate checklist stay searches; and when no release has the name asked about, the answer offers to search for it instead.',
+    checked:
+      'A new test that ordinary words about releases stay searches. In the browser, Remove put focus on Keep and Escape closed the question but not the panel, and Ship it put focus on Not yet. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-25',
+    area: 'Product',
     title: 'A notice the day before a release is due',
     brief:
       'The day before a release’s day, everyone with an issue still open in it, on any board, hears that it is due tomorrow and how many of theirs are open.',

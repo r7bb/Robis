@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Confirmations that keyboards and screen readers can follow**
+  (2026-11-25). Ship it and removing a template now move focus to the safe
+  answer and say the question aloud, Escape cancels only the question, and
+  Sapha leaves ordinary words about releases to search.
 - **A notice the day before a release is due** (2026-11-25). The day before
   a release’s day, everyone with an issue still open in it, on any board,
   hears that it is due tomorrow and how many of theirs are open.
