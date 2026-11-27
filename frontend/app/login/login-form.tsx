@@ -165,36 +165,6 @@ export function LoginForm({ initialMode }: { initialMode: Mode }) {
   );
 }
 
-export function Field({
-  label,
-  value,
-  onChange,
-  type = 'text',
-  ...rest
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  type?: string;
-  autoComplete?: string;
-  required?: boolean;
-}) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-medium text-muted">{label}</span>
-      <input
-        {...rest}
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        spellCheck={type === 'email' ? false : undefined}
-        inputMode={type === 'email' ? 'email' : undefined}
-        className="w-full rounded-md border border-line bg-raised px-3 py-2 text-sm text-content outline-none transition focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/60"
-      />
-    </label>
-  );
-}
-
 /** After an address is given for a new account: where the link went, and a way back. */
 function SentPanel({ to, onAgain }: { to: string; onAgain: () => void }) {
   return (

@@ -13,9 +13,9 @@ what each layer does. Back to the [README](../README.md).
   of Sapha’s answers, the issues it looked at are listed as links, so each
   claim can be checked at its source, and Copy puts the answer on the
   clipboard.
-- **Signing in matches the other account pages** (2026-11-27). The sign-in
-  page now uses the same frame, fields, button and error as the reset,
-  verify and unsubscribe pages.
+- **Signing in and up match the other account pages** (2026-11-27). The
+  sign-in and finish-sign-up pages now use the same frame, fields, button
+  and error as the reset, verify and unsubscribe pages.
 - **Try again when Sapha could not answer** (2026-11-27). When Sapha’s
   latest answer failed, a Try again button asks the same question again,
   with no retyping.
