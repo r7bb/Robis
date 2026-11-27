@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Ask Sapha about an issue** (2026-11-27). An issue’s page has Ask Sapha:
+  the panel opens with the issue named, and its suggestions ask what it
+  waits on, for a summary, or who could take it.
 - **Sapha’s lookups cost less** (2026-11-27). Each step Sapha takes reads
   its rules, its tools and the conversation so far back from the provider’s
   cache, so a step pays in full only for what is new.

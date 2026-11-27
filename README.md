@@ -204,15 +204,15 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Ask Sapha about an issue.** An issue’s page has Ask Sapha: the panel
+  opens with the issue named, and its suggestions ask what it waits on, for
+  a summary, or who could take it.
 - **Sapha’s lookups cost less.** Each step Sapha takes reads its rules, its
   tools and the conversation so far back from the provider’s cache, so a
   step pays in full only for what is new.
 - **Sapha is a full assistant now.** Talk to Sapha in a side panel (Ctrl J):
   it looks things up as you in a few steps, answers with links to what it
   found, and proposes changes for you to approve.
-- **Sapha’s assistant asks what keeps slipping too.** With the assistant on,
-  other wordings, such as which tickets keep rolling over on web, now reach
-  the answer about work carried from earlier cycles.
 
 <!-- latest:end -->
 

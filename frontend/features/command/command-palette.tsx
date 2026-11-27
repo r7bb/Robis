@@ -56,7 +56,7 @@ export function CommandPalette({
   const openSapha = useOpenSapha();
   const askSapha = (words: string) => {
     onClose();
-    openSapha?.(words);
+    openSapha?.({ ask: words });
   };
   // An issue Sapha is answering about, in place of the list.
   const [answering, setAnswering] = useState<Question | null>(null);

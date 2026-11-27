@@ -17,10 +17,12 @@ import { call } from '../../lib/api.ts';
 import { issueCommands } from '../../lib/page-commands.ts';
 import { may } from '../../lib/permissions.ts';
 import { remembered } from '../../lib/remembered.ts';
+import { useAssist } from '../assist/use-assist.ts';
 import { useCommands } from '../command/command-provider.tsx';
 import { CyclePicker } from '../cycles/cycle-picker.tsx';
 import { ReleasePicker } from '../releases/release-picker.tsx';
 import { RemindMe } from '../reminders/remind-me.tsx';
+import { useOpenSapha } from '../sapha/panel/sapha-panel-provider.tsx';
 import { SaveAsTemplate } from '../templates/save-as-template.tsx';
 import { IssueAttachments } from './attachments.tsx';
 import { BlockedBy } from './blocked-by.tsx';
@@ -126,6 +128,8 @@ export function IssueDetail({
           <span className="mr-auto font-mono text-xs text-faint">{data.key}</span>
         ) : null}
         {toolbar}
+
+        {data ? <AskSaphaAbout workspaceId={workspaceId} issueKey={data.key} /> : null}
 
         {data && (
           <DeleteButton
@@ -508,5 +512,22 @@ function Select({
         </option>
       ))}
     </select>
+  );
+}
+
+/** Opens Sapha's panel about this issue, so a question about "this" names it. */
+function AskSaphaAbout({ workspaceId, issueKey }: { workspaceId: string; issueKey: string }) {
+  const openSapha = useOpenSapha();
+  // Shown only where Sapha can answer: with assistance off it could only say so.
+  const { available } = useAssist(workspaceId);
+  if (!openSapha || !available) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => openSapha({ about: issueKey })}
+      className="rounded px-2 py-1 text-xs text-muted transition-colors hover:bg-surface hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+    >
+      Ask Sapha
+    </button>
   );
 }

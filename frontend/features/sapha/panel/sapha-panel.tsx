@@ -5,16 +5,10 @@ import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from 
 import { ago } from '../../../lib/time.ts';
 import { useAssist } from '../../assist/use-assist.ts';
 import { SaphaTurnView } from './sapha-turn.tsx';
-import { stillAnswering } from './turn-model.ts';
+import { aboutDraft, hasQuestion, startersAbout, stillAnswering } from './turn-model.ts';
 import { useConversation, useConversations, useForget, useSay } from './use-sapha-chat.ts';
 
 /** Ways in, for someone who has not asked Sapha anything yet. */
-const STARTERS = [
-  'What is on my plate today?',
-  'What keeps slipping?',
-  'Which releases are coming up?',
-];
-
 const QUIET =
   'rounded px-2 py-1 text-xs text-muted transition-colors hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft';
 
@@ -27,21 +21,28 @@ const QUIET =
 export function SaphaPanel({
   workspaceId,
   firstWords,
+  about,
   onClose,
 }: {
   workspaceId: string;
   /** Words typed in the palette, asked as soon as the panel opens. */
   firstWords: string | null;
+  /** The issue it was opened from, by key, named in the draft and the starters. */
+  about: string | null;
   onClose: () => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const { available, loaded } = useAssist(workspaceId);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [showingHistory, setShowingHistory] = useState(false);
+  // The palette's words, until asked: back from History, they are not asked again.
+  const [unasked, setUnasked] = useState(firstWords);
 
   useEffect(() => {
     const element = dialog.current;
     if (element && !element.open) element.showModal();
+    // Drawn before the dialog opened, the field could not take focus then: it takes it now.
+    element?.querySelector<HTMLTextAreaElement>('textarea[name="sapha-message"]')?.focus();
   }, []);
 
   return (
@@ -104,7 +105,9 @@ export function SaphaPanel({
         <Conversation
           workspaceId={workspaceId}
           conversationId={conversationId}
-          firstWords={firstWords}
+          firstWords={unasked}
+          onAsked={() => setUnasked(null)}
+          about={about}
           onConversation={setConversationId}
           onNavigate={onClose}
         />
@@ -117,18 +120,22 @@ function Conversation({
   workspaceId,
   conversationId,
   firstWords,
+  onAsked,
+  about,
   onConversation,
   onNavigate,
 }: {
   workspaceId: string;
   conversationId: string | null;
   firstWords: string | null;
+  onAsked: () => void;
+  about: string | null;
   onConversation: (id: string) => void;
   onNavigate: () => void;
 }) {
   const conversation = useConversation(workspaceId, conversationId);
   const say = useSay(workspaceId, conversationId, onConversation);
-  const [draft, setDraft] = useState('');
+  const [draft, setDraft] = useState(() => aboutDraft(about));
   const asked = useRef(false);
   const end = useRef<HTMLDivElement>(null);
   const turns = conversationId ? (conversation.data?.turns ?? []) : [];
@@ -139,6 +146,7 @@ function Conversation({
   useEffect(() => {
     if (firstWords && !asked.current) {
       asked.current = true;
+      onAsked();
       say.mutate(firstWords);
     }
   }, []);
@@ -150,7 +158,7 @@ function Conversation({
 
   function send(text: string) {
     const words = text.trim();
-    if (!words || answering) return;
+    if (!hasQuestion(words, about) || answering) return;
     say.mutate(words, { onSuccess: () => setDraft('') });
   }
 
@@ -164,7 +172,7 @@ function Conversation({
               anything it would change waits for your Do it.
             </p>
             <ul className="space-y-1.5">
-              {STARTERS.map((starter) => (
+              {startersAbout(about).map((starter) => (
                 <li key={starter}>
                   <button
                     type="button"
@@ -200,6 +208,7 @@ function Conversation({
         draft={draft}
         onDraft={setDraft}
         answering={answering}
+        canSend={hasQuestion(draft, about)}
         error={say.isError ? (say.error as Error).message : null}
         onSend={() => send(draft)}
       />
@@ -211,15 +220,24 @@ function Composer({
   draft,
   onDraft,
   answering,
+  canSend,
   error,
   onSend,
 }: {
   draft: string;
   onDraft: (text: string) => void;
   answering: boolean;
+  /** Something asked, beyond the issue's name typed for them. */
+  canSend: boolean;
   error: string | null;
   onSend: () => void;
 }) {
+  const field = useRef<HTMLTextAreaElement>(null);
+  // Opened with first words, the caret waits after them, kept when the panel focuses the field.
+  useEffect(() => {
+    const end = field.current?.value.length ?? 0;
+    field.current?.setSelectionRange(end, end);
+  }, []);
   function submit(event: FormEvent) {
     event.preventDefault();
     onSend();
@@ -241,6 +259,7 @@ function Composer({
         <textarea
           // biome-ignore lint/a11y/noAutofocus: the panel was opened to type into
           autoFocus
+          ref={field}
           value={draft}
           onChange={(event) => onDraft(event.target.value)}
           onKeyDown={onKeyDown}
@@ -254,7 +273,7 @@ function Composer({
         />
         <button
           type="submit"
-          disabled={!draft.trim() || answering}
+          disabled={!canSend || answering}
           className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-accent-contrast hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft disabled:opacity-50"
         >
           Ask

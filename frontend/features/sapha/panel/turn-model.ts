@@ -73,3 +73,26 @@ export function isSaphaShortcut(event: KeyLike): boolean {
 export function stillAnswering(turns: readonly SaphaTurn[]): boolean {
   return turns.at(-1)?.status === 'pending';
 }
+
+/** What to ask an empty conversation, about one issue when opened from it. */
+export function startersAbout(key: string | null): readonly string[] {
+  if (!key) {
+    return ['What is on my plate today?', 'What keeps slipping?', 'Which releases are coming up?'];
+  }
+  return [
+    `What is ${key} waiting on?`,
+    `Sum up ${key} and its latest comments`,
+    `Who could take ${key} on?`,
+  ];
+}
+
+/** The composer's first words when opened from an issue, so a question about "this" names it. */
+export function aboutDraft(key: string | null): string {
+  return key ? `About ${key}: ` : '';
+}
+
+/** Whether the draft asks something: not empty, and more than the issue's name typed for them. */
+export function hasQuestion(draft: string, about: string | null): boolean {
+  const words = draft.trim();
+  return words.length > 0 && words !== aboutDraft(about).trim();
+}

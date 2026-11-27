@@ -45,14 +45,25 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-27',
+    area: 'Product',
+    title: 'Ask Sapha about an issue',
+    brief:
+      'An issue’s page has Ask Sapha: the panel opens with the issue named, and its suggestions ask what it waits on, for a summary, or who could take it.',
+    summary:
+      'Next to an issue’s delete button there is now Ask Sapha. It opens the side panel with “About WEB-1: ” already typed and the cursor after it, so a question about “this” names the issue Sapha should look at. In an empty conversation its suggestions are about that issue too: what it is waiting on, a summary with its latest comments, and who could take it on. Ctrl J and the palette still open the panel as before, with the usual suggestions. The same button shows in the issue peek over a board, and only where assistance is turned on. Sending the issue’s name alone is not allowed, as it asks nothing. Words from the palette are now asked once only, even after a visit to History.',
+    checked:
+      'Two new tests: the suggestions and the first words with and without an issue, and the issue’s name alone not counting as a question. A code review found nothing critical; its points (the button where assistance is off, the name alone, words asked again after History) are fixed. In the browser, with the provider kept out of reach: the button on WEB-1 opened the panel with “About WEB-1: ” typed, the cursor at its end and three suggestions naming WEB-1; Escape closed it; Ctrl J then opened it with nothing typed and the usual suggestions. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-27',
     area: 'ML',
     title: 'Sapha’s lookups cost less',
     brief:
       'Each step Sapha takes reads its rules, its tools and the conversation so far back from the provider’s cache, so a step pays in full only for what is new.',
     summary:
-      'While Sapha looks things up it sends everything before each step again: its rules, the tools it may use and the exchange so far. Those are now marked for the provider’s prompt cache, the rules and tools with a mark of their own and the exchange with one that moves forward as it grows, so a question of several steps pays in full only for what each step adds; cached reads are billed at a small part of the usual price. The rules and tools are sent the same way byte for byte on every step, as a cache only matches an identical start. The worker’s log now says per step how many tokens came from the cache, how many were written to it and how many were not cached, as counts only, never a word of what was asked.',
+      'While Sapha looks things up it sends everything before each step again: its rules, the tools it may use and the exchange so far. Those are now marked for the provider’s prompt cache, the rules and tools with a mark of their own and the exchange with one that moves forward as it grows, so a question of several steps pays in full only for what each step adds; cached reads are billed at a small part of the usual price. The last step, when Sapha must answer with what it has, carries no moving mark, as nothing follows it to read the mark back. The rules and tools are sent the same way byte for byte on every step, as a cache only matches an identical start. The worker’s log now says per step how many tokens came from the cache, how many were written to it and how many were not cached, as counts only, never a word of what was asked.',
     checked:
-      'A new test with a stand-in for the provider: every step carries the cache mark on the rules and on the request, including the last step, and the rules and tools are identical from the first step to the last. The agent’s other twenty tests, the full suite, lint, typecheck, knip and docs:links. Not yet seen against the real provider, as that is a paid call: the worker’s log line is where to check it once a key is set.',
+      'A new test with a stand-in for the provider: every step carries the cache mark on the rules, every step but the last the moving one, and the rules and tools are identical from the first step to the last. A code review found nothing critical; its point about the last step is the change above. The agent’s other twenty tests, the full suite, lint, typecheck, knip and docs:links. Not yet seen against the real provider, as that is a paid call: the worker’s log line is where to check it once a key is set.',
   },
   {
     date: '2026-11-25',

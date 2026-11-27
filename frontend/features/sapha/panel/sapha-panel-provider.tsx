@@ -5,19 +5,24 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useS
 import { SaphaPanel } from './sapha-panel.tsx';
 import { isSaphaShortcut } from './turn-model.ts';
 
-type Opened = { firstWords: string | null; at: number };
+type Opened = { firstWords: string | null; about: string | null; at: number };
 
-const SaphaContext = createContext<((words?: string) => void) | null>(null);
+/** How the panel opens: asking some words at once, or about one issue, by key. */
+type Opening = { ask?: string; about?: string };
+
+const SaphaContext = createContext<((opening?: Opening) => void) | null>(null);
 
 /**
  * Sapha's panel, for every page of a workspace: Ctrl J or Cmd J opens and
- * closes it, and the palette's Ask Sapha opens it with the words typed.
+ * closes it, the palette's Ask Sapha opens it with the words typed, and an
+ * issue's Ask Sapha opens it about that issue.
  */
 export function SaphaPanelProvider({ children }: { children: ReactNode }) {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const [opened, setOpened] = useState<Opened | null>(null);
   const open = useCallback(
-    (words?: string) => setOpened({ firstWords: words?.trim() || null, at: Date.now() }),
+    ({ ask, about }: Opening = {}) =>
+      setOpened({ firstWords: ask?.trim() || null, about: about ?? null, at: Date.now() }),
     [],
   );
 
@@ -25,7 +30,7 @@ export function SaphaPanelProvider({ children }: { children: ReactNode }) {
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
       if (!isSaphaShortcut(event) || event.repeat) return;
       event.preventDefault();
-      setOpened((was) => (was ? null : { firstWords: null, at: Date.now() }));
+      setOpened((was) => (was ? null : { firstWords: null, about: null, at: Date.now() }));
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
@@ -40,6 +45,7 @@ export function SaphaPanelProvider({ children }: { children: ReactNode }) {
           key={opened.at}
           workspaceId={workspaceId}
           firstWords={opened.firstWords}
+          about={opened.about}
           onClose={() => setOpened(null)}
         />
       ) : null}
@@ -47,7 +53,7 @@ export function SaphaPanelProvider({ children }: { children: ReactNode }) {
   );
 }
 
-/** Open Sapha's panel, asking these words at once when given. */
-export function useOpenSapha(): ((words?: string) => void) | null {
+/** Open Sapha's panel, asking some words at once, or about an issue. */
+export function useOpenSapha(): ((opening?: Opening) => void) | null {
   return useContext(SaphaContext);
 }

@@ -1,9 +1,12 @@
 import { describe, expect, test } from 'bun:test';
 import type { SaphaTurn } from '@robis/shared';
 import {
+  aboutDraft,
   changesOf,
+  hasQuestion,
   isSaphaShortcut,
   linkIssues,
+  startersAbout,
   stillAnswering,
 } from '@robis/web/features/sapha/panel/turn-model.ts';
 
@@ -91,5 +94,22 @@ describe('the panel', () => {
     expect(stillAnswering([])).toBe(false);
     expect(stillAnswering([turn('done'), turn('pending')])).toBe(true);
     expect(stillAnswering([turn('pending'), turn('failed')])).toBe(false);
+  });
+
+  test('opened from an issue, the draft names it and the starters ask about it', () => {
+    expect(aboutDraft('ENG-12')).toBe('About ENG-12: ');
+    expect(aboutDraft(null)).toBe('');
+    const about = startersAbout('ENG-12');
+    expect(about.length).toBeGreaterThan(1);
+    for (const starter of about) expect(starter).toContain('ENG-12');
+    expect(startersAbout(null)).not.toContain(about[0]);
+    expect(startersAbout(null).length).toBeGreaterThan(0);
+  });
+
+  test('the issue’s name alone is not a question, and is not sent', () => {
+    expect(hasQuestion('About ENG-12: ', 'ENG-12')).toBe(false);
+    expect(hasQuestion('  ', null)).toBe(false);
+    expect(hasQuestion('About ENG-12: who has it?', 'ENG-12')).toBe(true);
+    expect(hasQuestion('What keeps slipping?', null)).toBe(true);
   });
 });
