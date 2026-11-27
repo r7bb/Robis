@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-11-27): **2223 TypeScript tests, 132 Python tests, lint and
+Status (2026-11-27): **2224 TypeScript tests, 132 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -215,7 +215,7 @@ new account does still works before the address is confirmed.
 
 ### 5. Deferred review findings
 
-- Migrate the login page onto `AuthShell` so all five auth surfaces share one.
+- (Done 2026-11-27: the login page is on `AuthShell`, with the other auth surfaces.)
 - (Done: `trustProxy` pinned, and no-referrer / no-store on token pages.)
 
 ---
@@ -231,9 +231,12 @@ runs here. The images still run
 the upgrade removes and the image scan would otherwise fail on. Drop the
 step once a digest Dependabot proposes scans clean (stage 4, item 38).
 
-**Product.** Sapha reads a dozen kinds of request in the palette, and with
-assistance on, asks the provider about the rest (tier 1); next, answers to
-questions (what is blocking REL-4?) drawn from the workspace, with sources. (Drag and drop on the board, the search results page,
+**Product.** Sapha reads a dozen kinds of request in the palette at once,
+and with assistance on is a full assistant in a side panel: it looks things
+up as the person in a few steps, answers with links to what it looked at,
+and proposes changes for a yes. Next: trying it on a real provider key, a
+triage queue for new work, and a public page for release notes (both wait on
+the owner's go-ahead). (Drag and drop on the board, the search results page,
 filtering by label and bulk actions, once listed here, are built: see
 `frontend/features/board/` and the search page.)
 

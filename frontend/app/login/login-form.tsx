@@ -2,9 +2,15 @@
 
 import { contracts } from '@robis/shared';
 import { useQueryClient } from '@tanstack/react-query';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useId, useState } from 'react';
+import {
+  AuthButton,
+  AuthError,
+  AuthField,
+  AuthLink,
+  AuthShell,
+} from '../../components/auth-shell.tsx';
 import { ApiError, call } from '../../lib/api.ts';
 import { getSyncEngine } from '../../lib/sync.ts';
 import { CodeStep } from './code-step.tsx';
@@ -36,6 +42,7 @@ export function LoginForm({ initialMode }: { initialMode: Mode }) {
   const [submitting, setSubmitting] = useState(false);
   /** The password was right and the account asks for a code too (C4). */
   const [challenge, setChallenge] = useState<string | null>(null);
+  const ids = useId();
 
   /** Signed in: the same next steps whether it took one step or two. */
   async function enter(userId: string) {
@@ -82,98 +89,75 @@ export function LoginForm({ initialMode }: { initialMode: Mode }) {
   // The password was right and a code is owed: that is all the page asks.
   if (challenge) {
     return (
-      <main className="grid min-h-[100dvh] place-items-center px-4 py-10">
-        <div className="w-full max-w-sm">
-          <h1 className="text-2xl font-semibold tracking-tight text-content">Robis</h1>
-          <p className="mt-1 text-sm text-muted">One more step to sign in.</p>
-          <CodeStep
-            challenge={challenge}
-            onSignedIn={enter}
-            onRestart={(why) => {
-              setChallenge(null);
-              setError(why);
-            }}
-          />
-        </div>
-      </main>
+      <AuthShell subtitle="One more step to sign in.">
+        <CodeStep
+          challenge={challenge}
+          onSignedIn={enter}
+          onRestart={(why) => {
+            setChallenge(null);
+            setError(why);
+          }}
+        />
+      </AuthShell>
     );
   }
 
   return (
-    <main className="grid min-h-[100dvh] place-items-center px-4 py-10">
-      <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-semibold tracking-tight text-content">Robis</h1>
-        <p className="mt-1 text-sm text-muted">
-          {mode === 'login' ? 'Sign in to your workspace.' : 'Create an account.'}
-        </p>
+    <AuthShell subtitle={mode === 'login' ? 'Sign in to your workspace.' : 'Create an account.'}>
+      {mode === 'register' && sentTo ? (
+        <SentPanel to={sentTo} onAgain={() => setSentTo(null)} />
+      ) : (
+        <form onSubmit={onSubmit} className="mt-6 space-y-3">
+          <AuthField
+            id={`${ids}-email`}
+            label="Email"
+            type="email"
+            value={email}
+            onChange={setEmail}
+            autoComplete="email"
+            required
+          />
 
-        {mode === 'register' && sentTo ? (
-          <SentPanel to={sentTo} onAgain={() => setSentTo(null)} />
-        ) : (
-          <form onSubmit={onSubmit} className="mt-6 space-y-3">
-            <Field
-              label="Email"
-              type="email"
-              value={email}
-              onChange={setEmail}
-              autoComplete="email"
+          {mode === 'login' && (
+            <AuthField
+              id={`${ids}-password`}
+              label="Password"
+              type="password"
+              value={password}
+              onChange={setPassword}
+              autoComplete="current-password"
               required
             />
+          )}
 
-            {mode === 'login' && (
-              <Field
-                label="Password"
-                type="password"
-                value={password}
-                onChange={setPassword}
-                autoComplete="current-password"
-                required
-              />
-            )}
+          {error && <AuthError message={error} />}
 
-            {error && (
-              <p
-                role="alert"
-                className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger-soft"
-              >
-                {error}
-              </p>
-            )}
+          <AuthButton disabled={submitting}>
+            {submitting ? 'Working…' : mode === 'login' ? 'Sign in' : 'Send me a link'}
+          </AuthButton>
+        </form>
+      )}
 
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full rounded-md bg-accent px-3 py-2 text-sm font-medium text-accent-contrast transition hover:bg-accent-hover active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-surface motion-reduce:transition-none motion-reduce:active:translate-y-0 disabled:opacity-50 disabled:active:translate-y-0"
-            >
-              {submitting ? 'Working…' : mode === 'login' ? 'Sign in' : 'Send me a link'}
-            </button>
-          </form>
-        )}
+      {mode === 'login' && <PasskeyButton onSignedIn={enter} onError={setError} />}
 
-        {mode === 'login' && <PasskeyButton onSignedIn={enter} onError={setError} />}
+      {mode === 'login' && (
+        <p className="mt-4 text-sm">
+          <AuthLink href="/forgot-password">Forgot your password?</AuthLink>
+        </p>
+      )}
 
-        {mode === 'login' && (
-          <Link
-            href="/forgot-password"
-            className="mt-4 block rounded text-sm text-muted underline-offset-4 transition hover:text-content hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
-          >
-            Forgot your password?
-          </Link>
-        )}
-
-        <button
-          type="button"
-          onClick={() => {
-            setMode(mode === 'login' ? 'register' : 'login');
-            setError(null);
-            setSentTo(null);
-          }}
-          className="mt-4 text-sm text-muted underline-offset-4 hover:text-content hover:underline"
-        >
-          {mode === 'login' ? 'Need an account?' : 'Already have an account?'}
-        </button>
-      </div>
-    </main>
+      <button
+        type="button"
+        onClick={() => {
+          setMode(mode === 'login' ? 'register' : 'login');
+          setError(null);
+          setSentTo(null);
+        }}
+        className="mt-4 rounded text-sm text-muted underline-offset-4 hover:text-content hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+      >
+        {mode === 'login' ? 'Need an account?' : 'Already have an account?'}
+      </button>
+    </AuthShell>
   );
 }
 

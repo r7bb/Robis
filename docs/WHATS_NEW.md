@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Signing in matches the other account pages** (2026-11-27). The sign-in
+  page now uses the same frame, fields, button and error as the reset,
+  verify and unsubscribe pages.
 - **Try again when Sapha could not answer** (2026-11-27). When Sapha’s
   latest answer failed, a Try again button asks the same question again,
   with no retyping.

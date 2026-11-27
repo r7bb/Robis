@@ -25,7 +25,8 @@ export function AuthShell({
   children,
   footer,
 }: {
-  title: string;
+  /** The step's own heading; left out where the subtitle says it all (signing in). */
+  title?: string;
   subtitle: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
@@ -36,7 +37,7 @@ export function AuthShell({
         <h1 className="text-2xl font-semibold tracking-tight text-content">Robis</h1>
         <p className="mt-1 text-sm text-muted">{subtitle}</p>
 
-        <h2 className="mt-8 text-sm font-medium text-content">{title}</h2>
+        {title ? <h2 className="mt-8 text-sm font-medium text-content">{title}</h2> : null}
 
         {children}
 

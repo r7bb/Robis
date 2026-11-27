@@ -204,14 +204,14 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Signing in matches the other account pages.** The sign-in page now uses
+  the same frame, fields, button and error as the reset, verify and
+  unsubscribe pages.
 - **Try again when Sapha could not answer.** When Sapha’s latest answer
   failed, a Try again button asks the same question again, with no retyping.
 - **Enter in the palette runs the command typed.** When the words typed in
   the command palette name a command, Enter runs it; asking Sapha in those
   words waits at the end of the list instead of coming first.
-- **Ask Sapha about an issue.** An issue’s page has Ask Sapha: the panel
-  opens with the issue named, and its suggestions ask what it waits on, for
-  a summary, or who could take it.
 
 <!-- latest:end -->
 

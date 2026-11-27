@@ -45,6 +45,17 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-27',
+    area: 'Site',
+    title: 'Signing in matches the other account pages',
+    brief:
+      'The sign-in page now uses the same frame, fields, button and error as the reset, verify and unsubscribe pages.',
+    summary:
+      'The sign-in page kept its own copy of the frame the other signed-out pages share, so the two had begun to drift. It now uses the shared one, AuthShell: the same column and heading, fields whose label is tied to the input by id, the same button and the same announced error, and the forgotten-password link styled as the other pages’ links, with a focus ring on the switch between signing in and signing up. The code step for two-factor sign-in sits in the same frame. Nothing about how signing in or signing up works has changed.',
+    checked:
+      'In the browser: the sign-in and sign-up forms, the link sent panel and a wrong password’s error, each looked at; the sign-up journey, the stack smoke test with sign-in by password and passkey paths, the accessibility, phone and keyboard journeys. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-27',
     area: 'ML',
     title: 'Try again when Sapha could not answer',
     brief:
