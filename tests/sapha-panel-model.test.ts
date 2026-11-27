@@ -5,7 +5,9 @@ import {
   changesOf,
   hasQuestion,
   isSaphaShortcut,
+  lastAsked,
   linkIssues,
+  retryOf,
   startersAbout,
   stillAnswering,
 } from '@robis/web/features/sapha/panel/turn-model.ts';
@@ -111,5 +113,60 @@ describe('the panel', () => {
     expect(hasQuestion('  ', null)).toBe(false);
     expect(hasQuestion('About ENG-12: who has it?', 'ENG-12')).toBe(true);
     expect(hasQuestion('What keeps slipping?', null)).toBe(true);
+  });
+
+  test('a failed answer, the latest, can be asked again in the same words', () => {
+    const turn = (
+      role: SaphaTurn['role'],
+      status: SaphaTurn['status'],
+      text: string,
+    ): SaphaTurn => ({
+      id: `${role}-${text}`,
+      role,
+      text,
+      status,
+      steps: [],
+      proposals: [],
+      issues: [],
+      createdAt: '2026-11-27T10:00:00.000Z',
+    });
+    const asked = turn('person', 'done', 'What keeps slipping?');
+    expect(retryOf([asked, turn('sapha', 'failed', 'Could not answer')])).toBe(
+      'What keeps slipping?',
+    );
+    expect(retryOf([asked, turn('sapha', 'done', 'Two issues')])).toBeNull();
+    expect(retryOf([asked, turn('sapha', 'pending', '')])).toBeNull();
+    expect(retryOf([])).toBeNull();
+    // An earlier failure, answered since, is not offered again.
+    expect(
+      retryOf([
+        asked,
+        turn('sapha', 'failed', 'x'),
+        turn('person', 'done', 'Again'),
+        turn('sapha', 'done', 'ok'),
+      ]),
+    ).toBeNull();
+  });
+
+  test('up in an empty composer brings back the last question asked', () => {
+    const turn = (role: SaphaTurn['role'], text: string): SaphaTurn => ({
+      id: `${role}-${text}`,
+      role,
+      text,
+      status: 'done',
+      steps: [],
+      proposals: [],
+      issues: [],
+      createdAt: '2026-11-27T10:00:00.000Z',
+    });
+    expect(
+      lastAsked([
+        turn('person', 'First'),
+        turn('sapha', 'A'),
+        turn('person', 'Second'),
+        turn('sapha', 'B'),
+      ]),
+    ).toBe('Second');
+    expect(lastAsked([])).toBeNull();
   });
 });

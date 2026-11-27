@@ -96,3 +96,19 @@ export function hasQuestion(draft: string, about: string | null): boolean {
   const words = draft.trim();
   return words.length > 0 && words !== aboutDraft(about).trim();
 }
+
+/** The question to ask again when the latest answer failed: the words just before it. */
+export function retryOf(turns: readonly SaphaTurn[]): string | null {
+  const last = turns.at(-1);
+  const asked = turns.at(-2);
+  if (last?.role !== 'sapha' || last.status !== 'failed') return null;
+  return asked?.role === 'person' ? asked.text : null;
+}
+
+/** The last question asked in a conversation, for Up in an empty composer. */
+export function lastAsked(turns: readonly SaphaTurn[]): string | null {
+  for (let i = turns.length - 1; i >= 0; i--) {
+    if (turns[i]?.role === 'person') return turns[i]?.text ?? null;
+  }
+  return null;
+}

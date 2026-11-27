@@ -18,10 +18,13 @@ export function SaphaTurnView({
   workspaceId,
   turn,
   onNavigate,
+  onRetry,
 }: {
   workspaceId: string;
   turn: SaphaTurn;
   onNavigate: () => void;
+  /** Ask the same question again: offered on the latest answer only, when it failed. */
+  onRetry?: () => void;
 }) {
   if (turn.role === 'person') {
     return (
@@ -38,7 +41,20 @@ export function SaphaTurnView({
     );
   }
   if (turn.status === 'failed') {
-    return <li className="mr-8 text-sm text-danger-soft">{turn.text}</li>;
+    return (
+      <li className="mr-8 space-y-1.5 text-sm">
+        <p className="text-danger-soft">{turn.text}</p>
+        {onRetry ? (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="rounded-md border border-line px-2.5 py-1 text-xs text-content transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+          >
+            Try again
+          </button>
+        ) : null}
+      </li>
+    );
   }
   const changes = changesOf(turn.proposals, new Date());
   return (

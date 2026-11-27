@@ -5,7 +5,14 @@ import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from 
 import { ago } from '../../../lib/time.ts';
 import { useAssist } from '../../assist/use-assist.ts';
 import { SaphaTurnView } from './sapha-turn.tsx';
-import { aboutDraft, hasQuestion, startersAbout, stillAnswering } from './turn-model.ts';
+import {
+  aboutDraft,
+  hasQuestion,
+  lastAsked,
+  retryOf,
+  startersAbout,
+  stillAnswering,
+} from './turn-model.ts';
 import { useConversation, useConversations, useForget, useSay } from './use-sapha-chat.ts';
 
 /** Ways in, for someone who has not asked Sapha anything yet. */
@@ -140,6 +147,8 @@ function Conversation({
   const end = useRef<HTMLDivElement>(null);
   const turns = conversationId ? (conversation.data?.turns ?? []) : [];
   const answering = stillAnswering(turns) || say.isPending;
+  // The latest answer failed: its question, to ask again.
+  const again = retryOf(turns);
 
   // What was typed in the palette is asked once, as the panel opens.
   // biome-ignore lint/correctness/useExhaustiveDependencies: asked once, when opened with words.
@@ -187,12 +196,17 @@ function Conversation({
           </div>
         ) : (
           <ol aria-live="polite" className="space-y-4">
-            {turns.map((turn) => (
+            {turns.map((turn, i) => (
               <SaphaTurnView
                 key={turn.id}
                 workspaceId={workspaceId}
                 turn={turn}
                 onNavigate={onNavigate}
+                onRetry={
+                  again !== null && i === turns.length - 1 && !answering
+                    ? () => send(again)
+                    : undefined
+                }
               />
             ))}
             {say.isPending && !stillAnswering(turns) ? (
@@ -209,6 +223,7 @@ function Conversation({
         onDraft={setDraft}
         answering={answering}
         canSend={hasQuestion(draft, about)}
+        recall={lastAsked(turns)}
         error={say.isError ? (say.error as Error).message : null}
         onSend={() => send(draft)}
       />
@@ -221,6 +236,7 @@ function Composer({
   onDraft,
   answering,
   canSend,
+  recall,
   error,
   onSend,
 }: {
@@ -229,6 +245,8 @@ function Composer({
   answering: boolean;
   /** Something asked, beyond the issue's name typed for them. */
   canSend: boolean;
+  /** The last question asked here, brought back by Up in the empty field. */
+  recall: string | null;
   error: string | null;
   onSend: () => void;
 }) {
@@ -243,9 +261,15 @@ function Composer({
     onSend();
   }
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+    if (event.nativeEvent.isComposing) return;
+    if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       onSend();
+    } else if (event.key === 'ArrowUp' && !draft && recall) {
+      // Up in an empty field brings back the last question, to change and ask again.
+      event.preventDefault();
+      onDraft(recall);
+      requestAnimationFrame(() => field.current?.setSelectionRange(recall.length, recall.length));
     }
   }
   return (

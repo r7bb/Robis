@@ -45,6 +45,17 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-27',
+    area: 'ML',
+    title: 'Try again when Sapha could not answer',
+    brief:
+      'When Sapha’s latest answer failed, a Try again button asks the same question again, with no retyping.',
+    summary:
+      'An answer can fail when the provider is busy or a step goes wrong; Sapha says so rather than showing half an answer. The latest such answer now carries Try again, which asks the question just before it once more, in the same words. It counts as a new question towards the day’s limit, as it is one, and it is hidden while Sapha is answering and on earlier failures that have been answered since. In the same spirit, Up in the empty question field brings back the last question asked, with the cursor at its end, to change a word and ask again.',
+    checked:
+      'A new test of which question is offered again: only after the latest answer failed, never while it waits, never for a failure answered since. In the browser, with the provider kept out of reach: a question whose answer was marked failed showed Try again; pressing it sent the question again, Sapha began looking, and the button went away; Up in the empty field brought the question back with the cursor at its end. A test of the last question asked, too. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-27',
     area: 'Product',
     title: 'Enter in the palette runs the command typed',
     brief:

@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Try again when Sapha could not answer** (2026-11-27). When Sapha’s
+  latest answer failed, a Try again button asks the same question again,
+  with no retyping.
 - **Enter in the palette runs the command typed** (2026-11-27). When the
   words typed in the command palette name a command, Enter runs it; asking
   Sapha in those words waits at the end of the list instead of coming first.
