@@ -8,6 +8,7 @@ import {
   lastAsked,
   linkIssues,
   retryOf,
+  sourcesOf,
   startersAbout,
   stillAnswering,
 } from '@robis/web/features/sapha/panel/turn-model.ts';
@@ -168,5 +169,24 @@ describe('the panel', () => {
       ]),
     ).toBe('Second');
     expect(lastAsked([])).toBeNull();
+  });
+
+  test('the sources under an answer: each issue looked at once, a few, and how many more', () => {
+    const cited = (n: number) => ({ id: `i${n}`, key: `WEB-${n}`, title: `Issue ${n}` });
+    expect(sourcesOf([cited(1), cited(2), cited(1)])).toEqual({
+      shown: [cited(1), cited(2)],
+      more: 0,
+    });
+    const many = sourcesOf(Array.from({ length: 9 }, (_, n) => cited(n + 1)));
+    expect(many.shown.map((issue) => issue.key)).toEqual([
+      'WEB-1',
+      'WEB-2',
+      'WEB-3',
+      'WEB-4',
+      'WEB-5',
+      'WEB-6',
+    ]);
+    expect(many.more).toBe(3);
+    expect(sourcesOf([])).toEqual({ shown: [], more: 0 });
   });
 });

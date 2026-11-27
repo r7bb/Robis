@@ -204,14 +204,14 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Sapha’s answers show their sources, and copy.** Under each of Sapha’s
+  answers, the issues it looked at are listed as links, so each claim can be
+  checked at its source, and Copy puts the answer on the clipboard.
 - **Signing in matches the other account pages.** The sign-in page now uses
   the same frame, fields, button and error as the reset, verify and
   unsubscribe pages.
 - **Try again when Sapha could not answer.** When Sapha’s latest answer
   failed, a Try again button asks the same question again, with no retyping.
-- **Enter in the palette runs the command typed.** When the words typed in
-  the command palette name a command, Enter runs it; asking Sapha in those
-  words waits at the end of the list instead of coming first.
 
 <!-- latest:end -->
 

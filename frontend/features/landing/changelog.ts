@@ -45,6 +45,17 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-27',
+    area: 'ML',
+    title: 'Sapha’s answers show their sources, and copy',
+    brief:
+      'Under each of Sapha’s answers, the issues it looked at are listed as links, so each claim can be checked at its source, and Copy puts the answer on the clipboard.',
+    summary:
+      'An answer named an issue as a link only where its words did, so an issue Sapha looked at but did not name was out of sight. Each answer now ends with Looked at and the keys of every issue it drew on, each once and in the order looked at, the first six shown and the rest counted; each opens its issue. Copy puts the answer’s words on the clipboard and says Copied for two seconds, or Could not copy if the browser refuses. The idea comes from assistants in other tools, which show their sources beside each answer so it can be checked.',
+    checked:
+      'A new test of the sources: each issue once, the first six, and how many more. In the browser, with the provider kept out of reach: an answer drawing on WEB-1 and WEB-2 listed both, each linked to its issue; Copy put the answer on the clipboard, read Copied, then Copy again. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-27',
     area: 'Site',
     title: 'Signing in matches the other account pages',
     brief:

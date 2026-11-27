@@ -2,7 +2,7 @@
 
 Where Robis is, what is left, and what is deliberately not being built.
 
-Status (2026-11-27): **2224 TypeScript tests, 132 Python tests, lint and
+Status (2026-11-27): **2226 TypeScript tests, 132 Python tests, lint and
 typecheck clean, production build passing.** This is the one place test counts are kept; a
 test (`tests/doc-links.test.ts`) refuses a count anywhere else, so the other
 documents point here instead of drifting.
@@ -202,8 +202,9 @@ the fallback where the model is absent.
 
 ### 3. Mail beyond the first driver
 
-SMTP is in, and account mail goes through the job queue. What is left: try a
-real provider, tell someone when a mail job dead-letters, and handle bounces
+SMTP is in, and account mail goes through the job queue. A mail job that
+dead-letters raises the RobisDeadLetters alert, with its runbook entry, and
+shows on Insights. What is left: try a real provider, and handle bounces
 before sending anything people did not ask for.
 
 ### 4. Decide what a verified address gates

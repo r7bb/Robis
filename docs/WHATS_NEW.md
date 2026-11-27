@@ -6,6 +6,10 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Sapha’s answers show their sources, and copy** (2026-11-27). Under each
+  of Sapha’s answers, the issues it looked at are listed as links, so each
+  claim can be checked at its source, and Copy puts the answer on the
+  clipboard.
 - **Signing in matches the other account pages** (2026-11-27). The sign-in
   page now uses the same frame, fields, button and error as the reset,
   verify and unsubscribe pages.

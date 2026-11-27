@@ -1,13 +1,13 @@
 'use client';
 
-import { describeIntent, type SaphaTurn } from '@robis/shared';
+import { describeIntent, type SaphaCited, type SaphaTurn } from '@robis/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { issueHref } from '../../../lib/links.ts';
 import { useMyId } from '../../../lib/use-people.ts';
 import { runIntent } from '../run-intent.ts';
-import { type Change, changesOf, linkIssues } from './turn-model.ts';
+import { type Change, changesOf, linkIssues, sourcesOf } from './turn-model.ts';
 
 /**
  * One turn in a conversation with Sapha: what was asked, or the answer with
@@ -81,6 +81,12 @@ export function SaphaTurnView({
           ),
         )}
       </p>
+      <AnswerFooter
+        workspaceId={workspaceId}
+        text={turn.text}
+        cited={turn.issues}
+        onNavigate={onNavigate}
+      />
       {changes.length > 0 ? (
         <ul className="space-y-2">
           {changes.map((change, i) => (
@@ -96,6 +102,71 @@ export function SaphaTurnView({
         </ul>
       ) : null}
     </li>
+  );
+}
+
+/** How long Copy says Copied before it reads Copy again. */
+const COPIED_MS = 2000;
+
+/**
+ * Under an answer: the issues it drew on, as links, so each claim can be
+ * checked at its source, and Copy for the words.
+ */
+function AnswerFooter({
+  workspaceId,
+  text,
+  cited,
+  onNavigate,
+}: {
+  workspaceId: string;
+  text: string;
+  cited: readonly SaphaCited[];
+  onNavigate: () => void;
+}) {
+  const { shown, more } = sourcesOf(cited);
+  const [copied, setCopied] = useState<'yes' | 'failed' | null>(null);
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(null), COPIED_MS);
+    return () => clearTimeout(timer);
+  }, [copied]);
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied('yes');
+    } catch {
+      setCopied('failed');
+    }
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-faint">
+      {shown.length > 0 ? (
+        <>
+          <span>Looked at</span>
+          {shown.map((issue) => (
+            <Link
+              key={issue.id}
+              href={issueHref(workspaceId, issue.id)}
+              onClick={onNavigate}
+              title={issue.title}
+              className="rounded font-mono text-muted hover:text-content hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+            >
+              {issue.key}
+            </Link>
+          ))}
+          {more > 0 ? <span>and {more} more</span> : null}
+        </>
+      ) : null}
+      <button
+        type="button"
+        onClick={copy}
+        className="ml-auto rounded px-1.5 py-0.5 text-muted transition-colors hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+      >
+        <span aria-live="polite">
+          {copied === 'yes' ? 'Copied' : copied === 'failed' ? 'Could not copy' : 'Copy'}
+        </span>
+      </button>
+    </div>
   );
 }
 

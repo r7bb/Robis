@@ -112,3 +112,12 @@ export function lastAsked(turns: readonly SaphaTurn[]): string | null {
   }
   return null;
 }
+
+/** Sources listed under an answer before the rest are counted. */
+const SOURCES_SHOWN = 6;
+
+/** The issues an answer drew on, each once in the order looked at: a few, and how many more. */
+export function sourcesOf(cited: readonly SaphaCited[]): { shown: SaphaCited[]; more: number } {
+  const once = [...new Map(cited.map((issue) => [issue.id, issue])).values()];
+  return { shown: once.slice(0, SOURCES_SHOWN), more: Math.max(0, once.length - SOURCES_SHOWN) };
+}
