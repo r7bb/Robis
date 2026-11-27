@@ -12,6 +12,13 @@ import {
 } from './harness.ts';
 
 /**
+ * A day counted from the real today, as the server trusts a browser's today
+ * only within a day of its own: fixed dates went stale as the calendar moved.
+ */
+const DAY_MS = 86_400_000;
+const day = (offset: number) => new Date(Date.now() + offset * DAY_MS).toISOString().slice(0, 10);
+
+/**
  * Workload: each person's open issues, everyone listed (the idle too), and
  * someone called heavy only when well above the team and above a floor.
  */
@@ -48,18 +55,18 @@ describe('the workload', () => {
     const project = await createProject(ana, workspace.id);
     const file = (actor: Actor, payload: Record<string, unknown>) =>
       request(`${ws}/projects/${project.id}/issues`, { method: 'POST', actor, payload });
-    const today = '2026-11-24';
+    const today = day(0);
     for (let i = 0; i < 6; i++) await file(ana, { title: `Bo ${i}`, assigneeId: bo.id });
     await file(ana, {
       title: 'Bo urgent',
       assigneeId: bo.id,
       priority: 'URGENT',
-      dueOn: '2026-11-20',
+      dueOn: day(-4),
     });
     await file(ana, {
       title: 'Bo soon',
       assigneeId: bo.id,
-      dueOn: '2026-11-26',
+      dueOn: day(2),
       status: 'IN_PROGRESS',
     });
     await file(ana, { title: 'Ana one', assigneeId: ana.id });
@@ -116,8 +123,8 @@ describe('the workload', () => {
           payload: { name, startsOn, endsOn },
         })
       ).json().cycle as { id: string };
-    const now = await plan('Now', '2026-11-16', '2026-11-29');
-    const ended = await plan('Ended', '2026-11-02', '2026-11-15');
+    const now = await plan('Now', day(-8), day(5));
+    const ended = await plan('Ended', day(-22), day(-9));
     const file = async (assigneeId: string, cycleId: string | null) => {
       const { issue } = (
         await request(`${ws}/projects/${project.id}/issues`, {
@@ -141,14 +148,14 @@ describe('the workload', () => {
     await file(ana.id, now.id);
 
     const everything = (
-      await request(`${ws}/insights/workload?today=2026-11-24`, { actor: ana })
+      await request(`${ws}/insights/workload?today=${day(0)}`, { actor: ana })
     ).json();
     expect(everything.people.map((p: { name: string; open: number }) => [p.name, p.open])).toEqual([
       ['Bo', 3],
       ['Ana', 2],
     ]);
     const planned = (
-      await request(`${ws}/insights/workload?today=2026-11-24&scope=cycles`, { actor: ana })
+      await request(`${ws}/insights/workload?today=${day(0)}&scope=cycles`, { actor: ana })
     ).json();
     expect(planned.people.map((p: { name: string; open: number }) => [p.name, p.open])).toEqual([
       ['Ana', 2],
