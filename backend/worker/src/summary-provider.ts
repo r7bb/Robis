@@ -268,9 +268,12 @@ const CACHED = { type: 'ephemeral' } as const;
 
 /**
  * One step's request: the exchange, and the tools, none callable on the
- * last step. Each step sends everything before it again, so the rules and
- * tools carry a cache mark of their own and the exchange a moving one: a
- * step pays in full only for what the last step added.
+ * last step. Each step sends everything before it again, so a mark on the
+ * rules (which covers the tools sent before them) and a moving mark on the
+ * exchange let a step pay in full only for what the last step added. The
+ * last step has no moving mark: forbidding the tools changes the request
+ * after the tools, so nothing past them is read back, and nothing follows
+ * that step to read what it would write.
  */
 function requestOf(
   model: string,
@@ -283,7 +286,7 @@ function requestOf(
     model,
     max_tokens: AGENT_MAX_TOKENS,
     system: [{ type: 'text', text: system, cache_control: CACHED }],
-    cache_control: CACHED,
+    ...(final ? {} : { cache_control: CACHED }),
     messages: agentMessages(turns),
     ...(tools.length > 0
       ? {

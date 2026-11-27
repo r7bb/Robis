@@ -83,12 +83,14 @@ describe('one step on the provider', () => {
     const { sent, model } = standIn([answer, answer]);
     await model.step({ system: 'rules', turns, tools: AGENT_TOOLS, final: false });
     await model.step({ system: 'rules', turns, tools: AGENT_TOOLS, final: true });
-    for (const params of sent as { system: unknown; cache_control: unknown }[]) {
+    for (const params of sent as { system: unknown }[]) {
       expect(params.system).toEqual([
         { type: 'text', text: 'rules', cache_control: { type: 'ephemeral' } },
       ]);
-      expect(params.cache_control).toEqual({ type: 'ephemeral' });
     }
+    // The moving mark on every step but the last, whose answer nothing reads back.
+    const marks = (sent as { cache_control?: unknown }[]).map((params) => params.cache_control);
+    expect(marks).toEqual([{ type: 'ephemeral' }, undefined]);
     // The same rules and tools on every step, byte for byte, or nothing is read back.
     const [first, last] = sent as { system: unknown; tools: unknown }[];
     expect(JSON.stringify(last!.system)).toBe(JSON.stringify(first!.system));
