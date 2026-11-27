@@ -149,7 +149,7 @@ function AnswerFooter({
               href={issueHref(workspaceId, issue.id)}
               onClick={onNavigate}
               title={issue.title}
-              className="rounded font-mono text-muted hover:text-content hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+              className="inline-flex min-h-6 items-center rounded px-1 font-mono text-muted hover:text-content hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
             >
               {issue.key}
             </Link>
@@ -160,12 +160,19 @@ function AnswerFooter({
       <button
         type="button"
         onClick={copy}
-        className="ml-auto rounded px-1.5 py-0.5 text-muted transition-colors hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+        aria-label="Copy the answer"
+        className="ml-auto inline-flex min-h-6 items-center rounded px-1.5 text-muted transition-colors hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
       >
-        <span aria-live="polite">
-          {copied === 'yes' ? 'Copied' : copied === 'failed' ? 'Could not copy' : 'Copy'}
-        </span>
+        {copied === 'yes' ? 'Copied' : 'Copy'}
       </button>
+      {copied === 'failed' ? (
+        <span className="basis-full text-danger-soft">
+          Could not copy. Select the words to copy them.
+        </span>
+      ) : null}
+      <span role="status" className="sr-only">
+        {copied === 'yes' ? 'Copied.' : copied === 'failed' ? 'Could not copy.' : ''}
+      </span>
     </div>
   );
 }

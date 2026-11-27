@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Sapha’s panel is kinder to keyboards and screen readers** (2026-11-27).
+  Closing Sapha’s panel puts focus back where it was, its confirmations keep
+  the keyboard’s place, and a screen reader hears one short line per answer.
 - **Sapha’s answers show their sources, and copy** (2026-11-27). Under each
   of Sapha’s answers, the issues it looked at are listed as links, so each
   claim can be checked at its source, and Copy puts the answer on the

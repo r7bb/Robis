@@ -80,7 +80,11 @@ export function LoginForm({ initialMode }: { initialMode: Mode }) {
       }
       await withPassword();
     } catch (cause) {
-      setError(cause instanceof ApiError ? cause.message : 'Something went wrong');
+      setError(
+        cause instanceof ApiError
+          ? cause.message
+          : 'Could not reach Robis. Check your connection and try again.',
+      );
     } finally {
       setSubmitting(false);
     }
@@ -203,7 +207,7 @@ function SentPanel({ to, onAgain }: { to: string; onAgain: () => void }) {
       <button
         type="button"
         onClick={onAgain}
-        className="mt-3 text-sm text-muted underline-offset-4 hover:text-content hover:underline"
+        className="mt-2 rounded py-1 text-sm text-muted underline-offset-4 hover:text-content hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
       >
         Use a different address
       </button>

@@ -121,3 +121,11 @@ export function sourcesOf(cited: readonly SaphaCited[]): { shown: SaphaCited[]; 
   const once = [...new Map(cited.map((issue) => [issue.id, issue])).values()];
   return { shown: once.slice(0, SOURCES_SHOWN), more: Math.max(0, once.length - SOURCES_SHOWN) };
 }
+
+/** What a screen reader hears as the latest answer changes: a line, never the answer read twice. */
+export function announced(turns: readonly SaphaTurn[]): string {
+  const last = turns.at(-1);
+  if (last?.role !== 'sapha') return '';
+  if (last.status === 'pending') return 'Sapha is looking.';
+  return last.status === 'failed' ? 'Sapha could not answer.' : 'Sapha answered.';
+}

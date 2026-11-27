@@ -204,14 +204,15 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Sapha’s panel is kinder to keyboards and screen readers.** Closing
+  Sapha’s panel puts focus back where it was, its confirmations keep the
+  keyboard’s place, and a screen reader hears one short line per answer.
 - **Sapha’s answers show their sources, and copy.** Under each of Sapha’s
   answers, the issues it looked at are listed as links, so each claim can be
   checked at its source, and Copy puts the answer on the clipboard.
 - **Signing in matches the other account pages.** The sign-in page now uses
   the same frame, fields, button and error as the reset, verify and
   unsubscribe pages.
-- **Try again when Sapha could not answer.** When Sapha’s latest answer
-  failed, a Try again button asks the same question again, with no retyping.
 
 <!-- latest:end -->
 

@@ -7,6 +7,7 @@ import { useAssist } from '../../assist/use-assist.ts';
 import { SaphaTurnView } from './sapha-turn.tsx';
 import {
   aboutDraft,
+  announced,
   hasQuestion,
   lastAsked,
   retryOf,
@@ -195,7 +196,7 @@ function Conversation({
             </ul>
           </div>
         ) : (
-          <ol aria-live="polite" className="space-y-4">
+          <ol className="space-y-4">
             {turns.map((turn, i) => (
               <SaphaTurnView
                 key={turn.id}
@@ -216,6 +217,10 @@ function Conversation({
             ) : null}
           </ol>
         )}
+        {/* One short line for screen readers, rather than the whole list read again. */}
+        <p role="status" className="sr-only">
+          {say.isPending && !stillAnswering(turns) ? 'Sapha is looking.' : announced(turns)}
+        </p>
         <div ref={end} />
       </div>
       <Composer
@@ -273,7 +278,10 @@ function Composer({
     }
   }
   return (
-    <form onSubmit={submit} className="space-y-1.5 border-t border-line px-4 py-3">
+    <form
+      onSubmit={submit}
+      className="space-y-1.5 border-t border-line px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3"
+    >
       {error ? (
         <p role="alert" className="text-xs text-danger-soft">
           {error}
@@ -293,7 +301,7 @@ function Composer({
           aria-label="Ask Sapha"
           placeholder="Ask Sapha…"
           autoComplete="off"
-          className="min-h-[2.5rem] flex-1 resize-none rounded-md border border-line bg-surface px-2 py-1.5 text-sm text-content placeholder:text-faint focus:border-accent-soft focus:outline-none"
+          className="min-h-[2.5rem] flex-1 resize-none rounded-md border border-line bg-surface px-2 py-1.5 text-sm text-content placeholder:text-faint focus:border-accent-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
         />
         <button
           type="submit"
@@ -339,12 +347,27 @@ function History({
               className="min-w-0 flex-1 rounded text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
             >
               <span className="block truncate text-sm text-content">{row.title}</span>
-              <span className="block text-[11px] text-faint">{ago(row.updatedAt)}</span>
+              <time
+                dateTime={row.updatedAt}
+                title={new Date(row.updatedAt).toLocaleString()}
+                className="block text-[11px] text-faint"
+              >
+                {ago(row.updatedAt)}
+              </time>
             </button>
             {clearing === row.id ? (
               <span className="flex shrink-0 items-center gap-1 text-[11px] text-muted">
                 Clear it?
-                <button type="button" className={QUIET} onClick={() => setClearing(null)}>
+                <button
+                  type="button"
+                  // biome-ignore lint/a11y/noAutofocus: the safe choice takes focus as the question appears
+                  autoFocus
+                  className={QUIET}
+                  onClick={() => {
+                    setClearing(null);
+                    refocus(`[data-clear="${row.id}"]`);
+                  }}
+                >
                   Keep
                 </button>
                 <button
@@ -362,6 +385,7 @@ function History({
               <button
                 type="button"
                 aria-label={`Clear the conversation ${row.title}`}
+                data-clear={row.id}
                 onClick={() => setClearing(row.id)}
                 className={QUIET}
               >
@@ -375,7 +399,16 @@ function History({
         confirming ? (
           <p className="flex flex-wrap items-center gap-2 text-xs text-muted">
             Clear every conversation with Sapha here, for good?
-            <button type="button" className={QUIET} onClick={() => setConfirming(false)}>
+            <button
+              type="button"
+              // biome-ignore lint/a11y/noAutofocus: the safe choice takes focus as the question appears
+              autoFocus
+              className={QUIET}
+              onClick={() => {
+                setConfirming(false);
+                refocus('[data-clear-all]');
+              }}
+            >
               Keep them
             </button>
             <button
@@ -390,7 +423,12 @@ function History({
             </button>
           </p>
         ) : (
-          <button type="button" className={QUIET} onClick={() => setConfirming(true)}>
+          <button
+            type="button"
+            data-clear-all
+            className={QUIET}
+            onClick={() => setConfirming(true)}
+          >
             Clear all…
           </button>
         )
@@ -401,5 +439,12 @@ function History({
         </p>
       ) : null}
     </div>
+  );
+}
+
+/** Focus the button the panel draws back once a question closes, so the keyboard keeps its place. */
+function refocus(selector: string) {
+  requestAnimationFrame(() =>
+    document.querySelector<HTMLElement>(`dialog[open] ${selector}`)?.focus(),
   );
 }

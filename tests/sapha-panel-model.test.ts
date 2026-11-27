@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import type { SaphaTurn } from '@robis/shared';
 import {
   aboutDraft,
+  announced,
   changesOf,
   hasQuestion,
   isSaphaShortcut,
@@ -188,5 +189,25 @@ describe('the panel', () => {
     ]);
     expect(many.more).toBe(3);
     expect(sourcesOf([])).toEqual({ shown: [], more: 0 });
+  });
+
+  test('a screen reader hears one line as the latest answer changes', () => {
+    const turn = (role: SaphaTurn['role'], status: SaphaTurn['status']): SaphaTurn => ({
+      id: `${role}-${status}`,
+      role,
+      text: 'words',
+      status,
+      steps: [],
+      proposals: [],
+      issues: [],
+      createdAt: '2026-11-27T10:00:00.000Z',
+    });
+    expect(announced([])).toBe('');
+    expect(announced([turn('person', 'done')])).toBe('');
+    expect(announced([turn('person', 'done'), turn('sapha', 'pending')])).toBe('Sapha is looking.');
+    expect(announced([turn('person', 'done'), turn('sapha', 'done')])).toBe('Sapha answered.');
+    expect(announced([turn('person', 'done'), turn('sapha', 'failed')])).toBe(
+      'Sapha could not answer.',
+    );
   });
 });

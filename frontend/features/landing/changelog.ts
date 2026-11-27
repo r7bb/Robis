@@ -45,6 +45,17 @@ export type Entry = {
 export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-27',
+    area: 'Product',
+    title: 'Sapha’s panel is kinder to keyboards and screen readers',
+    brief:
+      'Closing Sapha’s panel puts focus back where it was, its confirmations keep the keyboard’s place, and a screen reader hears one short line per answer.',
+    summary:
+      'An interface review of the day’s screens against the web interface guidelines found no blockers and a handful of rough edges, now smoothed. Closing the panel, by Escape, the close button or Ctrl J again, puts focus back on whatever opened it, such as an issue’s Ask Sapha. Clearing a conversation, or all of them, moves focus to Keep as the question appears, and back to Clear when kept. A screen reader hears Sapha is looking, Sapha answered or Sapha could not answer, rather than the whole list read again, and Copy says Copied without its name changing. The question field shows a focus ring, and on phones sits clear of the home bar. Source links and Copy are larger to tap, History shows each conversation’s exact time on hover, a failed copy says what to do instead, and the issue’s Ask Sapha says it opens a dialog. On the sign-in page, a failure to reach the server now says to check the connection and try again, and Use a different address has a focus ring.',
+    checked:
+      'A new test of the line a screen reader hears. In the browser: Escape and a second Ctrl J each put focus back on the issue’s Ask Sapha; Clear moved focus to Keep, and Keep back to Clear; the status line read Sapha could not answer for a failed answer; History’s time carried its exact time. The full suite, lint, typecheck, knip, docs:links and the keyboard, accessibility and phone journeys.',
+  },
+  {
+    date: '2026-11-27',
     area: 'ML',
     title: 'Sapha’s answers show their sources, and copy',
     brief:

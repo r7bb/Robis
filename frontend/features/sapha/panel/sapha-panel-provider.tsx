@@ -1,7 +1,15 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from 'react';
+import {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useAssist } from '../../assist/use-assist.ts';
 import { SaphaPanel } from './sapha-panel.tsx';
 import { isSaphaShortcut } from './turn-model.ts';
@@ -21,21 +29,35 @@ const SaphaContext = createContext<((opening?: Opening) => void) | null>(null);
 export function SaphaPanelProvider({ children }: { children: ReactNode }) {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const [opened, setOpened] = useState<Opened | null>(null);
-  const open = useCallback(
-    ({ ask, about }: Opening = {}) =>
-      setOpened({ firstWords: ask?.trim() || null, about: about ?? null, at: Date.now() }),
-    [],
-  );
+  // What had focus when the panel opened, given it back when the panel closes.
+  const opener = useRef<HTMLElement | null>(null);
+  const open = useCallback(({ ask, about }: Opening = {}) => {
+    opener.current = focused();
+    setOpened({ firstWords: ask?.trim() || null, about: about ?? null, at: Date.now() });
+  }, []);
+  const close = useCallback(() => {
+    setOpened(null);
+    // After the dialog has gone, as the page is inert while it is open.
+    setTimeout(() => {
+      if (opener.current?.isConnected) opener.current.focus();
+      opener.current = null;
+    }, 0);
+  }, []);
+
+  // Read by the shortcut, which is set up once: open or closed now.
+  const isOpen = useRef(false);
+  isOpen.current = opened !== null;
 
   useEffect(() => {
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
       if (!isSaphaShortcut(event) || event.repeat) return;
       event.preventDefault();
-      setOpened((was) => (was ? null : { firstWords: null, about: null, at: Date.now() }));
+      if (isOpen.current) close();
+      else open();
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [open, close]);
 
   return (
     <SaphaContext.Provider value={open}>
@@ -47,7 +69,7 @@ export function SaphaPanelProvider({ children }: { children: ReactNode }) {
           workspaceId={workspaceId}
           firstWords={opened.firstWords}
           about={opened.about}
-          onClose={() => setOpened(null)}
+          onClose={close}
         />
       ) : null}
     </SaphaContext.Provider>
@@ -64,4 +86,10 @@ export function useAskSaphaAbout(workspaceId: string): ((issueKey: string) => vo
   const open = useOpenSapha();
   const { available } = useAssist(workspaceId);
   return open && available ? (issueKey) => open({ about: issueKey }) : null;
+}
+
+/** The element with focus now, if it is one that can take it back. */
+function focused(): HTMLElement | null {
+  const element = document.activeElement;
+  return element instanceof HTMLElement && element !== document.body ? element : null;
 }

@@ -513,6 +513,7 @@ function AskSaphaAbout({ onAsk }: { onAsk: () => void }) {
   return (
     <button
       type="button"
+      aria-haspopup="dialog"
       onClick={onAsk}
       className="rounded px-2 py-1 text-xs text-muted transition-colors hover:bg-surface hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
     >
