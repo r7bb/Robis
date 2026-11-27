@@ -44,6 +44,17 @@ export type Entry = {
 
 export const CHANGELOG: readonly Entry[] = [
   {
+    date: '2026-11-27',
+    area: 'ML',
+    title: 'Sapha’s lookups cost less',
+    brief:
+      'Each step Sapha takes reads its rules, its tools and the conversation so far back from the provider’s cache, so a step pays in full only for what is new.',
+    summary:
+      'While Sapha looks things up it sends everything before each step again: its rules, the tools it may use and the exchange so far. Those are now marked for the provider’s prompt cache, the rules and tools with a mark of their own and the exchange with one that moves forward as it grows, so a question of several steps pays in full only for what each step adds; cached reads are billed at a small part of the usual price. The rules and tools are sent the same way byte for byte on every step, as a cache only matches an identical start. The worker’s log now says per step how many tokens came from the cache, how many were written to it and how many were not cached, as counts only, never a word of what was asked.',
+    checked:
+      'A new test with a stand-in for the provider: every step carries the cache mark on the rules and on the request, including the last step, and the rules and tools are identical from the first step to the last. The agent’s other twenty tests, the full suite, lint, typecheck, knip and docs:links. Not yet seen against the real provider, as that is a paid call: the worker’s log line is where to check it once a key is set.',
+  },
+  {
     date: '2026-11-25',
     area: 'ML',
     title: 'Sapha is a full assistant now',

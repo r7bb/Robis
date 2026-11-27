@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Sapha’s lookups cost less** (2026-11-27). Each step Sapha takes reads
+  its rules, its tools and the conversation so far back from the provider’s
+  cache, so a step pays in full only for what is new.
 - **Sapha is a full assistant now** (2026-11-25). Talk to Sapha in a side
   panel (Ctrl J): it looks things up as you in a few steps, answers with
   links to what it found, and proposes changes for you to approve.

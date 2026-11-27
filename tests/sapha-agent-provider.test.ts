@@ -78,6 +78,23 @@ describe('one step on the provider', () => {
     expect(params.tool_choice).toEqual({ type: 'none' });
   });
 
+  test('the rules and tools are marked for the cache, and so is the exchange as it grows', async () => {
+    const answer = { stop_reason: 'end_turn', content: [{ type: 'text', text: 'Done.' }] };
+    const { sent, model } = standIn([answer, answer]);
+    await model.step({ system: 'rules', turns, tools: AGENT_TOOLS, final: false });
+    await model.step({ system: 'rules', turns, tools: AGENT_TOOLS, final: true });
+    for (const params of sent as { system: unknown; cache_control: unknown }[]) {
+      expect(params.system).toEqual([
+        { type: 'text', text: 'rules', cache_control: { type: 'ephemeral' } },
+      ]);
+      expect(params.cache_control).toEqual({ type: 'ephemeral' });
+    }
+    // The same rules and tools on every step, byte for byte, or nothing is read back.
+    const [first, last] = sent as { system: unknown; tools: unknown }[];
+    expect(JSON.stringify(last!.system)).toBe(JSON.stringify(first!.system));
+    expect(JSON.stringify(last!.tools)).toBe(JSON.stringify(first!.tools));
+  });
+
   test('every tool takes an object, and propose asks only for its kind', () => {
     for (const tool of AGENT_TOOLS) expect(tool.inputSchema.type).toBe('object');
     const propose = AGENT_TOOLS.find((tool) => tool.name === 'propose')!;

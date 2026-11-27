@@ -263,7 +263,15 @@ function agentMessages(turns: readonly AgentTurn[]): Anthropic.MessageParam[] {
   return messages;
 }
 
-/** One step's request: the exchange, and the tools, none callable on the last step. */
+/** Kept by the provider for a few minutes, so the next step reads it back cheaply. */
+const CACHED = { type: 'ephemeral' } as const;
+
+/**
+ * One step's request: the exchange, and the tools, none callable on the
+ * last step. Each step sends everything before it again, so the rules and
+ * tools carry a cache mark of their own and the exchange a moving one: a
+ * step pays in full only for what the last step added.
+ */
 function requestOf(
   model: string,
   system: string,
@@ -274,7 +282,8 @@ function requestOf(
   return {
     model,
     max_tokens: AGENT_MAX_TOKENS,
-    system,
+    system: [{ type: 'text', text: system, cache_control: CACHED }],
+    cache_control: CACHED,
     messages: agentMessages(turns),
     ...(tools.length > 0
       ? {
@@ -291,8 +300,17 @@ function requestOf(
   };
 }
 
+/** How much of a step was read from the cache: counts only, never a word of it. */
+function notedCache(usage: Anthropic.Usage | undefined) {
+  if (!usage) return;
+  log.info(
+    `sapha: step read ${usage.cache_read_input_tokens ?? 0} cached, wrote ${usage.cache_creation_input_tokens ?? 0}, ${usage.input_tokens} uncached`,
+  );
+}
+
 /** What came back, as a step: words and calls, or nothing for a refusal. */
 function stepOf(response: Anthropic.Message): AgentStep | null {
+  notedCache(response.usage);
   if (response.stop_reason === 'refusal') return null;
   const text = response.content
     .flatMap((block) => (block.type === 'text' ? [block.text] : []))
