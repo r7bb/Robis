@@ -17,6 +17,8 @@ const COMMAND_GROUPS = [
   'Channels',
   'People',
   'Search',
+  // Asking Sapha in the words typed, when a command above matched them.
+  'Or ask Sapha',
 ] as const;
 export type CommandGroup = (typeof COMMAND_GROUPS)[number];
 
@@ -163,5 +165,17 @@ export function isPaletteShortcut(event: KeyLike): boolean {
     !event.altKey &&
     !event.shiftKey &&
     event.key.toLowerCase() === 'k'
+  );
+}
+
+/**
+ * Asking Sapha in the words typed is a paid question, so when the words
+ * matched a command it waits at the end, and Enter runs what matched. With nothing matched it leads. A request Sapha read itself,
+ * checked and free, is not moved.
+ */
+export function yieldAsk(sapha: readonly Command[], matched: boolean): Command[] {
+  if (!matched) return [...sapha];
+  return sapha.map((command) =>
+    command.id === 'sapha-ask' ? { ...command, group: 'Or ask Sapha' } : command,
   );
 }

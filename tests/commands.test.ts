@@ -8,6 +8,7 @@ import {
   isPaletteShortcut,
   matchScore,
   rankCommands,
+  yieldAsk,
 } from '@robis/web/lib/commands.ts';
 import { ACTIONS, type Action, may } from '@robis/web/lib/permissions.ts';
 
@@ -114,6 +115,20 @@ describe('laying the list out', () => {
       'Actions',
       'Boards',
     ]);
+  });
+  test('asking Sapha in words waits below a command that matched, and leads when none did', () => {
+    const ask = command('sapha-ask', 'Ask Sapha: “ask sapha”', { group: 'Sapha' });
+    const read = command('sapha', 'Move REL-2 to Done', { group: 'Sapha' });
+    const matched = [command('issue-ask-sapha', 'Ask Sapha about REL-2', { group: 'Actions' })];
+    const first = (sapha: Command[], others: Command[]) =>
+      arrangeCommands([...yieldAsk(sapha, others.length > 0), ...others], { browsing: false })
+        .flatMap((s) => s.commands)
+        .map((c) => c.id);
+    // Enter runs what was matched, not a paid question.
+    expect(first([ask], matched)).toEqual(['issue-ask-sapha', 'sapha-ask']);
+    expect(first([ask], [])).toEqual(['sapha-ask']);
+    // A request Sapha read itself, free and checked, still leads.
+    expect(first([read], matched)).toEqual(['sapha', 'issue-ask-sapha']);
   });
 });
 

@@ -16,6 +16,7 @@ import {
   arrangeCommands,
   type Command,
   rankCommands,
+  yieldAsk,
 } from '../../lib/commands.ts';
 import { useOpenSapha } from '../sapha/panel/sapha-panel-provider.tsx';
 import { SaphaAnswer } from '../sapha/sapha-answer.tsx';
@@ -79,13 +80,12 @@ export function CommandPalette({
     ? arrangeCommands(rankCommands(allowedCommands(parent.children ?? [], role), query), {
         browsing: false,
       })
-    : arrangeCommands(
-        [
-          ...allowedCommands(sapha, role),
-          ...rankCommands(allowedCommands([...pageCommands, ...local], role), query),
-          ...allowedCommands(found, role),
-        ],
-        { browsing: !query.trim() },
+    : arrangePalette(
+        sapha,
+        rankCommands(allowedCommands([...pageCommands, ...local], role), query),
+        allowedCommands(found, role),
+        role,
+        query,
       );
   const items = sections.flatMap((section) => section.commands);
   const current = Math.min(active, Math.max(items.length - 1, 0));
@@ -419,4 +419,20 @@ function SaphaPane({
     );
   }
   return <>{children}</>;
+}
+
+/** The palette's list at the top: Sapha's line, what matched on this page, then found elsewhere. */
+function arrangePalette(
+  sapha: readonly Command[],
+  ranked: readonly Command[],
+  found: readonly Command[],
+  role: Role | undefined,
+  query: string,
+) {
+  // Only a command here that took every word typed: search results match
+  // loosely, and a question that finds some issues is still a question.
+  return arrangeCommands(
+    [...yieldAsk(allowedCommands(sapha, role), ranked.length > 0), ...ranked, ...found],
+    { browsing: !query.trim() },
+  );
 }
