@@ -204,15 +204,15 @@ no write lost and nothing done twice.
 
 <!-- latest:start -->
 
+- **Enter in the palette runs the command typed.** When the words typed in
+  the command palette name a command, Enter runs it; asking Sapha in those
+  words waits at the end of the list instead of coming first.
 - **Ask Sapha about an issue.** An issue’s page has Ask Sapha: the panel
   opens with the issue named, and its suggestions ask what it waits on, for
   a summary, or who could take it.
 - **Sapha’s lookups cost less.** Each step Sapha takes reads its rules, its
   tools and the conversation so far back from the provider’s cache, so a
   step pays in full only for what is new.
-- **Sapha is a full assistant now.** Talk to Sapha in a side panel (Ctrl J):
-  it looks things up as you in a few steps, answers with links to what it
-  found, and proposes changes for you to approve.
 
 <!-- latest:end -->
 

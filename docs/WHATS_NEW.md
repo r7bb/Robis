@@ -6,6 +6,9 @@ what each layer does. Back to the [README](../README.md).
 
 <!-- whats-new:start -->
 
+- **Enter in the palette runs the command typed** (2026-11-27). When the
+  words typed in the command palette name a command, Enter runs it; asking
+  Sapha in those words waits at the end of the list instead of coming first.
 - **Ask Sapha about an issue** (2026-11-27). An issue’s page has Ask Sapha:
   the panel opens with the issue named, and its suggestions ask what it
   waits on, for a summary, or who could take it.

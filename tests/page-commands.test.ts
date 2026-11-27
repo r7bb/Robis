@@ -45,6 +45,23 @@ describe("the open issue's status", () => {
     expect(allowedCommands(commands, 'GUEST')).toEqual([]);
     expect(allowedCommands(commands, 'MEMBER')).toHaveLength(1);
   });
+
+  test('where Sapha can answer, the palette asks it about the issue, a guest too', () => {
+    const asked: string[] = [];
+    const commands = issueCommands({
+      issueKey: 'REL-2',
+      status: 'TODO',
+      statusLabel: label,
+      setStatus: () => undefined,
+      askSapha: () => asked.push('REL-2'),
+    });
+    const [ask] = rankCommands(commands, 'ask sapha');
+    expect(ask?.title).toBe('Ask Sapha about REL-2');
+    ask?.run?.();
+    expect(asked).toEqual(['REL-2']);
+    // Asking changes nothing, so a guest, who may read the issue, is offered it.
+    expect(allowedCommands(commands, 'GUEST').map((c) => c.id)).toEqual(['issue-ask-sapha']);
+  });
 });
 
 describe('the board', () => {

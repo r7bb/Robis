@@ -46,13 +46,24 @@ export const CHANGELOG: readonly Entry[] = [
   {
     date: '2026-11-27',
     area: 'Product',
+    title: 'Enter in the palette runs the command typed',
+    brief:
+      'When the words typed in the command palette name a command, Enter runs it; asking Sapha in those words waits at the end of the list instead of coming first.',
+    summary:
+      'Asking Sapha in the words typed came first in the palette whenever assistance was on, so typing a command’s name and pressing Enter could send it to Sapha as a question, a paid call, instead of running it. Now, when a command on the page or in the palette takes every word typed, it comes first and the ask waits at the end, under Or ask Sapha. When nothing matches, as with most questions, the ask still leads, and search results never push it down, as they match more loosely. A request Sapha reads by itself, such as moving an issue to done, still comes first: it is checked and free.',
+    checked:
+      'A new test of the order: a matched command before the ask, the ask first when nothing matched, and a request Sapha read still first. In the browser, on an issue’s page: “ask sapha” put Ask Sapha about the issue first and Enter opened the panel about it; a question in plain words still had the ask first. The full suite, lint, typecheck, knip and docs:links.',
+  },
+  {
+    date: '2026-11-27',
+    area: 'Product',
     title: 'Ask Sapha about an issue',
     brief:
       'An issue’s page has Ask Sapha: the panel opens with the issue named, and its suggestions ask what it waits on, for a summary, or who could take it.',
     summary:
-      'Next to an issue’s delete button there is now Ask Sapha. It opens the side panel with “About WEB-1: ” already typed and the cursor after it, so a question about “this” names the issue Sapha should look at. In an empty conversation its suggestions are about that issue too: what it is waiting on, a summary with its latest comments, and who could take it on. Ctrl J and the palette still open the panel as before, with the usual suggestions. The same button shows in the issue peek over a board, and only where assistance is turned on. Sending the issue’s name alone is not allowed, as it asks nothing. Words from the palette are now asked once only, even after a visit to History.',
+      'Next to an issue’s delete button there is now Ask Sapha. It opens the side panel with “About WEB-1: ” already typed and the cursor after it, so a question about “this” names the issue Sapha should look at. In an empty conversation its suggestions are about that issue too: what it is waiting on, a summary with its latest comments, and who could take it on. Ctrl J and the palette still open the panel as before, with the usual suggestions. The same button shows in the issue peek over a board, and only where assistance is turned on; on an issue’s page the command palette offers Ask Sapha about it too, to anyone who can read the issue. Sending the issue’s name alone is not allowed, as it asks nothing. Words from the palette are now asked once only, even after a visit to History.',
     checked:
-      'Two new tests: the suggestions and the first words with and without an issue, and the issue’s name alone not counting as a question. A code review found nothing critical; its points (the button where assistance is off, the name alone, words asked again after History) are fixed. In the browser, with the provider kept out of reach: the button on WEB-1 opened the panel with “About WEB-1: ” typed, the cursor at its end and three suggestions naming WEB-1; Escape closed it; Ctrl J then opened it with nothing typed and the usual suggestions. The full suite, lint, typecheck, knip and docs:links.',
+      'Three new tests: the suggestions and the first words with and without an issue, the issue’s name alone not counting as a question, and the palette command found by “ask sapha”, opening the panel, and offered to a guest. A code review found nothing critical; its points (the button where assistance is off, the name alone, words asked again after History) are fixed. In the browser, with the provider kept out of reach: the button on WEB-1 opened the panel with “About WEB-1: ” typed, the cursor at its end and three suggestions naming WEB-1; Escape closed it; Ctrl J then opened it with nothing typed and the usual suggestions. The full suite, lint, typecheck, knip and docs:links.',
   },
   {
     date: '2026-11-27',

@@ -17,12 +17,11 @@ import { call } from '../../lib/api.ts';
 import { issueCommands } from '../../lib/page-commands.ts';
 import { may } from '../../lib/permissions.ts';
 import { remembered } from '../../lib/remembered.ts';
-import { useAssist } from '../assist/use-assist.ts';
 import { useCommands } from '../command/command-provider.tsx';
 import { CyclePicker } from '../cycles/cycle-picker.tsx';
 import { ReleasePicker } from '../releases/release-picker.tsx';
 import { RemindMe } from '../reminders/remind-me.tsx';
-import { useOpenSapha } from '../sapha/panel/sapha-panel-provider.tsx';
+import { useAskSaphaAbout } from '../sapha/panel/sapha-panel-provider.tsx';
 import { SaveAsTemplate } from '../templates/save-as-template.tsx';
 import { IssueAttachments } from './attachments.tsx';
 import { BlockedBy } from './blocked-by.tsx';
@@ -108,16 +107,7 @@ export function IssueDetail({
   // The same checks the palette makes for its commands (C2).
   const canEdit = may(role, 'editIssue');
   const canDelete = may(role, 'deleteIssue');
-  useCommands(
-    data
-      ? issueCommands({
-          issueKey: data.key,
-          status: data.status,
-          statusLabel: (status) => STATUS_LABELS[status],
-          setStatus: (status) => update.mutate({ status }),
-        })
-      : [],
-  );
+  const askThis = useIssuePageCommands(workspaceId, data, (status) => update.mutate({ status }));
 
   if (issue.isError) return <ErrorState message={(issue.error as Error).message} />;
 
@@ -129,7 +119,7 @@ export function IssueDetail({
         ) : null}
         {toolbar}
 
-        {data ? <AskSaphaAbout workspaceId={workspaceId} issueKey={data.key} /> : null}
+        {askThis ? <AskSaphaAbout onAsk={askThis} /> : null}
 
         {data && (
           <DeleteButton
@@ -515,19 +505,43 @@ function Select({
   );
 }
 
-/** Opens Sapha's panel about this issue, so a question about "this" names it. */
-function AskSaphaAbout({ workspaceId, issueKey }: { workspaceId: string; issueKey: string }) {
-  const openSapha = useOpenSapha();
-  // Shown only where Sapha can answer: with assistance off it could only say so.
-  const { available } = useAssist(workspaceId);
-  if (!openSapha || !available) return null;
+/**
+ * Opens Sapha's panel about this issue, so a question about "this" names it.
+ * Shown only where Sapha can answer: with assistance off it could only say so.
+ */
+function AskSaphaAbout({ onAsk }: { onAsk: () => void }) {
   return (
     <button
       type="button"
-      onClick={() => openSapha({ about: issueKey })}
+      onClick={onAsk}
       className="rounded px-2 py-1 text-xs text-muted transition-colors hover:bg-surface hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
     >
       Ask Sapha
     </button>
   );
+}
+
+/**
+ * What the issue page adds to the palette: its status, and asking Sapha
+ * about it where Sapha can answer. Returns that ask, for the button too.
+ */
+function useIssuePageCommands(
+  workspaceId: string,
+  data: { key: string; status: IssueStatus } | undefined,
+  setStatus: (status: IssueStatus) => void,
+): (() => void) | undefined {
+  const askAbout = useAskSaphaAbout(workspaceId);
+  const askThis = askAbout && data ? () => askAbout(data.key) : undefined;
+  useCommands(
+    data
+      ? issueCommands({
+          issueKey: data.key,
+          status: data.status,
+          statusLabel: (status) => STATUS_LABELS[status],
+          setStatus,
+          askSapha: askThis,
+        })
+      : [],
+  );
+  return askThis;
 }

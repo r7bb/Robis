@@ -13,13 +13,29 @@ export function issueCommands({
   status,
   statusLabel,
   setStatus,
+  askSapha,
 }: {
   issueKey: string;
   status: IssueStatus;
   statusLabel: (status: IssueStatus) => string;
   setStatus: (status: IssueStatus) => void;
+  /** Opens Sapha's panel about this issue; left out where Sapha cannot answer. */
+  askSapha?: () => void;
 }): Command[] {
+  const asking: Command[] = askSapha
+    ? [
+        {
+          // No action: asking changes nothing, so anyone who can read the issue may.
+          id: 'issue-ask-sapha',
+          title: `Ask Sapha about ${issueKey}`,
+          group: 'Actions',
+          keywords: ['assistant', issueKey],
+          run: askSapha,
+        },
+      ]
+    : [];
   return [
+    ...asking,
     {
       id: 'issue-status',
       title: `Change status of ${issueKey}…`,
